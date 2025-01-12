@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Definir Rota</title>
+  <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+  <link rel="icon" href="../../assets/img/pydenadmin/favicon.ico" type="image/x-icon" />
+
+  <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+  <script>
+    WebFont.load({
+      google: { families: ["Public Sans:300,400,500,600,700"] },
+      custom: {
+        families: [
+          "Font Awesome 5 Solid",
+          "Font Awesome 5 Regular",
+          "Font Awesome 5 Brands",
+          "simple-line-icons"
+        ],
+        urls: ["../../assets/css/fonts.min.css"]
+      },
+      active: function () {
+        sessionStorage.fonts = true;
+      }
+    });
+  </script>
+
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+  <link rel="stylesheet" href="../../assets/css/demo.css" />
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
+
+  <style>
+    /* ====================== MAPAS ====================== */
+    #map-modal-create {
+      height: 400px;
+      width: 100%;
+    }
+
+    #map-modal-view {
+      height: 500px;
+      width: 100%;
+    }
+
+    /* ====================== LEGENDAS ====================== */
+    .legend-marker {
+      font-size: 14px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-marker img {
+      width: 24px;
+      height: 24px;
+      margin-right: 5px;
+    }
+
+    /* ====================== BOTÕES DE EXPORT ====================== */
+    .dropdown-download {
+      margin-right: 10px;
+      display: inline-block;
+    }
+
+    /* ====================== DATATABLE AJUSTE ====================== */
+    .dataTables_wrapper .row>div:nth-child(1) {
+      /* Se quiser customizar a combo "Mostrar X registros", coloque aqui. */
+    }
+
+    .dataTables_wrapper .row>div:nth-child(2) {
+      display: flex !important;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .dataTables_filter {
+      margin: 0 !important;
+    }
+
+    .dataTables_filter label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0;
+    }
+
+    .dataTables_filter input {
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar" data-background-color="dark">
+      <div class="sidebar-logo">
+        <!-- Logo Header -->
+        <div class="logo-header" data-background-color="dark">
+          <a href="../../" class="logo">
+            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
+          </a>
+          <div class="nav-toggle">
+            <button class="btn btn-toggle toggle-sidebar">
+              <i class="gg-menu-right"></i>
+            </button>
+            <button class="btn btn-toggle sidenav-toggler">
+              <i class="gg-menu-left"></i>
+            </button>
+          </div>
+          <button class="topbar-toggler more">
+            <i class="gg-more-vertical-alt"></i>
+          </button>
+        </div>
+        <!-- End Logo Header -->
+      </div>
+      <div class="sidebar-wrapper scrollbar scrollbar-inner">
+        <div class="sidebar-content">
+          <ul class="nav nav-secondary">
+            <!-- MENU OMITIDO (igual ao seu) -->
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- End Sidebar -->
+
+    <div class="main-panel">
+      <div class="main-header">
+        <div class="main-header-logo">
+          <div class="logo-header" data-background-color="dark">
+            <a href="/" class="logo">
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                height="20" />
+            </a>
+            <div class="nav-toggle">
+              <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+              <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+            </div>
+            <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+          </div>
+        </div>
+
+        <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+          <div class="container-fluid">
+            <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+              <!-- Mensagens, Notificações, Ações Rápidas, Perfil -->
+              <li class="nav-item topbar-user dropdown hidden-caret">
+                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                  <div class="avatar-sm">
+                    <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
+                  </div>
+                  <span class="profile-username">
+                    <span class="op-7">Olá,</span>
+                    <span class="fw-bold">Hizrian</span>
+                  </span>
+                </a>
+                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                  <div class="dropdown-user-scroll scrollbar-outer">
+                    <li>
+                      <div class="user-box">
+                        <div class="avatar-lg">
+                          <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
+                        </div>
+                        <div class="u-text">
+                          <h4>Hizrian</h4>
+                          <p class="text-muted">hello@example.com</p>
+                          <a href="profile.html" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Meu Perfil</a>
+                      <a class="dropdown-item" href="#">Meu Saldo</a>
+                      <a class="dropdown-item" href="#">Caixa de Entrada</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Configurações da Conta</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Sair</a>
+                    </li>
+                  </div>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+
+      <div class="container">
+        <div class="page-inner">
+          <div class="page-header">
+            <h3 class="fw-bold mb-3">Definir Rotas</h3>
+            <ul class="breadcrumbs mb-3">
+              <li class="nav-home"><a href="../../"><i class="icon-home"></i></a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Rotas</a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Listar / Cadastrar</a></li>
+            </ul>
+          </div>
+
+          <!-- Tabela de Rotas -->
+          <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <h4 class="card-title mb-0">Rotas Cadastradas</h4>
+                </div>
+                <div class="card-body">
+                  <!-- Botão "Nova Rota" antes do campo de pesquisa -->
+                  <div class="mb-2 text-end">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaRota">
+                      <i class="fa fa-plus"></i> Nova Rota
+                    </button>
+                  </div>
+
+                  <div class="table-responsive">
+                    <table id="rotas-table" class="display table table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Identificador</th>
+                          <th>Descrição</th>
+                          <th>Zona</th> <!-- NOVA COLUNA EXIBINDO area_zona -->
+                          <th>Zoneamentos (Pontos)</th>
+                          <th>Escolas</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tfoot>
+                        <tr>
+                          <th>ID</th>
+                          <th>Identificador</th>
+                          <th>Descrição</th>
+                          <th>Zona</th>
+                          <th>Zoneamentos (Pontos)</th>
+                          <th>Escolas</th>
+                          <th>Ações</th>
+                        </tr>
+                      </tfoot>
+                      <tbody>
+                        <!-- Preenchido via JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="card-footer text-right">
+                  <div class="dropdown dropdown-download">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                      Exportar Todas
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="#" onclick="downloadAll('kml')">Baixar em KML</a></li>
+                      <li><a class="dropdown-item" href="#" onclick="downloadAll('kmz')">Baixar em KMZ</a></li>
+                      <li><a class="dropdown-item" href="#" onclick="downloadAll('gpx')">Baixar em GPX</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Fim tabela de rotas -->
+
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="container-fluid d-flex justify-content-between">
+          <nav class="pull-left">
+            <ul class="nav">
+              <li class="nav-item"><a class="nav-link" href="#">ThemeKita</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Help</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Licenses</a></li>
+            </ul>
+          </nav>
+          <div class="copyright">
+            2024, made with <i class="fa fa-heart heart text-danger"></i> by
+            <a href="http://www.themekita.com">ThemeKita</a>
+          </div>
+          <div>
+            Distributed by <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL: Criar Nova Rota -->
+  <div class="modal fade" id="modalNovaRota" tabindex="-1" aria-labelledby="modalNovaRotaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalNovaRotaLabel">Cadastrar Nova Rota</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <button id="startMarkerBtn" class="btn btn-primary mb-2">
+              Definir Ponto de Partida/Chegada
+            </button>
+            <div id="map-modal-create"></div>
+          </div>
+          <hr />
+          <form id="formDadosRota">
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label for="identificador" class="form-label">Identificador</label>
+                <input type="text" class="form-control" id="identificador" name="identificador" required />
+              </div>
+              <div class="col-md-9 mb-3">
+                <label for="descricao" class="form-label">Descrição da Rota</label>
+                <input type="text" class="form-control" id="descricao" name="descricao" required />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="area_zona" class="form-label">É zona rural ou urbana?</label>
+              <select class="form-control" id="area_zona" name="area_zona" required>
+                <option value="URBANA">Urbana</option>
+                <option value="RURAL">Rural</option>
+              </select>
+            </div>
+
+            <input type="hidden" id="partidaLat" name="partidaLat" />
+            <input type="hidden" id="partidaLng" name="partidaLng" />
+            <input type="hidden" id="pontosParadaSelecionados" name="pontosParadaSelecionados" />
+            <input type="hidden" id="escolasSelecionadas" name="escolasSelecionadas" />
+
+            <div class="mt-3">
+              <strong>Legenda:</strong>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/ms/icons/green-dot.png" alt="Partida/Chegada">
+                Ponto de Partida/Chegada
+              </div>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/kml/pal3/icon56.png" alt="Escola">
+                Escola (clique para selecionar)
+              </div>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/kml/pal2/icon13.png" alt="Ponto de Parada">
+                Ponto de Parada (clique para selecionar)
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-success mt-4">Salvar Rota</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FIM MODAL -->
+
+  <!-- MODAL: Visualizar Rota -->
+  <div class="modal fade" id="viewRouteModal" tabindex="-1" aria-labelledby="viewRouteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" style="max-width: 90%;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="viewRouteModalLabel">Visualizar Rota</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div id="map-modal-view"></div>
+          <hr />
+          <div class="dropdown-download">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              Exportar Rota
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" id="downloadKml">Baixar em KML</a></li>
+              <li><a class="dropdown-item" href="#" id="downloadKmz">Baixar em KMZ</a></li>
+              <li><a class="dropdown-item" href="#" id="downloadGpx">Baixar em GPX</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Fim Modal -->
+
+  <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+  <script src="../../assets/js/core/popper.min.js"></script>
+  <script src="../../assets/js/core/bootstrap.min.js"></script>
+  <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+  <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+  <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+  <script src="../../assets/js/pydenadmin.min.js"></script>
+  <script src="../../assets/js/setting-demo2.js"></script>
+
+  <script>
+    let mapCreate;
+    let startMarker = null;
+    let isPlacingStart = false;
+
+    const iconStartEnd = 'https://maps.google.com/mapfiles/ms/icons/green-dot.png';
+    const iconEscola = 'https://maps.google.com/mapfiles/kml/pal3/icon56.png';
+    const iconPonto = 'https://maps.google.com/mapfiles/kml/pal2/icon13.png';
+
+    let escolasData = [];
+    let pontosData = [];
+    let escolaMarkers = [];
+    let pontoMarkers = [];
+    let escolasSelecionadas = [];
+    let pontosParadaSelecionados = [];
+
+    let modalMapView = null;
+    let directionsService = null;
+    let directionsRenderer = null;
+    let currentRotaId = null;
+
+    // Notificação
+    function showNotification(type, message) {
+      let icon = 'fa fa-bell';
+      if (type === 'success') icon = 'fa fa-check-circle';
+      else if (type === 'danger') icon = 'fa fa-exclamation-circle';
+      else if (type === 'warning') icon = 'fa fa-exclamation-triangle';
+      else if (type === 'info') icon = 'fa fa-info-circle';
+
+      $.notify({ icon: icon, message: message }, {
+        type: type,
+        placement: { from: "top", align: "right" },
+        offset: 20,
+        spacing: 10,
+        z_index: 1031,
+        delay: 3000,
+        timer: 1000,
+        animate: { enter: 'animated fadeInDown', exit: 'animated fadeOutUp' }
+      });
+    }
+
+    // Carregar Escolas e Pontos
+    function loadEscolasEPontos() {
+      const escolasPromise = fetch('/api/escolas').then(r => r.json());
+      const pontosPromise = fetch('/api/pontos').then(r => r.json());
+      Promise.all([escolasPromise, pontosPromise])
+        .then(([escData, ptData]) => {
+          escolasData = escData;
+          pontosData = ptData;
+          placeEscolas();
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao carregar Escolas ou Pontos.');
+        });
+    }
+
+    // Plotar Escolas no mapa
+    function placeEscolas() {
+      escolasData.forEach(escola => {
+        if (!escola.latitude || !escola.longitude) return;
+        const lat = parseFloat(escola.latitude);
+        const lng = parseFloat(escola.longitude);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        const marker = new google.maps.Marker({
+          position: { lat, lng },
+          map: mapCreate,
+          icon: iconEscola,
+          title: escola.nome
+        });
+        escolaMarkers.push(marker);
+
+        marker.addListener('click', () => {
+          if (!escolasSelecionadas.includes(escola.id)) {
+            escolasSelecionadas.push(escola.id);
+            showNotification('info', `Escola "${escola.nome}" selecionada!`);
+          } else {
+            escolasSelecionadas = escolasSelecionadas.filter(id => id !== escola.id);
+            showNotification('warning', `Escola "${escola.nome}" removida da seleção!`);
+          }
+          reloadPontos();
+        });
+      });
+    }
+
+    // Plotar Pontos de Parada
+    function reloadPontos() {
+      // Remove markers de pontos anteriores
+      pontoMarkers.forEach(m => m.setMap(null));
+      pontoMarkers = [];
+      pontosParadaSelecionados = [];
+
+      if (escolasSelecionadas.length === 0) return;
+
+      // Descobrir zoneamentos a partir das escolas
+      const zoneSet = new Set();
+      escolasSelecionadas.forEach(eId => {
+        const esc = escolasData.find(e => e.id == eId);
+        if (esc && esc.zoneamentos) {
+          esc.zoneamentos.forEach(z => {
+            zoneSet.add(z.id);
+          });
+        }
+      });
+
+      // Adicionar pontos que pertencem a esses zoneamentos
+      pontosData.forEach(p => {
+        const hasZone = p.zoneamentos.some(z => zoneSet.has(z.id));
+        if (hasZone) {
+          const lat = parseFloat(p.latitude);
+          const lng = parseFloat(p.longitude);
+          if (isNaN(lat) || isNaN(lng)) return;
+
+          const marker = new google.maps.Marker({
+            position: { lat, lng },
+            map: mapCreate,
+            icon: iconPonto,
+            title: p.nome_ponto
+          });
+          pontoMarkers.push(marker);
+
+          marker.addListener('click', () => {
+            if (!pontosParadaSelecionados.includes(p.id)) {
+              pontosParadaSelecionados.push(p.id);
+              showNotification('info', `Ponto "${p.nome_ponto}" adicionado à rota!`);
+            } else {
+              pontosParadaSelecionados = pontosParadaSelecionados.filter(id => id !== p.id);
+              showNotification('warning', `Ponto "${p.nome_ponto}" removido da rota!`);
+            }
+          });
+        }
+      });
+    }
+
+    // Iniciar mapa do Modal de Criação
+    function initMapCreate() {
+      mapCreate = new google.maps.Map(document.getElementById('map-modal-create'), {
+        center: { lat: -6.530066, lng: -49.851630 },
+        zoom: 13,
+        mapTypeId: 'roadmap'
+      });
+
+      loadEscolasEPontos();
+
+      mapCreate.addListener('click', (event) => {
+        if (isPlacingStart) {
+          const lat = event.latLng.lat();
+          const lng = event.latLng.lng();
+
+          if (startMarker) {
+            startMarker.setMap(null);
+          }
+          startMarker = new google.maps.Marker({
+            position: { lat, lng },
+            map: mapCreate,
+            icon: iconStartEnd,
+            title: 'Partida/Chegada'
+          });
+
+          document.getElementById('partidaLat').value = lat;
+          document.getElementById('partidaLng').value = lng;
+          showNotification('success', 'Ponto de Partida/Chegada definido!');
+          isPlacingStart = false;
+        }
+      });
+    }
+
+    // Modal Nova Rota
+    $('#modalNovaRota').on('shown.bs.modal', function () {
+      if (!mapCreate) {
+        initMapCreate();
+      }
+    });
+
+    // Botão "Definir Ponto de Partida/Chegada"
+    $('#startMarkerBtn').click(function () {
+      isPlacingStart = true;
+      showNotification('info', 'Clique no mapa para definir o Ponto de Partida/Chegada.');
+    });
+
+    // Submeter form de cadastro
+    $('#formDadosRota').on('submit', function (e) {
+      e.preventDefault();
+      const identificador = $('#identificador').val().trim();
+      const descricao = $('#descricao').val().trim();
+      const partidaLat = $('#partidaLat').val().trim();
+      const partidaLng = $('#partidaLng').val().trim();
+      const areaZona = $('#area_zona').val().trim();
+
+      if (!identificador || !descricao || !partidaLat || !partidaLng || !areaZona) {
+        showNotification('warning', 'Preencha todos os campos e defina o ponto de partida!');
+        return;
+      }
+
+      const rotaData = {
+        identificador: identificador,
+        descricao: descricao,
+        partidaLat: parseFloat(partidaLat),
+        partidaLng: parseFloat(partidaLng),
+        chegadaLat: parseFloat(partidaLat),
+        chegadaLng: parseFloat(partidaLng),
+        pontosParada: pontosParadaSelecionados,
+        escolas: escolasSelecionadas,
+        areaZona: areaZona
+      };
+
+      fetch('/api/rotas/cadastrar-simples', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rotaData)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('success', 'Rota cadastrada com sucesso!');
+            $('#formDadosRota')[0].reset();
+            if (startMarker) {
+              startMarker.setMap(null);
+              startMarker = null;
+            }
+            escolaMarkers.forEach(m => m.setMap(null));
+            pontoMarkers.forEach(m => m.setMap(null));
+            escolaMarkers = [];
+            pontoMarkers = [];
+            escolasSelecionadas = [];
+            pontosParadaSelecionados = [];
+            $('#modalNovaRota').modal('hide');
+            loadRotas();
+          } else {
+            showNotification('danger', 'Erro ao cadastrar rota: ' + data.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro interno ao cadastrar rota.');
+        });
+    });
+
+    // Carregar e popular DataTable
+    let rotasTable;
+    function loadRotas() {
+      fetch('/api/rotas-simples-detalhes')
+        .then(r => r.json())
+        .then(rotas => {
+          const tableBody = $('#rotas-table tbody');
+          tableBody.empty();
+
+          rotas.forEach(rt => {
+            const zoneamentosNomes = rt.zoneamentos.map(z => z.nome).join(', ');
+            const escolasNomes = rt.escolas.map(e => e.nome).join(', ');
+            const rowData = encodeURIComponent(JSON.stringify(rt));
+
+            const row = `
+              <tr>
+                <td>${rt.id}</td>
+                <td>${rt.identificador}</td>
+                <td>${rt.descricao || ''}</td>
+                <td>${rt.area_zona || ''}</td> <!-- AQUI EXIBE URBANA / RURAL -->
+                <td>${zoneamentosNomes || ''}</td>
+                <td>${escolasNomes || ''}</td>
+                <td>
+                  <div class="form-button-action">
+                    <div class="btn-group dropend">
+                      <button 
+                        type="button" 
+                        class="btn btn-link btn-primary btn-lg" 
+                        data-bs-toggle="tooltip"
+                        title="Visualizar"
+                        onclick="openRouteModal('${rowData}')"
+                      >
+                        <i class="fa fa-eye"></i>
+                      </button>
+                      <button 
+                        type="button" 
+                        class="btn btn-link dropdown-toggle" 
+                        data-bs-toggle="dropdown" 
+                        aria-expanded="false"
+                        title="Baixar"
+                      >
+                        <i class="fa fa-download"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id}','kml')">Baixar KML</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id}','kmz')">Baixar KMZ</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id}','gpx')">Baixar GPX</a></li>
+                      </ul>
+                      <button
+                        type="button"
+                        class="btn btn-link btn-danger btn-lg"
+                        data-bs-toggle="tooltip"
+                        title="Excluir"
+                        onclick="deleteRota(${rt.id})"
+                      >
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            `;
+            tableBody.append(row);
+          });
+
+          if (rotasTable) {
+            rotasTable.destroy();
+          }
+          rotasTable = $('#rotas-table').DataTable({
+            pageLength: 10,
+            language: {
+              decimal: ",",
+              thousands: ".",
+              info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+              infoEmpty: "Mostrando 0 até 0 de 0 registros",
+              infoFiltered: "(filtrado de _MAX_ registros no total)",
+              lengthMenu: "Mostrar _MENU_ registros",
+              loadingRecords: "Carregando...",
+              processing: "Processando...",
+              search: "Pesquisar:",
+              zeroRecords: "Nenhum registro encontrado",
+              paginate: {
+                first: "Primeiro",
+                last: "Último",
+                next: "Próximo",
+                previous: "Anterior"
+              },
+              emptyTable: "Nenhuma rota disponível"
+            }
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao carregar lista de rotas.');
+        });
+    }
+
+    loadRotas();
+
+    // Excluir Rota
+    function deleteRota(rotaId) {
+      if (!confirm('Tem certeza que deseja excluir esta rota?')) return;
+      fetch('/api/rotas-simples/' + rotaId, {
+        method: 'DELETE'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('success', 'Rota excluída com sucesso!');
+            loadRotas();
+          } else {
+            showNotification('danger', 'Não foi possível excluir a rota: ' + (data.message || ''));
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro interno ao excluir a rota.');
+        });
+    }
+
+    // Modal de Visualizar Rota
+    let modalMap = null;
+    let directionsSrv = null;
+    let directionsRdr = null;
+    function openRouteModal(encodedData) {
+      const rotaData = JSON.parse(decodeURIComponent(encodedData));
+      currentRotaId = rotaData.id;
+      $('#viewRouteModal').modal('show');
+
+      setTimeout(() => {
+        if (!modalMapView) {
+          modalMapView = new google.maps.Map(document.getElementById('map-modal-view'), {
+            center: { lat: -6.530066, lng: -49.851630 },
+            zoom: 13,
+            mapTypeId: 'roadmap'
+          });
+          directionsSrv = new google.maps.DirectionsService();
+          directionsRdr = new google.maps.DirectionsRenderer();
+          directionsRdr.setMap(modalMapView);
+        }
+
+        if (rotaData.id) {
+          fetch(`/api/rotas_simples/${rotaData.id}`)
+            .then(r => r.json())
+            .then(detalhesRota => {
+              const origin = {
+                lat: parseFloat(detalhesRota.partidaLat),
+                lng: parseFloat(detalhesRota.partidaLng)
+              };
+              const destination = {
+                lat: parseFloat(detalhesRota.chegadaLat),
+                lng: parseFloat(detalhesRota.chegadaLng)
+              };
+
+              const waypoints = [];
+              detalhesRota.pontosParada.forEach(pt => {
+                waypoints.push({
+                  location: new google.maps.LatLng(parseFloat(pt.latitude), parseFloat(pt.longitude)),
+                  stopover: true
+                });
+              });
+              detalhesRota.escolas.forEach(es => {
+                waypoints.push({
+                  location: new google.maps.LatLng(parseFloat(es.latitude), parseFloat(es.longitude)),
+                  stopover: true
+                });
+              });
+
+              const request = {
+                origin: origin,
+                destination: destination,
+                waypoints: waypoints,
+                optimizeWaypoints: true,
+                travelMode: google.maps.TravelMode.DRIVING
+              };
+              directionsSrv.route(request, function (result, status) {
+                if (status === google.maps.DirectionsStatus.OK) {
+                  directionsRdr.setDirections(result);
+                }
+              });
+            })
+            .catch(err => {
+              console.error(err);
+              showNotification('danger', 'Erro ao carregar detalhes da rota para exibição.');
+            });
+        }
+      }, 400);
+    }
+
+    // Download Rota
+    function downloadRota(rotaId, formato) {
+      window.open(`/api/download-rota/${rotaId}?format=${formato}`, '_blank');
+    }
+
+    // Download de todas
+    function downloadAll(formato) {
+      window.open(`/api/download-rotas-todas?format=${formato}`, '_blank');
+    }
+
+    // Botões do modal de visualização
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('downloadKml').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentRotaId) {
+          downloadRota(currentRotaId, 'kml');
+        }
+      });
+      document.getElementById('downloadKmz').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentRotaId) {
+          downloadRota(currentRotaId, 'kmz');
+        }
+      });
+      document.getElementById('downloadGpx').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentRotaId) {
+          downloadRota(currentRotaId, 'gpx');
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

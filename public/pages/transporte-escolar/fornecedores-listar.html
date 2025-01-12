@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Listar Fornecedores - pydenadmin Bootstrap 5 Admin Dashboard</title>
+  <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+  <link rel="icon" href="../../assets/img/pydenadmin/favicon.ico" type="image/x-icon" />
+
+  <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+  <script>
+    WebFont.load({
+      google: { families: ["Public Sans:300,400,500,600,700"] },
+      custom: {
+        families: [
+          "Font Awesome 5 Solid",
+          "Font Awesome 5 Regular",
+          "Font Awesome 5 Brands",
+          "simple-line-icons",
+        ],
+        urls: ["../../assets/css/fonts.min.css"],
+      },
+      active: function () {
+        sessionStorage.fonts = true;
+      },
+    });
+  </script>
+
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+  <link rel="stylesheet" href="../../assets/css/demo.css" />
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
+
+  <style>
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+
+    .required-label::after {
+      content: " *";
+      color: red;
+    }
+
+    .map-instructions {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .select2-container {
+      width: 100% !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar" data-background-color="dark">
+      <div class="sidebar-logo">
+        <!-- Logo Header -->
+        <div class="logo-header" data-background-color="dark">
+          <a href="../../" class="logo">
+            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
+          </a>
+          <div class="nav-toggle">
+            <button class="btn btn-toggle toggle-sidebar">
+              <i class="gg-menu-right"></i>
+            </button>
+            <button class="btn btn-toggle sidenav-toggler">
+              <i class="gg-menu-left"></i>
+            </button>
+          </div>
+          <button class="topbar-toggler more">
+            <i class="gg-more-vertical-alt"></i>
+          </button>
+        </div>
+        <!-- End Logo Header -->
+      </div>
+      <div class="sidebar-wrapper scrollbar scrollbar-inner">
+        <div class="sidebar-content">
+          <ul class="nav nav-secondary">
+
+            <li class="nav-section">
+              <span class="sidebar-mini-icon">
+                <i class="fa fa-ellipsis-h"></i>
+              </span>
+              <h4 class="text-section">Transporte Escolar</h4>
+            </li>
+
+            <li class="nav-item">
+              <a href="../../pages/transporte-escolar/dashboard-escolar.html">
+                <i class="fas fa-tachometer-alt"></i>
+                <p>Dashboard</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarAlunos" aria-expanded="false">
+                <i class="fas fa-user-graduate"></i>
+                <p>Alunos</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarAlunos">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/alunos-listar.html"><span class="sub-item">Listar
+                        Alunos</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarMotoristas" aria-expanded="false">
+                <i class="fas fa-id-card"></i>
+                <p>Motoristas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarMotoristas">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/motoristas-listar.html"><span class="sub-item">Listar
+                        Motoristas</span></a></li>
+                  <li><a href="../../pages/transporte-escolar/motoristas-licencas.html"><span class="sub-item">Licenças
+                        e Certificações</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarMonitores" aria-expanded="false">
+                <i class="fas fa-user-check"></i>
+                <p>Monitores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarMonitores">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/monitores-listar.html"><span class="sub-item">Listar
+                        Monitores</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarVeiculos" aria-expanded="false">
+                <i class="fas fa-bus"></i>
+                <p>Veículos</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarVeiculos">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/veiculos-listar.html"><span class="sub-item">Listar
+                        Veículos</span></a></li>
+                  <li><a href="../../pages/transporte-escolar/veiculos-manutencao.html"><span
+                        class="sub-item">Manutenção</span></a></li>
+                  <li><a href="../../pages/transporte-escolar/veiculos-documentacao.html"><span
+                        class="sub-item">Documentação e Seguros</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarRotas" aria-expanded="false">
+                <i class="fas fa-route"></i>
+                <p>Rotas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarRotas">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/rotas-listar.html"><span class="sub-item">Listar
+                        Rotas</span></a></li>
+                  <li><a href="../../pages/transporte-escolar/pontos-cadastrar.html"><span class="sub-item">Listar Pontos de Parada</span></a></li>
+                  
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarRelatorios" aria-expanded="false">
+                <i class="fas fa-chart-line"></i>
+                <p>Relatórios</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarRelatorios">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/relatorios-mensais.html"><span
+                        class="sub-item">Mensais</span></a></li>
+                  <li><a href="../../pages/transporte-escolar/relatorios-rotas.html"><span class="sub-item">Por
+                        Rota</span></a></li>
+                  <li><a href="../../pages/transporte-escolar/relatorios-comparativos.html"><span
+                        class="sub-item">Comparativos</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarZoneamento" aria-expanded="false">
+                <i class="fas fa-school"></i>
+                <p>Zoneamento</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarZoneamento">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/zoneamento-listar.html"><span class="sub-item">Listar
+                        Zoneamento</span></a></li>
+                  <li><a href="../../pages/transporte-escolar/zoneamento-cadastrar.html"><span
+                        class="sub-item">Cadastrar Zoneamento</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarEscolas" aria-expanded="false">
+                <i class="fas fa-school"></i>
+                <p>Escolas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarEscolas">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/escolas-listar.html"><span class="sub-item">Listar
+                        Escolas</span></a></li>
+                  
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#escolarFornecedores" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Fornecedores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="escolarFornecedores">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-escolar/fornecedores-listar.html"><span class="sub-item">Listar
+                        Fornecedores</span></a></li>
+                  <li><a href="../../pages/transporte-escolar/fornecedores-cadastrar.html"><span
+                        class="sub-item">Cadastrar Fornecedor</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-section">
+              <span class="sidebar-mini-icon">
+                <i class="fa fa-ellipsis-h"></i>
+              </span>
+              <h4 class="text-section">Transporte Administrativo</h4>
+            </li>
+
+            <li class="nav-item">
+              <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
+                <i class="fas fa-tachometer-alt"></i>
+                <p>Dashboard</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#admFuncionarios" aria-expanded="false">
+                <i class="fas fa-users-cog"></i>
+                <p>Funcionários</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="admFuncionarios">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/funcionarios-listar.html"><span
+                        class="sub-item">Listar Funcionários</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/funcionarios-cadastrar.html"><span
+                        class="sub-item">Cadastrar Funcionário</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/funcionarios-cargos.html"><span
+                        class="sub-item">Funções e Cargos</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#admMotoristas" aria-expanded="false">
+                <i class="fas fa-id-card"></i>
+                <p>Motoristas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="admMotoristas">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/motoristas-listar.html"><span
+                        class="sub-item">Listar Motoristas</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/motoristas-cadastrar.html"><span
+                        class="sub-item">Cadastrar Motorista</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/motoristas-licencas.html"><span
+                        class="sub-item">Licenças e Certificações</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#admMonitores" aria-expanded="false">
+                <i class="fas fa-user-check"></i>
+                <p>Monitores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="admMonitores">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/monitores-listar.html"><span
+                        class="sub-item">Listar Monitores</span></a></li>
+                  
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#admFornecedores" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Fornecedores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="admFornecedores">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/fornecedores-listar.html"><span
+                        class="sub-item">Listar Fornecedores</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/fornecedores-cadastrar.html"><span
+                        class="sub-item">Cadastrar Fornecedor</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#admFrota" aria-expanded="false">
+                <i class="fas fa-warehouse"></i>
+                <p>Frota Administrativa</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="admFrota">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/frota-listar.html"><span class="sub-item">Listar
+                        Frota</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/frota-manutencao.html"><span
+                        class="sub-item">Manutenção</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/frota-rotas.html"><span class="sub-item">Rotas
+                        Internas</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#admAgenda" aria-expanded="false">
+                <i class="far fa-calendar-alt"></i>
+                <p>Agenda de Viagens</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="admAgenda">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/agenda-viagens-listar.html"><span
+                        class="sub-item">Listar Viagens</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/agenda-viagens-nova.html"><span
+                        class="sub-item">Agendar Nova Viagem</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/agenda-viagens-historico.html"><span
+                        class="sub-item">Histórico de Viagens</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#admLogistica" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Logística Interna</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="admLogistica">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/logistica-materiais.html"><span
+                        class="sub-item">Transporte de Materiais</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/logistica-manutencoes.html"><span
+                        class="sub-item">Agendamento Manutenção</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/logistica-suprimentos.html"><span
+                        class="sub-item">Controle de Suprimentos</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#admRelatorios" aria-expanded="false">
+                <i class="fas fa-chart-pie"></i>
+                <p>Relatórios</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="admRelatorios">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/relatorios-operacionais.html"><span
+                        class="sub-item">Operacionais</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/relatorios-eficiencia.html"><span
+                        class="sub-item">Eficiência</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/relatorios-custos.html"><span
+                        class="sub-item">Custos Operacionais</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-section">
+              <span class="sidebar-mini-icon">
+                <i class="fa fa-ellipsis-h"></i>
+              </span>
+              <h4 class="text-section">Financeiro</h4>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#finContratos" aria-expanded="false">
+                <i class="fas fa-file-contract"></i>
+                <p>Contratos</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="finContratos">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/financeiro/contratos-listar.html"><span class="sub-item">Listar
+                        Contratos</span></a></li>
+                  <li><a href="../../pages/financeiro/contratos-cadastrar.html"><span class="sub-item">Cadastrar
+                        Contrato</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#finRelatorios" aria-expanded="false">
+                <i class="far fa-chart-bar"></i>
+                <p>Relatórios Financeiros</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="finRelatorios">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/financeiro/relatorios-mensal.html"><span class="sub-item">Relatório
+                        Mensal</span></a></li>
+                  <li><a href="../../pages/financeiro/relatorios-anual.html"><span class="sub-item">Relatório
+                        Anual</span></a></li>
+                  <li><a href="../../pages/financeiro/relatorios-custos-setor.html"><span class="sub-item">Custos por
+                        Setor</span></a></li>
+                  <li><a href="../../pages/financeiro/relatorios-comparativos.html"><span class="sub-item">Comparativos
+                        Financeiros</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#finGestaoAbastecimento" aria-expanded="false">
+                <i class="fas fa-gas-pump"></i>
+                <p>Gestão de Abastecimento</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="finGestaoAbastecimento">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/financeiro/abastecimento-listar.html"><span class="sub-item">Listar
+                        Abastecimentos</span></a></li>
+                  <li><a href="../../pages/financeiro/abastecimento-cadastrar.html"><span class="sub-item">Cadastrar
+                        Abastecimento</span></a></li>
+                  <li><a href="../../pages/financeiro/abastecimento-relatorios.html"><span class="sub-item">Relatórios
+                        de Abastecimento</span></a></li>
+                </ul>
+              </div>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- End Sidebar -->
+
+    <div class="main-panel">
+      <div class="main-header">
+        <div class="main-header-logo">
+          <!-- Logo Header -->
+          <div class="logo-header" data-background-color="dark">
+            <a href="/" class="logo">
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                height="20" />
+            </a>
+            <div class="nav-toggle">
+              <button class="btn btn-toggle toggle-sidebar">
+                <i class="gg-menu-right"></i>
+              </button>
+              <button class="btn btn-toggle sidenav-toggler">
+                <i class="gg-menu-left"></i>
+              </button>
+            </div>
+            <button class="topbar-toggler more">
+              <i class="gg-more-vertical-alt"></i>
+            </button>
+          </div>
+          <!-- End Logo Header -->
+        </div>
+
+        <!-- Navbar Header -->
+        <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+          <div class="container-fluid">
+            <!-- Removida a seção da barra de pesquisa -->
+
+            <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+
+              <!-- Mensagens -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-envelope"></i>
+                </a>
+                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
+                  <li>
+                    <div class="dropdown-title d-flex justify-content-between align-items-center">
+                      Mensagens
+                      <a href="#" class="small">Marcar todas como lidas</a>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="message-notif-scroll scrollbar-outer">
+                      <div class="notif-center">
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="subject">Jimmy Denis</span>
+                            <span class="block">Como você está?</span>
+                            <span class="time">Há 5 minutos</span>
+                          </div>
+                        </a>
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/chadengle.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="subject">Chad</span>
+                            <span class="block">Ok, obrigado!</span>
+                            <span class="time">Há 12 minutos</span>
+                          </div>
+                        </a>
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/mlane.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="subject">Jhon Doe</span>
+                            <span class="block">
+                              Pronto para a reunião hoje...
+                            </span>
+                            <span class="time">Há 12 minutos</span>
+                          </div>
+                        </a>
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/talha.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="subject">Talha</span>
+                            <span class="block">Oi, tudo bem?</span>
+                            <span class="time">Há 17 minutos</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);">Ver todas as mensagens<i
+                        class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <!-- Notificações -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-bell"></i>
+                  <span class="notification">4</span>
+                </a>
+                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
+                  <li>
+                    <div class="dropdown-title">
+                      Você tem 4 novas notificações
+                    </div>
+                  </li>
+                  <li>
+                    <div class="notif-scroll scrollbar-outer">
+                      <div class="notif-center">
+                        <a href="#">
+                          <div class="notif-icon notif-primary">
+                            <i class="fa fa-user-plus"></i>
+                          </div>
+                          <div class="notif-content">
+                            <span class="block"> Novo usuário registrado </span>
+                            <span class="time">Há 5 minutos</span>
+                          </div>
+                        </a>
+                        <a href="#">
+                          <div class="notif-icon notif-success">
+                            <i class="fa fa-comment"></i>
+                          </div>
+                          <div class="notif-content">
+                            <span class="block">
+                              Rahmad comentou no Admin
+                            </span>
+                            <span class="time">Há 12 minutos</span>
+                          </div>
+                        </a>
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/profile2.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="block">
+                              Reza enviou mensagens para você
+                            </span>
+                            <span class="time">Há 12 minutos</span>
+                          </div>
+                        </a>
+                        <a href="#">
+                          <div class="notif-icon notif-danger">
+                            <i class="fa fa-heart"></i>
+                          </div>
+                          <div class="notif-content">
+                            <span class="block"> Farrah curtiu o Admin </span>
+                            <span class="time">Há 17 minutos</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);">Ver todas as notificações<i
+                        class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <!-- Ações Rápidas -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-layer-group"></i>
+                </a>
+                <div class="dropdown-menu quick-actions animated fadeIn">
+                  <div class="quick-actions-header">
+                    <span class="title mb-1">Ações Rápidas</span>
+                    <span class="subtitle op-7">Atalhos</span>
+                  </div>
+                  <div class="quick-actions-scroll scrollbar-outer">
+                    <div class="quick-actions-items">
+                      <div class="row m-0">
+                        <a class="col-6 col-md-4 p-0" href="/alunos/cadastrar">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-primary rounded-circle">
+                              <i class="fas fa-user-plus"></i>
+                            </div>
+                            <span class="text">Cadastrar Aluno</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/motoristas/cadastrar">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-success rounded-circle">
+                              <i class="fas fa-user-tie"></i>
+                            </div>
+                            <span class="text">Cadastrar Motorista</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/veiculos/cadastrar">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-info rounded-circle">
+                              <i class="fas fa-bus"></i>
+                            </div>
+                            <span class="text">Cadastrar Veículo</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/rotas/cadastrar">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-warning rounded-circle">
+                              <i class="fas fa-route"></i>
+                            </div>
+                            <span class="text">Cadastrar Rota</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/relatorios">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-danger rounded-circle">
+                              <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <span class="text">Relatórios</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/contratos">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-secondary rounded-circle">
+                              <i class="fas fa-file-contract"></i>
+                            </div>
+                            <span class="text">Contratos</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+
+              <!-- Perfil do Usuário -->
+              <li class="nav-item topbar-user dropdown hidden-caret">
+                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                  <div class="avatar-sm">
+                    <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
+                  </div>
+                  <span class="profile-username">
+                    <span class="op-7">Olá,</span>
+                    <span class="fw-bold">Hizrian</span>
+                  </span>
+                </a>
+                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                  <div class="dropdown-user-scroll scrollbar-outer">
+                    <li>
+                      <div class="user-box">
+                        <div class="avatar-lg">
+                          <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
+                        </div>
+                        <div class="u-text">
+                          <h4>Hizrian</h4>
+                          <p class="text-muted">hello@example.com</p>
+                          <a href="profile.html" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Meu Perfil</a>
+                      <a class="dropdown-item" href="#">Meu Saldo</a>
+                      <a class="dropdown-item" href="#">Caixa de Entrada</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Configurações da Conta</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#">Sair</a>
+                    </li>
+                  </div>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </nav>
+        <!-- End Navbar -->
+      </div>
+
+      <div class="container">
+        <div class="page-inner">
+          <div class="page-header">
+            <h3 class="fw-bold mb-3">Listar Fornecedores</h3>
+            <ul class="breadcrumbs mb-3">
+              <li class="nav-home">
+                <a href="../../">
+                  <i class="icon-home"></i>
+                </a>
+              </li>
+              <li class="separator">
+                <i class="icon-arrow-right"></i>
+              </li>
+              <li class="nav-item">
+                <a href="#">Fornecedores</a>
+              </li>
+              <li class="separator">
+                <i class="icon-arrow-right"></i>
+              </li>
+              <li class="nav-item">
+                <a href="#">Listar Fornecedores</a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">Visualização de Fornecedores</div>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <select id="fornecedorSelect" class="form-control mt-2">
+                      <option value="">Selecione um fornecedor</option>
+                    </select>
+                  </div>
+                  <div id="map"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabela de Fornecedores -->
+          <div class="row mt-4">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <h4 class="card-title">Lista de Fornecedores</h4>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table id="fornecedores-table" class="display table table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Nome Fornecedor</th>
+                          <th>Tipo de Contrato</th>
+                          <th>CNPJ</th>
+                          <th>Contato</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tfoot>
+                        <tr>
+                          <th>ID</th>
+                          <th>Nome Fornecedor</th>
+                          <th>Tipo de Contrato</th>
+                          <th>CNPJ</th>
+                          <th>Contato</th>
+                          <th>Ações</th>
+                        </tr>
+                      </tfoot>
+                      <tbody>
+                        <!-- Dados preenchidos via JavaScript -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <footer class="footer">
+        <div class="container-fluid d-flex justify-content-between">
+          <nav class="pull-left">
+            <ul class="nav">
+              <li class="nav-item">
+                <a class="nav-link" href="#">
+                  ThemeKita
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#"> Help </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#"> Licenses </a>
+              </li>
+            </ul>
+          </nav>
+          <div class="copyright">
+            2024, made with <i class="fa fa-heart heart text-danger"></i> by
+            <a href="http://www.themekita.com">ThemeKita</a>
+          </div>
+          <div>
+            Distributed by
+            <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+  <script src="../../assets/js/core/popper.min.js"></script>
+  <script src="../../assets/js/core/bootstrap.min.js"></script>
+  <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+  <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+  <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+  <script src="../../assets/js/pydenadmin.min.js"></script>
+  <script src="../../assets/js/setting-demo2.js"></script>
+  <script>
+    let map;
+    let fornecedores = [];
+    let markers = [];
+    let bounds;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: -6.530066, lng: -49.851630 },
+        zoom: 13,
+        mapTypeId: 'satellite'
+      });
+    }
+
+    function showNotification(type, message, title = "") {
+      $.notify({
+        title: title,
+        message: message,
+        icon: type === 'success' ? 'fa fa-check-circle' :
+          type === 'danger' ? 'fa fa-exclamation-circle' :
+            type === 'warning' ? 'fa fa-exclamation-triangle' :
+              type === 'info' ? 'fa fa-info-circle' : ''
+      }, {
+        type: type,
+        placement: {
+          from: "top",
+          align: "right"
+        },
+        offset: 20,
+        spacing: 10,
+        z_index: 1031,
+        delay: 3000,
+        timer: 1000,
+        animate: {
+          enter: 'animated fadeInDown',
+          exit: 'animated fadeOutUp'
+        }
+      });
+    }
+
+    function loadFornecedores() {
+      fetch('/api/fornecedores')
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Erro ao carregar fornecedores');
+          }
+          return res.json();
+        })
+        .then(data => {
+          fornecedores = data;
+          const select = document.getElementById('fornecedorSelect');
+          select.innerHTML = '<option value="">Selecione um fornecedor</option>';
+          fornecedores.forEach(f => {
+            const option = document.createElement('option');
+            option.value = f.id;
+            option.textContent = f.nome_fornecedor;
+            select.appendChild(option);
+          });
+          populateTable();
+          plotAllFornecedoresOnMap();
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Não foi possível carregar os fornecedores.');
+        });
+    }
+
+    function populateTable() {
+      const tableBody = $('#fornecedores-table tbody');
+      tableBody.empty();
+
+      fornecedores.forEach(f => {
+        const row = `
+                <tr>
+                    <td>${f.id}</td>
+                    <td>${f.nome_fornecedor}</td>
+                    <td>${f.tipo_contrato || ''}</td>
+                    <td>${f.cnpj || ''}</td>
+                    <td>${f.contato || ''}</td>
+                    <td>
+                        <div class="form-button-action">
+                            <button type="button" class="btn btn-link btn-primary btn-lg" onclick="focusFornecedor(${f.id})" data-bs-toggle="tooltip" title="Focar no Mapa">
+                                <i class="fa fa-map-marker-alt"></i>
+                            </button>
+                            <button type="button" class="btn btn-link btn-danger btn-lg" onclick="deleteFornecedor(${f.id})" data-bs-toggle="tooltip" title="Excluir Fornecedor">
+                                <i class="fa fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+        tableBody.append(row);
+      });
+
+      if ($.fn.DataTable.isDataTable('#fornecedores-table')) {
+        $('#fornecedores-table').DataTable().clear().destroy();
+      }
+
+      $('#fornecedores-table').DataTable({
+        pageLength: 10,
+        language: {
+          decimal: ",",
+          thousands: ".",
+          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+          infoEmpty: "Mostrando 0 até 0 de 0 registros",
+          infoFiltered: "(filtrado de _MAX_ registros no total)",
+          lengthMenu: "Mostrar _MENU_ registros",
+          loadingRecords: "Carregando...",
+          processing: "Processando...",
+          search: "Pesquisar:",
+          zeroRecords: "Nenhum registro encontrado",
+          paginate: {
+            first: "Primeiro",
+            last: "Último",
+            next: "Próximo",
+            previous: "Anterior"
+          },
+          emptyTable: "Nenhum dado disponível na tabela"
+        }
+      });
+    }
+
+    function plotAllFornecedoresOnMap() {
+      // Limpar marcadores anteriores
+      markers.forEach(m => m.setMap(null));
+      markers = [];
+      bounds = new google.maps.LatLngBounds();
+
+      let hasAtLeastOne = false;
+      fornecedores.forEach(f => {
+        if (f.latitude && f.longitude) {
+          const lat = parseFloat(f.latitude);
+          const lng = parseFloat(f.longitude);
+          const position = { lat: lat, lng: lng };
+          const marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            title: f.nome_fornecedor
+          });
+          markers.push({ marker: marker, id: f.id });
+          bounds.extend(position);
+          hasAtLeastOne = true;
+        }
+      });
+
+      if (hasAtLeastOne) {
+        map.fitBounds(bounds);
+      }
+    }
+
+    function focusFornecedor(id) {
+      const f = fornecedores.find(fornecedor => fornecedor.id == id);
+      if (!f) return;
+      if (!f.latitude || !f.longitude) {
+        showNotification('warning', 'Este fornecedor não possui coordenadas.');
+        return;
+      }
+
+      const lat = parseFloat(f.latitude);
+      const lng = parseFloat(f.longitude);
+      const position = { lat: lat, lng: lng };
+
+      // Encontrar o marcador correspondente
+      const m = markers.find(m => m.id == id);
+      if (m) {
+        map.setCenter(position);
+        map.setZoom(16);
+        // Pode adicionar uma animação temporária para destacar o marcador
+        m.marker.setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout(() => {
+          m.marker.setAnimation(null);
+        }, 1500);
+      } else {
+        // Caso não tenha marcador para este fornecedor, mostre notificação
+        showNotification('warning', 'Este fornecedor não possui coordenadas.');
+      }
+
+      document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteFornecedor(id) {
+      fetch('/api/fornecedores/' + id, {
+        method: 'DELETE'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('success', 'Fornecedor excluído com sucesso!');
+            loadFornecedores();
+          } else {
+            showNotification('danger', 'Erro ao excluir fornecedor: ' + data.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao excluir fornecedor. Tente novamente.');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      initMap();
+      loadFornecedores();
+
+      document.getElementById('fornecedorSelect').addEventListener('change', function () {
+        const val = this.value;
+        if (!val) {
+          // Mostra todos os fornecedores
+          plotAllFornecedoresOnMap();
+          return;
+        }
+        focusFornecedor(val);
+      });
+    });
+  </script>
+</body>
+
+</html>

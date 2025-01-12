@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Solicitar Rota</title>
+  <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+  <link rel="icon" href="../../assets/img/pydenadmin/favicon.ico" type="image/x-icon" />
+
+  <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+  <script>
+    WebFont.load({
+      google: { families: ["Public Sans:300,400,500,600,700"] },
+      custom: {
+        families: [
+          "Font Awesome 5 Solid",
+          "Font Awesome 5 Regular",
+          "Font Awesome 5 Brands",
+          "simple-line-icons",
+        ],
+        urls: ["../../assets/css/fonts.min.css"],
+      },
+      active: function () {
+        sessionStorage.fonts = true;
+      },
+    });
+  </script>
+
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+  <link rel="stylesheet" href="../../assets/css/demo.css" />
+
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places"></script>
+
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+    }
+
+    .required-label::after {
+      content: " *";
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container my-4">
+    <div class="page-inner">
+      <div class="page-header">
+        <h3 class="fw-bold mb-3">Cadastro de Alunos</h3>
+        <ul class="breadcrumbs mb-3">
+          <li class="nav-home">
+            <a href="../../">
+              <i class="icon-home"></i>
+            </a>
+          </li>
+          <li class="separator">
+            <i class="icon-arrow-right"></i>
+          </li>
+          <li class="nav-item">
+            <a href="#">Formulários</a>
+          </li>
+          <li class="separator">
+            <i class="icon-arrow-right"></i>
+          </li>
+          <li class="nav-item">
+            <a href="#">Cadastro de Alunos</a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Formulário de Cadastro</div>
+            </div>
+            <div class="card-body">
+              <form id="cadastro-aluno-form">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="nomeResponsavel" class="form-label required-label">
+                      Nome Completo do Responsável
+                    </label>
+                    <input type="text" class="form-control" id="nomeResponsavel" name="nome_responsavel" required />
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="cpfResponsavel" class="form-label required-label">
+                      CPF do Responsável
+                    </label>
+                    <input type="text" class="form-control" id="cpfResponsavel" name="cpf_responsavel" maxlength="14"
+                      required />
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="celularResponsavel" class="form-label required-label">
+                      Celular (WhatsApp)
+                    </label>
+                    <input type="text" class="form-control" id="celularResponsavel" name="celular_responsavel"
+                      maxlength="15" required />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="idMatriculaAluno" class="form-label required-label">
+                      ID de Matrícula do Aluno
+                    </label>
+                    <input type="text" class="form-control" id="idMatriculaAluno" name="id_matricula_aluno" required />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="escolaSelect" class="form-label required-label">
+                      Selecione a Escola
+                    </label>
+                    <select class="form-select" id="escolaSelect" name="escola_id" required>
+                      <option value="">Selecione uma Escola</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label for="cep" class="form-label required-label">CEP</label>
+                    <input type="text" class="form-control" id="cep" name="cep" required />
+                    <a href="https://portalcanaa.com.br/ceps/ceps-do-centro-canaa-dos-carajas/" target="_blank"
+                      class="d-block mt-2">
+                      Não sei meu CEP
+                    </a>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="numero" class="form-label required-label">Número</label>
+                    <input type="text" class="form-control" id="numero" name="numero" required />
+                    <button type="button" id="buscar-endereco" class="btn btn-secondary mt-2">
+                      Buscar Endereço
+                    </button>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="endereco" class="form-label">Endereço</label>
+                    <input type="text" class="form-control" id="endereco" name="endereco" readonly />
+                    <button type="button" id="buscar-coordenadas" class="btn btn-secondary mt-2" disabled>
+                      Buscar Coordenadas
+                    </button>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label required-label">
+                      O aluno pertence ao zoneamento da escola?
+                    </label>
+                    <br />
+                    <div class="form-check form-check-inline">
+                      <input type="radio" id="zoneamentoSim" name="zoneamento" value="sim" class="form-check-input"
+                        required />
+                      <label class="form-check-label" for="zoneamentoSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input type="radio" id="zoneamentoNao" name="zoneamento" value="nao" class="form-check-input"
+                        required />
+                      <label class="form-check-label" for="zoneamentoNao">Não</label>
+                    </div>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label required-label">O aluno é público do AEE?</label>
+                    <br />
+                    <div class="form-check form-check-inline">
+                      <input type="radio" id="aeeSim" name="deficiencia" value="sim" class="form-check-input"
+                        required />
+                      <label class="form-check-label" for="aeeSim">Sim</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input type="radio" id="aeeNao" name="deficiencia" value="nao" class="form-check-input"
+                        required />
+                      <label class="form-check-label" for="aeeNao">Não</label>
+                    </div>
+                  </div>
+                  <div class="col-md-4 mb-3" id="uploadLaudo" style="display: none;">
+                    <label for="laudoDeficiencia" class="form-label">Upload do Documento</label>
+                    <input type="file" class="form-control" id="laudoDeficiencia" name="laudo_deficiencia"
+                      accept="image/*" />
+                  </div>
+                </div>
+
+                <div id="map" class="mt-3"></div>
+
+                <div class="mb-3 mt-3">
+                  <button type="button" id="verificar-direito" class="btn btn-secondary">
+                    Verificar Critérios
+                  </button>
+                </div>
+
+                <input id="longitude" name="longitude" type="hidden" />
+                <input id="latitude" name="latitude" type="hidden" />
+
+                <div class="mb-3 d-none" id="divComprovanteEndereco">
+                  <label for="comprovanteEndereco" class="form-label">Comprovante de Endereço</label>
+                  <input type="file" class="form-control" id="comprovanteEndereco" name="comprovante_endereco"
+                    accept="image/*" />
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="modalDireito" tabindex="-1" aria-labelledby="modalDireitoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDireitoLabel">Critério de Direito ao Transporte</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="mensagemModal"></div>
+          <div class="mb-3">
+            <label for="observacoesModal" class="form-label">Observações</label>
+            <textarea class="form-control" id="observacoesModal" name="observacoes_modal" rows="4"
+              placeholder="Descreva aqui qualquer observação ou detalhe adicional..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Fechar
+          </button>
+          <button type="button" class="btn btn-primary" id="confirmarSolicitacao">
+            Enviar Solicitação
+          </button>
+          <button type="button" class="btn btn-danger" id="encerrarSolicitacao">
+            Encerrar Solicitação
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Fim Modal -->
+
+  <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+  <script src="../../assets/js/core/popper.min.js"></script>
+  <script src="../../assets/js/core/bootstrap.min.js"></script>
+  <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+  <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+  <script src="../../assets/js/pydenadmin.min.js"></script>
+
+  <script>
+    let map, marker, escolaMarker, directionsService, directionsRenderer;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: -6.530066, lng: -49.85163 },
+        zoom: 15,
+        mapTypeId: "satellite",
+      });
+
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: "#FF0000",
+          strokeOpacity: 1,
+          strokeWeight: 4,
+          strokePattern: [{ offset: "0", repeat: "10px" }],
+        },
+      });
+
+      map.addListener("click", function (event) {
+        placeMarker(event.latLng);
+        document.getElementById("latitude").value = event.latLng.lat();
+        document.getElementById("longitude").value = event.latLng.lng();
+      });
+    }
+
+    function placeMarker(location) {
+      if (marker) {
+        marker.setPosition(location);
+      } else {
+        marker = new google.maps.Marker({
+          position: location,
+          map: map,
+        });
+      }
+    }
+
+    function showNotification(type, message, title = "") {
+      $.notify(
+        {
+          title: title,
+          message: message,
+          icon:
+            type === "success"
+              ? "fa fa-check-circle"
+              : type === "danger"
+                ? "fa fa-exclamation-circle"
+                : type === "warning"
+                  ? "fa fa-exclamation-triangle"
+                  : type === "info"
+                    ? "fa fa-info-circle"
+                    : "",
+        },
+        {
+          type: type,
+          placement: {
+            from: "top",
+            align: "right",
+          },
+          offset: 20,
+          spacing: 10,
+          z_index: 1031,
+          delay: 3000,
+          timer: 1000,
+          animate: {
+            enter: "animated fadeInDown",
+            exit: "animated fadeOutUp",
+          },
+        }
+      );
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const buscarEnderecoBtn = document.getElementById("buscar-endereco");
+      if (buscarEnderecoBtn) {
+        buscarEnderecoBtn.addEventListener("click", async function () {
+          const cep = document.getElementById("cep").value.trim();
+          const numero = document.getElementById("numero").value.trim();
+
+          if (!cep || !numero) {
+            showNotification("danger", "Por favor, preencha o CEP e o Número.");
+            return;
+          }
+
+          const cepFormatado = cep.replace(/\D/g, "");
+          if (cepFormatado.length !== 8) {
+            showNotification(
+              "danger",
+              "CEP inválido. Por favor, insira um CEP válido."
+            );
+            return;
+          }
+
+          try {
+            const response = await fetch(
+              `https://viacep.com.br/ws/${cepFormatado}/json/`
+            );
+            const data = await response.json();
+
+            if (!data.erro) {
+              const enderecoCompleto = `${data.logradouro}, ${numero}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+              document.getElementById("endereco").value = enderecoCompleto;
+              document.getElementById("buscar-coordenadas").disabled = false;
+              showNotification("success", "Endereço encontrado com sucesso!");
+            } else {
+              showNotification(
+                "danger",
+                "Endereço não encontrado para o CEP informado."
+              );
+              document.getElementById("buscar-coordenadas").disabled = true;
+            }
+          } catch (error) {
+            console.error("Erro ao buscar o endereço:", error);
+            showNotification(
+              "danger",
+              "Ocorreu um erro ao buscar o endereço. Tente novamente mais tarde."
+            );
+          }
+        });
+      }
+
+      const buscarCoordenadasBtn = document.getElementById("buscar-coordenadas");
+      if (buscarCoordenadasBtn) {
+        buscarCoordenadasBtn.addEventListener("click", function () {
+          const endereco = document.getElementById("endereco").value.trim();
+          if (!endereco) {
+            showNotification(
+              "danger",
+              "Endereço não disponível. Por favor, busque o endereço primeiro."
+            );
+            return;
+          }
+
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ address: endereco }, function (results, status) {
+            if (status === "OK") {
+              const location = results[0].geometry.location;
+              map.setCenter(location);
+              map.setZoom(18);
+              placeMarker(location);
+              document.getElementById("latitude").value = location.lat();
+              document.getElementById("longitude").value = location.lng();
+              showNotification(
+                "success",
+                "Coordenadas geográficas obtidas com sucesso!"
+              );
+            } else {
+              showNotification("danger", "Geocode falhou devido a: " + status);
+            }
+          });
+        });
+      }
+
+      $(document).ready(function () {
+        $.getJSON("/api/escolas", function (data) {
+          var select = $("#escolaSelect");
+          $.each(data, function (key, entry) {
+            select.append(
+              $("<option></option>").attr("value", entry.id).text(entry.nome)
+            );
+          });
+        });
+      });
+
+      const verificarDireitoBtn = document.getElementById("verificar-direito");
+      if (verificarDireitoBtn) {
+        verificarDireitoBtn.addEventListener("click", async function () {
+          const latitude = document.getElementById("latitude").value;
+          const longitude = document.getElementById("longitude").value;
+          const escolaId = document.getElementById("escolaSelect")
+            ? document.getElementById("escolaSelect").value
+            : null;
+          const zoneamento = document.querySelector(
+            'input[name="zoneamento"]:checked'
+          );
+          const aee = document.querySelector('input[name="deficiencia"]:checked');
+
+          if (!zoneamento) {
+            showNotification(
+              "danger",
+              "Por favor, selecione se o aluno pertence ao zoneamento da escola."
+            );
+            return;
+          }
+
+          if (!aee) {
+            showNotification(
+              "danger",
+              "Por favor, selecione se o aluno é público do AEE."
+            );
+            return;
+          }
+
+          if (
+            aee.value === "sim" &&
+            document.getElementById("uploadLaudo").style.display !== "none" &&
+            !document.getElementById("laudoDeficiencia").files.length
+          ) {
+            showNotification(
+              "danger",
+              "Por favor, envie o laudo de deficiência antes de verificar os critérios."
+            );
+            return;
+          }
+
+          if (!latitude || !longitude || !escolaId) {
+            showNotification(
+              "danger",
+              "Por favor, preencha todas as informações necessárias."
+            );
+            return;
+          }
+
+          try {
+            const response = await fetch(
+              `/api/escola-coordenadas?escola_id=${escolaId}`
+            );
+            const data = await response.json();
+
+            if (data && data.latitude && data.longitude) {
+              const escolaLatLng = {
+                lat: parseFloat(data.latitude),
+                lng: parseFloat(data.longitude),
+              };
+
+              if (escolaMarker) {
+                escolaMarker.setPosition(escolaLatLng);
+              } else {
+                escolaMarker = new google.maps.Marker({
+                  position: escolaLatLng,
+                  map: map,
+                  icon: "../../assets/img/icones/escola-marcador.png",
+                });
+              }
+
+              calculateAndDisplayRoute(
+                latitude,
+                longitude,
+                escolaLatLng,
+                zoneamento.value,
+                aee.value
+              );
+            } else {
+              showNotification(
+                "danger",
+                "Não foi possível encontrar as coordenadas da escola."
+              );
+            }
+          } catch (error) {
+            console.error("Erro ao buscar coordenadas da escola:", error);
+            showNotification(
+              "danger",
+              "Erro ao buscar coordenadas da escola. Tente novamente mais tarde."
+            );
+          }
+        });
+      }
+
+      const confirmarSolicitacaoBtn = document.getElementById("confirmarSolicitacao");
+      if (confirmarSolicitacaoBtn) {
+        confirmarSolicitacaoBtn.addEventListener("click", async function () {
+          const form = document.getElementById("cadastro-aluno-form");
+          const formData = new FormData(form);
+
+          const obsModal = document.getElementById("observacoesModal").value.trim();
+          if (obsModal) {
+            formData.append("observacoes", obsModal);
+          }
+
+          const criterioDireito = document.getElementById("mensagemModal").textContent.trim();
+          if (criterioDireito) {
+            formData.append("criterio_direito", criterioDireito);
+          }
+
+          if (
+            !document.getElementById("comprovanteEndereco") ||
+            !document.getElementById("comprovanteEndereco").files.length
+          ) {
+            formData.delete("comprovante_endereco");
+          }
+
+          try {
+            const response = await fetch("/api/enviar-solicitacao", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+              showNotification("success", "Solicitação enviada com sucesso!");
+              form.reset();
+
+              if (marker) {
+                marker.setMap(null);
+                marker = null;
+              }
+              if (escolaMarker) {
+                escolaMarker.setMap(null);
+                escolaMarker = null;
+              }
+              directionsRenderer.set("directions", null);
+              map.setCenter({ lat: -6.530066, lng: -49.85163 });
+              map.setZoom(15);
+
+              $("#modalDireito").modal("hide");
+            } else {
+              showNotification(
+                "danger",
+                `Erro ao enviar a solicitação: ${data.message}`
+              );
+            }
+          } catch (error) {
+            console.error("Erro ao enviar a solicitação:", error);
+            showNotification(
+              "danger",
+              "Erro ao enviar a solicitação. Tente novamente mais tarde."
+            );
+          }
+        });
+      }
+
+      const encerrarSolicitacaoBtn = document.getElementById("encerrarSolicitacao");
+      if (encerrarSolicitacaoBtn) {
+        encerrarSolicitacaoBtn.addEventListener("click", function () {
+          showNotification("info", "Solicitação encerrada.");
+          $("#modalDireito").modal("hide");
+        });
+      }
+
+      $("#cpfResponsavel").on("input", function () {
+        let cpf = $(this).val().replace(/\D/g, "");
+        if (cpf.length > 11) {
+          cpf = cpf.substring(0, 11);
+        }
+        cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+        cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+        cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        $(this).val(cpf);
+      });
+
+      $("#celularResponsavel").on("input", function () {
+        let celular = $(this).val().replace(/\D/g, "");
+        if (celular.length > 11) {
+          celular = celular.substring(0, 11);
+        }
+        celular = celular.replace(/(\d{2})(\d)/, "($1) $2");
+        celular = celular.replace(/(\d{5})(\d{1,4})$/, "$1-$2");
+        $(this).val(celular);
+      });
+    });
+
+    function mostrarUpload(mostrar) {
+      const uploadDiv = document.getElementById("uploadLaudo");
+      if (mostrar) {
+        uploadDiv.style.display = "block";
+        document
+          .getElementById("laudoDeficiencia")
+          .setAttribute("required", "required");
+      } else {
+        uploadDiv.style.display = "none";
+        document.getElementById("laudoDeficiencia").removeAttribute("required");
+      }
+    }
+
+    function calculateAndDisplayRoute(alunoLat, alunoLng, escolaLatLng, zoneamento, aee) {
+      const alunoLatLng = new google.maps.LatLng(alunoLat, alunoLng);
+      const request = {
+        origin: alunoLatLng,
+        destination: escolaLatLng,
+        travelMode: google.maps.TravelMode.WALKING,
+      };
+
+      directionsService.route(request, function (result, status) {
+        if (status === google.maps.DirectionsStatus.OK) {
+          directionsRenderer.setDirections(result);
+          const distance = result.routes[0].legs[0].distance.value / 1000;
+          let mensagem = "";
+
+          if (distance > 2 && zoneamento === "sim") {
+            mensagem = "O aluno tem direito ao transporte.";
+          } else if (distance > 2 && zoneamento === "nao" && aee === "sim") {
+            mensagem =
+              "O aluno reside em um zoneamento não atendido pela escola e é público AEE. Deseja prosseguir com a solicitação?";
+            mostrarUpload(true);
+          } else if (distance > 2 && zoneamento === "nao") {
+            mensagem =
+              "O aluno reside em um zoneamento não atendido pela escola. Deseja prosseguir com a solicitação?";
+            mostrarUpload(false);
+          } else if (distance <= 2 && zoneamento === "sim" && aee === "sim") {
+            mensagem =
+              "O aluno é público AEE, mas não mora a mais de 2 km da escola. Por favor, descreva a deficiência ou síndrome do aluno.";
+            mostrarUpload(true);
+          } else if (distance <= 2 && zoneamento === "nao" && aee === "sim") {
+            mensagem =
+              "O aluno é público AEE, reside em um zoneamento não atendido pela escola e mora a menos de 2 km. Por favor, descreva a deficiência ou síndrome do aluno.";
+            mostrarUpload(true);
+          } else {
+            mensagem =
+              "O aluno não atende aos critérios para o transporte escolar. Caso ainda deseje solicitar o transporte, forneça mais detalhes sobre a sua solicitação!";
+          }
+
+          document.getElementById("mensagemModal").textContent = mensagem;
+          $("#modalDireito").modal("show");
+        } else {
+          showNotification(
+            "danger",
+            "Não foi possível calcular a rota: " + status
+          );
+        }
+      });
+    }
+
+    initMap();
+  </script>
+</body>
+
+</html>
