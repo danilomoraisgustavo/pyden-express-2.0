@@ -15,7 +15,7 @@ const { Parser } = require('xml2js');
 const archiver = require('archiver');
 const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
-const { Document, Paragraph, Packer, TextRun } = require('docx');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, Header, Footer } = require('docx');
 const PDFDocument = require('pdfkit');
 
 
@@ -1567,83 +1567,66 @@ app.get('/api/motoristas/rota', async (req, res) => {
 
 app.get('/api/dashboard', async (req, res) => {
     try {
-        // Exemplos de SELECT que você já tem
-        const alunosAtivos = await pool.query('SELECT COUNT(*)::int as count FROM alunos WHERE ativo = TRUE');
-        const rotasAtivas = await pool.query('SELECT COUNT(*)::int as count FROM rotas WHERE ativa = TRUE');
-        const viagensAgendadas = await pool.query('SELECT COUNT(*)::int as count FROM viagens WHERE agendada = TRUE');
+        // Contagem de alunos_ativos (municipal ou estadual)
+        const alunosAtivos = await pool.query(`
+        SELECT COUNT(*)::int AS count
+        FROM alunos_ativos
+        WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
+      `);
 
-        // EXEMPLOS DE NOVAS CONSULTAS:
-        // (A) Contar Zoneamentos
-        const zoneamentosCount = await pool.query('SELECT COUNT(*)::int as count FROM zoneamentos');
+        // Contagem de rotas
+        const rotasAtivas = await pool.query(`
+        SELECT COUNT(*)::int AS count
+        FROM rotas_simples
+      `);
 
-        // (B) Contar Monitores
-        const monitoresCount = await pool.query('SELECT COUNT(*)::int as count FROM monitores');
+        // Contagem de zoneamentos
+        const zoneamentosCount = await pool.query(`
+        SELECT COUNT(*)::int AS count
+        FROM zoneamentos
+      `);
 
-        // (C) Contar Motoristas
-        const motoristasCount = await pool.query('SELECT COUNT(*)::int as count FROM motoristas');
+        // Contagem de motoristas
+        const motoristasCount = await pool.query(`
+        SELECT COUNT(*)::int AS count
+        FROM motoristas
+      `);
 
-        // (D) Contar Fornecedores
-        const fornecedoresCount = await pool.query('SELECT COUNT(*)::int as count FROM fornecedores');
+        // Contagem de monitores
+        const monitoresCount = await pool.query(`
+        SELECT COUNT(*)::int AS count
+        FROM monitores
+      `);
 
-        // Exemplo de dados fixos
-        const quilometragemEstimada = 12345;
-        const alunosAtivosPercent = '+5% desde a última semana';
-        const rotasAtivasPercent = '+3% desde a última semana';
-        const quilometragemEstimadaPercent = '+2% desde a última semana';
-        const viagensAgendadasPercent = '+4% desde a última semana';
-        const receitaDiaria = '4.578,58';
-        const veiculosOperacao = 17;
-        const veiculosOperacaoPercent = 5;
+        // Contagem de fornecedores
+        const fornecedoresCount = await pool.query(`
+        SELECT COUNT(*)::int AS count
+        FROM fornecedores
+      `);
 
-        const geolocalizacao = [
-            { flag: 'br.png', nome: 'Brasil', valor: 640, percentual: 11.63 },
-            { flag: 'pt.png', nome: 'Portugal', valor: 120, percentual: 2.16 },
-        ];
-        const novosAlunos = [
-            { nome: 'Jimmy Denis', curso: 'Estudante de Matemática', imagem: '../../assets/img/jm_denis.jpg' },
-        ];
-        const quilometragem = [
-            { veiculo: 'Ônibus 01', atual: 15000, estimada: 20000, status: 'OK', status_classe: 'success' },
-        ];
+        // Contagem de pontos
+        const pontosCount = await pool.query(`
+        SELECT COUNT(*)::int AS count
+        FROM pontos
+      `);
 
+        // Retorno JSON (sem porcentagens)
         res.json({
             alunos_ativos: alunosAtivos.rows[0]?.count || 0,
-            alunos_ativos_percent: alunosAtivosPercent,
-
             rotas_ativas: rotasAtivas.rows[0]?.count || 0,
-            rotas_ativas_percent: rotasAtivasPercent,
-
-            quilometragem_estimada: quilometragemEstimada,
-            quilometragem_estimada_percent: quilometragemEstimadaPercent,
-
-            viagens_agendadas: viagensAgendadas.rows[0]?.count || 0,
-            viagens_agendadas_percent: viagensAgendadasPercent,
-
-            receita_diaria: receitaDiaria,
-            veiculos_operacao: veiculosOperacao,
-            veiculos_operacao_percent: veiculosOperacaoPercent,
-
             zoneamentos_total: zoneamentosCount.rows[0]?.count || 0,
-            zoneamentos_total_percent: '+2% desde a última semana',
-
-            monitores_total: monitoresCount.rows[0]?.count || 0,
-            monitores_total_percent: '+1% desde a última semana',
-
             motoristas_total: motoristasCount.rows[0]?.count || 0,
-            motoristas_total_percent: '+3% desde a última semana',
-
+            monitores_total: monitoresCount.rows[0]?.count || 0,
             fornecedores_total: fornecedoresCount.rows[0]?.count || 0,
-            fornecedores_total_percent: '+4% desde a última semana',
-
-            geolocalizacao,
-            novos_alunos: novosAlunos,
-            quilometragem
+            pontos_total: pontosCount.rows[0]?.count || 0
         });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
+
+
 
 app.get('/api/escola-coordenadas', async (req, res) => {
     const escolaId = req.query.escola_id;
@@ -2770,247 +2753,203 @@ app.post('/api/memorandos/cadastrar', memorandoUpload.none(), async (req, res) =
 
 app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
     const { id } = req.params;
-
     try {
         const result = await pool.query('SELECT * FROM memorandos WHERE id = $1', [id]);
         if (result.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Memorando não encontrado.',
-            });
+            return res.status(404).json({ success: false, message: 'Memorando não encontrado.' });
         }
-
         const memorando = result.rows[0];
 
-        // Carrega imagens se existirem
+        // Importes do docx
+
         const fs = require('fs');
         const path = require('path');
-        let logoMemorando1Buffer = null;
-        let memorandoSeparadorBuffer = null;
-        let logoMemorando2Buffer = null;
-        let assinaturaBuffer = null;
 
-        const logoMemorando1Path = path.join(__dirname, 'public', 'assets', 'img', 'logo_memorando1.png');
-        const memorandoSeparadorPath = path.join(__dirname, 'public', 'assets', 'img', 'memorando_separador.png');
-        const logoMemorando2Path = path.join(__dirname, 'public', 'assets', 'img', 'memorando_logo2.png');
-        const assinaturaPath = path.join(__dirname, 'public', 'assets', 'img', 'assinatura.png');
-
-        if (fs.existsSync(logoMemorando1Path)) {
-            logoMemorando1Buffer = fs.readFileSync(logoMemorando1Path);
-        }
-        if (fs.existsSync(memorandoSeparadorPath)) {
-            memorandoSeparadorBuffer = fs.readFileSync(memorandoSeparadorPath);
-        }
-        if (fs.existsSync(logoMemorando2Path)) {
-            logoMemorando2Buffer = fs.readFileSync(logoMemorando2Path);
-        }
-        if (fs.existsSync(assinaturaPath)) {
-            assinaturaBuffer = fs.readFileSync(assinaturaPath);
+        // Função auxiliar para converter arquivo em Base64
+        function loadBase64(filePath) {
+            if (!fs.existsSync(filePath)) return null;
+            const file = fs.readFileSync(filePath);
+            return Buffer.from(file).toString('base64');
         }
 
-        // docx
-        const { Document, Packer, Paragraph, TextRun, Header, Footer, Table, TableRow, TableCell, ImageRun } = require('docx');
+        // Carregar as imagens
+        const logo1Path = path.join(__dirname, 'public', 'assets', 'img', 'logo_memorando1.png');
+        const separadorPath = path.join(__dirname, 'public', 'assets', 'img', 'memorando_separador.png');
+        const logo2Path = path.join(__dirname, 'public', 'assets', 'img', 'memorando_logo2.png');
 
-        // HEADER: Tabela com (logo_esquerda | texto_direita) + separador centralizado
+        const logo1Base64 = loadBase64(logo1Path);
+        const separadorBase64 = loadBase64(separadorPath);
+        const logo2Base64 = loadBase64(logo2Path);
+
+        // Cria o Header (cabeçalho)
         const headerChildren = [];
 
-        // Tabela com logo à esquerda e texto à direita
-        headerChildren.push(
-            new Table({
-                rows: [
-                    new TableRow({
-                        children: [
-                            new TableCell({
-                                children: [
-                                    logoMemorando1Buffer
-                                        ? new Paragraph({
-                                            children: [
-                                                new ImageRun({
-                                                    data: logoMemorando1Buffer,
-                                                    transformation: { width: 60, height: 60 },
-                                                }),
-                                            ],
-                                        })
-                                        : new Paragraph("")
-                                ],
-                                width: { size: 50 },
-                            }),
-                            new TableCell({
-                                children: [
-                                    new Paragraph({
-                                        children: [
-                                            new TextRun({
-                                                text: "ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO",
-                                                bold: true,
-                                            }),
-                                        ],
-                                    }),
-                                ],
-                                width: { size: 9000 },
-                            }),
-                        ],
-                    }),
-                ],
-                width: {
-                    size: 100,
-                    type: "pct",
-                },
-            })
-        );
-
-        // Separador no header (caso exista)
-        if (memorandoSeparadorBuffer) {
+        // (A) Logo1 à esquerda (docx não faz posicionamento absoluto,
+        // mas podemos inserir imagem e depois texto no mesmo parágrafo ou em parágrafos diferentes)
+        if (logo1Base64) {
             headerChildren.push(
                 new Paragraph({
                     children: [
                         new ImageRun({
-                            data: memorandoSeparadorBuffer,
-                            transformation: { width: 510, height: 10 },
+                            data: Buffer.from(logo1Base64, 'base64'),
+                            transformation: { width: 60, height: 60 },
                         }),
                     ],
                 })
             );
         }
 
-        // FOOTER: separador + logo2 + texto rodapé
-        const footerChildren = [];
-
-        // Separador no rodapé (caso exista)
-        if (memorandoSeparadorBuffer) {
-            footerChildren.push(
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: memorandoSeparadorBuffer,
-                            transformation: { width: 510, height: 10 },
-                        }),
-                    ],
-                })
-            );
-        }
-
-        // Logo2 centralizado no rodapé (caso exista)
-        if (logoMemorando2Buffer) {
-            footerChildren.push(
-                new Paragraph({
-                    children: [
-                        new ImageRun({
-                            data: logoMemorando2Buffer,
-                            transformation: { width: 160, height: 50 },
-                        }),
-                    ],
-                    alignment: "CENTER",
-                })
-            );
-        }
-
-        // Texto rodapé
-        footerChildren.push(
+        // (B) Texto à direita (podemos usar outro Parágrafo, com alignment RIGHT)
+        headerChildren.push(
             new Paragraph({
+                alignment: AlignmentType.RIGHT,
                 children: [
                     new TextRun({
-                        text: "SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED",
+                        text: 'ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO',
+                        bold: true,
+                        size: 22, // ~11pt
                     }),
                 ],
-                alignment: "CENTER",
-            }),
-            new Paragraph({
-                children: [
-                    new TextRun({
-                        text: "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-                    }),
-                ],
-                alignment: "CENTER",
-            }),
-            new Paragraph({
-                children: [
-                    new TextRun({
-                        text: "Telefone: (94) 99293-4500",
-                    }),
-                ],
-                alignment: "CENTER",
             })
         );
 
-        // Corpo principal do memorando
-        const bodyParagraphs = [
-            // Título
+        // (C) Separador (centralizado)
+        if (separadorBase64) {
+            headerChildren.push(
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new ImageRun({
+                            data: Buffer.from(separadorBase64, 'base64'),
+                            transformation: { width: 510, height: 20 },
+                        }),
+                    ],
+                })
+            );
+        }
+
+        // Cria o Footer (rodapé)
+        const footerChildren = [];
+
+        // (D) Separador no rodapé, novamente
+        if (separadorBase64) {
+            footerChildren.push(
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new ImageRun({
+                            data: Buffer.from(separadorBase64, 'base64'),
+                            transformation: { width: 510, height: 20 },
+                        }),
+                    ],
+                })
+            );
+        }
+
+        // (E) Logo2 centralizado
+        if (logo2Base64) {
+            footerChildren.push(
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                        new ImageRun({
+                            data: Buffer.from(logo2Base64, 'base64'),
+                            transformation: { width: 160, height: 40 },
+                        }),
+                    ],
+                })
+            );
+        }
+
+        // (F) Texto do rodapé
+        footerChildren.push(
             new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                    new TextRun({
+                        text: 'SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED\nRua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA\nTelefone: (94) 99293-4500',
+                        size: 20, // ~10pt
+                    }),
+                ],
+            })
+        );
+
+        // Cria o corpo (conteúdo principal da "section")
+        const docBody = [];
+        // Título
+        docBody.push(
+            new Paragraph({
+                heading: HeadingLevel.HEADING_2,
+                alignment: AlignmentType.JUSTIFIED,
                 children: [
                     new TextRun({
                         text: `MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA DE EDUCACAO`,
                         bold: true,
+                        size: 24, // ~12pt
                     }),
                 ],
-                alignment: "JUSTIFIED",
-            }),
-            new Paragraph({ text: "" }),
-            // A: ...
-            new Paragraph({
-                children: [
-                    new TextRun({ text: `A: ${memorando.destinatario}` }),
-                ],
-                alignment: "JUSTIFIED",
-            }),
-            new Paragraph({
-                children: [
-                    new TextRun({ text: `Assunto: ${memorando.tipo_memorando}` }),
-                ],
-                alignment: "JUSTIFIED",
-            }),
-            new Paragraph({ text: "" }),
-            // Prezados(as)...
-            new Paragraph({
-                children: [
-                    new TextRun("Prezados(as),"),
-                ],
-                alignment: "JUSTIFIED",
-            }),
-            new Paragraph({ text: "" }),
-            new Paragraph({
-                children: [
-                    new TextRun(memorando.corpo),
-                ],
-                alignment: "JUSTIFIED",
-            }),
-            new Paragraph({ text: "" }),
-            new Paragraph({
-                children: [
-                    new TextRun("Atenciosamente,"),
-                ],
-                alignment: "JUSTIFIED",
-            }),
-            new Paragraph({ text: "" }),
-            // Assinatura se existir
-            ...(assinaturaBuffer
-                ? [
-                    new Paragraph({
-                        children: [
-                            new ImageRun({
-                                data: assinaturaBuffer,
-                                transformation: { width: 150, height: 50 },
-                            }),
-                        ],
-                        alignment: "CENTER",
-                    }),
-                ]
-                : []
-            ),
-            // Nome e cargo
-            new Paragraph({
-                children: [new TextRun("DANILO DE MORAIS GUSTAVO")],
-                alignment: "CENTER",
-            }),
-            new Paragraph({
-                children: [new TextRun("Gestor de Transporte Escolar")],
-                alignment: "CENTER",
-            }),
-            new Paragraph({
-                children: [new TextRun("Portaria 118/2023 - GP")],
-                alignment: "CENTER",
-            }),
-        ];
+            })
+        );
 
+        docBody.push(new Paragraph({ text: '' })); // espaçamento
+
+        // A / Assunto
+        docBody.push(
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                children: [new TextRun({ text: `A: ${memorando.destinatario}`, size: 24 })],
+            })
+        );
+        docBody.push(
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                children: [new TextRun({ text: `Assunto: ${memorando.tipo_memorando}`, size: 24 })],
+            })
+        );
+        docBody.push(new Paragraph({ text: '' }));
+        docBody.push(
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                children: [new TextRun({ text: 'Prezados(as),', size: 24 })],
+            })
+        );
+        docBody.push(new Paragraph({ text: '' }));
+        docBody.push(
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                children: [new TextRun({ text: memorando.corpo || '', size: 24 })],
+            })
+        );
+        docBody.push(new Paragraph({ text: '' }));
+
+        // Assinatura
+        docBody.push(
+            new Paragraph({
+                alignment: AlignmentType.JUSTIFIED,
+                children: [new TextRun({ text: 'Atenciosamente,', size: 24 })],
+            })
+        );
+        docBody.push(new Paragraph({ text: '' }));
+        docBody.push(
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new TextRun({ text: 'DANILO DE MORAIS GUSTAVO', size: 24 })],
+            })
+        );
+        docBody.push(
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new TextRun({ text: 'Gestor de Transporte Escolar', size: 24 })],
+            })
+        );
+        docBody.push(
+            new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new TextRun({ text: 'Portaria 118/2023 - GP', size: 24 })],
+            })
+        );
+
+        // Monta o documento final
         const doc = new Document({
             sections: [
                 {
@@ -3024,23 +2963,31 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
                             children: footerChildren,
                         }),
                     },
-                    children: bodyParagraphs,
+                    children: docBody,
                 },
             ],
         });
+
+        // Gera o buffer docx
+        const { Packer } = require('docx');
         const buffer = await Packer.toBuffer(doc);
 
+        // Retorna como arquivo
         res.setHeader('Content-Disposition', `attachment; filename=memorando_${id}.docx`);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         return res.send(buffer);
+
     } catch (error) {
-        console.error('Erro ao gerar documento .docx:', error);
+        console.error('Erro ao gerar DOCX:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro ao gerar documento .docx.',
+            message: 'Erro ao gerar .docx do memorando.'
         });
     }
 });
+
+
+
 
 // ==========================================
 // ENDPOINT: OBTER MEMORANDO (VISUALIZAR)

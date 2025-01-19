@@ -591,7 +591,7 @@
 
           <!-- Cards de Estatísticas -->
           <div class="row">
-            <div class="col-sm-6 col-md-3">
+            <div class="col-sm-4 col-md-4">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -602,7 +602,7 @@
                     </div>
                     <div class="col col-stats ms-3 ms-sm-0">
                       <div class="numbers">
-                        <p class="card-category">Alunos Ativos</p>
+                        <p class="card-category">Alunos</p>
                         <h4 class="card-title" id="alunos-ativos">0</h4>
                       </div>
                     </div>
@@ -611,7 +611,7 @@
               </div>
             </div>
 
-            <div class="col-sm-6 col-md-3">
+            <div class="col-sm-4 col-md-4">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -622,7 +622,7 @@
                     </div>
                     <div class="col col-stats ms-3 ms-sm-0">
                       <div class="numbers">
-                        <p class="card-category">Rotas Ativas</p>
+                        <p class="card-category">Rotas Escolares</p>
                         <h4 class="card-title" id="rotas-ativas">0</h4>
                       </div>
                     </div>
@@ -630,50 +630,7 @@
                 </div>
               </div>
             </div>
-
-            <div class="col-sm-6 col-md-3">
-              <div class="card card-stats card-round">
-                <div class="card-body">
-                  <div class="row align-items-center">
-                    <div class="col-icon">
-                      <div class="icon-big text-center icon-success bubble-shadow-small">
-                        <i class="fas fa-gas-pump"></i>
-                      </div>
-                    </div>
-                    <div class="col col-stats ms-3 ms-sm-0">
-                      <div class="numbers">
-                        <p class="card-category">Quilometragem</p>
-                        <h4 class="card-title" id="quilometragem-estimada">0 km</h4>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-sm-6 col-md-3">
-              <div class="card card-stats card-round">
-                <div class="card-body">
-                  <div class="row align-items-center">
-                    <div class="col-icon">
-                      <div class="icon-big text-center icon-secondary bubble-shadow-small">
-                        <i class="fas fa-calendar-check"></i>
-                      </div>
-                    </div>
-                    <div class="col col-stats ms-3 ms-sm-0">
-                      <div class="numbers">
-                        <p class="card-category">Viagens Agendadas</p>
-                        <h4 class="card-title" id="viagens-agendadas">0</h4>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- NOVA LINHA DE CARDS -->
-          <div class="row mt-3">
-            <div class="col-sm-6 col-md-3">
+            <div class="col-sm-4 col-md-4">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -692,8 +649,12 @@
                 </div>
               </div>
             </div>
+          </div>
+          <!-- NOVA LINHA DE CARDS -->
+          <!-- NOVA LINHA DE CARDS (agora com 4 colunas) -->
+          <div class="row mt-3">
 
-            <div class="col-sm-6 col-md-3">
+            <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -713,7 +674,7 @@
               </div>
             </div>
 
-            <div class="col-sm-6 col-md-3">
+            <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -733,7 +694,7 @@
               </div>
             </div>
 
-            <div class="col-sm-6 col-md-3">
+            <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -752,7 +713,29 @@
                 </div>
               </div>
             </div>
+
+            <!-- NOVO CARD DE PONTOS -->
+            <div class="col-sm-3 col-md-3">
+              <div class="card card-stats card-round">
+                <div class="card-body">
+                  <div class="row align-items-center">
+                    <div class="col-icon">
+                      <div class="icon-big text-center icon-warning bubble-shadow-small">
+                        <i class="fas fa-map-marker-alt"></i>
+                      </div>
+                    </div>
+                    <div class="col col-stats ms-3 ms-sm-0">
+                      <div class="numbers">
+                        <p class="card-category">Pontos de Parada</p>
+                        <h4 class="card-title" id="pontos-total">0</h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+
           <!-- FIM DA NOVA LINHA DE CARDS -->
 
           <!-- Estatísticas de Transporte -->
@@ -1044,7 +1027,6 @@
 
   <!-- pydenadmin DEMO methods, don't include it in your project! -->
   <script src="../../assets/js/setting-demo.js"></script>
-  <script src="../../assets/js/demo.js"></script>
 
   <script>
     let map, marker, escolaMarker, directionsService, directionsRenderer;
@@ -1317,35 +1299,14 @@
       const res = await fetch('/api/dashboard');
       const data = await res.json();
 
-      document.getElementById('alunos-ativos').textContent = data.alunos_ativos;
-      document.getElementById('alunos-ativos-percent').textContent = data.alunos_ativos_percent;
-
-      document.getElementById('rotas-ativas').textContent = data.rotas_ativas;
-      document.getElementById('rotas-ativas-percent').textContent = data.rotas_ativas_percent;
-
-      document.getElementById('quilometragem-estimada').textContent = data.quilometragem_estimada + ' km';
-      document.getElementById('quilometragem-estimada-percent').textContent = data.quilometragem_estimada_percent;
-
-      document.getElementById('viagens-agendadas').textContent = data.viagens_agendadas;
-      document.getElementById('viagens-agendadas-percent').textContent = data.viagens_agendadas_percent;
-
-      document.getElementById('receita-diaria').textContent = 'R$ ' + data.receita_diaria;
-
-      document.getElementById('veiculos-operacao').textContent = data.veiculos_operacao;
-      document.getElementById('veiculos-operacao-percent').textContent = '+' + data.veiculos_operacao_percent + '%';
-
-      // Novos cards
+      document.getElementById('alunos-ativos').textContent = data.alunos_ativos || 0;
+      document.getElementById('rotas-ativas').textContent = data.rotas_ativas || 0;
       document.getElementById('zoneamentos-total').textContent = data.zoneamentos_total || 0;
-      document.getElementById('zoneamentos-total-percent').textContent = data.zoneamentos_total_percent || '0% desde a última semana';
-
       document.getElementById('motoristas-total').textContent = data.motoristas_total || 0;
-      document.getElementById('motoristas-total-percent').textContent = data.motoristas_total_percent || '0% desde a última semana';
-
       document.getElementById('monitores-total').textContent = data.monitores_total || 0;
-      document.getElementById('monitores-total-percent').textContent = data.monitores_total_percent || '0% desde a última semana';
-
       document.getElementById('fornecedores-total').textContent = data.fornecedores_total || 0;
-      document.getElementById('fornecedores-total-percent').textContent = data.fornecedores_total_percent || '0% desde a última semana';
+      document.getElementById('pontos-total').textContent = data.pontos_total || 0;
+
 
       const geolocTabela = document.getElementById('geolocalizacao-tabela');
       if (geolocTabela) {
