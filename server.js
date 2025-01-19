@@ -3114,7 +3114,7 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
         // ----------------------------
         // 1) SALVA POSIÇÃO INICIAL
         // ----------------------------
-        doc.save(); // guarda (x, y) atuais
+        doc.save();
 
         // ----------------------------
         // 2) LOGO À ESQUERDA (absoluto)
@@ -3135,10 +3135,7 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
                 'SECRETARIA MUNICIPAL DE EDUCAÇÃO',
                 250,
                 20,
-                {
-                    width: 300,
-                    align: 'right'
-                }
+                { width: 300, align: 'right' }
             );
 
         // ----------------------------
@@ -3161,17 +3158,17 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
         doc.x = 50;
 
         // ----------------------------
-        // 6) TÍTULO MEMORANDO (NEGRITO, 12, JUSTIFY)
+        // 6) TÍTULO MEMORANDO
         // ----------------------------
         doc.fontSize(12)
             .font('Helvetica-Bold')
             .text(`MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA DE EDUCACAO`, {
                 align: 'justify'
-            });
-        doc.moveDown();
+            })
+            .moveDown();
 
         // ----------------------------
-        // 7) CORPO DO TEXTO (12, JUSTIFY)
+        // 7) CORPO DO TEXTO
         // ----------------------------
         doc.fontSize(12)
             .font('Helvetica')
@@ -3181,50 +3178,47 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
             .text('Prezados(as),', { align: 'justify' })
             .moveDown()
             .text(memorando.corpo, { align: 'justify' })
-            .moveDown()
-            .text('Atenciosamente,', { align: 'justify' })
-            .moveDown(2);
+            .moveDown();
 
         // ----------------------------
-        // 8) ASSINATURA CENTRALIZADA
+        // VERIFICA SE ESPAÇO É SUFICIENTE P/ ASSINATURA
         // ----------------------------
+        const spaceNeededForSignature = 100;
+        if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+            doc.addPage();
+        }
+
+        // ----------------------------
+        // 8) ASSINATURA FIXA A ~1CM ACIMA DO RODAPÉ
+        // ----------------------------
+        const signatureY = doc.page.height - 270;
+        doc.y = signatureY;
+        doc.x = 50;
         doc.fontSize(12)
             .font('Helvetica')
+            .text('Atenciosamente,', { align: 'justify' })
+            .moveDown(2)
             .text('DANILO DE MORAIS GUSTAVO', { align: 'center' })
             .text('Gestor de Transporte Escolar', { align: 'center' })
             .text('Portaria 118/2023 - GP', { align: 'center' });
 
         // ========================================
-        // 9) RODAPÉ (página "virtual" no final)
+        // 9) RODAPÉ
         // ========================================
-        // Empurrar o cursor perto do fim da página
-        doc.moveDown(4);
+        const footerSepX = (doc.page.width - 510) / 2;
+        const footerSepY = doc.page.height - 160;
 
-        // SEPARADOR DE RODAPÉ
         if (fs.existsSync(separadorPath)) {
-            // Vamos reaproveitar a mesma imagem do separador,
-            // mas desenhar novamente no rodapé:
-            // Ajuste X e Y conforme sua necessidade.
-            const footerSepX = (doc.page.width - 510) / 2;
-            // Vamos posicionar uns 90 pts antes de doc.page.height
-            const footerSepY = doc.page.height - 160;
-            doc.image(separadorPath, footerSepX, footerSepY, {
-                width: 510
-            });
+            doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
         }
 
-        // LOGO memorando_logo2 CENTRALIZADO ABAIXO DO SEPARADOR
         const logo2Path = path.join(__dirname, 'public', 'assets', 'img', 'memorando_logo2.png');
         if (fs.existsSync(logo2Path)) {
-            // Exemplo: desenha o logo 2 uns 30pts abaixo do separador
             const logo2X = (doc.page.width - 160) / 2;
             const logo2Y = doc.page.height - 150;
-            doc.image(logo2Path, logo2X, logo2Y, {
-                width: 160
-            });
+            doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
         }
 
-        // TEXTO CENTRALIZADO ABAIXO
         doc.fontSize(10)
             .font('Helvetica')
             .text(
@@ -3242,7 +3236,6 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
                 { align: 'center' }
             );
 
-        // Finaliza
         doc.end();
     } catch (error) {
         console.error('Erro ao gerar PDF:', error);
@@ -3252,6 +3245,7 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
         });
     }
 });
+
 
 // Exemplo de rota de importação (Node + Express + pg)
 app.post('/api/import-alunos-ativos', async (req, res) => {

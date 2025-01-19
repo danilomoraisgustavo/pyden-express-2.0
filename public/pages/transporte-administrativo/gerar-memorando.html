@@ -369,8 +369,8 @@
               </a>
               <div class="collapse" id="admRelatorios">
                 <ul class="nav nav-collapse">
-                  <li><a href="../../pages/transporte-administrativo/gerar-memorando.html"><span
-                        class="sub-item">Operacionais</span></a></li>
+                  <li><a href="../../pages/transporte-administrativo/gerar-memorando.html"><span class="sub-item">Gerar
+                        Memorando</span></a></li>
                   <li><a href="../../pages/transporte-administrativo/relatorios-eficiencia.html"><span
                         class="sub-item">Eficiência</span></a></li>
                   <li><a href="../../pages/transporte-administrativo/relatorios-custos.html"><span
@@ -904,7 +904,7 @@
 
   <script>
     let memorandos = [];
-    let memorandoAtivo = null; // Para armazenar o memorando que está sendo visualizado
+    let memorandoAtivo = null;
 
     function showNotification(type, message, title = "") {
       $.notify({
@@ -933,6 +933,17 @@
       });
     }
 
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${day}-${month}-${year} ${hours}:${minutes}`;
+    }
+
     function loadMemorandos() {
       fetch('/api/memorandos')
         .then(res => {
@@ -956,36 +967,33 @@
       tableBody.empty();
 
       memorandos.forEach(m => {
+        const dataFormatada = formatDate(m.data_criacao);
         const row = `
           <tr>
             <td>${m.id}</td>
             <td>${m.tipo_memorando}</td>
-            <td>${m.data_criacao}</td>
+            <td>${dataFormatada}</td>
             <td>${m.destinatario}</td>
             <td>
               <div class="form-button-action">
-                <!-- Visualizar Memorando em PDF em outra página/aba -->
                 <button type="button" class="btn btn-link btn-dark btn-lg"
                   onclick="visualizarMemorandoEmPdf('${m.id}')"
                   data-bs-toggle="tooltip" title="Visualizar Memorando (PDF)">
                   <i class="fa fa-eye"></i>
                 </button>
   
-                <!-- Gerar PDF (Download) -->
                 <button type="button" class="btn btn-link btn-secondary btn-lg"
                   onclick="gerarPdf('${m.id}')"
                   data-bs-toggle="tooltip" title="Gerar PDF para Baixar">
                   <i class="fa fa-file-pdf"></i>
                 </button>
   
-                <!-- Gerar DOCX -->
                 <button type="button" class="btn btn-link btn-info btn-lg"
                   onclick="gerarDocx('${m.id}')"
                   data-bs-toggle="tooltip" title="Gerar .docx">
                   <i class="fa fa-file-word"></i>
                 </button>
   
-                <!-- Excluir Memorando -->
                 <button type="button" class="btn btn-link btn-danger btn-lg"
                   onclick="excluirMemorando('${m.id}')"
                   data-bs-toggle="tooltip" title="Excluir Memorando">
@@ -1026,13 +1034,10 @@
       });
     }
 
-    // Abre o PDF em uma nova aba para visualização
     function visualizarMemorandoEmPdf(id) {
-      // Aqui simplesmente abrimos o endpoint de PDF em outra aba:
       window.open(`/api/memorandos/${id}/gerar-pdf`, '_blank');
     }
 
-    // Faz o download do PDF
     function gerarPdf(id) {
       fetch(`/api/memorandos/${id}/gerar-pdf`)
         .then(res => {
@@ -1055,7 +1060,6 @@
         });
     }
 
-    // Faz o download do DOCX
     function gerarDocx(id) {
       fetch(`/api/memorandos/${id}/gerar-docx`)
         .then(res => {
@@ -1080,7 +1084,6 @@
         });
     }
 
-    // Excluir Memorando
     function excluirMemorando(id) {
       fetch(`/api/memorandos/${id}`, {
         method: 'DELETE'
@@ -1105,11 +1108,10 @@
         });
     }
 
-    // Ao carregar a página
     document.addEventListener('DOMContentLoaded', function () {
       loadMemorandos();
 
-      // Formulário de novo memorando
+      // Submeter novo memorando
       document.getElementById('memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);
