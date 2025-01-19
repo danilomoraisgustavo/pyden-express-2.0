@@ -1,38 +1,50 @@
 // ====================================================================================
-// SERVER.JS
+// SERVER.JS (versão organizada e final)
 // ====================================================================================
 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+
 const { Pool } = require('pg');
 const multer = require('multer');
-const fs = require('fs');
-const { DOMParser } = require('xmldom');
-const tj = require('@mapbox/togeojson');
-const JSZip = require('jszip');
-const { Parser } = require('xml2js');
-const archiver = require('archiver');
-const { v4: uuidv4 } = require('uuid');
-const moment = require('moment');
-const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, Header, Footer } = require('docx');
-const PDFDocument = require('pdfkit');
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
+
 const bcrypt = require('bcrypt');
+const moment = require('moment');
+const { v4: uuidv4 } = require('uuid');
+const archiver = require('archiver');
+const { Parser } = require('xml2js');
+const JSZip = require('jszip');
+const { DOMParser } = require('xmldom');
+const tj = require('@mapbox/togeojson');
 
+const {
+    Document,
+    Packer,
+    Paragraph,
+    TextRun,
+    HeadingLevel,
+    AlignmentType,
+    ImageRun,
+    Header,
+    Footer,
+} = require('docx');
 
-const app = express();
-
-
-
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use('/assets', express.static(path.join(__dirname, 'public', 'assets')));
-app.use('/pages', isAuthenticated, express.static(path.join(__dirname, 'public', 'pages')));
+const PDFDocument = require('pdfkit');
 
 // --------------------------------------------------------------------------------
-// CONFIGURAÇÃO DO BANCO DE DADOS
+// CONFIGURAÇÃO DO EXPRESS
+// --------------------------------------------------------------------------------
+const app = express();
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(cors({ origin: '*' }));
+
+// --------------------------------------------------------------------------------
+// CONFIGURAÇÃO DO BANCO DE DADOS (PostgreSQL)
 // --------------------------------------------------------------------------------
 const pool = new Pool({
     user: 'postgres',
@@ -41,55 +53,52 @@ const pool = new Pool({
     password: 'DeD-140619',
     port: 5430,
 });
-app.use(session({
-    store: new pgSession({
-        pool: pool,             // Reutiliza seu Pool do PostgreSQL
-        tableName: 'session',   // Tabela para armazenar as sessões
-    }),
-    secret: 'DeD-140619', // Troque por algo seguro em produção
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        maxAge: 24 * 60 * 60 * 1000, // 24 horas
-        secure: false               // Se estiver usando HTTPS em prod, coloque true
-    }
-}));
-app.use(cors({ origin: '*' }));
 
 // --------------------------------------------------------------------------------
-// CONFIGURAÇÃO DE UPLOAD
+// CONFIGURAÇÃO DE SESSÃO (express-session + connect-pg-simple)
 // --------------------------------------------------------------------------------
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-}
+app.use(
+    session({
+        store: new pgSession({
+            pool: pool,
+            tableName: 'session',
+        }),
+        secret: 'DeD-140619', // Troque por algo seguro em produção
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            maxAge: 24 * 60 * 60 * 1000, // 24 horas
+            secure: false, // Em produção, usar true se for HTTPS
+        },
+    })
+);
 
-
+// --------------------------------------------------------------------------------
+// MIDDLEWARE: isAuthenticated (protege rotas e páginas)
+// --------------------------------------------------------------------------------
 function isAuthenticated(req, res, next) {
-    // Primeiro verifica se existe usuário logado
+    // Verifica se existe userId na sessão
     if (!req.session || !req.session.userId) {
         return res.redirect('/');
     }
 
-    // Se o usuário for ID 1, dá acesso total (usuário master)
+    // Se usuário for ID 1, é "master"
     if (req.session.userId === 1) {
         return next();
     }
 
-    // Para outros IDs, precisamos verificar se o campo "init" na tabela está "true"
-    pool.query('SELECT init FROM usuarios WHERE id = $1', [req.session.userId])
+    // Caso contrário, verifica se 'init' está true
+    pool
+        .query('SELECT init FROM usuarios WHERE id = $1', [req.session.userId])
         .then((result) => {
             if (result.rows.length === 0) {
-                // Usuário não encontrado no BD
+                // Usuário não encontrado
                 return res.redirect('/');
             }
-
             const { init } = result.rows[0];
             if (init === true) {
-                // Se "init" for true, permite acesso
                 return next();
             } else {
-                // Caso contrário, bloqueia
                 return res.status(403).send('Acesso negado: usuário sem permissão.');
             }
         })
@@ -99,12 +108,38 @@ function isAuthenticated(req, res, next) {
         });
 }
 
+// --------------------------------------------------------------------------------
+// ARQUIVOS ESTÁTICOS
+// --------------------------------------------------------------------------------
+// Serve /assets de forma livre
+app.use('/assets', express.static(path.join(__dirname, 'public', 'assets')));
+// Serve /pages apenas se autenticado
+app.use('/pages', isAuthenticated, express.static(path.join(__dirname, 'public', 'pages')));
+
+// --------------------------------------------------------------------------------
+// ROTAS PRINCIPAIS
+// --------------------------------------------------------------------------------
+
+// Página raiz: exibe login-cadastro
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/login-cadastro.html'));
+});
+
+// Logout (encerra sessão)
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         res.clearCookie('connect.sid');
         return res.redirect('/');
     });
 });
+
+// --------------------------------------------------------------------------------
+// CONFIGURAÇÃO DE UPLOAD
+// --------------------------------------------------------------------------------
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
 
 const memorandoUpload = multer();
 
@@ -115,19 +150,12 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
+    },
 });
 
 const upload = multer({ dest: 'uploads/' });
 const uploadFrota = multer({ storage: storage });
 const uploadMonitores = multer({ storage: storage });
-
-// --------------------------------------------------------------------------------
-// ROTA PRINCIPAL
-// --------------------------------------------------------------------------------
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/login-cadastro.html'));
-});
 
 // --------------------------------------------------------------------------------
 // FUNÇÕES UTILITÁRIAS PARA CONVERSÃO DE ARQUIVOS (KMZ -> KML, etc.)
@@ -143,53 +171,51 @@ async function kmzToKml(filePath) {
 
 async function convertToGeoJSON(filePath, originalname) {
     const extension = path.extname(originalname).toLowerCase();
+
     if (extension === '.geojson' || extension === '.json') {
         const data = fs.readFileSync(filePath, 'utf8');
-        const geojson = JSON.parse(data);
-        return geojson;
+        return JSON.parse(data);
     }
     if (extension === '.kml') {
         const kmlData = fs.readFileSync(filePath, 'utf8');
         const dom = new DOMParser().parseFromString(kmlData, 'text/xml');
-        const geojson = tj.kml(dom);
-        return geojson;
+        return tj.kml(dom);
     }
     if (extension === '.kmz') {
         const kmlData = await kmzToKml(filePath);
         const dom = new DOMParser().parseFromString(kmlData, 'text/xml');
-        const geojson = tj.kml(dom);
-        return geojson;
+        return tj.kml(dom);
     }
     if (extension === '.gpx') {
         const gpxData = fs.readFileSync(filePath, 'utf8');
         const dom = new DOMParser().parseFromString(gpxData, 'text/xml');
-        const geojson = tj.gpx(dom);
-        return geojson;
+        return tj.gpx(dom);
     }
     throw new Error('Formato de arquivo não suportado.');
 }
+
+// --------------------------------------------------------------------------------
+// ROTA: CADASTRAR USUÁRIO (CPF ou CNPJ)
+// --------------------------------------------------------------------------------
 app.post('/api/cadastrar-usuario', async (req, res) => {
     try {
         const { nome_completo, cpf_cnpj, telefone, email, senha } = req.body;
 
-        // Validar se já existe e-mail cadastrado
-        const checkUser = await pool.query(
-            'SELECT id FROM usuarios WHERE email = $1 LIMIT 1',
-            [email]
-        );
+        // Verificar se email já existe
+        const checkUser = await pool.query('SELECT id FROM usuarios WHERE email = $1 LIMIT 1', [email]);
         if (checkUser.rows.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Este e-mail já está em uso. Tente outro.'
+                message: 'Este e-mail já está em uso. Tente outro.',
             });
         }
 
-        // Remove qualquer pontuação do cpf_cnpj
-        const docNumeros = (cpf_cnpj || '').replace(/\D/g, ''); // só dígitos
+        // Limpa pontuação do CPF/CNPJ
+        const docNumeros = (cpf_cnpj || '').replace(/\D/g, '');
         let cpfValue = null;
         let cnpjValue = null;
 
-        // Verifica se é CPF (11 dígitos) ou CNPJ (14 dígitos)
+        // Decide se é CPF (11 dígitos) ou CNPJ (14 dígitos)
         if (docNumeros.length === 11) {
             cpfValue = docNumeros;
         } else if (docNumeros.length === 14) {
@@ -197,71 +223,58 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
         } else {
             return res.status(400).json({
                 success: false,
-                message: 'Documento inválido: deve ter 11 dígitos (CPF) ou 14 (CNPJ).'
+                message: 'Documento inválido: deve ter 11 dígitos (CPF) ou 14 (CNPJ).',
             });
         }
 
-        // Criptografar senha
+        // Criptografa a senha
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(senha, saltRounds);
 
-        // Inserir no banco
+        // Insere no banco
         const insertQuery = `
-        INSERT INTO usuarios (
-          nome_completo, cpf, cnpj, telefone, email, senha, ativo
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id
-      `;
-        // Se quiser ativar automaticamente, use 'ativo = true'
-        const values = [
-            nome_completo,
-            cpfValue,
-            cnpjValue,
-            telefone,
-            email,
-            hashedPassword,
-            true
-        ];
-
+      INSERT INTO usuarios (
+        nome_completo, cpf, cnpj, telefone, email, senha, ativo
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `;
+        const values = [nome_completo, cpfValue, cnpjValue, telefone, email, hashedPassword, true];
         const result = await pool.query(insertQuery, values);
+
         if (result.rows.length > 0) {
             return res.status(200).json({
                 success: true,
-                message: 'Cadastro realizado com sucesso! Aguarde ativação ou permissões.'
+                message: 'Cadastro realizado com sucesso! Aguarde ativação ou permissões.',
             });
         } else {
             return res.status(500).json({
                 success: false,
-                message: 'Não foi possível cadastrar o usuário (erro interno).'
+                message: 'Não foi possível cadastrar o usuário (erro interno).',
             });
         }
-
     } catch (error) {
         console.error('Erro ao cadastrar usuário:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro ao cadastrar usuário. Tente novamente.'
+            message: 'Erro ao cadastrar usuário. Tente novamente.',
         });
     }
 });
 
-
-// -----------------------------------
+// --------------------------------------------------------------------------------
 // ROTA: LOGIN
-// -----------------------------------
+// --------------------------------------------------------------------------------
 app.post('/api/login', async (req, res) => {
     try {
         const { email, senha } = req.body;
-
-        // Buscar usuário
         const userQuery = 'SELECT id, senha, ativo FROM usuarios WHERE email = $1 LIMIT 1';
         const result = await pool.query(userQuery, [email]);
 
         if (result.rows.length === 0) {
             return res.status(401).json({
                 success: false,
-                message: 'Usuário não encontrado.'
+                message: 'Usuário não encontrado.',
             });
         }
 
@@ -269,41 +282,37 @@ app.post('/api/login', async (req, res) => {
         if (!usuario.ativo) {
             return res.status(403).json({
                 success: false,
-                message: 'Este usuário ainda não está ativo no sistema.'
+                message: 'Usuário ainda não está ativo.',
             });
         }
 
-        // Comparar senha usando bcrypt
         const match = await bcrypt.compare(senha, usuario.senha);
         if (!match) {
             return res.status(401).json({
                 success: false,
-                message: 'Senha incorreta.'
+                message: 'Senha incorreta.',
             });
         }
 
-        // Se chegou aqui, login ok. Salvar userId na sessão (se estiver usando express-session):
         req.session.userId = usuario.id;
 
-        // Retornar sucesso
         return res.status(200).json({
             success: true,
             message: 'Login bem sucedido!',
-            redirectUrl: '/pages/transporte-escolar/dashboard-escolar.html'
+            redirectUrl: '/pages/transporte-escolar/dashboard-escolar.html',
         });
-
     } catch (error) {
         console.error('Erro ao efetuar login:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro interno ao efetuar login.'
+            message: 'Erro interno ao efetuar login.',
         });
     }
 });
-// ====================================================================================
-//                              ZONEAMENTOS
-// ====================================================================================
 
+// ====================================================================================
+// ZONEAMENTOS
+// ====================================================================================
 app.post('/api/zoneamento/cadastrar', async (req, res) => {
     try {
         const nome = req.body.nome_zoneamento;
@@ -325,10 +334,10 @@ app.post('/api/zoneamento/cadastrar', async (req, res) => {
         }
 
         const insertQuery = `
-            INSERT INTO zoneamentos (nome, geom)
-            VALUES($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
-            RETURNING id;
-        `;
+      INSERT INTO zoneamentos (nome, geom)
+      VALUES($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
+      RETURNING id;
+    `;
         const values = [nome, JSON.stringify(geojson.geometry)];
         const result = await pool.query(insertQuery, values);
 
@@ -345,17 +354,17 @@ app.post('/api/zoneamento/cadastrar', async (req, res) => {
 app.get('/api/zoneamentos', async (req, res) => {
     try {
         const query = `
-            SELECT
-                id,
-                nome,
-                ST_AsGeoJSON(geom) as geojson
-            FROM zoneamentos;
-        `;
+      SELECT
+        id,
+        nome,
+        ST_AsGeoJSON(geom) as geojson
+      FROM zoneamentos;
+    `;
         const result = await pool.query(query);
         const zoneamentos = result.rows.map((row) => ({
             id: row.id,
             nome: row.nome,
-            geojson: JSON.parse(row.geojson)
+            geojson: JSON.parse(row.geojson),
         }));
         res.json(zoneamentos);
     } catch (error) {
@@ -394,10 +403,10 @@ app.post('/api/zoneamento/importar', upload.single('file'), async (req, res) => 
             if (!geometry) continue;
 
             const insertQuery = `
-                INSERT INTO zoneamentos (nome, lote, geom)
-                VALUES ($1, $2, ST_SetSRID(ST_Force2D(ST_GeomFromGeoJSON($3)), 4326))
-                RETURNING id;
-            `;
+        INSERT INTO zoneamentos (nome, lote, geom)
+        VALUES ($1, $2, ST_SetSRID(ST_Force2D(ST_GeomFromGeoJSON($3)), 4326))
+        RETURNING id;
+      `;
             const values = [nome, lote, JSON.stringify(geometry)];
             await pool.query(insertQuery, values);
         }
@@ -409,9 +418,8 @@ app.post('/api/zoneamento/importar', upload.single('file'), async (req, res) => 
 });
 
 // ====================================================================================
-//                              ESCOLAS
+// ESCOLAS
 // ====================================================================================
-
 app.post('/api/escolas/cadastrar', async (req, res) => {
     try {
         const {
@@ -425,7 +433,7 @@ app.post('/api/escolas/cadastrar', async (req, res) => {
             bairro,
             cep,
             nomeEscola,
-            codigoINEP
+            codigoINEP,
         } = req.body;
 
         const regime = req.body['regime[]'] || [];
@@ -434,13 +442,15 @@ app.post('/api/escolas/cadastrar', async (req, res) => {
         const zoneamentosSelecionados = JSON.parse(req.body.zoneamentosSelecionados || '[]');
 
         const insertEscolaQuery = `
-            INSERT INTO escolas (
-                nome, codigo_inep, latitude, longitude, area, logradouro, numero, complemento, ponto_referencia, bairro, cep, regime, nivel, horario
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-            )
-            RETURNING id;
-        `;
+      INSERT INTO escolas (
+        nome, codigo_inep, latitude, longitude, area, logradouro, numero, complemento,
+        ponto_referencia, bairro, cep, regime, nivel, horario
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8,
+        $9, $10, $11, $12, $13, $14
+      )
+      RETURNING id;
+    `;
         const values = [
             nomeEscola,
             codigoINEP || null,
@@ -455,7 +465,7 @@ app.post('/api/escolas/cadastrar', async (req, res) => {
             cep || null,
             regime.join(','),
             nivel.join(','),
-            horario.join(',')
+            horario.join(','),
         ];
         const result = await pool.query(insertEscolaQuery, values);
         if (result.rows.length === 0) {
@@ -465,9 +475,9 @@ app.post('/api/escolas/cadastrar', async (req, res) => {
 
         if (zoneamentosSelecionados.length > 0) {
             const insertZonaEscolaQuery = `
-                INSERT INTO escolas_zoneamentos (escola_id, zoneamento_id)
-                VALUES ($1, $2);
-            `;
+        INSERT INTO escolas_zoneamentos (escola_id, zoneamento_id)
+        VALUES ($1, $2);
+      `;
             for (const zid of zoneamentosSelecionados) {
                 await pool.query(insertZonaEscolaQuery, [escolaId, zid]);
             }
@@ -481,24 +491,21 @@ app.post('/api/escolas/cadastrar', async (req, res) => {
 app.get('/api/escolas', async (req, res) => {
     try {
         const query = `
-            SELECT e.id, e.nome, e.codigo_inep, e.latitude, e.longitude, e.area,
-                e.logradouro, e.numero, e.complemento, e.ponto_referencia,
-                e.bairro, e.cep, e.regime, e.nivel, e.horario,
-                COALESCE(
-                    json_agg(
-                        json_build_object(
-                            'id', z.id,
-                            'nome', z.nome
-                        )
-                    ) FILTER (WHERE z.id IS NOT NULL),
-                    '[]'
-                ) AS zoneamentos
-            FROM escolas e
-            LEFT JOIN escolas_zoneamentos ez ON ez.escola_id = e.id
-            LEFT JOIN zoneamentos z ON z.id = ez.zoneamento_id
-            GROUP BY e.id
-            ORDER BY e.id;
-        `;
+      SELECT e.id, e.nome, e.codigo_inep, e.latitude, e.longitude, e.area,
+             e.logradouro, e.numero, e.complemento, e.ponto_referencia,
+             e.bairro, e.cep, e.regime, e.nivel, e.horario,
+             COALESCE(
+               json_agg(
+                 json_build_object('id', z.id, 'nome', z.nome)
+               ) FILTER (WHERE z.id IS NOT NULL),
+               '[]'
+             ) AS zoneamentos
+      FROM escolas e
+      LEFT JOIN escolas_zoneamentos ez ON ez.escola_id = e.id
+      LEFT JOIN zoneamentos z ON z.id = ez.zoneamento_id
+      GROUP BY e.id
+      ORDER BY e.id;
+    `;
         const result = await pool.query(query);
         const escolas = result.rows.map((row) => ({
             id: row.id,
@@ -516,7 +523,7 @@ app.get('/api/escolas', async (req, res) => {
             regime: (row.regime || '').split(',').filter((r) => r),
             nivel: (row.nivel || '').split(',').filter((n) => n),
             horario: (row.horario || '').split(',').filter((h) => h),
-            zoneamentos: row.zoneamentos
+            zoneamentos: row.zoneamentos,
         }));
         res.json(escolas);
     } catch (error) {
@@ -525,9 +532,8 @@ app.get('/api/escolas', async (req, res) => {
 });
 
 // ====================================================================================
-//                              FORNECEDORES
+// FORNECEDORES
 // ====================================================================================
-
 app.post('/api/fornecedores/cadastrar', async (req, res) => {
     try {
         const {
@@ -541,7 +547,7 @@ app.post('/api/fornecedores/cadastrar', async (req, res) => {
             numero,
             complemento,
             bairro,
-            cep
+            cep,
         } = req.body;
 
         if (!nome_fornecedor || !tipo_contrato || !cnpj || !contato) {
@@ -549,13 +555,13 @@ app.post('/api/fornecedores/cadastrar', async (req, res) => {
         }
 
         const insertQuery = `
-            INSERT INTO fornecedores (
-                nome_fornecedor, tipo_contrato, cnpj, contato, latitude, longitude, logradouro, numero, complemento, bairro, cep
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-            )
-            RETURNING id;
-        `;
+      INSERT INTO fornecedores (
+        nome_fornecedor, tipo_contrato, cnpj, contato,
+        latitude, longitude, logradouro, numero, complemento, bairro, cep
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id;
+    `;
         const values = [
             nome_fornecedor,
             tipo_contrato,
@@ -567,9 +573,10 @@ app.post('/api/fornecedores/cadastrar', async (req, res) => {
             numero || null,
             complemento || null,
             bairro || null,
-            cep || null
+            cep || null,
         ];
         const result = await pool.query(insertQuery, values);
+
         if (result.rows.length === 0) {
             return res.status(500).json({ success: false, message: 'Erro ao cadastrar fornecedor.' });
         }
@@ -582,22 +589,22 @@ app.post('/api/fornecedores/cadastrar', async (req, res) => {
 app.get('/api/fornecedores', async (req, res) => {
     try {
         const query = `
-            SELECT
-                id,
-                nome_fornecedor,
-                tipo_contrato,
-                cnpj,
-                contato,
-                latitude,
-                longitude,
-                logradouro,
-                numero,
-                complemento,
-                bairro,
-                cep
-            FROM fornecedores
-            ORDER BY id;
-        `;
+      SELECT
+        id,
+        nome_fornecedor,
+        tipo_contrato,
+        cnpj,
+        contato,
+        latitude,
+        longitude,
+        logradouro,
+        numero,
+        complemento,
+        bairro,
+        cep
+      FROM fornecedores
+      ORDER BY id;
+    `;
         const result = await pool.query(query);
         const fornecedores = result.rows.map((row) => ({
             id: row.id,
@@ -611,7 +618,7 @@ app.get('/api/fornecedores', async (req, res) => {
             numero: row.numero,
             complemento: row.complemento,
             bairro: row.bairro,
-            cep: row.cep
+            cep: row.cep,
         }));
         res.json(fornecedores);
     } catch (error) {
@@ -636,41 +643,40 @@ app.delete('/api/fornecedores/:id', async (req, res) => {
 });
 
 // ====================================================================================
-//                              FROTA
+// FROTA
 // ====================================================================================
-
 app.get('/api/frota', async (req, res) => {
     try {
         const query = `
-            SELECT
-                f.id,
-                f.nome_veiculo,
-                f.placa,
-                f.tipo_veiculo,
-                f.capacidade,
-                f.latitude_garagem,
-                f.longitude_garagem,
-                f.fornecedor_id,
-                f.documentacao,
-                f.licenca,
-                fr.nome_fornecedor AS fornecedor_nome,
-                COALESCE(
-                    json_agg(
-                        json_build_object(
-                            'id', m.id,
-                            'nome_motorista', m.nome_motorista,
-                            'cpf', m.cpf
-                        )
-                    ) FILTER (WHERE m.id IS NOT NULL),
-                    '[]'
-                ) AS motoristas
-            FROM frota f
-            LEFT JOIN fornecedores fr ON fr.id = f.fornecedor_id
-            LEFT JOIN frota_motoristas fm ON fm.frota_id = f.id
-            LEFT JOIN motoristas m ON m.id = fm.motorista_id
-            GROUP BY f.id, fr.nome_fornecedor
-            ORDER BY f.id;
-        `;
+      SELECT
+        f.id,
+        f.nome_veiculo,
+        f.placa,
+        f.tipo_veiculo,
+        f.capacidade,
+        f.latitude_garagem,
+        f.longitude_garagem,
+        f.fornecedor_id,
+        f.documentacao,
+        f.licenca,
+        fr.nome_fornecedor AS fornecedor_nome,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', m.id,
+              'nome_motorista', m.nome_motorista,
+              'cpf', m.cpf
+            )
+          ) FILTER (WHERE m.id IS NOT NULL),
+          '[]'
+        ) AS motoristas
+      FROM frota f
+      LEFT JOIN fornecedores fr ON fr.id = f.fornecedor_id
+      LEFT JOIN frota_motoristas fm ON fm.frota_id = f.id
+      LEFT JOIN motoristas m ON m.id = fm.motorista_id
+      GROUP BY f.id, fr.nome_fornecedor
+      ORDER BY f.id;
+    `;
         const result = await pool.query(query);
         const frotaCompleta = result.rows.map((row) => ({
             id: row.id,
@@ -684,7 +690,7 @@ app.get('/api/frota', async (req, res) => {
             documentacao: row.documentacao,
             licenca: row.licenca,
             fornecedor_nome: row.fornecedor_nome,
-            motoristas: row.motoristas || []
+            motoristas: row.motoristas || [],
         }));
         res.json(frotaCompleta);
     } catch (error) {
@@ -697,7 +703,7 @@ app.post(
     '/api/frota/cadastrar',
     uploadFrota.fields([
         { name: 'documentacao', maxCount: 1 },
-        { name: 'licenca', maxCount: 1 }
+        { name: 'licenca', maxCount: 1 },
     ]),
     async (req, res) => {
         try {
@@ -718,7 +724,7 @@ app.post(
                 elevador,
                 ar_condicionado,
                 gps,
-                cinto_seguranca
+                cinto_seguranca,
             } = req.body;
 
             let motoristasAssociados = [];
@@ -740,17 +746,22 @@ app.post(
             }
 
             const insertQuery = `
-                INSERT INTO frota (
-                    nome_veiculo, placa, tipo_veiculo, capacidade, latitude_garagem, longitude_garagem, fornecedor_id,
-                    documentacao, licenca, ano, marca, modelo, tipo_combustivel, data_aquisicao,
-                    adaptado, elevador, ar_condicionado, gps, cinto_seguranca
-                ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7,
-                    $8, $9, $10, $11, $12, $13, $14,
-                    $15, $16, $17, $18, $19
-                )
-                RETURNING id;
-            `;
+        INSERT INTO frota (
+          nome_veiculo, placa, tipo_veiculo, capacidade,
+          latitude_garagem, longitude_garagem, fornecedor_id,
+          documentacao, licenca, ano, marca, modelo,
+          tipo_combustivel, data_aquisicao,
+          adaptado, elevador, ar_condicionado, gps, cinto_seguranca
+        )
+        VALUES (
+          $1, $2, $3, $4,
+          $5, $6, $7,
+          $8, $9, $10, $11, $12,
+          $13, $14,
+          $15, $16, $17, $18, $19
+        )
+        RETURNING id;
+      `;
             const values = [
                 nome_veiculo,
                 placa,
@@ -770,23 +781,25 @@ app.post(
                 elevador === 'Sim',
                 ar_condicionado === 'Sim',
                 gps === 'Sim',
-                cinto_seguranca === 'Sim'
+                cinto_seguranca === 'Sim',
             ];
             const result = await pool.query(insertQuery, values);
+
             if (result.rows.length === 0) {
                 return res.status(500).json({ success: false, message: 'Erro ao cadastrar veículo.' });
             }
 
             const frotaId = result.rows[0].id;
             if (Array.isArray(motoristasAssociados) && motoristasAssociados.length > 0) {
+                const relQuery = `
+          INSERT INTO frota_motoristas (frota_id, motorista_id)
+          VALUES ($1, $2);
+        `;
                 for (const motoristaId of motoristasAssociados) {
-                    const relQuery = `
-                        INSERT INTO frota_motoristas (frota_id, motorista_id)
-                        VALUES ($1, $2);
-                    `;
                     await pool.query(relQuery, [frotaId, motoristaId]);
                 }
             }
+
             return res.json({ success: true, message: 'Veículo cadastrado com sucesso!' });
         } catch (error) {
             console.error('Erro no /api/frota/cadastrar:', error);
@@ -811,14 +824,13 @@ app.delete('/api/frota/:id', async (req, res) => {
 });
 
 // ====================================================================================
-//                              MONITORES
+// MONITORES
 // ====================================================================================
-
 app.post(
     '/api/monitores/cadastrar',
     uploadMonitores.fields([
         { name: 'documento_pessoal', maxCount: 1 },
-        { name: 'certificado_curso', maxCount: 1 }
+        { name: 'certificado_curso', maxCount: 1 },
     ]),
     async (req, res) => {
         try {
@@ -841,27 +853,28 @@ app.post(
             }
 
             const fornecedorResult = await pool.query('SELECT nome_fornecedor FROM fornecedores WHERE id = $1', [
-                fornecedor_id
+                fornecedor_id,
             ]);
-            let fornecedorNome =
+            const fornecedorNome =
                 fornecedorResult.rows.length > 0 ? fornecedorResult.rows[0].nome_fornecedor : null;
 
             if (fornecedorNome && fornecedorNome !== 'FUNDO MUNICIPAL DE EDUCAÇÃO DE CANAA DOS CARAJAS') {
                 if (!certificadoCursoPath) {
-                    return res
-                        .status(400)
-                        .json({ success: false, message: 'Certificado do curso é obrigatório para monitores de outros fornecedores.' });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Certificado do curso é obrigatório para monitores de outros fornecedores.',
+                    });
                 }
             }
 
             const insertQuery = `
-                INSERT INTO monitores (
-                    nome_monitor, cpf, fornecedor_id, telefone, email, endereco, data_admissao, documento_pessoal, certificado_curso
-                ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9
-                )
-                RETURNING id;
-            `;
+        INSERT INTO monitores (
+          nome_monitor, cpf, fornecedor_id, telefone, email,
+          endereco, data_admissao, documento_pessoal, certificado_curso
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id;
+      `;
             const values = [
                 nome_monitor,
                 cpf,
@@ -871,7 +884,7 @@ app.post(
                 endereco || null,
                 data_admissao || null,
                 documentoPessoalPath,
-                certificadoCursoPath
+                certificadoCursoPath,
             ];
             const result = await pool.query(insertQuery, values);
             if (result.rows.length === 0) {
@@ -887,13 +900,13 @@ app.post(
 app.get('/api/monitores', async (req, res) => {
     try {
         const query = `
-            SELECT m.id, m.nome_monitor, m.cpf, m.fornecedor_id, m.telefone, m.email, m.endereco, m.data_admissao,
-                m.documento_pessoal, m.certificado_curso,
-                fr.nome_fornecedor as fornecedor_nome
-            FROM monitores m
-            LEFT JOIN fornecedores fr ON fr.id = m.fornecedor_id
-            ORDER BY m.id;
-        `;
+      SELECT m.id, m.nome_monitor, m.cpf, m.fornecedor_id, m.telefone, m.email, m.endereco,
+             m.data_admissao, m.documento_pessoal, m.certificado_curso,
+             fr.nome_fornecedor as fornecedor_nome
+      FROM monitores m
+      LEFT JOIN fornecedores fr ON fr.id = m.fornecedor_id
+      ORDER BY m.id;
+    `;
         const result = await pool.query(query);
         const monitores = result.rows.map((row) => ({
             id: row.id,
@@ -906,7 +919,7 @@ app.get('/api/monitores', async (req, res) => {
             data_admissao: row.data_admissao,
             documento_pessoal: row.documento_pessoal,
             certificado_curso: row.certificado_curso,
-            fornecedor_nome: row.fornecedor_nome
+            fornecedor_nome: row.fornecedor_nome,
         }));
         res.json(monitores);
     } catch (error) {
@@ -930,37 +943,36 @@ app.delete('/api/monitores/:id', async (req, res) => {
 });
 
 // ====================================================================================
-//                              MOTORISTAS
+// MOTORISTAS
 // ====================================================================================
-
 app.get('/api/motoristas', async (req, res) => {
     try {
         const query = `
-            SELECT m.id,
-                m.nome_motorista,
-                m.cpf,
-                m.rg,
-                m.data_nascimento,
-                m.telefone,
-                m.email,
-                m.endereco,
-                m.cidade,
-                m.estado,
-                m.cep,
-                m.numero_cnh,
-                m.categoria_cnh,
-                m.validade_cnh,
-                m.fornecedor_id,
-                m.cnh_pdf,
-                m.cert_transporte_escolar,
-                m.cert_transporte_passageiros,
-                m.data_validade_transporte_escolar,
-                m.data_validade_transporte_passageiros,
-                fr.nome_fornecedor
-            FROM motoristas m
-            LEFT JOIN fornecedores fr ON fr.id = m.fornecedor_id
-            ORDER BY m.id;
-        `;
+      SELECT m.id,
+             m.nome_motorista,
+             m.cpf,
+             m.rg,
+             m.data_nascimento,
+             m.telefone,
+             m.email,
+             m.endereco,
+             m.cidade,
+             m.estado,
+             m.cep,
+             m.numero_cnh,
+             m.categoria_cnh,
+             m.validade_cnh,
+             m.fornecedor_id,
+             m.cnh_pdf,
+             m.cert_transporte_escolar,
+             m.cert_transporte_passageiros,
+             m.data_validade_transporte_escolar,
+             m.data_validade_transporte_passageiros,
+             fr.nome_fornecedor
+      FROM motoristas m
+      LEFT JOIN fornecedores fr ON fr.id = m.fornecedor_id
+      ORDER BY m.id;
+    `;
         const result = await pool.query(query);
         const hoje = new Date();
         const trintaDiasDepois = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -1010,7 +1022,7 @@ app.get('/api/motoristas', async (req, res) => {
                 data_validade_transporte_passageiros: row.data_validade_transporte_passageiros,
                 fornecedor_nome: row.nome_fornecedor,
                 status_cert_escolar: statusEscolar,
-                status_cert_passageiros: statusPassageiros
+                status_cert_passageiros: statusPassageiros,
             };
         });
         res.json(motoristas);
@@ -1024,7 +1036,7 @@ app.post(
     uploadFrota.fields([
         { name: 'cnh_pdf', maxCount: 1 },
         { name: 'cert_transporte_escolar', maxCount: 1 },
-        { name: 'cert_transporte_passageiros', maxCount: 1 }
+        { name: 'cert_transporte_passageiros', maxCount: 1 },
     ]),
     async (req, res) => {
         try {
@@ -1044,7 +1056,7 @@ app.post(
                 validade_cnh,
                 fornecedor_id,
                 data_validade_transporte_escolar,
-                data_validade_transporte_passageiros
+                data_validade_transporte_passageiros,
             } = req.body;
 
             if (!nome_motorista || !cpf || !numero_cnh || !categoria_cnh || !validade_cnh || !fornecedor_id) {
@@ -1068,36 +1080,40 @@ app.post(
             }
 
             const fornecedorResult = await pool.query('SELECT nome_fornecedor FROM fornecedores WHERE id = $1', [
-                fornecedor_id
+                fornecedor_id,
             ]);
-            let fornecedorNome =
+            const fornecedorNome =
                 fornecedorResult.rows.length > 0 ? fornecedorResult.rows[0].nome_fornecedor : null;
 
             if (fornecedorNome && fornecedorNome !== 'FUNDO MUNICIPAL DE EDUCAÇÃO DE CANAA DOS CARAJAS') {
                 if (!certTransporteEscolarPath) {
-                    return res
-                        .status(400)
-                        .json({ success: false, message: 'Certificado de transporte escolar é obrigatório para este fornecedor.' });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Certificado de transporte escolar é obrigatório para este fornecedor.',
+                    });
                 }
                 if (!certTransportePassageirosPath) {
-                    return res
-                        .status(400)
-                        .json({ success: false, message: 'Certificado de transporte de passageiros é obrigatório para este fornecedor.' });
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Certificado de transporte de passageiros é obrigatório para este fornecedor.',
+                    });
                 }
             }
 
             const insertQuery = `
-                INSERT INTO motoristas (
-                    nome_motorista, cpf, rg, data_nascimento, telefone, email, endereco, cidade, estado, cep,
-                    numero_cnh, categoria_cnh, validade_cnh, fornecedor_id,
-                    cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros, data_validade_transporte_escolar, data_validade_transporte_passageiros
-                ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-                    $11, $12, $13, $14,
-                    $15, $16, $17, $18, $19
-                )
-                RETURNING id;
-            `;
+        INSERT INTO motoristas (
+          nome_motorista, cpf, rg, data_nascimento, telefone, email, endereco,
+          cidade, estado, cep, numero_cnh, categoria_cnh, validade_cnh,
+          fornecedor_id, cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros,
+          data_validade_transporte_escolar, data_validade_transporte_passageiros
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10, $11, $12, $13,
+          $14, $15, $16, $17,
+          $18, $19
+        )
+        RETURNING id;
+      `;
             const values = [
                 nome_motorista,
                 cpf,
@@ -1117,7 +1133,7 @@ app.post(
                 certTransporteEscolarPath,
                 certTransportePassageirosPath,
                 data_validade_transporte_escolar || null,
-                data_validade_transporte_passageiros || null
+                data_validade_transporte_passageiros || null,
             ];
             const result = await pool.query(insertQuery, values);
             if (result.rows.length === 0) {
@@ -1134,10 +1150,10 @@ app.get('/api/motoristas/download/:type/:id', async (req, res) => {
     try {
         const { type, id } = req.params;
         const query = `
-            SELECT cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros
-            FROM motoristas
-            WHERE id = $1;
-        `;
+      SELECT cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros
+      FROM motoristas
+      WHERE id = $1;
+    `;
         const result = await pool.query(query, [id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Motorista não encontrado.' });
@@ -1160,22 +1176,25 @@ app.get('/api/motoristas/download/:type/:id', async (req, res) => {
         }
 
         if (!filePath) {
-            return res
-                .status(404)
-                .json({ success: false, message: 'Documento não encontrado para este motorista.' });
+            return res.status(404).json({
+                success: false,
+                message: 'Documento não encontrado para este motorista.',
+            });
         }
 
         const absolutePath = path.join(__dirname, filePath);
         if (!fs.existsSync(absolutePath)) {
-            return res
-                .status(404)
-                .json({ success: false, message: 'Arquivo não encontrado no servidor.' });
+            return res.status(404).json({
+                success: false,
+                message: 'Arquivo não encontrado no servidor.',
+            });
         }
         res.download(absolutePath);
     } catch (error) {
-        res
-            .status(500)
-            .json({ success: false, message: 'Erro interno do servidor ao tentar baixar o arquivo.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor ao tentar baixar o arquivo.',
+        });
     }
 });
 
@@ -1199,46 +1218,40 @@ app.get('/api/motoristas/:id', async (req, res) => {
 });
 
 // ====================================================================================
-//                              LOGIN / CHECK CPF / DEFINIR SENHA
+// LOGIN / CHECK CPF / DEFINIR SENHA (MOTORISTAS, caso usem app mobile etc.)
 // ====================================================================================
-
 app.post('/api/motoristas/login', async (req, res) => {
     try {
         const { cpf, senha } = req.body;
         if (!cpf) {
             return res.status(400).json({ success: false, message: 'CPF é obrigatório' });
         }
-
         const queryMotorista = 'SELECT id, senha FROM motoristas WHERE cpf = $1 LIMIT 1';
         const result = await pool.query(queryMotorista, [cpf]);
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Motorista não encontrado' });
         }
-
         const motorista = result.rows[0];
         if (!motorista.senha) {
             return res.status(200).json({
                 success: false,
                 needsPassword: true,
-                message: 'Senha não cadastrada'
+                message: 'Senha não cadastrada',
             });
         }
-
         if (!senha) {
             return res.status(400).json({
                 success: false,
-                message: 'Informe a senha'
+                message: 'Informe a senha',
             });
         }
-
         if (motorista.senha !== senha) {
             return res.status(401).json({ success: false, message: 'Senha incorreta' });
         }
-
         return res.status(200).json({
             success: true,
             message: 'Login realizado com sucesso',
-            motoristaId: motorista.id
+            motoristaId: motorista.id,
         });
     } catch (error) {
         console.error(error);
@@ -1262,7 +1275,7 @@ app.post('/api/motoristas/definir-senha', async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: 'Senha definida com sucesso'
+            message: 'Senha definida com sucesso',
         });
     } catch (error) {
         console.error(error);
@@ -1284,7 +1297,7 @@ app.post('/api/motoristas/check-cpf', async (req, res) => {
         const { senha } = result.rows[0];
         return res.json({
             found: true,
-            hasPassword: !!senha
+            hasPassword: !!senha,
         });
     } catch (error) {
         console.error(error);
@@ -1293,9 +1306,8 @@ app.post('/api/motoristas/check-cpf', async (req, res) => {
 });
 
 // ====================================================================================
-//                              PONTOS DE PARADA
+// PONTOS DE PARADA
 // ====================================================================================
-
 app.post('/api/pontos/cadastrar', async (req, res) => {
     try {
         const {
@@ -1308,19 +1320,22 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
             complementoPonto,
             pontoReferenciaPonto,
             bairroPonto,
-            cepPonto
+            cepPonto,
         } = req.body;
 
         const zoneamentosPonto = JSON.parse(req.body.zoneamentosPonto || '[]');
 
         const insertPontoQuery = `
-            INSERT INTO pontos (
-                nome_ponto, latitude, longitude, area, logradouro, numero, complemento, ponto_referencia, bairro, cep
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-            )
-            RETURNING id;
-        `;
+      INSERT INTO pontos (
+        nome_ponto, latitude, longitude, area,
+        logradouro, numero, complemento, ponto_referencia,
+        bairro, cep
+      )
+      VALUES ($1, $2, $3, $4,
+              $5, $6, $7, $8,
+              $9, $10)
+      RETURNING id;
+    `;
         const values = [
             nomePonto,
             latitudePonto ? parseFloat(latitudePonto) : null,
@@ -1331,7 +1346,7 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
             complementoPonto || null,
             pontoReferenciaPonto || null,
             bairroPonto || null,
-            cepPonto || null
+            cepPonto || null,
         ];
         const result = await pool.query(insertPontoQuery, values);
         if (result.rows.length === 0) {
@@ -1341,9 +1356,9 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
 
         if (zoneamentosPonto.length > 0) {
             const insertZonaPontoQuery = `
-                INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
-                VALUES ($1, $2);
-            `;
+        INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+        VALUES ($1, $2);
+      `;
             for (const zid of zoneamentosPonto) {
                 await pool.query(insertZonaPontoQuery, [pontoId, zid]);
             }
@@ -1357,24 +1372,29 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
 app.get('/api/pontos', async (req, res) => {
     try {
         const query = `
-            SELECT p.id, p.nome_ponto, p.latitude, p.longitude, p.area,
-                p.logradouro, p.numero, p.complemento, p.ponto_referencia,
-                p.bairro, p.cep,
-                COALESCE(
-                    json_agg(
-                        json_build_object(
-                            'id', z.id,
-                            'nome', z.nome
-                        )
-                    ) FILTER (WHERE z.id IS NOT NULL),
-                    '[]'
-                ) AS zoneamentos
-            FROM pontos p
-            LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-            LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
-            GROUP BY p.id
-            ORDER BY p.id;
-        `;
+      SELECT p.id,
+             p.nome_ponto,
+             p.latitude,
+             p.longitude,
+             p.area,
+             p.logradouro,
+             p.numero,
+             p.complemento,
+             p.ponto_referencia,
+             p.bairro,
+             p.cep,
+             COALESCE(
+               json_agg(
+                 json_build_object('id', z.id, 'nome', z.nome)
+               ) FILTER (WHERE z.id IS NOT NULL),
+               '[]'
+             ) AS zoneamentos
+      FROM pontos p
+      LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+      LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
+      GROUP BY p.id
+      ORDER BY p.id;
+    `;
         const result = await pool.query(query);
         const pontos = result.rows.map((row) => ({
             id: row.id,
@@ -1388,7 +1408,7 @@ app.get('/api/pontos', async (req, res) => {
             ponto_referencia: row.ponto_referencia,
             bairro: row.bairro,
             cep: row.cep,
-            zoneamentos: row.zoneamentos
+            zoneamentos: row.zoneamentos,
         }));
         res.json(pontos);
     } catch (error) {
@@ -1412,9 +1432,8 @@ app.delete('/api/pontos/:id', async (req, res) => {
 });
 
 // ====================================================================================
-//                              ROTAS SIMPLES
+// ROTAS SIMPLES
 // ====================================================================================
-
 app.post('/api/rotas/cadastrar-simples', async (req, res) => {
     try {
         const {
@@ -1426,7 +1445,7 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
             chegadaLng,
             pontosParada,
             escolas,
-            areaZona
+            areaZona,
         } = req.body;
 
         if (!identificador || !descricao || partidaLat == null || partidaLng == null || !areaZona) {
@@ -1434,11 +1453,11 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
         }
 
         const insertRotaQuery = `
-            INSERT INTO rotas_simples
-            (identificador, descricao, partida_lat, partida_lng, chegada_lat, chegada_lng, area_zona)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id;
-        `;
+      INSERT INTO rotas_simples
+      (identificador, descricao, partida_lat, partida_lng, chegada_lat, chegada_lng, area_zona)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id;
+    `;
         const rotaValues = [
             identificador,
             descricao,
@@ -1446,7 +1465,7 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
             partidaLng,
             chegadaLat,
             chegadaLng,
-            areaZona
+            areaZona,
         ];
         const rotaResult = await pool.query(insertRotaQuery, rotaValues);
         if (rotaResult.rows.length === 0) {
@@ -1456,9 +1475,9 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
 
         if (pontosParada && Array.isArray(pontosParada)) {
             const insertPontoQuery = `
-                INSERT INTO rotas_pontos (rota_id, ponto_id)
-                VALUES ($1, $2);
-            `;
+        INSERT INTO rotas_pontos (rota_id, ponto_id)
+        VALUES ($1, $2);
+      `;
             for (const pId of pontosParada) {
                 await pool.query(insertPontoQuery, [rotaId, pId]);
             }
@@ -1466,9 +1485,9 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
 
         if (escolas && Array.isArray(escolas)) {
             const insertEscolaQuery = `
-                INSERT INTO rotas_escolas (rota_id, escola_id)
-                VALUES ($1, $2);
-            `;
+        INSERT INTO rotas_escolas (rota_id, escola_id)
+        VALUES ($1, $2);
+      `;
             for (const eId of escolas) {
                 await pool.query(insertEscolaQuery, [rotaId, eId]);
             }
@@ -1482,26 +1501,22 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
 
 app.get('/api/estatisticas-transporte', async (req, res) => {
     try {
-        // Vamos gerar arrays para cada mês do ano
         const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-        // Arrays que irão conter a contagem de rotas
         const totalRotasPorMes = new Array(12).fill(0);
         const rotasUrbanaPorMes = new Array(12).fill(0);
         const rotasRuralPorMes = new Array(12).fill(0);
 
         const query = `
-          SELECT
-            EXTRACT(MONTH FROM created_at)::int AS mes,
-            area_zona,
-            COUNT(*) AS total
-          FROM rotas_simples
-          GROUP BY 1, area_zona
-          ORDER BY 1;
-        `;
-
+      SELECT
+        EXTRACT(MONTH FROM created_at)::int AS mes,
+        area_zona,
+        COUNT(*) AS total
+      FROM rotas_simples
+      GROUP BY 1, area_zona
+      ORDER BY 1;
+    `;
         const { rows } = await pool.query(query);
 
-        // Preenche os valores em cada array
         rows.forEach((item) => {
             const mesIndex = item.mes - 1;
             const zona = item.area_zona;
@@ -1530,17 +1545,17 @@ app.get('/api/estatisticas-transporte', async (req, res) => {
 app.get('/api/rotas_simples', async (req, res) => {
     try {
         const query = `
-            SELECT 
-                id,
-                identificador,
-                descricao,
-                partida_lat AS "partidaLat",
-                partida_lng AS "partidaLng",
-                chegada_lat AS "chegadaLat",
-                chegada_lng AS "chegadaLng"
-            FROM rotas_simples
-            ORDER BY id;
-        `;
+      SELECT 
+        id,
+        identificador,
+        descricao,
+        partida_lat AS "partidaLat",
+        partida_lng AS "partidaLng",
+        chegada_lat AS "chegadaLat",
+        chegada_lng AS "chegadaLng"
+      FROM rotas_simples
+      ORDER BY id;
+    `;
         const result = await pool.query(query);
         return res.json(result.rows);
     } catch (error) {
@@ -1553,16 +1568,16 @@ app.get('/api/rotas_simples/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const rotaQuery = `
-            SELECT 
-                id,
-                partida_lat AS "partidaLat",
-                partida_lng AS "partidaLng",
-                chegada_lat AS "chegadaLat",
-                chegada_lng AS "chegadaLng"
-            FROM rotas_simples
-            WHERE id = $1
-            LIMIT 1;
-        `;
+      SELECT 
+        id,
+        partida_lat AS "partidaLat",
+        partida_lng AS "partidaLng",
+        chegada_lat AS "chegadaLat",
+        chegada_lng AS "chegadaLng"
+      FROM rotas_simples
+      WHERE id = $1
+      LIMIT 1;
+    `;
         const rotaResult = await pool.query(rotaQuery, [id]);
         if (rotaResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Rota não encontrada.' });
@@ -1570,19 +1585,19 @@ app.get('/api/rotas_simples/:id', async (req, res) => {
         const rota = rotaResult.rows[0];
 
         const pontosParadaQuery = `
-            SELECT p.id, p.nome_ponto, p.latitude, p.longitude
-            FROM rotas_pontos rp
-            JOIN pontos p ON p.id = rp.ponto_id
-            WHERE rp.rota_id = $1;
-        `;
+      SELECT p.id, p.nome_ponto, p.latitude, p.longitude
+      FROM rotas_pontos rp
+      JOIN pontos p ON p.id = rp.ponto_id
+      WHERE rp.rota_id = $1;
+    `;
         const pontosResult = await pool.query(pontosParadaQuery, [id]);
 
         const escolasQuery = `
-            SELECT e.id, e.nome, e.latitude, e.longitude
-            FROM rotas_escolas re
-            JOIN escolas e ON e.id = re.escola_id
-            WHERE re.rota_id = $1;
-        `;
+      SELECT e.id, e.nome, e.latitude, e.longitude
+      FROM rotas_escolas re
+      JOIN escolas e ON e.id = re.escola_id
+      WHERE re.rota_id = $1;
+    `;
         const escolasResult = await pool.query(escolasQuery, [id]);
 
         const detalhesRota = {
@@ -1594,14 +1609,14 @@ app.get('/api/rotas_simples/:id', async (req, res) => {
                 id: r.id,
                 nome_ponto: r.nome_ponto,
                 latitude: r.latitude,
-                longitude: r.longitude
+                longitude: r.longitude,
             })),
             escolas: escolasResult.rows.map((r) => ({
                 id: r.id,
                 nome: r.nome,
                 latitude: r.latitude,
-                longitude: r.longitude
-            }))
+                longitude: r.longitude,
+            })),
         };
         res.json(detalhesRota);
     } catch (error) {
@@ -1611,40 +1626,33 @@ app.get('/api/rotas_simples/:id', async (req, res) => {
 });
 
 // ====================================================================================
-//                              RELACIONAMENTOS: MOTORISTAS / MONITORES -> ROTAS
+// RELACIONAMENTOS: MOTORISTAS / MONITORES -> ROTAS
 // ====================================================================================
-
 app.post('/api/motoristas/atribuir-rota', async (req, res) => {
     try {
         const { motorista_id, rota_id } = req.body;
         if (!motorista_id || !rota_id) {
             return res.status(400).json({
                 success: false,
-                message: 'Parâmetros motorista_id e rota_id são obrigatórios.'
+                message: 'Parâmetros motorista_id e rota_id são obrigatórios.',
             });
         }
         const insertQuery = `
-            INSERT INTO motoristas_rotas (motorista_id, rota_id)
-            VALUES ($1, $2)
-            RETURNING id;
-        `;
+      INSERT INTO motoristas_rotas (motorista_id, rota_id)
+      VALUES ($1, $2)
+      RETURNING id;
+    `;
         const result = await pool.query(insertQuery, [motorista_id, rota_id]);
         if (result.rowCount > 0) {
-            return res.json({
-                success: true,
-                message: 'Rota atribuída com sucesso!'
-            });
+            return res.json({ success: true, message: 'Rota atribuída com sucesso!' });
         } else {
-            return res.status(500).json({
-                success: false,
-                message: 'Não foi possível atribuir a rota.'
-            });
+            return res.status(500).json({ success: false, message: 'Não foi possível atribuir a rota.' });
         }
     } catch (error) {
         console.error('Erro ao atribuir rota:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro interno do servidor ao atribuir rota.'
+            message: 'Erro interno do servidor ao atribuir rota.',
         });
     }
 });
@@ -1652,10 +1660,10 @@ app.post('/api/motoristas/atribuir-rota', async (req, res) => {
 app.post('/api/monitores/atribuir-rota', async (req, res) => {
     const { monitor_id, rota_id } = req.body;
     try {
-        await pool.query(
-            'INSERT INTO monitores_rotas (monitor_id, rota_id) VALUES ($1, $2)',
-            [monitor_id, rota_id]
-        );
+        await pool.query('INSERT INTO monitores_rotas (monitor_id, rota_id) VALUES ($1, $2)', [
+            monitor_id,
+            rota_id,
+        ]);
         res.json({ success: true });
     } catch (error) {
         res.json({ success: false, message: error.message });
@@ -1663,9 +1671,8 @@ app.post('/api/monitores/atribuir-rota', async (req, res) => {
 });
 
 // ====================================================================================
-//                              ROTA DE MOTORISTAS -> PONTOS/ESCOLAS
+// ROTA DE MOTORISTAS -> PONTOS/ESCOLAS
 // ====================================================================================
-
 app.get('/api/motoristas/rota', async (req, res) => {
     try {
         const { motoristaId } = req.query;
@@ -1673,11 +1680,11 @@ app.get('/api/motoristas/rota', async (req, res) => {
             return res.status(400).json({ success: false, message: 'motoristaId é obrigatório' });
         }
         const rotaIdQuery = `
-            SELECT rota_id
-            FROM motoristas_rotas
-            WHERE motorista_id = $1
-            LIMIT 1;
-        `;
+      SELECT rota_id
+      FROM motoristas_rotas
+      WHERE motorista_id = $1
+      LIMIT 1;
+    `;
         const rotaIdResult = await pool.query(rotaIdQuery, [motoristaId]);
         if (rotaIdResult.rows.length === 0) {
             return res.json({ success: true, message: 'Nenhuma rota encontrada', pontos: [] });
@@ -1685,15 +1692,15 @@ app.get('/api/motoristas/rota', async (req, res) => {
         const rotaId = rotaIdResult.rows[0].rota_id;
 
         const rotaDadosQuery = `
-            SELECT
-                partida_lat,
-                partida_lng,
-                chegada_lat,
-                chegada_lng
-            FROM rotas_simples
-            WHERE id = $1
-            LIMIT 1;
-        `;
+      SELECT
+        partida_lat,
+        partida_lng,
+        chegada_lat,
+        chegada_lng
+      FROM rotas_simples
+      WHERE id = $1
+      LIMIT 1;
+    `;
         const rotaDadosRes = await pool.query(rotaDadosQuery, [rotaId]);
         if (rotaDadosRes.rows.length === 0) {
             return res.json({ success: true, message: 'Rota não encontrada', pontos: [] });
@@ -1701,12 +1708,12 @@ app.get('/api/motoristas/rota', async (req, res) => {
         const rd = rotaDadosRes.rows[0];
 
         const pontosQuery = `
-            SELECT p.latitude, p.longitude
-            FROM rotas_pontos rp
-            JOIN pontos p ON p.id = rp.ponto_id
-            WHERE rp.rota_id = $1
-            ORDER BY rp.id;
-        `;
+      SELECT p.latitude, p.longitude
+      FROM rotas_pontos rp
+      JOIN pontos p ON p.id = rp.ponto_id
+      WHERE rp.rota_id = $1
+      ORDER BY rp.id;
+    `;
         const pontosRes = await pool.query(pontosQuery, [rotaId]);
         const pontosParada = pontosRes.rows.map((row) => ({
             lat: row.latitude ? parseFloat(row.latitude) : 0,
@@ -1714,12 +1721,12 @@ app.get('/api/motoristas/rota', async (req, res) => {
         }));
 
         const escolasQuery = `
-            SELECT e.latitude, e.longitude
-            FROM rotas_escolas re
-            JOIN escolas e ON e.id = re.escola_id
-            WHERE re.rota_id = $1
-            ORDER BY re.id;
-        `;
+      SELECT e.latitude, e.longitude
+      FROM rotas_escolas re
+      JOIN escolas e ON e.id = re.escola_id
+      WHERE re.rota_id = $1
+      ORDER BY re.id;
+    `;
         const escolasRes = await pool.query(escolasQuery, [rotaId]);
         const escolasPontos = escolasRes.rows.map((row) => ({
             lat: row.latitude ? parseFloat(row.latitude) : 0,
@@ -1728,19 +1735,14 @@ app.get('/api/motoristas/rota', async (req, res) => {
 
         const listaPontos = [];
         if (rd.partida_lat != null && rd.partida_lng != null) {
-            listaPontos.push({
-                lat: parseFloat(rd.partida_lat),
-                lng: parseFloat(rd.partida_lng),
-            });
+            listaPontos.push({ lat: parseFloat(rd.partida_lat), lng: parseFloat(rd.partida_lng) });
         }
         listaPontos.push(...pontosParada);
         listaPontos.push(...escolasPontos);
         if (rd.chegada_lat != null && rd.chegada_lng != null) {
-            listaPontos.push({
-                lat: parseFloat(rd.chegada_lat),
-                lng: parseFloat(rd.chegada_lng),
-            });
+            listaPontos.push({ lat: parseFloat(rd.chegada_lat), lng: parseFloat(rd.chegada_lng) });
         }
+
         return res.json({
             success: true,
             message: 'Rota carregada com sucesso',
@@ -1753,55 +1755,22 @@ app.get('/api/motoristas/rota', async (req, res) => {
 });
 
 // ====================================================================================
-//                              OUTRAS INFORMAÇÕES (DASHBOARD, ESCOLA COORDENADAS, ETC.)
+// OUTRAS INFORMAÇÕES (DASHBOARD, ESCOLA COORDENADAS, ETC.)
 // ====================================================================================
-
 app.get('/api/dashboard', async (req, res) => {
     try {
-        // Contagem de alunos_ativos (municipal ou estadual)
         const alunosAtivos = await pool.query(`
-        SELECT COUNT(*)::int AS count
-        FROM alunos_ativos
-        WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
-      `);
+      SELECT COUNT(*)::int AS count
+      FROM alunos_ativos
+      WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
+    `);
+        const rotasAtivas = await pool.query(`SELECT COUNT(*)::int AS count FROM rotas_simples`);
+        const zoneamentosCount = await pool.query(`SELECT COUNT(*)::int AS count FROM zoneamentos`);
+        const motoristasCount = await pool.query(`SELECT COUNT(*)::int AS count FROM motoristas`);
+        const monitoresCount = await pool.query(`SELECT COUNT(*)::int AS count FROM monitores`);
+        const fornecedoresCount = await pool.query(`SELECT COUNT(*)::int AS count FROM fornecedores`);
+        const pontosCount = await pool.query(`SELECT COUNT(*)::int AS count FROM pontos`);
 
-        // Contagem de rotas
-        const rotasAtivas = await pool.query(`
-        SELECT COUNT(*)::int AS count
-        FROM rotas_simples
-      `);
-
-        // Contagem de zoneamentos
-        const zoneamentosCount = await pool.query(`
-        SELECT COUNT(*)::int AS count
-        FROM zoneamentos
-      `);
-
-        // Contagem de motoristas
-        const motoristasCount = await pool.query(`
-        SELECT COUNT(*)::int AS count
-        FROM motoristas
-      `);
-
-        // Contagem de monitores
-        const monitoresCount = await pool.query(`
-        SELECT COUNT(*)::int AS count
-        FROM monitores
-      `);
-
-        // Contagem de fornecedores
-        const fornecedoresCount = await pool.query(`
-        SELECT COUNT(*)::int AS count
-        FROM fornecedores
-      `);
-
-        // Contagem de pontos
-        const pontosCount = await pool.query(`
-        SELECT COUNT(*)::int AS count
-        FROM pontos
-      `);
-
-        // Retorno JSON (sem porcentagens)
         res.json({
             alunos_ativos: alunosAtivos.rows[0]?.count || 0,
             rotas_ativas: rotasAtivas.rows[0]?.count || 0,
@@ -1809,15 +1778,13 @@ app.get('/api/dashboard', async (req, res) => {
             motoristas_total: motoristasCount.rows[0]?.count || 0,
             monitores_total: monitoresCount.rows[0]?.count || 0,
             fornecedores_total: fornecedoresCount.rows[0]?.count || 0,
-            pontos_total: pontosCount.rows[0]?.count || 0
+            pontos_total: pontosCount.rows[0]?.count || 0,
         });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
-
-
 
 app.get('/api/escola-coordenadas', async (req, res) => {
     const escolaId = req.query.escola_id;
@@ -1840,8 +1807,42 @@ app.get('/api/escola-coordenadas', async (req, res) => {
 });
 
 // ====================================================================================
-//                              DOWNLOAD DE ROTAS (KML, KMZ, GPX)
+// DOWNLOAD DE ROTAS (KML, KMZ, GPX)
 // ====================================================================================
+function geojsonToKml(geojson) {
+    let kml = `<?xml version="1.0" encoding="UTF-8"?>
+    <kml xmlns="http://www.opengis.net/kml/2.2">
+    <Document>`;
+
+    geojson.features.forEach((f, idx) => {
+        const coords = f.geometry.coordinates.map((c) => c[0] + ',' + c[1]).join(' ');
+        kml += `
+      <Placemark>
+        <name>Rota ${f.properties.identificador || idx}</name>
+        <description>${f.properties.descricao || ''}</description>
+        <LineString>
+          <coordinates>${coords}</coordinates>
+        </LineString>
+      </Placemark>`;
+    });
+    kml += '\n</Document>\n</kml>';
+    return kml;
+}
+
+function geojsonToGpx(geojson) {
+    let gpx = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <gpx version="1.1" creator="MyServer">
+  `;
+    geojson.features.forEach((f, idx) => {
+        gpx += `<trk><name>Rota ${f.properties.identificador || idx}</name><trkseg>`;
+        f.geometry.coordinates.forEach((c) => {
+            gpx += `<trkpt lat="${c[1]}" lon="${c[0]}"></trkpt>`;
+        });
+        gpx += `</trkseg></trk>\n`;
+    });
+    gpx += '</gpx>';
+    return gpx;
+}
 
 app.get('/api/download-rotas-todas', async (req, res) => {
     try {
@@ -1851,55 +1852,45 @@ app.get('/api/download-rotas-todas', async (req, res) => {
         }
 
         const rotasQuery = `
-            SELECT 
-                rs.id,
-                rs.identificador,
-                rs.descricao,
-                rs.partida_lat,
-                rs.partida_lng,
-                rs.chegada_lat,
-                rs.chegada_lng,
-                COALESCE(json_agg(
-                    json_build_object(
-                        'id', p.id,
-                        'latitude', p.latitude,
-                        'longitude', p.longitude
-                    )
-                ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
-                COALESCE(json_agg(
-                    json_build_object(
-                        'id', e.id,
-                        'latitude', e.latitude,
-                        'longitude', e.longitude
-                    )
-                ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
-            FROM rotas_simples rs
-            LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
-            LEFT JOIN pontos p ON p.id = rp.ponto_id
-            LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
-            LEFT JOIN escolas e ON e.id = re.escola_id
-            GROUP BY rs.id
-            ORDER BY rs.id;
-        `;
+      SELECT 
+        rs.id,
+        rs.identificador,
+        rs.descricao,
+        rs.partida_lat,
+        rs.partida_lng,
+        rs.chegada_lat,
+        rs.chegada_lng,
+        COALESCE(json_agg(
+          json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
+        ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
+        COALESCE(json_agg(
+          json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
+        ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
+      FROM rotas_simples rs
+      LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
+      LEFT JOIN pontos p ON p.id = rp.ponto_id
+      LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
+      LEFT JOIN escolas e ON e.id = re.escola_id
+      GROUP BY rs.id
+      ORDER BY rs.id;
+    `;
         const result = await pool.query(rotasQuery);
         if (result.rows.length === 0) {
             return res.status(404).send('Nenhuma rota encontrada.');
         }
 
-        let features = [];
+        const features = [];
         result.rows.forEach((r) => {
             const coords = [];
             if (r.partida_lat != null && r.partida_lng != null) {
                 coords.push([parseFloat(r.partida_lng), parseFloat(r.partida_lat)]);
             }
-            const pontos = r.pontos || [];
-            pontos.forEach((pt) => {
+            (r.pontos || []).forEach((pt) => {
                 if (pt.latitude != null && pt.longitude != null) {
                     coords.push([parseFloat(pt.longitude), parseFloat(pt.latitude)]);
                 }
             });
-            const escolas = r.escolas || [];
-            escolas.forEach((es) => {
+            (r.escolas || []).forEach((es) => {
                 if (es.latitude != null && es.longitude != null) {
                     coords.push([parseFloat(es.longitude), parseFloat(es.latitude)]);
                 }
@@ -1915,20 +1906,16 @@ app.get('/api/download-rotas-todas', async (req, res) => {
                 properties: {
                     id: r.id,
                     identificador: r.identificador,
-                    descricao: r.descricao
+                    descricao: r.descricao,
                 },
                 geometry: {
                     type: 'LineString',
-                    coordinates: coords
-                }
+                    coordinates: coords,
+                },
             });
         });
 
-        const geojson = {
-            type: 'FeatureCollection',
-            features: features
-        };
-
+        const geojson = { type: 'FeatureCollection', features };
         const lowerFmt = format.toLowerCase();
 
         if (lowerFmt === 'kml') {
@@ -1936,12 +1923,11 @@ app.get('/api/download-rotas-todas', async (req, res) => {
             res.setHeader('Content-Type', 'application/vnd.google-earth.kml+xml');
             res.setHeader('Content-Disposition', 'attachment; filename="todas_rotas.kml"');
             return res.send(kmlStr);
-        }
-
-        if (lowerFmt === 'kmz') {
+        } else if (lowerFmt === 'kmz') {
             const kmlStr = geojsonToKml(geojson);
             res.setHeader('Content-Type', 'application/vnd.google-earth.kmz');
             res.setHeader('Content-Disposition', 'attachment; filename="todas_rotas.kmz"');
+
             const archive = archiver('zip', { zlib: { level: 9 } });
             archive.on('error', (err) => {
                 throw err;
@@ -1950,16 +1936,14 @@ app.get('/api/download-rotas-todas', async (req, res) => {
             archive.pipe(res);
             archive.append(kmlStr, { name: 'doc.kml' });
             archive.finalize();
-            return;
-        }
-
-        if (lowerFmt === 'gpx') {
+        } else if (lowerFmt === 'gpx') {
             const gpxStr = geojsonToGpx(geojson);
             res.setHeader('Content-Type', 'application/gpx+xml');
             res.setHeader('Content-Disposition', 'attachment; filename="todas_rotas.gpx"');
-            return res.send(gpxStr);
+            res.send(gpxStr);
+        } else {
+            return res.status(400).send('Formato inválido.');
         }
-        return res.status(400).send('Formato inválido');
     } catch (error) {
         console.error('Erro ao gerar download de todas as rotas:', error);
         res.status(500).send('Erro ao gerar download de todas as rotas.');
@@ -1975,37 +1959,29 @@ app.get('/api/download-rota/:id', async (req, res) => {
         }
 
         const rotaQuery = `
-            SELECT 
-                rs.id,
-                rs.identificador,
-                rs.descricao,
-                rs.partida_lat,
-                rs.partida_lng,
-                rs.chegada_lat,
-                rs.chegada_lng,
-                COALESCE(json_agg(
-                    json_build_object(
-                        'id', p.id,
-                        'latitude', p.latitude,
-                        'longitude', p.longitude
-                    )
-                ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
-                COALESCE(json_agg(
-                    json_build_object(
-                        'id', e.id,
-                        'latitude', e.latitude,
-                        'longitude', e.longitude
-                    )
-                ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
-            FROM rotas_simples rs
-            LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
-            LEFT JOIN pontos p ON p.id = rp.ponto_id
-            LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
-            LEFT JOIN escolas e ON e.id = re.escola_id
-            WHERE rs.id = $1
-            GROUP BY rs.id
-            LIMIT 1;
-        `;
+      SELECT 
+        rs.id,
+        rs.identificador,
+        rs.descricao,
+        rs.partida_lat,
+        rs.partida_lng,
+        rs.chegada_lat,
+        rs.chegada_lng,
+        COALESCE(json_agg(
+          json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
+        ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
+        COALESCE(json_agg(
+          json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
+        ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
+      FROM rotas_simples rs
+      LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
+      LEFT JOIN pontos p ON p.id = rp.ponto_id
+      LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
+      LEFT JOIN escolas e ON e.id = re.escola_id
+      WHERE rs.id = $1
+      GROUP BY rs.id
+      LIMIT 1;
+    `;
         const result = await pool.query(rotaQuery, [id]);
         if (result.rows.length === 0) {
             return res.status(404).send('Rota não encontrada.');
@@ -2016,14 +1992,12 @@ app.get('/api/download-rota/:id', async (req, res) => {
         if (r.partida_lat != null && r.partida_lng != null) {
             coords.push([parseFloat(r.partida_lng), parseFloat(r.partida_lat)]);
         }
-        const pontos = r.pontos || [];
-        pontos.forEach((pt) => {
+        (r.pontos || []).forEach((pt) => {
             if (pt.latitude != null && pt.longitude != null) {
                 coords.push([parseFloat(pt.longitude), parseFloat(pt.latitude)]);
             }
         });
-        const escolas = r.escolas || [];
-        escolas.forEach((es) => {
+        (r.escolas || []).forEach((es) => {
             if (es.latitude != null && es.longitude != null) {
                 coords.push([parseFloat(es.longitude), parseFloat(es.latitude)]);
             }
@@ -2041,17 +2015,14 @@ app.get('/api/download-rota/:id', async (req, res) => {
             properties: {
                 id: r.id,
                 identificador: r.identificador,
-                descricao: r.descricao
+                descricao: r.descricao,
             },
             geometry: {
                 type: 'LineString',
-                coordinates: coords
-            }
+                coordinates: coords,
+            },
         };
-        const geojson = {
-            type: 'FeatureCollection',
-            features: [feature]
-        };
+        const geojson = { type: 'FeatureCollection', features: [feature] };
         const lowerFmt = format.toLowerCase();
 
         if (lowerFmt === 'kml') {
@@ -2063,6 +2034,7 @@ app.get('/api/download-rota/:id', async (req, res) => {
             const kmlStr = geojsonToKml(geojson);
             res.setHeader('Content-Type', 'application/vnd.google-earth.kmz');
             res.setHeader('Content-Disposition', `attachment; filename="rota_${r.id}.kmz"`);
+
             const archive = archiver('zip', { zlib: { level: 9 } });
             archive.on('error', (err) => {
                 throw err;
@@ -2071,7 +2043,6 @@ app.get('/api/download-rota/:id', async (req, res) => {
             archive.pipe(res);
             archive.append(kmlStr, { name: 'doc.kml' });
             archive.finalize();
-            return;
         } else if (lowerFmt === 'gpx') {
             const gpxStr = geojsonToGpx(geojson);
             res.setHeader('Content-Type', 'application/gpx+xml');
@@ -2086,90 +2057,54 @@ app.get('/api/download-rota/:id', async (req, res) => {
     }
 });
 
-function geojsonToKml(geojson) {
-    let kml = `<?xml version="1.0" encoding="UTF-8"?>
-    <kml xmlns="http://www.opengis.net/kml/2.2">
-    <Document>`;
-    geojson.features.forEach((f, idx) => {
-        const coords = f.geometry.coordinates.map((c) => c[0] + ',' + c[1]).join(' ');
-        kml += `
-    <Placemark>
-        <name>Rota ${f.properties.identificador || idx}</name>
-        <description>${f.properties.descricao || ''}</description>
-        <LineString>
-            <coordinates>${coords}</coordinates>
-        </LineString>
-    </Placemark>`;
-    });
-    kml += '\n</Document>\n</kml>';
-    return kml;
-}
-
-function geojsonToGpx(geojson) {
-    let gpx = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <gpx version="1.1" creator="MyServer">
-    `;
-    geojson.features.forEach((f, idx) => {
-        gpx += `<trk><name>Rota ${f.properties.identificador || idx}</name><trkseg>`;
-        f.geometry.coordinates.forEach((c) => {
-            gpx += `<trkpt lat="${c[1]}" lon="${c[0]}"></trkpt>`;
-        });
-        gpx += `</trkseg></trk>\n`;
-    });
-    gpx += '</gpx>';
-    return gpx;
-}
-
 // ====================================================================================
-//                              ROTAS SIMPLES DETALHADAS
+// ROTAS SIMPLES DETALHADAS
 // ====================================================================================
-
 app.get('/api/rotas-simples-detalhes', async (req, res) => {
     try {
         const query = `
-            WITH re AS (
-                SELECT 
-                    r.id AS rota_id,
-                    r.identificador,
-                    r.descricao,
-                    r.area_zona,
-                    
-                    array_agg(DISTINCT p.id) FILTER (WHERE p.id IS NOT NULL) AS pontos_ids,
-                    array_agg(DISTINCT p.nome_ponto) FILTER (WHERE p.id IS NOT NULL) AS pontos_nomes,
-                    
-                    array_agg(DISTINCT z.id) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_ids,
-                    array_agg(DISTINCT z.nome) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_nomes,
-                    
-                    array_agg(DISTINCT e.id) FILTER (WHERE e.id IS NOT NULL) AS escolas_ids,
-                    array_agg(DISTINCT e.nome) FILTER (WHERE e.id IS NOT NULL) AS escolas_nomes
+      WITH re AS (
+        SELECT 
+          r.id AS rota_id,
+          r.identificador,
+          r.descricao,
+          r.area_zona,
 
-                FROM rotas_simples r
-                LEFT JOIN rotas_pontos rp ON rp.rota_id = r.id
-                LEFT JOIN pontos p ON p.id = rp.ponto_id
-                LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-                LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
+          array_agg(DISTINCT p.id) FILTER (WHERE p.id IS NOT NULL) AS pontos_ids,
+          array_agg(DISTINCT p.nome_ponto) FILTER (WHERE p.id IS NOT NULL) AS pontos_nomes,
 
-                LEFT JOIN rotas_escolas re2 ON re2.rota_id = r.id
-                LEFT JOIN escolas e ON e.id = re2.escola_id
+          array_agg(DISTINCT z.id) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_ids,
+          array_agg(DISTINCT z.nome) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_nomes,
 
-                GROUP BY r.id
-            )
-            SELECT 
-                rota_id AS id,
-                identificador,
-                descricao,
-                area_zona,
-                
-                pontos_ids,
-                pontos_nomes,
-                zoneamentos_ids,
-                zoneamentos_nomes,
-                escolas_ids,
-                escolas_nomes
-            FROM re
-            ORDER BY rota_id;
-        `;
+          array_agg(DISTINCT e.id) FILTER (WHERE e.id IS NOT NULL) AS escolas_ids,
+          array_agg(DISTINCT e.nome) FILTER (WHERE e.id IS NOT NULL) AS escolas_nomes
 
+        FROM rotas_simples r
+        LEFT JOIN rotas_pontos rp ON rp.rota_id = r.id
+        LEFT JOIN pontos p ON p.id = rp.ponto_id
+        LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+        LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
+
+        LEFT JOIN rotas_escolas re2 ON re2.rota_id = r.id
+        LEFT JOIN escolas e ON e.id = re2.escola_id
+
+        GROUP BY r.id
+      )
+      SELECT 
+        rota_id AS id,
+        identificador,
+        descricao,
+        area_zona,
+
+        pontos_ids,
+        pontos_nomes,
+        zoneamentos_ids,
+        zoneamentos_nomes,
+        escolas_ids,
+        escolas_nomes
+      FROM re
+      ORDER BY rota_id;
+    `;
         const result = await pool.query(query);
 
         const data = result.rows.map((row) => {
@@ -2180,21 +2115,21 @@ app.get('/api/rotas-simples-detalhes', async (req, res) => {
             if (row.pontos_ids && row.pontos_ids.length) {
                 pontos = row.pontos_ids.map((pid, idx) => ({
                     id: pid,
-                    nome_ponto: row.pontos_nomes[idx]
+                    nome_ponto: row.pontos_nomes[idx],
                 }));
             }
 
             if (row.zoneamentos_ids && row.zoneamentos_ids.length) {
                 zoneamentos = row.zoneamentos_ids.map((zid, idx) => ({
                     id: zid,
-                    nome: row.zoneamentos_nomes[idx]
+                    nome: row.zoneamentos_nomes[idx],
                 }));
             }
 
             if (row.escolas_ids && row.escolas_ids.length) {
                 escolas = row.escolas_ids.map((eid, idx) => ({
                     id: eid,
-                    nome: row.escolas_nomes[idx]
+                    nome: row.escolas_nomes[idx],
                 }));
             }
 
@@ -2205,7 +2140,7 @@ app.get('/api/rotas-simples-detalhes', async (req, res) => {
                 area_zona: row.area_zona,
                 pontos,
                 zoneamentos,
-                escolas
+                escolas,
             };
         });
 
@@ -2214,49 +2149,47 @@ app.get('/api/rotas-simples-detalhes', async (req, res) => {
         console.error('Erro ao buscar rotas detalhadas:', err);
         return res.status(500).json({
             success: false,
-            message: 'Erro interno ao buscar rotas detalhadas.'
+            message: 'Erro interno ao buscar rotas detalhadas.',
         });
     }
 });
 
 // ====================================================================================
-//                              VEÍCULO POR MOTORISTA
+// VEÍCULO POR MOTORISTA
 // ====================================================================================
-
 app.get('/api/motoristas/veiculo/:motoristaId', async (req, res) => {
     try {
         const { motoristaId } = req.params;
         const query = `
-            SELECT f.*
-            FROM frota f
-            INNER JOIN frota_motoristas fm ON fm.frota_id = f.id
-            WHERE fm.motorista_id = $1
-            LIMIT 1;
-        `;
+      SELECT f.*
+      FROM frota f
+      INNER JOIN frota_motoristas fm ON fm.frota_id = f.id
+      WHERE fm.motorista_id = $1
+      LIMIT 1;
+    `;
         const result = await pool.query(query, [motoristaId]);
         if (result.rows.length === 0) {
             return res.json({
                 success: false,
-                message: 'Nenhum veículo encontrado para este motorista'
+                message: 'Nenhum veículo encontrado para este motorista',
             });
         }
         return res.json({
             success: true,
-            vehicle: result.rows[0]
+            vehicle: result.rows[0],
         });
     } catch (error) {
         console.error('Erro ao buscar veículo para motorista:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro interno do servidor'
+            message: 'Erro interno do servidor',
         });
     }
 });
 
 // ====================================================================================
-//                              CHECKLISTS ÔNIBUS
+// CHECKLISTS ÔNIBUS
 // ====================================================================================
-
 app.post('/api/checklists_onibus/salvar', async (req, res) => {
     try {
         const {
@@ -2315,80 +2248,77 @@ app.post('/api/checklists_onibus/salvar', async (req, res) => {
             problema_portas_janelas,
             manutencao_preventiva,
             pronto_prox_dia,
-            obs_retorno
+            obs_retorno,
         } = req.body;
 
         const selectQuery = `
-            SELECT id FROM checklists_onibus 
-            WHERE motorista_id=$1 AND frota_id=$2 AND data_checklist=$3
-            LIMIT 1
-        `;
-        const selectResult = await pool.query(selectQuery, [
-            motorista_id,
-            frota_id,
-            data_checklist
-        ]);
+      SELECT id FROM checklists_onibus
+      WHERE motorista_id=$1 AND frota_id=$2 AND data_checklist=$3
+      LIMIT 1
+    `;
+        const selectResult = await pool.query(selectQuery, [motorista_id, frota_id, data_checklist]);
 
         if (selectResult.rows.length > 0) {
+            // UPDATE
             const checklistId = selectResult.rows[0].id;
             const updateQuery = `
-                UPDATE checklists_onibus
-                SET
-                    horario_saida = $1,
-                    horario_retorno = $2,
-                    quilometragem_final = $3,
-                    cnh_valida = $4,
-                    crlv_atualizado = $5,
-                    aut_cert_escolar = $6,
-                    pneus_calibragem = $7,
-                    pneus_estado = $8,
-                    pneu_estepe = $9,
-                    fluido_oleo_motor = $10,
-                    fluido_freio = $11,
-                    fluido_radiador = $12,
-                    fluido_parabrisa = $13,
-                    freio_pe = $14,
-                    freio_mao = $15,
-                    farois = $16,
-                    lanternas = $17,
-                    setas = $18,
-                    luz_freio = $19,
-                    luz_re = $20,
-                    iluminacao_interna = $21,
-                    extintor = $22,
-                    cintos = $23,
-                    martelo_emergencia = $24,
-                    kit_primeiros_socorros = $25,
-                    lataria_pintura = $26,
-                    vidros_limpos = $27,
-                    retrovisores_ok = $28,
-                    limpador_para_brisa = $29,
-                    sinalizacao_externa = $30,
-                    interior_limpo = $31,
-                    combustivel_suficiente = $32,
-                    triangulo_sinalizacao = $33,
-                    macaco_chave_roda = $34,
-                    material_limpeza = $35,
-                    acessibilidade = $36,
-                    obs_saida = $37,
-                    combustivel_verificar = $38,
-                    abastecimento = $39,
-                    pneus_desgaste = $40,
-                    lataria_avarias = $41,
-                    interior_limpeza_retorno = $42,
-                    extintor_retorno = $43,
-                    cintos_retorno = $44,
-                    kit_primeiros_socorros_retorno = $45,
-                    equip_obrigatorio_retorno = $46,
-                    equip_acessorio_retorno = $47,
-                    problemas_mecanicos = $48,
-                    incidentes = $49,
-                    problema_portas_janelas = $50,
-                    manutencao_preventiva = $51,
-                    pronto_prox_dia = $52,
-                    obs_retorno = $53
-                WHERE id=$54
-            `;
+        UPDATE checklists_onibus
+        SET
+          horario_saida = $1,
+          horario_retorno = $2,
+          quilometragem_final = $3,
+          cnh_valida = $4,
+          crlv_atualizado = $5,
+          aut_cert_escolar = $6,
+          pneus_calibragem = $7,
+          pneus_estado = $8,
+          pneu_estepe = $9,
+          fluido_oleo_motor = $10,
+          fluido_freio = $11,
+          fluido_radiador = $12,
+          fluido_parabrisa = $13,
+          freio_pe = $14,
+          freio_mao = $15,
+          farois = $16,
+          lanternas = $17,
+          setas = $18,
+          luz_freio = $19,
+          luz_re = $20,
+          iluminacao_interna = $21,
+          extintor = $22,
+          cintos = $23,
+          martelo_emergencia = $24,
+          kit_primeiros_socorros = $25,
+          lataria_pintura = $26,
+          vidros_limpos = $27,
+          retrovisores_ok = $28,
+          limpador_para_brisa = $29,
+          sinalizacao_externa = $30,
+          interior_limpo = $31,
+          combustivel_suficiente = $32,
+          triangulo_sinalizacao = $33,
+          macaco_chave_roda = $34,
+          material_limpeza = $35,
+          acessibilidade = $36,
+          obs_saida = $37,
+          combustivel_verificar = $38,
+          abastecimento = $39,
+          pneus_desgaste = $40,
+          lataria_avarias = $41,
+          interior_limpeza_retorno = $42,
+          extintor_retorno = $43,
+          cintos_retorno = $44,
+          kit_primeiros_socorros_retorno = $45,
+          equip_obrigatorio_retorno = $46,
+          equip_acessorio_retorno = $47,
+          problemas_mecanicos = $48,
+          incidentes = $49,
+          problema_portas_janelas = $50,
+          manutencao_preventiva = $51,
+          pronto_prox_dia = $52,
+          obs_retorno = $53
+        WHERE id=$54
+      `;
             const updateValues = [
                 horario_saida || null,
                 horario_retorno || null,
@@ -2445,61 +2375,64 @@ app.post('/api/checklists_onibus/salvar', async (req, res) => {
                 extintor_retorno === 'true',
                 cintos_retorno === 'true',
                 kit_primeiros_socorros_retorno === 'true',
+
                 equip_obrigatorio_retorno === 'true',
                 equip_acessorio_retorno === 'true',
+
                 problemas_mecanicos === 'true',
                 incidentes === 'true',
                 problema_portas_janelas === 'true',
+
                 manutencao_preventiva === 'true',
                 pronto_prox_dia === 'true',
                 obs_retorno || null,
 
-                checklistId
+                checklistId,
             ];
-
             await pool.query(updateQuery, updateValues);
             return res.json({ success: true, message: 'Checklist atualizado com sucesso!' });
         } else {
+            // INSERT
             const insertQuery = `
-                INSERT INTO checklists_onibus (
-                    motorista_id, frota_id, data_checklist,
-                    horario_saida, horario_retorno, quilometragem_final,
-                    cnh_valida, crlv_atualizado, aut_cert_escolar,
-                    pneus_calibragem, pneus_estado, pneu_estepe,
-                    fluido_oleo_motor, fluido_freio, fluido_radiador, fluido_parabrisa,
-                    freio_pe, freio_mao,
-                    farois, lanternas, setas, luz_freio, luz_re, iluminacao_interna,
-                    extintor, cintos, martelo_emergencia, kit_primeiros_socorros,
-                    lataria_pintura, vidros_limpos, retrovisores_ok, limpador_para_brisa,
-                    sinalizacao_externa, interior_limpo,
-                    combustivel_suficiente, triangulo_sinalizacao, macaco_chave_roda,
-                    material_limpeza, acessibilidade, obs_saida,
-                    combustivel_verificar, abastecimento, pneus_desgaste, lataria_avarias,
-                    interior_limpeza_retorno, extintor_retorno, cintos_retorno, kit_primeiros_socorros_retorno,
-                    equip_obrigatorio_retorno, equip_acessorio_retorno,
-                    problemas_mecanicos, incidentes, problema_portas_janelas,
-                    manutencao_preventiva, pronto_prox_dia, obs_retorno
-                ) VALUES (
-                    $1, $2, $3,
-                    $4, $5, $6,
-                    $7, $8, $9,
-                    $10, $11, $12,
-                    $13, $14, $15, $16,
-                    $17, $18,
-                    $19, $20, $21, $22, $23, $24,
-                    $25, $26, $27, $28,
-                    $29, $30, $31, $32,
-                    $33, $34,
-                    $35, $36, $37,
-                    $38, $39, $40,
-                    $41, $42, $43, $44,
-                    $45, $46, $47, $48,
-                    $49, $50,
-                    $51, $52, $53,
-                    $54, $55, $56
-                )
-                RETURNING id
-            `;
+        INSERT INTO checklists_onibus (
+          motorista_id, frota_id, data_checklist,
+          horario_saida, horario_retorno, quilometragem_final,
+          cnh_valida, crlv_atualizado, aut_cert_escolar,
+          pneus_calibragem, pneus_estado, pneu_estepe,
+          fluido_oleo_motor, fluido_freio, fluido_radiador, fluido_parabrisa,
+          freio_pe, freio_mao,
+          farois, lanternas, setas, luz_freio, luz_re, iluminacao_interna,
+          extintor, cintos, martelo_emergencia, kit_primeiros_socorros,
+          lataria_pintura, vidros_limpos, retrovisores_ok, limpador_para_brisa,
+          sinalizacao_externa, interior_limpo,
+          combustivel_suficiente, triangulo_sinalizacao, macaco_chave_roda,
+          material_limpeza, acessibilidade, obs_saida,
+          combustivel_verificar, abastecimento, pneus_desgaste, lataria_avarias,
+          interior_limpeza_retorno, extintor_retorno, cintos_retorno, kit_primeiros_socorros_retorno,
+          equip_obrigatorio_retorno, equip_acessorio_retorno,
+          problemas_mecanicos, incidentes, problema_portas_janelas,
+          manutencao_preventiva, pronto_prox_dia, obs_retorno
+        ) VALUES (
+          $1, $2, $3,
+          $4, $5, $6,
+          $7, $8, $9,
+          $10, $11, $12,
+          $13, $14, $15, $16,
+          $17, $18,
+          $19, $20, $21, $22, $23, $24,
+          $25, $26, $27, $28,
+          $29, $30, $31, $32,
+          $33, $34,
+          $35, $36, $37,
+          $38, $39, $40,
+          $41, $42, $43, $44,
+          $45, $46, $47, $48,
+          $49, $50,
+          $51, $52, $53,
+          $54, $55, $56
+        )
+        RETURNING id
+      `;
             const insertValues = [
                 motorista_id,
                 frota_id,
@@ -2568,19 +2501,19 @@ app.post('/api/checklists_onibus/salvar', async (req, res) => {
 
                 manutencao_preventiva === 'true',
                 pronto_prox_dia === 'true',
-                obs_retorno || null
+                obs_retorno || null,
             ];
             const result = await pool.query(insertQuery, insertValues);
             if (result.rows.length > 0) {
                 return res.json({
                     success: true,
                     message: 'Checklist cadastrado com sucesso!',
-                    id: result.rows[0].id
+                    id: result.rows[0].id,
                 });
             } else {
                 return res.status(500).json({
                     success: false,
-                    message: 'Não foi possível inserir o checklist.'
+                    message: 'Não foi possível inserir o checklist.',
                 });
             }
         }
@@ -2596,28 +2529,28 @@ app.get('/api/checklists_onibus', async (req, res) => {
         if (!motorista_id || !frota_id || !data_checklist) {
             return res.status(400).json({
                 success: false,
-                message: 'Parâmetros motorista_id, frota_id e data_checklist são obrigatórios.'
+                message: 'Parâmetros motorista_id, frota_id e data_checklist são obrigatórios.',
             });
         }
         const query = `
-            SELECT *
-            FROM checklists_onibus
-            WHERE motorista_id=$1
-              AND frota_id=$2
-              AND data_checklist=$3
-            LIMIT 1
-        `;
+      SELECT *
+      FROM checklists_onibus
+      WHERE motorista_id=$1
+        AND frota_id=$2
+        AND data_checklist=$3
+      LIMIT 1
+    `;
         const values = [motorista_id, frota_id, data_checklist];
         const result = await pool.query(query, values);
         if (result.rows.length === 0) {
             return res.json({
                 success: false,
-                message: 'Nenhum checklist encontrado para esse dia.'
+                message: 'Nenhum checklist encontrado para esse dia.',
             });
         }
         return res.json({
             success: true,
-            data: result.rows[0]
+            data: result.rows[0],
         });
     } catch (error) {
         console.error('Erro ao buscar checklist_onibus:', error);
@@ -2626,9 +2559,8 @@ app.get('/api/checklists_onibus', async (req, res) => {
 });
 
 // ====================================================================================
-//                              COCESSAO_ROTA (ALUNOS)
+// COCESSAO_ROTA (ALUNOS)
 // ====================================================================================
-
 app.get('/api/cocessao-rota', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM cocessao_rota');
@@ -2660,7 +2592,7 @@ app.post(
                 latitude,
                 longitude,
                 observacoes,
-                criterio_direito
+                criterio_direito,
             } = req.body;
 
             let laudoDeficienciaPath = null;
@@ -2677,27 +2609,28 @@ app.post(
             const deficienciaBool = deficiencia === 'sim';
 
             const insertQuery = `
-                INSERT INTO cocessao_rota (
-                    nome_responsavel,
-                    cpf_responsavel,
-                    celular_responsavel,
-                    id_matricula_aluno,
-                    escola_id,
-                    cep,
-                    numero,
-                    endereco,
-                    zoneamento,
-                    deficiencia,
-                    laudo_deficiencia_path,
-                    comprovante_endereco_path,
-                    latitude,
-                    longitude,
-                    observacoes,
-                    criterio_direito
-                )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-                RETURNING id
-            `;
+        INSERT INTO cocessao_rota (
+          nome_responsavel,
+          cpf_responsavel,
+          celular_responsavel,
+          id_matricula_aluno,
+          escola_id,
+          cep,
+          numero,
+          endereco,
+          zoneamento,
+          deficiencia,
+          laudo_deficiencia_path,
+          comprovante_endereco_path,
+          latitude,
+          longitude,
+          observacoes,
+          criterio_direito
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+                $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING id
+      `;
             const values = [
                 nome_responsavel,
                 cpf_responsavel,
@@ -2740,10 +2673,7 @@ app.post(
     }
 );
 
-// =====================
-// ENDPOINT NODE.JS: Excluir Rota
-// =====================
-
+// Excluir rota
 app.delete('/api/rotas-simples/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -2761,107 +2691,108 @@ app.delete('/api/rotas-simples/:id', async (req, res) => {
     }
 });
 
+// Editar solicitação
+app.put(
+    '/api/cocessao-rota/:id',
+    upload.fields([
+        { name: 'laudo_deficiencia', maxCount: 1 },
+        { name: 'comprovante_endereco', maxCount: 1 },
+    ]),
+    async (req, res) => {
+        try {
+            const { id } = req.params;
+            const {
+                nome_responsavel,
+                cpf_responsavel,
+                celular_responsavel,
+                id_matricula_aluno,
+                escola_id,
+                cep,
+                numero,
+                endereco: endStr,
+                zoneamento,
+                deficiencia,
+                latitude,
+                longitude,
+                observacoes,
+                criterio_direito,
+            } = req.body;
 
-// ====================================================================================
-// EDITAR SOLICITAÇÃO (PUT /api/cocessao-rota/:id)
-// ====================================================================================
-app.put('/api/cocessao-rota/:id', upload.fields([
-    { name: 'laudo_deficiencia', maxCount: 1 },
-    { name: 'comprovante_endereco', maxCount: 1 },
-]), async (req, res) => {
-    try {
-        const { id } = req.params;
+            let laudoDeficienciaPath = null;
+            let comprovanteEnderecoPath = null;
+            if (req.files['laudo_deficiencia'] && req.files['laudo_deficiencia'].length > 0) {
+                laudoDeficienciaPath = `uploads/${req.files['laudo_deficiencia'][0].filename}`;
+            }
+            if (req.files['comprovante_endereco'] && req.files['comprovante_endereco'].length > 0) {
+                comprovanteEnderecoPath = `uploads/${req.files['comprovante_endereco'][0].filename}`;
+            }
 
-        const {
-            nome_responsavel,
-            cpf_responsavel,
-            celular_responsavel,
-            id_matricula_aluno,
-            escola_id,
-            cep,
-            numero,
-            endereco: endStr,
-            zoneamento,
-            deficiencia,
-            latitude,
-            longitude,
-            observacoes,
-            criterio_direito,
-        } = req.body;
+            const oldRowRes = await pool.query(
+                'SELECT laudo_deficiencia_path, comprovante_endereco_path FROM cocessao_rota WHERE id=$1',
+                [id]
+            );
+            if (oldRowRes.rows.length === 0) {
+                return res.status(404).json({ success: false, message: 'Solicitação não encontrada.' });
+            }
+            const oldRow = oldRowRes.rows[0];
 
-        let laudoDeficienciaPath = null;
-        let comprovanteEnderecoPath = null;
-        if (req.files['laudo_deficiencia'] && req.files['laudo_deficiencia'].length > 0) {
-            laudoDeficienciaPath = `uploads/${req.files['laudo_deficiencia'][0].filename}`;
+            if (!laudoDeficienciaPath) laudoDeficienciaPath = oldRow.laudo_deficiencia_path;
+            if (!comprovanteEnderecoPath) comprovanteEnderecoPath = oldRow.comprovante_endereco_path;
+
+            const zoneamentoBool = zoneamento === 'sim';
+            const deficienciaBool = deficiencia === 'sim';
+
+            const updateQuery = `
+        UPDATE cocessao_rota
+        SET
+          nome_responsavel = $1,
+          cpf_responsavel = $2,
+          celular_responsavel = $3,
+          id_matricula_aluno = $4,
+          escola_id = $5,
+          cep = $6,
+          numero = $7,
+          endereco = $8,
+          zoneamento = $9,
+          deficiencia = $10,
+          laudo_deficiencia_path = $11,
+          comprovante_endereco_path = $12,
+          latitude = $13,
+          longitude = $14,
+          observacoes = $15,
+          criterio_direito = $16
+        WHERE id = $17
+      `;
+            const values = [
+                nome_responsavel,
+                cpf_responsavel,
+                celular_responsavel,
+                id_matricula_aluno,
+                escola_id ? parseInt(escola_id, 10) : null,
+                cep,
+                numero,
+                endStr || null,
+                zoneamentoBool,
+                deficienciaBool,
+                laudoDeficienciaPath,
+                comprovanteEnderecoPath,
+                latitude ? parseFloat(latitude) : null,
+                longitude ? parseFloat(longitude) : null,
+                observacoes || null,
+                criterio_direito || null,
+                parseInt(id, 10),
+            ];
+
+            await pool.query(updateQuery, values);
+            return res.json({ success: true, message: 'Solicitação atualizada com sucesso!' });
+        } catch (error) {
+            console.error('Erro ao atualizar solicitação:', error);
+            return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
         }
-        if (req.files['comprovante_endereco'] && req.files['comprovante_endereco'].length > 0) {
-            comprovanteEnderecoPath = `uploads/${req.files['comprovante_endereco'][0].filename}`;
-        }
-
-        const oldRowRes = await pool.query('SELECT laudo_deficiencia_path, comprovante_endereco_path FROM cocessao_rota WHERE id=$1', [id]);
-        if (oldRowRes.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Solicitação não encontrada.' });
-        }
-        const oldRow = oldRowRes.rows[0];
-
-        if (!laudoDeficienciaPath) laudoDeficienciaPath = oldRow.laudo_deficiencia_path;
-        if (!comprovanteEnderecoPath) comprovanteEnderecoPath = oldRow.comprovante_endereco_path;
-
-        const zoneamentoBool = (zoneamento === 'sim');
-        const deficienciaBool = (deficiencia === 'sim');
-
-        const updateQuery = `
-            UPDATE cocessao_rota
-            SET
-                nome_responsavel = $1,
-                cpf_responsavel = $2,
-                celular_responsavel = $3,
-                id_matricula_aluno = $4,
-                escola_id = $5,
-                cep = $6,
-                numero = $7,
-                endereco = $8,
-                zoneamento = $9,
-                deficiencia = $10,
-                laudo_deficiencia_path = $11,
-                comprovante_endereco_path = $12,
-                latitude = $13,
-                longitude = $14,
-                observacoes = $15,
-                criterio_direito = $16
-            WHERE id = $17
-        `;
-        const values = [
-            nome_responsavel,
-            cpf_responsavel,
-            celular_responsavel,
-            id_matricula_aluno,
-            escola_id ? parseInt(escola_id, 10) : null,
-            cep,
-            numero,
-            endStr || null,
-            zoneamentoBool,
-            deficienciaBool,
-            laudoDeficienciaPath,
-            comprovanteEnderecoPath,
-            latitude ? parseFloat(latitude) : null,
-            longitude ? parseFloat(longitude) : null,
-            observacoes || null,
-            criterio_direito || null,
-            parseInt(id, 10),
-        ];
-
-        await pool.query(updateQuery, values);
-        return res.json({ success: true, message: 'Solicitação atualizada com sucesso!' });
-    } catch (error) {
-        console.error('Erro ao atualizar solicitação:', error);
-        return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
-});
+);
 
-// ====================================================================================
-// EXCLUIR SOLICITAÇÃO (DELETE /api/cocessao-rota/:id)
-// ====================================================================================
+// Excluir solicitação
 app.delete('/api/cocessao-rota/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -2879,9 +2810,8 @@ app.delete('/api/cocessao-rota/:id', async (req, res) => {
 });
 
 // ====================================================================================
-//                              MEMORANDOS
+// MEMORANDOS
 // ====================================================================================
-
 app.get('/api/memorandos', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM memorandos ORDER BY data_criacao DESC');
@@ -2895,9 +2825,7 @@ app.get('/api/memorandos', async (req, res) => {
     }
 });
 
-// =======================================
-// ENDPOINT: CRIAR MEMORANDO (ATUALIZADO)
-// =======================================
+// Criar memorando
 app.post('/api/memorandos/cadastrar', memorandoUpload.none(), async (req, res) => {
     const { tipo_memorando, destinatario, corpo } = req.body;
 
@@ -2912,11 +2840,11 @@ app.post('/api/memorandos/cadastrar', memorandoUpload.none(), async (req, res) =
 
     try {
         const insertQuery = `
-            INSERT INTO memorandos
-            (tipo_memorando, destinatario, corpo, data_criacao)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id;
-        `;
+      INSERT INTO memorandos
+      (tipo_memorando, destinatario, corpo, data_criacao)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id;
+    `;
         const values = [tipo_memorando, destinatario, corpo, data_criacao];
         const result = await pool.query(insertQuery, values);
 
@@ -2941,7 +2869,7 @@ app.post('/api/memorandos/cadastrar', memorandoUpload.none(), async (req, res) =
     }
 });
 
-
+// Gerar DOCX memorando
 app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
     const { id } = req.params;
     try {
@@ -2951,19 +2879,15 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
         }
         const memorando = result.rows[0];
 
-        // Importes do docx
-
         const fs = require('fs');
-        const path = require('path');
 
-        // Função auxiliar para converter arquivo em Base64
+        // Função auxiliar p/ base64
         function loadBase64(filePath) {
             if (!fs.existsSync(filePath)) return null;
             const file = fs.readFileSync(filePath);
             return Buffer.from(file).toString('base64');
         }
 
-        // Carregar as imagens
         const logo1Path = path.join(__dirname, 'public', 'assets', 'img', 'logo_memorando1.png');
         const separadorPath = path.join(__dirname, 'public', 'assets', 'img', 'memorando_separador.png');
         const logo2Path = path.join(__dirname, 'public', 'assets', 'img', 'memorando_logo2.png');
@@ -2972,11 +2896,8 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
         const separadorBase64 = loadBase64(separadorPath);
         const logo2Base64 = loadBase64(logo2Path);
 
-        // Cria o Header (cabeçalho)
+        // Cabeçalhos e rodapé
         const headerChildren = [];
-
-        // (A) Logo1 à esquerda (docx não faz posicionamento absoluto,
-        // mas podemos inserir imagem e depois texto no mesmo parágrafo ou em parágrafos diferentes)
         if (logo1Base64) {
             headerChildren.push(
                 new Paragraph({
@@ -2989,8 +2910,6 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
                 })
             );
         }
-
-        // (B) Texto à direita (podemos usar outro Parágrafo, com alignment RIGHT)
         headerChildren.push(
             new Paragraph({
                 alignment: AlignmentType.RIGHT,
@@ -2998,13 +2917,11 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
                     new TextRun({
                         text: 'ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO',
                         bold: true,
-                        size: 22, // ~11pt
+                        size: 22,
                     }),
                 ],
             })
         );
-
-        // (C) Separador (centralizado)
         if (separadorBase64) {
             headerChildren.push(
                 new Paragraph({
@@ -3019,10 +2936,7 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
             );
         }
 
-        // Cria o Footer (rodapé)
         const footerChildren = [];
-
-        // (D) Separador no rodapé, novamente
         if (separadorBase64) {
             footerChildren.push(
                 new Paragraph({
@@ -3036,8 +2950,6 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
                 })
             );
         }
-
-        // (E) Logo2 centralizado
         if (logo2Base64) {
             footerChildren.push(
                 new Paragraph({
@@ -3051,23 +2963,20 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
                 })
             );
         }
-
-        // (F) Texto do rodapé
         footerChildren.push(
             new Paragraph({
                 alignment: AlignmentType.CENTER,
                 children: [
                     new TextRun({
                         text: 'SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED\nRua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA\nTelefone: (94) 99293-4500',
-                        size: 20, // ~10pt
+                        size: 20,
                     }),
                 ],
             })
         );
 
-        // Cria o corpo (conteúdo principal da "section")
+        // Corpo
         const docBody = [];
-        // Título
         docBody.push(
             new Paragraph({
                 heading: HeadingLevel.HEADING_2,
@@ -3076,15 +2985,12 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
                     new TextRun({
                         text: `MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA DE EDUCACAO`,
                         bold: true,
-                        size: 24, // ~12pt
+                        size: 24,
                     }),
                 ],
             })
         );
-
-        docBody.push(new Paragraph({ text: '' })); // espaçamento
-
-        // A / Assunto
+        docBody.push(new Paragraph({ text: '' }));
         docBody.push(
             new Paragraph({
                 alignment: AlignmentType.JUSTIFIED,
@@ -3112,8 +3018,6 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
             })
         );
         docBody.push(new Paragraph({ text: '' }));
-
-        // Assinatura
         docBody.push(
             new Paragraph({
                 alignment: AlignmentType.JUSTIFIED,
@@ -3140,49 +3044,39 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
             })
         );
 
-        // Monta o documento final
         const doc = new Document({
             sections: [
                 {
                     headers: {
-                        default: new Header({
-                            children: headerChildren,
-                        }),
+                        default: new Header({ children: headerChildren }),
                     },
                     footers: {
-                        default: new Footer({
-                            children: footerChildren,
-                        }),
+                        default: new Footer({ children: footerChildren }),
                     },
                     children: docBody,
                 },
             ],
         });
 
-        // Gera o buffer docx
         const { Packer } = require('docx');
         const buffer = await Packer.toBuffer(doc);
 
-        // Retorna como arquivo
         res.setHeader('Content-Disposition', `attachment; filename=memorando_${id}.docx`);
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
         return res.send(buffer);
-
     } catch (error) {
         console.error('Erro ao gerar DOCX:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro ao gerar .docx do memorando.'
+            message: 'Erro ao gerar .docx do memorando.',
         });
     }
 });
 
-
-
-
-// ==========================================
-// ENDPOINT: OBTER MEMORANDO (VISUALIZAR)
-// ==========================================
+// Obter memorando (visualizar)
 app.get('/api/memorandos/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -3191,24 +3085,21 @@ app.get('/api/memorandos/:id', async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: 'Memorando não encontrado.'
+                message: 'Memorando não encontrado.',
             });
         }
-
-        // Retorna o memorando em JSON para exibir no front-end
         return res.json({
             success: true,
-            memorando: result.rows[0]
+            memorando: result.rows[0],
         });
     } catch (error) {
         console.error('Erro ao buscar memorando:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro interno do servidor.'
+            message: 'Erro interno do servidor.',
         });
     }
 });
-
 
 app.delete('/api/memorandos/:id', async (req, res) => {
     const { id } = req.params;
@@ -3242,29 +3133,18 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
         }
         const memorando = result.rows[0];
 
-        const PDFDocument = require('pdfkit');
         const doc = new PDFDocument({ size: 'A4', margin: 50 });
-
         res.setHeader('Content-Disposition', `inline; filename=memorando_${id}.pdf`);
         res.setHeader('Content-Type', 'application/pdf');
         doc.pipe(res);
 
-        // ----------------------------
-        // 1) SALVA POSIÇÃO INICIAL
-        // ----------------------------
-        doc.save();
-
-        // ----------------------------
-        // 2) LOGO À ESQUERDA (absoluto)
-        // ----------------------------
+        // LOGO ESQUERDA
         const logoPath = path.join(__dirname, 'public', 'assets', 'img', 'logo_memorando1.png');
         if (fs.existsSync(logoPath)) {
             doc.image(logoPath, 50, 20, { width: 60 });
         }
 
-        // ----------------------------
-        // 3) TEXTO À DIREITA (absoluto)
-        // ----------------------------
+        // TEXTO DIREITA
         doc.fontSize(11)
             .font('Helvetica-Bold')
             .text(
@@ -3276,38 +3156,27 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
                 { width: 300, align: 'right' }
             );
 
-        // ----------------------------
-        // 4) SEPARADOR CENTRALIZADO (TOPO)
-        // ----------------------------
+        // SEPARADOR
         const separadorPath = path.join(__dirname, 'public', 'assets', 'img', 'memorando_separador.png');
         if (fs.existsSync(separadorPath)) {
             const separadorX = (doc.page.width - 510) / 2;
             const separadorY = 90;
-            doc.image(separadorPath, separadorX, separadorY, {
-                width: 510
-            });
+            doc.image(separadorPath, separadorX, separadorY, { width: 510 });
         }
 
-        // ----------------------------
-        // 5) RESTAURA POSIÇÃO CURSOR
-        // ----------------------------
         doc.restore();
         doc.y = 130;
         doc.x = 50;
 
-        // ----------------------------
-        // 6) TÍTULO MEMORANDO
-        // ----------------------------
+        // TÍTULO
         doc.fontSize(12)
             .font('Helvetica-Bold')
             .text(`MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA DE EDUCACAO`, {
-                align: 'justify'
+                align: 'justify',
             })
             .moveDown();
 
-        // ----------------------------
-        // 7) CORPO DO TEXTO
-        // ----------------------------
+        // CORPO
         doc.fontSize(12)
             .font('Helvetica')
             .text(`A: ${memorando.destinatario}`, { align: 'justify' })
@@ -3318,17 +3187,12 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
             .text(memorando.corpo, { align: 'justify' })
             .moveDown();
 
-        // ----------------------------
-        // VERIFICA SE ESPAÇO É SUFICIENTE P/ ASSINATURA
-        // ----------------------------
+        // ESPAÇO E ASSINATURA
         const spaceNeededForSignature = 100;
         if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
             doc.addPage();
         }
 
-        // ----------------------------
-        // 8) ASSINATURA FIXA A ~1CM ACIMA DO RODAPÉ
-        // ----------------------------
         const signatureY = doc.page.height - 270;
         doc.y = signatureY;
         doc.x = 50;
@@ -3340,12 +3204,9 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
             .text('Gestor de Transporte Escolar', { align: 'center' })
             .text('Portaria 118/2023 - GP', { align: 'center' });
 
-        // ========================================
-        // 9) RODAPÉ
-        // ========================================
+        // RODAPÉ
         const footerSepX = (doc.page.width - 510) / 2;
         const footerSepY = doc.page.height - 160;
-
         if (fs.existsSync(separadorPath)) {
             doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
         }
@@ -3359,41 +3220,32 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
 
         doc.fontSize(10)
             .font('Helvetica')
-            .text(
-                'SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED',
-                50,
-                doc.page.height - 85,
-                { width: doc.page.width - 100, align: 'center' }
-            )
-            .text(
-                'Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA',
-                { align: 'center' }
-            )
-            .text(
-                'Telefone: (94) 99293-4500',
-                { align: 'center' }
-            );
+            .text('SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED', 50, doc.page.height - 85, {
+                width: doc.page.width - 100,
+                align: 'center',
+            })
+            .text('Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA', {
+                align: 'center',
+            })
+            .text('Telefone: (94) 99293-4500', { align: 'center' });
 
         doc.end();
     } catch (error) {
         console.error('Erro ao gerar PDF:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro ao gerar PDF.'
+            message: 'Erro ao gerar PDF.',
         });
     }
 });
 
-
-// Exemplo de rota de importação (Node + Express + pg)
+// Import alunos ativos
 app.post('/api/import-alunos-ativos', async (req, res) => {
     try {
         const { alunos, escolaId } = req.body;
         if (!alunos || !Array.isArray(alunos)) {
             return res.json({ success: false, message: 'Dados inválidos.' });
         }
-
-        // Caso precise validar se a escola existe:
         if (!escolaId) {
             return res.json({ success: false, message: 'É necessário informar uma escola.' });
         }
@@ -3419,7 +3271,7 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
                 numero_telefone,
                 filiacao_2,
                 RESPONSAVEL,
-                deficiencia
+                deficiencia,
             } = aluno;
 
             let defArray = [];
@@ -3428,20 +3280,22 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
                     defArray = JSON.parse(deficiencia);
                     if (!Array.isArray(defArray)) defArray = [];
                 }
-            } catch (e) {
+            } catch {
                 defArray = [];
             }
 
             await pool.query(
                 `INSERT INTO alunos_ativos(
-            id_matricula, escola_id, ano, modalidade, formato_letivo, turma, pessoa_nome, cpf,
-            transporte_escolar_poder_publico, cep, bairro, filiacao_1, numero_telefone, filiacao_2,
-            responsavel, deficiencia
-          )
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+          id_matricula, escola_id, ano, modalidade, formato_letivo, turma,
+          pessoa_nome, cpf, transporte_escolar_poder_publico, cep, bairro,
+          filiacao_1, numero_telefone, filiacao_2, responsavel, deficiencia
+        )
+        VALUES ($1, $2, $3, $4, $5, $6,
+                $7, $8, $9, $10, $11,
+                $12, $13, $14, $15, $16)`,
                 [
                     id_matricula || null,
-                    escolaId,  // <<< associando todos os alunos à mesma escola
+                    escolaId,
                     ANO || null,
                     MODALIDADE || null,
                     FORMATO_LETIVO || null,
@@ -3455,7 +3309,7 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
                     numero_telefone || null,
                     filiacao_2 || null,
                     RESPONSAVEL || null,
-                    defArray
+                    defArray,
                 ]
             );
         }
@@ -3467,17 +3321,15 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
     }
 });
 
-
 app.get('/api/alunos-ativos', async (req, res) => {
     try {
         const query = `
-        SELECT a.*,
-               e.nome AS escola_nome
-        FROM alunos_ativos a
-        LEFT JOIN escolas e 
-          ON e.id = a.escola_id
-        ORDER BY a.id DESC
-      `;
+      SELECT a.*,
+             e.nome AS escola_nome
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      ORDER BY a.id DESC
+    `;
         const result = await pool.query(query);
         return res.json(result.rows);
     } catch (err) {
@@ -3486,11 +3338,9 @@ app.get('/api/alunos-ativos', async (req, res) => {
     }
 });
 
-
-// ====================================================================================
-//                              LISTEN (FINAL)
-// ====================================================================================
-
+// --------------------------------------------------------------------------------
+// LISTEN (FINAL)
+// --------------------------------------------------------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
