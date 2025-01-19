@@ -21,8 +21,8 @@ const PDFDocument = require('pdfkit');
 
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --------------------------------------------------------------------------------
@@ -3250,6 +3250,107 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
             success: false,
             message: 'Erro ao gerar PDF.'
         });
+    }
+});
+
+// Exemplo de rota de importação (Node + Express + pg)
+app.post('/api/import-alunos-ativos', async (req, res) => {
+    try {
+        const { alunos, escolaId } = req.body;
+        if (!alunos || !Array.isArray(alunos)) {
+            return res.json({ success: false, message: 'Dados inválidos.' });
+        }
+
+        // Caso precise validar se a escola existe:
+        if (!escolaId) {
+            return res.json({ success: false, message: 'É necessário informar uma escola.' });
+        }
+        const buscaEscola = await pool.query(`SELECT id FROM escolas WHERE id = $1`, [escolaId]);
+        if (buscaEscola.rows.length === 0) {
+            return res.json({ success: false, message: 'Escola não encontrada.' });
+        }
+
+        for (const aluno of alunos) {
+            const {
+                id_matricula,
+                UNIDADE_ENSINO,
+                ANO,
+                MODALIDADE,
+                FORMATO_LETIVO,
+                TURMA,
+                pessoa_nome,
+                cpf,
+                transporte_escolar_poder_publico,
+                cep,
+                bairro,
+                filiacao_1,
+                numero_telefone,
+                filiacao_2,
+                RESPONSAVEL,
+                deficiencia
+            } = aluno;
+
+            let defArray = [];
+            try {
+                if (typeof deficiencia === 'string') {
+                    defArray = JSON.parse(deficiencia);
+                    if (!Array.isArray(defArray)) defArray = [];
+                }
+            } catch (e) {
+                defArray = [];
+            }
+
+            await pool.query(
+                `INSERT INTO alunos_ativos(
+            id_matricula, escola_id, ano, modalidade, formato_letivo, turma, pessoa_nome, cpf,
+            transporte_escolar_poder_publico, cep, bairro, filiacao_1, numero_telefone, filiacao_2,
+            responsavel, deficiencia
+          )
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+                [
+                    id_matricula || null,
+                    escolaId,  // <<< associando todos os alunos à mesma escola
+                    ANO || null,
+                    MODALIDADE || null,
+                    FORMATO_LETIVO || null,
+                    TURMA || null,
+                    pessoa_nome || null,
+                    cpf || null,
+                    transporte_escolar_poder_publico || null,
+                    cep || null,
+                    bairro || null,
+                    filiacao_1 || null,
+                    numero_telefone || null,
+                    filiacao_2 || null,
+                    RESPONSAVEL || null,
+                    defArray
+                ]
+            );
+        }
+
+        return res.json({ success: true, message: 'Alunos importados com sucesso!' });
+    } catch (err) {
+        console.error(err);
+        return res.json({ success: false, message: 'Erro ao importar os alunos.' });
+    }
+});
+
+
+app.get('/api/alunos-ativos', async (req, res) => {
+    try {
+        const query = `
+        SELECT a.*,
+               e.nome AS escola_nome
+        FROM alunos_ativos a
+        LEFT JOIN escolas e 
+          ON e.id = a.escola_id
+        ORDER BY a.id DESC
+      `;
+        const result = await pool.query(query);
+        return res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: 'Erro ao buscar alunos.' });
     }
 });
 

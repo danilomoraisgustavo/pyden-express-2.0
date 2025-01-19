@@ -341,3 +341,24 @@ CREATE TABLE IF NOT EXISTS memorandos (
   quantidade_litros INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE IF NOT EXISTS alunos_ativos (
+  id SERIAL PRIMARY KEY,
+  id_matricula INTEGER,
+  escola_id INTEGER REFERENCES escolas(id),
+  ano INTEGER,
+  modalidade VARCHAR(255),
+  formato_letivo VARCHAR(255),
+  turma VARCHAR(255),
+  pessoa_nome VARCHAR(255),
+  cpf VARCHAR(50),
+  transporte_escolar_poder_publico VARCHAR(255),
+  cep VARCHAR(50),
+  bairro VARCHAR(255),
+  filiacao_1 VARCHAR(255),
+  numero_telefone VARCHAR(50),
+  filiacao_2 VARCHAR(255),
+  responsavel VARCHAR(255),
+  deficiencia TEXT[]
+);
