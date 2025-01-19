@@ -1,3 +1,4 @@
+require('dotenv').config(); // Importante: deve ser chamado antes de usar as variáveis
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -40,14 +41,10 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors({ origin: '*' }));
 
 // --------------------------------------------------------------------------------
-// CONFIGURAÇÃO DO BANCO DE DADOS (PostgreSQL)
+// CONFIGURAÇÃO DO BANCO DE DADOS (PostgreSQL) usando .env
 // --------------------------------------------------------------------------------
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'pyden_express',
-    password: 'DeD-140619',
-    port: 5430,
+    connectionString: process.env.DATABASE_URL,
 });
 
 // --------------------------------------------------------------------------------
@@ -59,12 +56,12 @@ app.use(
             pool: pool,
             tableName: 'session',
         }),
-        secret: 'DeD-140619', // Troque por algo seguro em produção
+        secret: process.env.SESSION_SECRET || 'fallback-secret',
         resave: false,
         saveUninitialized: false,
         cookie: {
             maxAge: 24 * 60 * 60 * 1000, // 24 horas
-            secure: false, // Em produção, usar true se for HTTPS
+            secure: false, // Em produção, use true se for HTTPS
         },
     })
 );
