@@ -634,7 +634,7 @@
             </div>
           </div>
 
-          <!-- TABELA DE FILTROS E ALUNOS -->
+          <!-- TABELA DE ALUNOS -->
           <div class="row mt-4">
             <div class="col-md-12">
               <div class="card">
@@ -642,89 +642,6 @@
                   <h4 class="card-title">Alunos Cadastrados</h4>
                 </div>
                 <div class="card-body">
-                  <!-- FILTROS (DUAS/TRÊS LINHAS, 4 SELECTS POR LINHA) -->
-                  <div class="row mb-3">
-                    <div class="col-md-3">
-                      <label for="filterAno" class="form-label">Ano</label>
-                      <select id="filterAno" class="form-select filter-select">
-                        <option value="">Todos</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label for="filterModalidade" class="form-label">Modalidade</label>
-                      <select id="filterModalidade" class="form-select filter-select">
-                        <option value="">Todas</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label for="filterTurma" class="form-label">Turma</label>
-                      <select id="filterTurma" class="form-select filter-select">
-                        <option value="">Todas</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label for="filterEscola" class="form-label">Escola</label>
-                      <select id="filterEscola" class="form-select filter-select">
-                        <option value="">Todas</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- 2ª LINHA DE FILTROS -->
-                  <div class="row mb-3">
-                    <div class="col-md-3">
-                      <label for="filterCPF" class="form-label">CPF</label>
-                      <select id="filterCPF" class="form-select filter-select">
-                        <option value="">Todos</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label for="filterBairro" class="form-label">Bairro</label>
-                      <select id="filterBairro" class="form-select filter-select">
-                        <option value="">Todos</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label for="filterResponsavel" class="form-label">Responsável</label>
-                      <select id="filterResponsavel" class="form-select filter-select">
-                        <option value="">Todos</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label for="filterDeficiencia" class="form-label">Deficiência</label>
-                      <select id="filterDeficiencia" class="form-select filter-select">
-                        <option value="">Todas</option>
-                        <option value="Sim">Sim</option>
-                        <option value="Nao">Não</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- 3ª LINHA DE FILTROS -->
-                  <div class="row mb-3">
-                    <div class="col-md-3">
-                      <label for="filterFiliacao1" class="form-label">Filiação 1</label>
-                      <select id="filterFiliacao1" class="form-select filter-select">
-                        <option value="">Todos</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label for="filterFiliacao2" class="form-label">Filiação 2</label>
-                      <select id="filterFiliacao2" class="form-select filter-select">
-                        <option value="">Todos</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label for="filterTransporte" class="form-label">Transp. Escolar</label>
-                      <select id="filterTransporte" class="form-select filter-select">
-                        <option value="">Todos</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <!-- espaço vazio ou outro filtro se desejar -->
-                    </div>
-                  </div>
-
                   <div class="table-responsive">
                     <table id="alunos-table" class="display table table-striped table-hover">
                       <thead>
@@ -892,6 +809,7 @@
         escolaId: escolaIdSelecionada,
         alunos: dadosXLSX
       };
+
       fetch('/api/import-alunos-ativos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -920,7 +838,6 @@
         .then(data => {
           alunosData = data;
           popularTabela(alunosData);
-          preencherFiltros(alunosData);
         })
         .catch(err => {
           console.error(err);
@@ -936,25 +853,25 @@
           ? JSON.stringify(item.deficiencia)
           : item.deficiencia || '';
         const row = `
-            <tr>
-              <td>${item.id_matricula || ''}</td>
-              <td>${item.escola_nome || ''}</td>
-              <td>${item.ano || ''}</td>
-              <td>${item.modalidade || ''}</td>
-              <td>${item.formato_letivo || ''}</td>
-              <td>${item.turma || ''}</td>
-              <td>${item.pessoa_nome || ''}</td>
-              <td>${item.cpf || ''}</td>
-              <td>${item.transporte_escolar_poder_publico || ''}</td>
-              <td>${item.cep || ''}</td>
-              <td>${item.bairro || ''}</td>
-              <td>${item.filiacao_1 || ''}</td>
-              <td>${item.numero_telefone || ''}</td>
-              <td>${item.filiacao_2 || ''}</td>
-              <td>${item.responsavel || ''}</td>
-              <td>${defString}</td>
-            </tr>
-          `;
+          <tr>
+            <td>${item.id_matricula || ''}</td>
+            <td>${item.escola_nome || ''}</td>
+            <td>${item.ano || ''}</td>
+            <td>${item.modalidade || ''}</td>
+            <td>${item.formato_letivo || ''}</td>
+            <td>${item.turma || ''}</td>
+            <td>${item.pessoa_nome || ''}</td>
+            <td>${item.cpf || ''}</td>
+            <td>${item.transporte_escolar_poder_publico || ''}</td>
+            <td>${item.cep || ''}</td>
+            <td>${item.bairro || ''}</td>
+            <td>${item.filiacao_1 || ''}</td>
+            <td>${item.numero_telefone || ''}</td>
+            <td>${item.filiacao_2 || ''}</td>
+            <td>${item.responsavel || ''}</td>
+            <td>${defString}</td>
+          </tr>
+        `;
         tbody.append(row);
       });
 
@@ -985,107 +902,11 @@
       });
     }
 
-    function preencherFiltros(alunos) {
-      const anos = [...new Set(alunos.map(a => a.ano).filter(a => a))];
-      const modalidades = [...new Set(alunos.map(a => a.modalidade).filter(a => a))];
-      const turmas = [...new Set(alunos.map(a => a.turma).filter(a => a))];
-      const escolasNomes = [...new Set(alunos.map(a => a.escola_nome).filter(a => a))];
-      const cpfs = [...new Set(alunos.map(a => a.cpf).filter(a => a))];
-      const bairros = [...new Set(alunos.map(a => a.bairro).filter(a => a))];
-      const responsaveis = [...new Set(alunos.map(a => a.responsavel).filter(a => a))];
-      const filiacao1 = [...new Set(alunos.map(a => a.filiacao_1).filter(a => a))];
-      const filiacao2 = [...new Set(alunos.map(a => a.filiacao_2).filter(a => a))];
-      const transporte = [...new Set(alunos.map(a => a.transporte_escolar_poder_publico).filter(a => a))];
-
-      const filterAno = document.getElementById('filterAno');
-      const filterModalidade = document.getElementById('filterModalidade');
-      const filterTurma = document.getElementById('filterTurma');
-      const filterEscola = document.getElementById('filterEscola');
-
-      const filterCPF = document.getElementById('filterCPF');
-      const filterBairro = document.getElementById('filterBairro');
-      const filterResponsavel = document.getElementById('filterResponsavel');
-      const filterDeficiencia = document.getElementById('filterDeficiencia');
-
-      const filterFiliacao1 = document.getElementById('filterFiliacao1');
-      const filterFiliacao2 = document.getElementById('filterFiliacao2');
-      const filterTransporte = document.getElementById('filterTransporte');
-
-      function preencherSelect(select, values, textoPadrao) {
-        select.innerHTML = `<option value="">${textoPadrao}</option>`;
-        values.forEach(v => {
-          const opt = document.createElement('option');
-          opt.value = v;
-          opt.textContent = v;
-          select.appendChild(opt);
-        });
-      }
-
-      preencherSelect(filterAno, anos, 'Todos');
-      preencherSelect(filterModalidade, modalidades, 'Todas');
-      preencherSelect(filterTurma, turmas, 'Todas');
-      preencherSelect(filterEscola, escolasNomes, 'Todas');
-      preencherSelect(filterCPF, cpfs, 'Todos');
-      preencherSelect(filterBairro, bairros, 'Todos');
-      preencherSelect(filterResponsavel, responsaveis, 'Todos');
-      // filterDeficiencia já tem Sim/Não; não alterar, mas poderia se quiser filtrar dinamicamente
-      preencherSelect(filterFiliacao1, filiacao1, 'Todos');
-      preencherSelect(filterFiliacao2, filiacao2, 'Todos');
-      preencherSelect(filterTransporte, transporte, 'Todos');
-    }
-
-    function filtrarTabela() {
-      const ano = $('#filterAno').val();
-      const modalidade = $('#filterModalidade').val();
-      const turma = $('#filterTurma').val();
-      const escola = $('#filterEscola').val();
-
-      const cpf = $('#filterCPF').val();
-      const bairro = $('#filterBairro').val();
-      const responsavel = $('#filterResponsavel').val();
-      const deficiencia = $('#filterDeficiencia').val();
-      const filiacao1 = $('#filterFiliacao1').val();
-      const filiacao2 = $('#filterFiliacao2').val();
-      const transporte = $('#filterTransporte').val();
-
-      const filtrados = alunosData.filter(item => {
-        if (ano && item.ano != ano) return false;
-        if (modalidade && item.modalidade != modalidade) return false;
-        if (turma && item.turma != turma) return false;
-        if (escola && item.escola_nome != escola) return false;
-
-        if (cpf && item.cpf != cpf) return false;
-        if (bairro && item.bairro != bairro) return false;
-        if (responsavel && item.responsavel != responsavel) return false;
-
-        if (deficiencia) {
-          // Se 'Sim' -> item.deficiencia != '[]'
-          // Se 'Nao' -> item.deficiencia == '[]' ou null
-          if (deficiencia === 'Sim') {
-            // Se deficiencia array e length > 0, considera "sim"
-            const defArr = Array.isArray(item.deficiencia) ? item.deficiencia : [];
-            if (defArr.length === 0) return false;
-          } else if (deficiencia === 'Nao') {
-            const defArr = Array.isArray(item.deficiencia) ? item.deficiencia : [];
-            if (defArr.length > 0) return false;
-          }
-        }
-
-        if (filiacao1 && item.filiacao_1 != filiacao1) return false;
-        if (filiacao2 && item.filiacao_2 != filiacao2) return false;
-        if (transporte && item.transporte_escolar_poder_publico != transporte) return false;
-
-        return true;
-      });
-      popularTabela(filtrados);
-    }
-
     $(document).ready(function () {
       carregarEscolas();
       carregarAlunosBD();
       $("#fileInput").on("change", handleFileImport);
       $("#importarBtn").on("click", enviarImportacao);
-      $(document).on('change', '.filter-select', filtrarTabela);
     });
   </script>
 </body>
