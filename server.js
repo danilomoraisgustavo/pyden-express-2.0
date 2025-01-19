@@ -14,7 +14,7 @@ const { v4: uuidv4 } = require('uuid');
 const archiver = require('archiver');
 const { Parser } = require('xml2js');
 const JSZip = require('jszip');
-const { DOMParser } = require('xmldom');
+const { DOMParser } = require('@xmldom/xmldom');
 const tj = require('@mapbox/togeojson');
 
 const {
