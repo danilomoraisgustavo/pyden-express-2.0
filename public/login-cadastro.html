@@ -1,363 +1,309 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Login e Cadastro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
+    <title>Login e Cadastro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Estilos da página de login/cadastro -->
-  <link rel="stylesheet" href="/assets/css/login.css" />
+    <!-- Estilos da página de login/cadastro -->
+    <link rel="stylesheet" href="/assets/css/login.css" />
 
-  <!-- Favicon -->
-  <link rel="shortcut icon" href="/assets/img/favicon.png" type="image/x-icon" />
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/assets/img/favicon.png" type="image/x-icon" />
 
-  <!-- Ícones e fontes -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-  />
+    <!-- Ícones e fontes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
 
-  <!-- Toastify (para notificações) -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"
-  />
+    <!-- Toastify (para notificações) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
 </head>
-<body>
-  <div class="container">
-    <div class="forms-container">
-      <div class="signin-signup">
 
-        <!-- =====================
+<body>
+    <div class="container">
+        <div class="forms-container">
+            <div class="signin-signup">
+
+                <!-- =====================
              FORMULÁRIO DE LOGIN
         ====================== -->
-        <form id="loginForm" class="sign-in-form">
-          <img src="/assets/img/pydenadmin/logo_light.png" alt="logo" class="form-logo" />
-          <h2 class="title">Login</h2>
-          <div class="input-field">
-            <i class="fas fa-envelope"></i>
-            <input
-              type="email"
-              name="email"
-              autocomplete="email"
-              placeholder="E-mail"
-              required
-            />
-          </div>
-          <div class="input-field">
-            <i class="fas fa-lock"></i>
-            <input
-              type="password"
-              name="senha"
-              autocomplete="current-password"
-              placeholder="Senha"
-              id="id_password"
-              required
-            />
-            <i
-              class="far fa-eye"
-              id="togglePassword"
-              style="cursor: pointer;"
-            ></i>
-          </div>
-          <div>
-            <a class="pass" href="/politicaprivacidade">Política de Privacidade</a> |
-            <a class="pass" href="/termos">Termos de Serviço</a>
-          </div>
-          <input type="submit" value="Entrar" class="btn solid" />
-        </form>
+                <form id="loginForm" class="sign-in-form">
+                    <img src="/assets/img/pydenadmin/logo_light.png" alt="logo" class="form-logo" />
+                    <h2 class="title">Login</h2>
+                    <div class="input-field">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" autocomplete="email" placeholder="E-mail" required />
+                    </div>
+                    <div class="input-field">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="senha" autocomplete="current-password" placeholder="Senha"
+                            id="id_password" required />
+                        <i class="far fa-eye" id="togglePassword" style="cursor: pointer;"></i>
+                    </div>
+                    <div>
+                        <a class="pass" href="/politicaprivacidade">Política de Privacidade</a> |
+                        <a class="pass" href="/termos">Termos de Serviço</a>
+                    </div>
+                    <input type="submit" value="Entrar" class="btn solid" />
+                </form>
 
-        <!-- =====================
+                <!-- =====================
              FORMULÁRIO DE CADASTRO
         ====================== -->
-        <form id="signUpForm" class="sign-up-form">
-          <img src="/assets/img/pydenadmin/logo_light.png" alt="logo" class="form-logo" />
-          <h2 class="title">Cadastre-se</h2>
+                <form id="signUpForm" class="sign-up-form">
+                    <img src="/assets/img/pydenadmin/logo_light.png" alt="logo" class="form-logo" />
+                    <h2 class="title">Cadastre-se</h2>
 
-          <div class="input-field">
-            <i class="fas fa-user"></i>
-            <input
-              type="text"
-              name="nome_completo"
-              placeholder="Digite seu nome completo"
-              required
-            />
-          </div>
+                    <div class="input-field">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="nome_completo" placeholder="Digite seu nome completo" required />
+                    </div>
 
-          <div class="input-field">
-            <i class="fas fa-id-card"></i>
-            <input
-              type="text"
-              name="cpf_cnpj"
-              placeholder="Digite CPF ou CNPJ"
-              required
-              id="docInput"
-            />
-          </div>
+                    <div class="input-field">
+                        <i class="fas fa-id-card"></i>
+                        <input type="text" name="cpf_cnpj" placeholder="Digite CPF ou CNPJ" required id="docInput" />
+                    </div>
 
-          <div class="input-field">
-            <i class="fas fa-phone"></i>
-            <input
-              type="text"
-              name="telefone"
-              placeholder="Digite seu Telefone"
-              required
-              id="telInput"
-            />
-          </div>
+                    <div class="input-field">
+                        <i class="fas fa-phone"></i>
+                        <input type="text" name="telefone" placeholder="Digite seu Telefone" required id="telInput" />
+                    </div>
 
-          <div class="input-field">
-            <i class="fas fa-envelope"></i>
-            <input
-              type="email"
-              name="email"
-              placeholder="Endereço de e-mail"
-              required
-            />
-          </div>
+                    <div class="input-field">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" placeholder="Endereço de e-mail" required />
+                    </div>
 
-          <div class="input-field">
-            <i class="fas fa-lock"></i>
-            <input
-              type="password"
-              name="senha"
-              placeholder="Senha"
-              id="id_password2"
-              required
-            />
-            <i class="far fa-eye" id="togglePassword2" style="cursor: pointer;"></i>
-          </div>
+                    <div class="input-field">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="senha" placeholder="Senha" id="id_password2" required />
+                        <i class="far fa-eye" id="togglePassword2" style="cursor: pointer;"></i>
+                    </div>
 
-          <input
-            type="submit"
-            value="Solicitar Cadastro"
-            class="btn solid"
-            style="width: 250px;"
-          />
-        </form>
-      </div>
+                    <input type="submit" value="Solicitar Cadastro" class="btn solid" style="width: 250px;" />
+                </form>
+            </div>
+        </div>
+
+        <div class="panels-container">
+            <div class="panel left-panel">
+                <div class="content">
+                    <h3>Você ainda não tem uma conta?</h3>
+                    <p>Crie agora uma conta para você e desfrute de todos os nossos benefícios</p>
+                    <button class="btn transparent" id="sign-up-btn">Cadastre-se</button>
+                </div>
+            </div>
+            <div class="panel right-panel">
+                <div class="content">
+                    <h3>Já tem uma conta?</h3>
+                    <p>Faça login agora para acessar seus dados</p>
+                    <button class="btn transparent" id="sign-in-btn">Entrar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="panels-container">
-      <div class="panel left-panel">
-        <div class="content">
-          <h3>Você ainda não tem uma conta?</h3>
-          <p>Crie agora uma conta para você e desfrute de todos os nossos benefícios</p>
-          <button class="btn transparent" id="sign-up-btn">Cadastre-se</button>
-        </div>
-      </div>
-      <div class="panel right-panel">
-        <div class="content">
-          <h3>Já tem uma conta?</h3>
-          <p>Faça login agora para acessar seus dados</p>
-          <button class="btn transparent" id="sign-in-btn">Entrar</button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- Toastify e JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/vanilla-masker/build/vanilla-masker.min.js"></script>
 
-  <!-- Toastify e JS -->
-  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://unpkg.com/vanilla-masker/build/vanilla-masker.min.js"></script>
-
-  <script>
-    /******************************************
-     * Função de notificação via Toastify
-     *****************************************/
-    function showToast(type, message) {
-      let bgColor = "linear-gradient(to right, #00b09b, #96c93d)";
-      if (type === "danger" || type === "error") {
-        bgColor = "linear-gradient(to right, #de1f1f, #c40606)";
-      } else if (type === "warning") {
-        bgColor = "linear-gradient(to right, #FFA900, #FF7700)";
-      } else if (type === "info") {
-        bgColor = "linear-gradient(to right, #0080ff, #00c6ff)";
-      }
-
-      Toastify({
-        text: message,
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        style: { background: bgColor },
-      }).showToast();
-    }
-
-    /******************************************
-     * Aplicar máscara CPF/CNPJ
-     *****************************************/
-    function aplicarMascaraCpfCnpj(valor) {
-      const soNumeros = valor.replace(/\D/g, '');
-      if (soNumeros.length <= 11) {
-        return VMasker.toPattern(soNumeros, "999.999.999-99");
-      } else {
-        return VMasker.toPattern(soNumeros, "99.999.999/9999-99");
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-      console.log("DOM loaded: scripts init...");
-
-      /******************************************
-       * Botões para trocar formulário
-       *****************************************/
-      const sign_in_btn = document.querySelector("#sign-in-btn");
-      const sign_up_btn = document.querySelector("#sign-up-btn");
-      const container = document.querySelector(".container");
-
-      if (sign_up_btn) {
-        sign_up_btn.addEventListener("click", () => {
-          container.classList.add("sign-up-mode");
-        });
-      }
-      if (sign_in_btn) {
-        sign_in_btn.addEventListener("click", () => {
-          container.classList.remove("sign-up-mode");
-        });
-      }
-
-      /******************************************
-       * Toggle senhas (olhinho)
-       *****************************************/
-      const togglePasswords = document.querySelectorAll("#togglePassword, #togglePassword2");
-      const passwordElem1 = document.getElementById("id_password");
-      const passwordElem2 = document.getElementById("id_password2");
-
-      togglePasswords.forEach((toggle) => {
-        toggle.addEventListener("click", function () {
-          if (!this || !this.id) return;
-          let targetElem = null;
-          if (this.id === "togglePassword" && passwordElem1) {
-            targetElem = passwordElem1;
-          } else if (this.id === "togglePassword2" && passwordElem2) {
-            targetElem = passwordElem2;
-          }
-          if (targetElem) {
-            const type = targetElem.getAttribute("type") === "password" ? "text" : "password";
-            targetElem.setAttribute("type", type);
-            this.classList.toggle("fa-eye");
-            this.classList.toggle("fa-eye-slash");
-          }
-        });
-      });
-
-      /******************************************
-       * Máscara CPF/CNPJ
-       *****************************************/
-      const docInput = document.getElementById("docInput");
-      if (docInput) {
-        docInput.addEventListener("input", function () {
-          this.value = aplicarMascaraCpfCnpj(this.value);
-        });
-      }
-
-      /******************************************
-       * Máscara TELEFONE
-       *****************************************/
-      const telInput = document.getElementById("telInput");
-      if (telInput) {
-        telInput.addEventListener("input", function () {
-          const onlyNums = this.value.replace(/\D/g, '');
-          this.value = VMasker.toPattern(onlyNums, "(99) 99999-9999");
-        });
-      }
-
-      /******************************************
-       * FORMULÁRIO DE CADASTRO
-       *****************************************/
-      const signUpForm = document.getElementById("signUpForm");
-      if (signUpForm) {
-        signUpForm.addEventListener("submit", function (e) {
-          e.preventDefault();
-          console.log("Cadastro -> submit...");
-          const formData = new FormData(signUpForm);
-          const data = {
-            nome_completo: formData.get("nome_completo"),
-            cpf_cnpj: formData.get("cpf_cnpj"),
-            telefone: formData.get("telefone"),
-            email: formData.get("email"),
-            senha: formData.get("senha"),
-          };
-          console.log("Cadastro -> dados:", data);
-
-          fetch("/api/cadastrar-usuario", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          })
-          .then(response => {
-            console.log("Cadastro -> status:", response.status);
-            return response.json();
-          })
-          .then(res => {
-            console.log("Cadastro -> resposta JSON:", res);
-            if (res.success) {
-              showToast("success", res.message || "Cadastro realizado com sucesso!");
-              signUpForm.reset();
-              container.classList.remove("sign-up-mode");
-            } else {
-              showToast("danger", res.message || "Erro ao cadastrar.");
+    <script>
+        /******************************************
+         * Função de notificação via Toastify
+         *****************************************/
+        function showToast(type, message) {
+            let bgColor = "linear-gradient(to right, #00b09b, #96c93d)";
+            if (type === "danger" || type === "error") {
+                bgColor = "linear-gradient(to right, #de1f1f, #c40606)";
+            } else if (type === "warning") {
+                bgColor = "linear-gradient(to right, #FFA900, #FF7700)";
+            } else if (type === "info") {
+                bgColor = "linear-gradient(to right, #0080ff, #00c6ff)";
             }
-          })
-          .catch(err => {
-            console.error("Erro ao cadastrar:", err);
-            showToast("danger", "Erro interno ao cadastrar usuário!");
-          });
-        });
-      }
 
-      /******************************************
-       * FORMULÁRIO DE LOGIN
-       *****************************************/
-      const loginForm = document.getElementById("loginForm");
-      if (loginForm) {
-        loginForm.addEventListener("submit", function (e) {
-          e.preventDefault();
-          console.log("Login -> submit...");
-          const formData = new FormData(loginForm);
-          const data = {
-            email: formData.get("email"),
-            senha: formData.get("senha"),
-          };
-          console.log("Login -> dados:", data);
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                style: { background: bgColor },
+            }).showToast();
+        }
 
-          fetch("/api/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          })
-          .then(response => {
-            console.log("Login -> status:", response.status);
-            return response.json();
-          })
-          .then(res => {
-            console.log("Login -> resposta JSON:", res);
-            if (res.success) {
-              showToast("success", res.message || "Login bem-sucedido!");
-              // Redireciona
-              window.location.href = res.redirectUrl || "/pages/transporte-escolar/dashboard-escolar.html";
+        /******************************************
+         * Aplicar máscara CPF/CNPJ
+         *****************************************/
+        function aplicarMascaraCpfCnpj(valor) {
+            const soNumeros = valor.replace(/\D/g, '');
+            if (soNumeros.length <= 11) {
+                return VMasker.toPattern(soNumeros, "999.999.999-99");
             } else {
-              showToast("danger", res.message || "Falha no login.");
+                return VMasker.toPattern(soNumeros, "99.999.999/9999-99");
             }
-          })
-          .catch(err => {
-            console.error("Erro ao efetuar login:", err);
-            showToast("danger", "Erro interno ao efetuar login.");
-          });
-        });
-      }
+        }
 
-      console.log("DOM loaded: scripts final...");
-    });
-  </script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("DOM loaded: scripts init...");
+
+            /******************************************
+             * Botões para trocar formulário (login/cadastro)
+             *****************************************/
+            const sign_in_btn = document.querySelector("#sign-in-btn");
+            const sign_up_btn = document.querySelector("#sign-up-btn");
+            const container = document.querySelector(".container");
+
+            if (sign_up_btn) {
+                sign_up_btn.addEventListener("click", () => {
+                    container.classList.add("sign-up-mode");
+                });
+            }
+            if (sign_in_btn) {
+                sign_in_btn.addEventListener("click", () => {
+                    container.classList.remove("sign-up-mode");
+                });
+            }
+
+            /******************************************
+             * Toggle senhas (olhinho)
+             *****************************************/
+            const togglePasswords = document.querySelectorAll("#togglePassword, #togglePassword2");
+            const passwordElem1 = document.getElementById("id_password");
+            const passwordElem2 = document.getElementById("id_password2");
+
+            togglePasswords.forEach((toggle) => {
+                toggle.addEventListener("click", function () {
+                    if (!this || !this.id) return;
+                    let targetElem = null;
+                    if (this.id === "togglePassword" && passwordElem1) {
+                        targetElem = passwordElem1;
+                    } else if (this.id === "togglePassword2" && passwordElem2) {
+                        targetElem = passwordElem2;
+                    }
+                    if (targetElem) {
+                        const type = targetElem.getAttribute("type") === "password" ? "text" : "password";
+                        targetElem.setAttribute("type", type);
+                        this.classList.toggle("fa-eye");
+                        this.classList.toggle("fa-eye-slash");
+                    }
+                });
+            });
+
+            /******************************************
+             * Máscara CPF/CNPJ
+             *****************************************/
+            const docInput = document.getElementById("docInput");
+            if (docInput) {
+                docInput.addEventListener("input", function () {
+                    this.value = aplicarMascaraCpfCnpj(this.value);
+                });
+            }
+
+            /******************************************
+             * Máscara TELEFONE
+             *****************************************/
+            const telInput = document.getElementById("telInput");
+            if (telInput) {
+                telInput.addEventListener("input", function () {
+                    const onlyNums = this.value.replace(/\D/g, '');
+                    this.value = VMasker.toPattern(onlyNums, "(99) 99999-9999");
+                });
+            }
+
+            /******************************************
+             * FORMULÁRIO DE CADASTRO
+             *****************************************/
+            const signUpForm = document.getElementById("signUpForm");
+            if (signUpForm) {
+                signUpForm.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    console.log("Cadastro -> submit...");
+                    const formData = new FormData(signUpForm);
+                    const data = {
+                        nome_completo: formData.get("nome_completo"),
+                        cpf_cnpj: formData.get("cpf_cnpj"),
+                        telefone: formData.get("telefone"),
+                        email: formData.get("email"),
+                        senha: formData.get("senha"),
+                    };
+                    console.log("Cadastro -> dados:", data);
+
+                    fetch("/api/cadastrar-usuario", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data),
+                    })
+                        .then(response => {
+                            console.log("Cadastro -> status:", response.status);
+                            return response.json();
+                        })
+                        .then(res => {
+                            console.log("Cadastro -> resposta JSON:", res);
+                            if (res.success) {
+                                showToast("success", res.message || "Cadastro realizado com sucesso!");
+                                signUpForm.reset();
+                                container.classList.remove("sign-up-mode"); // Volta para tela de login
+                            } else {
+                                showToast("danger", res.message || "Erro ao cadastrar.");
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Erro ao cadastrar:", err);
+                            showToast("danger", "Erro interno ao cadastrar usuário!");
+                        });
+                });
+            }
+
+            /******************************************
+             * FORMULÁRIO DE LOGIN
+             *****************************************/
+            const loginForm = document.getElementById("loginForm");
+            if (loginForm) {
+                loginForm.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    console.log("Login -> submit...");
+                    const formData = new FormData(loginForm);
+                    const data = {
+                        email: formData.get("email"),
+                        senha: formData.get("senha"),
+                    };
+                    console.log("Login -> dados:", data);
+
+                    fetch("/api/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data),
+                    })
+                        .then(response => {
+                            console.log("Login -> status:", response.status);
+                            return response.json();
+                        })
+                        .then(res => {
+                            console.log("Login -> resposta JSON:", res);
+                            if (res.success) {
+                                showToast("success", res.message || "Login bem-sucedido!");
+                                // Redireciona para a página principal
+                                window.location.href = res.redirectUrl || "/pages/transporte-escolar/dashboard-escolar.html";
+                            } else {
+                                showToast("danger", res.message || "Falha no login.");
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Erro ao efetuar login:", err);
+                            showToast("danger", "Erro interno ao efetuar login.");
+                        });
+                });
+            }
+
+            console.log("DOM loaded: scripts final...");
+        });
+    </script>
 </body>
+
 </html>

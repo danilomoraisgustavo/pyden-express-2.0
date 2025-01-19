@@ -363,16 +363,23 @@ CREATE TABLE IF NOT EXISTS alunos_ativos (
   deficiencia TEXT[]
 );
 
+-- ==========================================
+-- CRIAÇÃO DA TABELA "usuarios"
+-- ==========================================
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     nome_completo VARCHAR(255) NOT NULL,
-    cpf VARCHAR(14) NOT NULL,
+    cpf VARCHAR(14),       -- Aceita até 14 dígitos (padrão: xxx.xxx.xxx-xx)
+    cnpj VARCHAR(18),      -- Aceita até 18 dígitos (padrão: xx.xxx.xxx/xxxx-xx)
     telefone VARCHAR(20) NOT NULL,
     email VARCHAR(100) NOT NULL,
     senha VARCHAR(255) NOT NULL,
-    ativo BOOLEAN DEFAULT FALSE,
-    permissoes TEXT
+    init BOOLEAN DEFAULT FALSE,  -- Indica se o usuário está liberado (true/false)
+    permissoes TEXT             -- Se precisar de alguma estrutura de permissões extras
 );
+
+-- (Opcional) criar índice único para não permitir emails duplicados:
+-- CREATE UNIQUE INDEX
 
 CREATE TABLE IF NOT EXISTS session (
   sid varchar NOT NULL COLLATE "default",
@@ -381,3 +388,15 @@ CREATE TABLE IF NOT EXISTS session (
   CONSTRAINT session_pkey PRIMARY KEY (sid)
 );
 CREATE INDEX ON session (expire);
+
+
+CREATE TABLE IF NOT EXISTS notificacoes (
+    id SERIAL PRIMARY KEY,
+    user_id INT,                 -- Quem realizou a ação (FK p/ usuarios.id)
+    acao VARCHAR(50),            -- Ex: "CREATE", "DELETE", "UPDATE"
+    tabela VARCHAR(50),          -- Ex: "zoneamentos", "escolas", etc.
+    registro_id INT,             -- ID do registro afetado
+    mensagem TEXT,               -- Texto descritivo do que ocorreu
+    datahora TIMESTAMP DEFAULT NOW(),
+    is_read BOOLEAN DEFAULT FALSE
+);

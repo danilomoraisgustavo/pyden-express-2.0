@@ -1,7 +1,3 @@
-// ====================================================================================
-// SERVER.JS (versão organizada e final)
-// ====================================================================================
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -77,22 +73,18 @@ app.use(
 // MIDDLEWARE: isAuthenticated (protege rotas e páginas)
 // --------------------------------------------------------------------------------
 function isAuthenticated(req, res, next) {
-    // Verifica se existe userId na sessão
     if (!req.session || !req.session.userId) {
         return res.redirect('/');
     }
-
     // Se usuário for ID 1, é "master"
     if (req.session.userId === 1) {
         return next();
     }
-
     // Caso contrário, verifica se 'init' está true
     pool
         .query('SELECT init FROM usuarios WHERE id = $1', [req.session.userId])
         .then((result) => {
             if (result.rows.length === 0) {
-                // Usuário não encontrado
                 return res.redirect('/');
             }
             const { init } = result.rows[0];
@@ -111,21 +103,16 @@ function isAuthenticated(req, res, next) {
 // --------------------------------------------------------------------------------
 // ARQUIVOS ESTÁTICOS
 // --------------------------------------------------------------------------------
-// Serve /assets de forma livre
 app.use('/assets', express.static(path.join(__dirname, 'public', 'assets')));
-// Serve /pages apenas se autenticado
 app.use('/pages', isAuthenticated, express.static(path.join(__dirname, 'public', 'pages')));
 
 // --------------------------------------------------------------------------------
 // ROTAS PRINCIPAIS
 // --------------------------------------------------------------------------------
-
-// Página raiz: exibe login-cadastro
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/login-cadastro.html'));
 });
 
-// Logout (encerra sessão)
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         res.clearCookie('connect.sid');
@@ -195,27 +182,30 @@ async function convertToGeoJSON(filePath, originalname) {
 }
 
 // --------------------------------------------------------------------------------
-// ROTA: CADASTRAR USUÁRIO (CPF ou CNPJ)
+// ROTA: CADASTRAR USUÁRIO
 // --------------------------------------------------------------------------------
 app.post('/api/cadastrar-usuario', async (req, res) => {
     try {
         const { nome_completo, cpf_cnpj, telefone, email, senha } = req.body;
 
-        // Verificar se email já existe
-        const checkUser = await pool.query('SELECT id FROM usuarios WHERE email = $1 LIMIT 1', [email]);
-        if (checkUser.rows.length > 0) {
+        // 1) Verificar se e-mail já existe
+        const checkEmail = await pool.query(
+            'SELECT id FROM usuarios WHERE email = $1 LIMIT 1',
+            [email]
+        );
+        if (checkEmail.rows.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Este e-mail já está em uso. Tente outro.',
+                message: 'Este e-mail já está em uso. Tente outro.'
             });
         }
 
-        // Limpa pontuação do CPF/CNPJ
+        // 2) Limpa pontuação do CPF/CNPJ
         const docNumeros = (cpf_cnpj || '').replace(/\D/g, '');
         let cpfValue = null;
         let cnpjValue = null;
 
-        // Decide se é CPF (11 dígitos) ou CNPJ (14 dígitos)
+        // 3) Decide se é CPF (11 dígitos) ou CNPJ (14 dígitos)
         if (docNumeros.length === 11) {
             cpfValue = docNumeros;
         } else if (docNumeros.length === 14) {
@@ -223,41 +213,82 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
         } else {
             return res.status(400).json({
                 success: false,
-                message: 'Documento inválido: deve ter 11 dígitos (CPF) ou 14 (CNPJ).',
+                message: 'Documento inválido: deve ter 11 dígitos (CPF) ou 14 (CNPJ).'
             });
         }
 
-        // Criptografa a senha
+        // 4) Verifica se já existe o mesmo CPF ou CNPJ
+        if (cpfValue) {
+            const checkCPF = await pool.query(
+                'SELECT id FROM usuarios WHERE cpf = $1 LIMIT 1',
+                [cpfValue]
+            );
+            if (checkCPF.rows.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Este CPF já está em uso. Tente outro.'
+                });
+            }
+        } else if (cnpjValue) {
+            const checkCNPJ = await pool.query(
+                'SELECT id FROM usuarios WHERE cnpj = $1 LIMIT 1',
+                [cnpjValue]
+            );
+            if (checkCNPJ.rows.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Este CNPJ já está em uso. Tente outro.'
+                });
+            }
+        }
+
+        // 5) Criptografa a senha
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(senha, saltRounds);
 
-        // Insere no banco
+        // 6) Insere no banco (init = FALSE por padrão)
         const insertQuery = `
-      INSERT INTO usuarios (
-        nome_completo, cpf, cnpj, telefone, email, senha, ativo
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id
-    `;
-        const values = [nome_completo, cpfValue, cnpjValue, telefone, email, hashedPassword, true];
+            INSERT INTO usuarios (
+                nome_completo, cpf, cnpj, telefone, email, senha, init
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+        `;
+        const initValue = false;
+        const values = [
+            nome_completo,
+            cpfValue,
+            cnpjValue,
+            telefone,
+            email,
+            hashedPassword,
+            initValue
+        ];
         const result = await pool.query(insertQuery, values);
-
         if (result.rows.length > 0) {
             return res.status(200).json({
                 success: true,
-                message: 'Cadastro realizado com sucesso! Aguarde ativação ou permissões.',
+                message: 'Cadastro realizado com sucesso! Aguarde ativação ou permissões.'
             });
         } else {
             return res.status(500).json({
                 success: false,
-                message: 'Não foi possível cadastrar o usuário (erro interno).',
+                message: 'Não foi possível cadastrar o usuário (erro interno).'
             });
         }
     } catch (error) {
         console.error('Erro ao cadastrar usuário:', error);
+
+        if (error.code === '23505') {
+            return res.status(400).json({
+                success: false,
+                message: 'Violação de exclusividade. Verifique se email/CPF/CNPJ já existe.'
+            });
+        }
+
         return res.status(500).json({
             success: false,
-            message: 'Erro ao cadastrar usuário. Tente novamente.',
+            message: 'Erro ao cadastrar usuário. Tente novamente.'
         });
     }
 });
@@ -268,21 +299,26 @@ app.post('/api/cadastrar-usuario', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     try {
         const { email, senha } = req.body;
-        const userQuery = 'SELECT id, senha, ativo FROM usuarios WHERE email = $1 LIMIT 1';
+        const userQuery = `
+            SELECT id, senha, init
+            FROM usuarios
+            WHERE email = $1
+            LIMIT 1
+        `;
         const result = await pool.query(userQuery, [email]);
 
         if (result.rows.length === 0) {
             return res.status(401).json({
                 success: false,
-                message: 'Usuário não encontrado.',
+                message: 'Usuário não encontrado.'
             });
         }
 
         const usuario = result.rows[0];
-        if (!usuario.ativo) {
+        if (!usuario.init) {
             return res.status(403).json({
                 success: false,
-                message: 'Usuário ainda não está ativo.',
+                message: 'Usuário ainda não está inicializado para acesso.'
             });
         }
 
@@ -290,7 +326,7 @@ app.post('/api/login', async (req, res) => {
         if (!match) {
             return res.status(401).json({
                 success: false,
-                message: 'Senha incorreta.',
+                message: 'Senha incorreta.'
             });
         }
 
@@ -299,13 +335,52 @@ app.post('/api/login', async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Login bem sucedido!',
-            redirectUrl: '/pages/transporte-escolar/dashboard-escolar.html',
+            redirectUrl: '/pages/transporte-escolar/dashboard-escolar.html'
         });
+
     } catch (error) {
         console.error('Erro ao efetuar login:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro interno ao efetuar login.',
+            message: 'Erro interno ao efetuar login.'
+        });
+    }
+});
+
+app.get('/api/usuario-logado', async (req, res) => {
+    try {
+        if (!req.session || !req.session.userId) {
+            return res.json({
+                success: false,
+                message: 'Usuário não está logado.'
+            });
+        }
+        const userQuery = `
+            SELECT nome_completo, email
+            FROM usuarios
+            WHERE id = $1
+            LIMIT 1
+        `;
+        const result = await pool.query(userQuery, [req.session.userId]);
+        if (result.rows.length === 0) {
+            return res.json({
+                success: false,
+                message: 'Usuário não encontrado no banco.'
+            });
+        }
+
+        const usuario = result.rows[0];
+        return res.json({
+            success: true,
+            nome_completo: usuario.nome_completo,
+            email: usuario.email
+        });
+
+    } catch (error) {
+        console.error('Erro ao buscar /api/usuario-logado:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
         });
     }
 });
@@ -319,47 +394,80 @@ app.post('/api/zoneamento/cadastrar', async (req, res) => {
         const geojsonStr = req.body.geojson;
 
         if (!nome || !geojsonStr) {
-            return res.status(400).json({ success: false, message: 'Nome do zoneamento ou GeoJSON não fornecidos.' });
+            return res.status(400).json({
+                success: false,
+                message: 'Nome do zoneamento ou GeoJSON não fornecidos.'
+            });
         }
 
         let geojson;
         try {
             geojson = JSON.parse(geojsonStr);
         } catch (err) {
-            return res.status(400).json({ success: false, message: 'GeoJSON inválido.' });
+            return res.status(400).json({
+                success: false,
+                message: 'GeoJSON inválido.'
+            });
         }
 
         if (!geojson.type || geojson.type !== 'Feature' || !geojson.geometry || geojson.geometry.type !== 'Polygon') {
-            return res.status(400).json({ success: false, message: 'GeoJSON não é um polígono válido.' });
+            return res.status(400).json({
+                success: false,
+                message: 'GeoJSON não é um polígono válido.'
+            });
         }
 
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
         const insertQuery = `
-      INSERT INTO zoneamentos (nome, geom)
-      VALUES($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
-      RETURNING id;
-    `;
+            INSERT INTO zoneamentos (nome, geom)
+            VALUES($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
+            RETURNING id;
+        `;
         const values = [nome, JSON.stringify(geojson.geometry)];
         const result = await pool.query(insertQuery, values);
 
         if (result.rows.length > 0) {
-            res.json({ success: true, message: 'Zoneamento cadastrado com sucesso!', id: result.rows[0].id });
+            const newId = result.rows[0].id;
+            // REGISTRA NOTIFICAÇÃO
+            const mensagem = `Zoneamento criado: ${nome}`;
+            const acao = 'CREATE';
+            const tabela = 'zoneamentos';
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [userId, acao, tabela, newId, mensagem]
+            );
+
+            res.json({
+                success: true,
+                message: 'Zoneamento cadastrado com sucesso!',
+                id: newId
+            });
         } else {
-            res.status(500).json({ success: false, message: 'Erro ao cadastrar zoneamento.' });
+            res.status(500).json({
+                success: false,
+                message: 'Erro ao cadastrar zoneamento.'
+            });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
 app.get('/api/zoneamentos', async (req, res) => {
     try {
         const query = `
-      SELECT
-        id,
-        nome,
-        ST_AsGeoJSON(geom) as geojson
-      FROM zoneamentos;
-    `;
+            SELECT
+                id,
+                nome,
+                ST_AsGeoJSON(geom) as geojson
+            FROM zoneamentos;
+        `;
         const result = await pool.query(query);
         const zoneamentos = result.rows.map((row) => ({
             id: row.id,
@@ -368,23 +476,59 @@ app.get('/api/zoneamentos', async (req, res) => {
         }));
         res.json(zoneamentos);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
 app.delete('/api/zoneamento/:id', async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
+        // Buscar o nome do zoneamento antes de deletar (para log)
+        const busca = await pool.query('SELECT nome FROM zoneamentos WHERE id = $1', [id]);
+        if (busca.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Zoneamento não encontrado.'
+            });
+        }
+        const nomeZoneamento = busca.rows[0].nome;
+
         const deleteQuery = 'DELETE FROM zoneamentos WHERE id = $1';
         const result = await pool.query(deleteQuery, [id]);
 
         if (result.rowCount > 0) {
-            res.json({ success: true, message: 'Zoneamento excluído com sucesso!' });
+            // REGISTRA NOTIFICAÇÃO
+            const mensagem = `Zoneamento excluído: ${nomeZoneamento}`;
+            const acao = 'DELETE';
+            const tabela = 'zoneamentos';
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [userId, acao, tabela, id, mensagem]
+            );
+
+            res.json({
+                success: true,
+                message: 'Zoneamento excluído com sucesso!'
+            });
         } else {
-            res.status(404).json({ success: false, message: 'Zoneamento não encontrado.' });
+            res.status(404).json({
+                success: false,
+                message: 'Zoneamento não encontrado.'
+            });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
@@ -395,6 +539,10 @@ app.post('/api/zoneamento/importar', upload.single('file'), async (req, res) => 
         const geojson = await convertToGeoJSON(filePath, originalName);
         const features = geojson.features || [];
 
+        // (Opcional: pode registrar apenas 1 notificação "Importação de zoneamentos" em vez de uma por feature)
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
         for (const feature of features) {
             const props = feature.properties || {};
             const geometry = feature.geometry;
@@ -403,17 +551,36 @@ app.post('/api/zoneamento/importar', upload.single('file'), async (req, res) => 
             if (!geometry) continue;
 
             const insertQuery = `
-        INSERT INTO zoneamentos (nome, lote, geom)
-        VALUES ($1, $2, ST_SetSRID(ST_Force2D(ST_GeomFromGeoJSON($3)), 4326))
-        RETURNING id;
-      `;
+                INSERT INTO zoneamentos (nome, lote, geom)
+                VALUES ($1, $2, ST_SetSRID(ST_Force2D(ST_GeomFromGeoJSON($3)), 4326))
+                RETURNING id;
+            `;
             const values = [nome, lote, JSON.stringify(geometry)];
-            await pool.query(insertQuery, values);
+            const result = await pool.query(insertQuery, values);
+
+            if (result.rows.length > 0) {
+                const newId = result.rows[0].id;
+                // Notificação por cada polígono criado:
+                const mensagem = `Zoneamento importado/criado: ${nome}`;
+                const acao = 'CREATE';
+                const tabela = 'zoneamentos';
+                await pool.query(
+                    `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                     VALUES ($1, $2, $3, $4, $5)`,
+                    [userId, acao, tabela, newId, mensagem]
+                );
+            }
         }
         fs.unlinkSync(filePath);
-        res.json({ success: true, message: 'Importação concluída com sucesso!' });
+        res.json({
+            success: true,
+            message: 'Importação concluída com sucesso!'
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
@@ -441,16 +608,18 @@ app.post('/api/escolas/cadastrar', async (req, res) => {
         const horario = req.body['horario[]'] || [];
         const zoneamentosSelecionados = JSON.parse(req.body.zoneamentosSelecionados || '[]');
 
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
         const insertEscolaQuery = `
-      INSERT INTO escolas (
-        nome, codigo_inep, latitude, longitude, area, logradouro, numero, complemento,
-        ponto_referencia, bairro, cep, regime, nivel, horario
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8,
-        $9, $10, $11, $12, $13, $14
-      )
-      RETURNING id;
-    `;
+            INSERT INTO escolas (
+                nome, codigo_inep, latitude, longitude, area,
+                logradouro, numero, complemento, ponto_referencia,
+                bairro, cep, regime, nivel, horario
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            RETURNING id;
+        `;
         const values = [
             nomeEscola,
             codigoINEP || null,
@@ -469,43 +638,61 @@ app.post('/api/escolas/cadastrar', async (req, res) => {
         ];
         const result = await pool.query(insertEscolaQuery, values);
         if (result.rows.length === 0) {
-            return res.status(500).json({ success: false, message: 'Erro ao cadastrar escola.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao cadastrar escola.'
+            });
         }
         const escolaId = result.rows[0].id;
 
         if (zoneamentosSelecionados.length > 0) {
             const insertZonaEscolaQuery = `
-        INSERT INTO escolas_zoneamentos (escola_id, zoneamento_id)
-        VALUES ($1, $2);
-      `;
+                INSERT INTO escolas_zoneamentos (escola_id, zoneamento_id)
+                VALUES ($1, $2);
+            `;
             for (const zid of zoneamentosSelecionados) {
                 await pool.query(insertZonaEscolaQuery, [escolaId, zid]);
             }
         }
-        res.json({ success: true, message: 'Escola cadastrada com sucesso!' });
+
+        // NOTIFICAÇÃO
+        const mensagem = `Escola criada: ${nomeEscola}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'CREATE', 'escolas', $2, $3)`,
+            [userId, escolaId, mensagem]
+        );
+
+        res.json({
+            success: true,
+            message: 'Escola cadastrada com sucesso!'
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
 app.get('/api/escolas', async (req, res) => {
     try {
         const query = `
-      SELECT e.id, e.nome, e.codigo_inep, e.latitude, e.longitude, e.area,
-             e.logradouro, e.numero, e.complemento, e.ponto_referencia,
-             e.bairro, e.cep, e.regime, e.nivel, e.horario,
-             COALESCE(
-               json_agg(
-                 json_build_object('id', z.id, 'nome', z.nome)
-               ) FILTER (WHERE z.id IS NOT NULL),
-               '[]'
-             ) AS zoneamentos
-      FROM escolas e
-      LEFT JOIN escolas_zoneamentos ez ON ez.escola_id = e.id
-      LEFT JOIN zoneamentos z ON z.id = ez.zoneamento_id
-      GROUP BY e.id
-      ORDER BY e.id;
-    `;
+            SELECT e.id, e.nome, e.codigo_inep, e.latitude, e.longitude, e.area,
+                   e.logradouro, e.numero, e.complemento, e.ponto_referencia,
+                   e.bairro, e.cep, e.regime, e.nivel, e.horario,
+                   COALESCE(
+                     json_agg(
+                       json_build_object('id', z.id, 'nome', z.nome)
+                     ) FILTER (WHERE z.id IS NOT NULL),
+                     '[]'
+                   ) AS zoneamentos
+            FROM escolas e
+            LEFT JOIN escolas_zoneamentos ez ON ez.escola_id = e.id
+            LEFT JOIN zoneamentos z ON z.id = ez.zoneamento_id
+            GROUP BY e.id
+            ORDER BY e.id;
+        `;
         const result = await pool.query(query);
         const escolas = result.rows.map((row) => ({
             id: row.id,
@@ -527,7 +714,10 @@ app.get('/api/escolas', async (req, res) => {
         }));
         res.json(escolas);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
@@ -551,17 +741,24 @@ app.post('/api/fornecedores/cadastrar', async (req, res) => {
         } = req.body;
 
         if (!nome_fornecedor || !tipo_contrato || !cnpj || !contato) {
-            return res.status(400).json({ success: false, message: 'Campos obrigatórios não fornecidos.' });
+            return res.status(400).json({
+                success: false,
+                message: 'Campos obrigatórios não fornecidos.'
+            });
         }
 
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
         const insertQuery = `
-      INSERT INTO fornecedores (
-        nome_fornecedor, tipo_contrato, cnpj, contato,
-        latitude, longitude, logradouro, numero, complemento, bairro, cep
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING id;
-    `;
+            INSERT INTO fornecedores (
+                nome_fornecedor, tipo_contrato, cnpj, contato,
+                latitude, longitude, logradouro, numero,
+                complemento, bairro, cep
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING id;
+        `;
         const values = [
             nome_fornecedor,
             tipo_contrato,
@@ -578,33 +775,52 @@ app.post('/api/fornecedores/cadastrar', async (req, res) => {
         const result = await pool.query(insertQuery, values);
 
         if (result.rows.length === 0) {
-            return res.status(500).json({ success: false, message: 'Erro ao cadastrar fornecedor.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao cadastrar fornecedor.'
+            });
         }
-        res.json({ success: true, message: 'Fornecedor cadastrado com sucesso!' });
+        const newFornecedorId = result.rows[0].id;
+
+        // NOTIFICAÇÃO
+        const mensagem = `Fornecedor criado: ${nome_fornecedor}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES($1, 'CREATE', 'fornecedores', $2, $3)`,
+            [userId, newFornecedorId, mensagem]
+        );
+
+        res.json({
+            success: true,
+            message: 'Fornecedor cadastrado com sucesso!'
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
 app.get('/api/fornecedores', async (req, res) => {
     try {
         const query = `
-      SELECT
-        id,
-        nome_fornecedor,
-        tipo_contrato,
-        cnpj,
-        contato,
-        latitude,
-        longitude,
-        logradouro,
-        numero,
-        complemento,
-        bairro,
-        cep
-      FROM fornecedores
-      ORDER BY id;
-    `;
+            SELECT
+                id,
+                nome_fornecedor,
+                tipo_contrato,
+                cnpj,
+                contato,
+                latitude,
+                longitude,
+                logradouro,
+                numero,
+                complemento,
+                bairro,
+                cep
+            FROM fornecedores
+            ORDER BY id;
+        `;
         const result = await pool.query(query);
         const fornecedores = result.rows.map((row) => ({
             id: row.id,
@@ -622,23 +838,59 @@ app.get('/api/fornecedores', async (req, res) => {
         }));
         res.json(fornecedores);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
 app.delete('/api/fornecedores/:id', async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
+        // Buscar o nome do fornecedor antes de deletar (para log)
+        const busca = await pool.query('SELECT nome_fornecedor FROM fornecedores WHERE id = $1', [id]);
+        if (busca.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Fornecedor não encontrado.'
+            });
+        }
+        const nomeFornecedor = busca.rows[0].nome_fornecedor;
+
         const deleteQuery = 'DELETE FROM fornecedores WHERE id = $1';
         const result = await pool.query(deleteQuery, [id]);
 
         if (result.rowCount > 0) {
-            res.json({ success: true, message: 'Fornecedor excluído com sucesso!' });
+            // NOTIFICAÇÃO
+            const mensagem = `Fornecedor excluído: ${nomeFornecedor}`;
+            const acao = 'DELETE';
+            const tabela = 'fornecedores';
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES($1, $2, $3, $4, $5)`,
+                [userId, acao, tabela, id, mensagem]
+            );
+
+            res.json({
+                success: true,
+                message: 'Fornecedor excluído com sucesso!'
+            });
         } else {
-            res.status(404).json({ success: false, message: 'Fornecedor não encontrado.' });
+            res.status(404).json({
+                success: false,
+                message: 'Fornecedor não encontrado.'
+            });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
@@ -648,35 +900,35 @@ app.delete('/api/fornecedores/:id', async (req, res) => {
 app.get('/api/frota', async (req, res) => {
     try {
         const query = `
-      SELECT
-        f.id,
-        f.nome_veiculo,
-        f.placa,
-        f.tipo_veiculo,
-        f.capacidade,
-        f.latitude_garagem,
-        f.longitude_garagem,
-        f.fornecedor_id,
-        f.documentacao,
-        f.licenca,
-        fr.nome_fornecedor AS fornecedor_nome,
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'id', m.id,
-              'nome_motorista', m.nome_motorista,
-              'cpf', m.cpf
-            )
-          ) FILTER (WHERE m.id IS NOT NULL),
-          '[]'
-        ) AS motoristas
-      FROM frota f
-      LEFT JOIN fornecedores fr ON fr.id = f.fornecedor_id
-      LEFT JOIN frota_motoristas fm ON fm.frota_id = f.id
-      LEFT JOIN motoristas m ON m.id = fm.motorista_id
-      GROUP BY f.id, fr.nome_fornecedor
-      ORDER BY f.id;
-    `;
+            SELECT
+                f.id,
+                f.nome_veiculo,
+                f.placa,
+                f.tipo_veiculo,
+                f.capacidade,
+                f.latitude_garagem,
+                f.longitude_garagem,
+                f.fornecedor_id,
+                f.documentacao,
+                f.licenca,
+                fr.nome_fornecedor AS fornecedor_nome,
+                COALESCE(
+                  json_agg(
+                    json_build_object(
+                      'id', m.id,
+                      'nome_motorista', m.nome_motorista,
+                      'cpf', m.cpf
+                    )
+                  ) FILTER (WHERE m.id IS NOT NULL),
+                  '[]'
+                ) AS motoristas
+            FROM frota f
+            LEFT JOIN fornecedores fr ON fr.id = f.fornecedor_id
+            LEFT JOIN frota_motoristas fm ON fm.frota_id = f.id
+            LEFT JOIN motoristas m ON m.id = fm.motorista_id
+            GROUP BY f.id, fr.nome_fornecedor
+            ORDER BY f.id;
+        `;
         const result = await pool.query(query);
         const frotaCompleta = result.rows.map((row) => ({
             id: row.id,
@@ -695,7 +947,10 @@ app.get('/api/frota', async (req, res) => {
         res.json(frotaCompleta);
     } catch (error) {
         console.error('Erro ao listar frota:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
@@ -733,8 +988,14 @@ app.post(
             }
 
             if (!nome_veiculo || !placa || !tipo_veiculo || !capacidade || !fornecedor_id) {
-                return res.status(400).json({ success: false, message: 'Campos obrigatórios não fornecidos.' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'Campos obrigatórios não fornecidos.'
+                });
             }
+
+            // Quem está fazendo a ação?
+            const userId = req.session?.userId || null;
 
             let documentacaoPath = null;
             let licencaPath = null;
@@ -746,22 +1007,22 @@ app.post(
             }
 
             const insertQuery = `
-        INSERT INTO frota (
-          nome_veiculo, placa, tipo_veiculo, capacidade,
-          latitude_garagem, longitude_garagem, fornecedor_id,
-          documentacao, licenca, ano, marca, modelo,
-          tipo_combustivel, data_aquisicao,
-          adaptado, elevador, ar_condicionado, gps, cinto_seguranca
-        )
-        VALUES (
-          $1, $2, $3, $4,
-          $5, $6, $7,
-          $8, $9, $10, $11, $12,
-          $13, $14,
-          $15, $16, $17, $18, $19
-        )
-        RETURNING id;
-      `;
+                INSERT INTO frota (
+                    nome_veiculo, placa, tipo_veiculo, capacidade,
+                    latitude_garagem, longitude_garagem, fornecedor_id,
+                    documentacao, licenca, ano, marca, modelo,
+                    tipo_combustivel, data_aquisicao,
+                    adaptado, elevador, ar_condicionado, gps, cinto_seguranca
+                )
+                VALUES (
+                    $1, $2, $3, $4,
+                    $5, $6, $7,
+                    $8, $9, $10, $11, $12,
+                    $13, $14,
+                    $15, $16, $17, $18, $19
+                )
+                RETURNING id;
+            `;
             const values = [
                 nome_veiculo,
                 placa,
@@ -786,24 +1047,41 @@ app.post(
             const result = await pool.query(insertQuery, values);
 
             if (result.rows.length === 0) {
-                return res.status(500).json({ success: false, message: 'Erro ao cadastrar veículo.' });
+                return res.status(500).json({
+                    success: false,
+                    message: 'Erro ao cadastrar veículo.'
+                });
             }
 
             const frotaId = result.rows[0].id;
             if (Array.isArray(motoristasAssociados) && motoristasAssociados.length > 0) {
                 const relQuery = `
-          INSERT INTO frota_motoristas (frota_id, motorista_id)
-          VALUES ($1, $2);
-        `;
+                    INSERT INTO frota_motoristas (frota_id, motorista_id)
+                    VALUES ($1, $2);
+                `;
                 for (const motoristaId of motoristasAssociados) {
                     await pool.query(relQuery, [frotaId, motoristaId]);
                 }
             }
 
-            return res.json({ success: true, message: 'Veículo cadastrado com sucesso!' });
+            // NOTIFICAÇÃO
+            const mensagem = `Veículo adicionado à frota: ${nome_veiculo}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'CREATE', 'frota', $2, $3)`,
+                [userId, frotaId, mensagem]
+            );
+
+            return res.json({
+                success: true,
+                message: 'Veículo cadastrado com sucesso!'
+            });
         } catch (error) {
             console.error('Erro no /api/frota/cadastrar:', error);
-            return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Erro interno do servidor.'
+            });
         }
     }
 );
@@ -811,15 +1089,48 @@ app.post(
 app.delete('/api/frota/:id', async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
+        // Buscar nome do veículo antes de excluir (opcional)
+        const busca = await pool.query('SELECT nome_veiculo FROM frota WHERE id = $1', [id]);
+        if (busca.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Veículo não encontrado.'
+            });
+        }
+        const nomeVeiculo = busca.rows[0].nome_veiculo;
+
         const deleteQuery = 'DELETE FROM frota WHERE id = $1';
         const result = await pool.query(deleteQuery, [id]);
         if (result.rowCount > 0) {
-            res.json({ success: true, message: 'Veículo excluído com sucesso!' });
+            // NOTIFICAÇÃO
+            const mensagem = `Veículo removido da frota: ${nomeVeiculo}`;
+            const acao = 'DELETE';
+            const tabela = 'frota';
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [userId, acao, tabela, id, mensagem]
+            );
+
+            res.json({
+                success: true,
+                message: 'Veículo excluído com sucesso!'
+            });
         } else {
-            res.status(404).json({ success: false, message: 'Veículo não encontrado.' });
+            res.status(404).json({
+                success: false,
+                message: 'Veículo não encontrado.'
+            });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
@@ -836,8 +1147,14 @@ app.post(
         try {
             const { nome_monitor, cpf, fornecedor_id, telefone, email, endereco, data_admissao } = req.body;
             if (!nome_monitor || !cpf || !fornecedor_id) {
-                return res.status(400).json({ success: false, message: 'Campos obrigatórios não fornecidos.' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'Campos obrigatórios não fornecidos.'
+                });
             }
+
+            // Quem está fazendo a ação?
+            const userId = req.session?.userId || null;
 
             let documentoPessoalPath = null;
             let certificadoCursoPath = null;
@@ -845,7 +1162,10 @@ app.post(
             if (req.files['documento_pessoal'] && req.files['documento_pessoal'].length > 0) {
                 documentoPessoalPath = 'uploads/' + req.files['documento_pessoal'][0].filename;
             } else {
-                return res.status(400).json({ success: false, message: 'Documento pessoal é obrigatório.' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'Documento pessoal é obrigatório.'
+                });
             }
 
             if (req.files['certificado_curso'] && req.files['certificado_curso'].length > 0) {
@@ -868,13 +1188,13 @@ app.post(
             }
 
             const insertQuery = `
-        INSERT INTO monitores (
-          nome_monitor, cpf, fornecedor_id, telefone, email,
-          endereco, data_admissao, documento_pessoal, certificado_curso
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING id;
-      `;
+                INSERT INTO monitores (
+                    nome_monitor, cpf, fornecedor_id, telefone, email,
+                    endereco, data_admissao, documento_pessoal, certificado_curso
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id;
+            `;
             const values = [
                 nome_monitor,
                 cpf,
@@ -888,11 +1208,30 @@ app.post(
             ];
             const result = await pool.query(insertQuery, values);
             if (result.rows.length === 0) {
-                return res.status(500).json({ success: false, message: 'Erro ao cadastrar monitor.' });
+                return res.status(500).json({
+                    success: false,
+                    message: 'Erro ao cadastrar monitor.'
+                });
             }
-            res.json({ success: true, message: 'Monitor cadastrado com sucesso!' });
+            const novoMonitorId = result.rows[0].id;
+
+            // NOTIFICAÇÃO
+            const mensagem = `Monitor cadastrado: ${nome_monitor}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'CREATE', 'monitores', $2, $3)`,
+                [userId, novoMonitorId, mensagem]
+            );
+
+            res.json({
+                success: true,
+                message: 'Monitor cadastrado com sucesso!'
+            });
         } catch (error) {
-            res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+            res.status(500).json({
+                success: false,
+                message: 'Erro interno do servidor.'
+            });
         }
     }
 );
@@ -900,13 +1239,13 @@ app.post(
 app.get('/api/monitores', async (req, res) => {
     try {
         const query = `
-      SELECT m.id, m.nome_monitor, m.cpf, m.fornecedor_id, m.telefone, m.email, m.endereco,
-             m.data_admissao, m.documento_pessoal, m.certificado_curso,
-             fr.nome_fornecedor as fornecedor_nome
-      FROM monitores m
-      LEFT JOIN fornecedores fr ON fr.id = m.fornecedor_id
-      ORDER BY m.id;
-    `;
+            SELECT m.id, m.nome_monitor, m.cpf, m.fornecedor_id, m.telefone, m.email, m.endereco,
+                   m.data_admissao, m.documento_pessoal, m.certificado_curso,
+                   fr.nome_fornecedor as fornecedor_nome
+            FROM monitores m
+            LEFT JOIN fornecedores fr ON fr.id = m.fornecedor_id
+            ORDER BY m.id;
+        `;
         const result = await pool.query(query);
         const monitores = result.rows.map((row) => ({
             id: row.id,
@@ -923,22 +1262,56 @@ app.get('/api/monitores', async (req, res) => {
         }));
         res.json(monitores);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
 app.delete('/api/monitores/:id', async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
+        // Buscar nome do monitor antes de excluir (opcional)
+        const busca = await pool.query('SELECT nome_monitor FROM monitores WHERE id = $1', [id]);
+        if (busca.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Monitor não encontrado.'
+            });
+        }
+        const nomeMonitor = busca.rows[0].nome_monitor;
+
         const deleteQuery = 'DELETE FROM monitores WHERE id = $1';
         const result = await pool.query(deleteQuery, [id]);
         if (result.rowCount > 0) {
-            res.json({ success: true, message: 'Monitor excluído com sucesso!' });
+            // NOTIFICAÇÃO
+            const mensagem = `Monitor excluído: ${nomeMonitor}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'DELETE', 'monitores', $2, $3)`,
+                [userId, id, mensagem]
+            );
+
+            res.json({
+                success: true,
+                message: 'Monitor excluído com sucesso!'
+            });
         } else {
-            res.status(404).json({ success: false, message: 'Monitor não encontrado.' });
+            res.status(404).json({
+                success: false,
+                message: 'Monitor não encontrado.'
+            });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
@@ -948,31 +1321,31 @@ app.delete('/api/monitores/:id', async (req, res) => {
 app.get('/api/motoristas', async (req, res) => {
     try {
         const query = `
-      SELECT m.id,
-             m.nome_motorista,
-             m.cpf,
-             m.rg,
-             m.data_nascimento,
-             m.telefone,
-             m.email,
-             m.endereco,
-             m.cidade,
-             m.estado,
-             m.cep,
-             m.numero_cnh,
-             m.categoria_cnh,
-             m.validade_cnh,
-             m.fornecedor_id,
-             m.cnh_pdf,
-             m.cert_transporte_escolar,
-             m.cert_transporte_passageiros,
-             m.data_validade_transporte_escolar,
-             m.data_validade_transporte_passageiros,
-             fr.nome_fornecedor
-      FROM motoristas m
-      LEFT JOIN fornecedores fr ON fr.id = m.fornecedor_id
-      ORDER BY m.id;
-    `;
+            SELECT m.id,
+                   m.nome_motorista,
+                   m.cpf,
+                   m.rg,
+                   m.data_nascimento,
+                   m.telefone,
+                   m.email,
+                   m.endereco,
+                   m.cidade,
+                   m.estado,
+                   m.cep,
+                   m.numero_cnh,
+                   m.categoria_cnh,
+                   m.validade_cnh,
+                   m.fornecedor_id,
+                   m.cnh_pdf,
+                   m.cert_transporte_escolar,
+                   m.cert_transporte_passageiros,
+                   m.data_validade_transporte_escolar,
+                   m.data_validade_transporte_passageiros,
+                   fr.nome_fornecedor
+            FROM motoristas m
+            LEFT JOIN fornecedores fr ON fr.id = m.fornecedor_id
+            ORDER BY m.id;
+        `;
         const result = await pool.query(query);
         const hoje = new Date();
         const trintaDiasDepois = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -1027,7 +1400,10 @@ app.get('/api/motoristas', async (req, res) => {
         });
         res.json(motoristas);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
@@ -1060,8 +1436,14 @@ app.post(
             } = req.body;
 
             if (!nome_motorista || !cpf || !numero_cnh || !categoria_cnh || !validade_cnh || !fornecedor_id) {
-                return res.status(400).json({ success: false, message: 'Campos obrigatórios não fornecidos.' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'Campos obrigatórios não fornecidos.'
+                });
             }
+
+            // Quem está fazendo a ação?
+            const userId = req.session?.userId || null;
 
             let cnhPdfPath = null;
             let certTransporteEscolarPath = null;
@@ -1070,7 +1452,10 @@ app.post(
             if (req.files['cnh_pdf'] && req.files['cnh_pdf'].length > 0) {
                 cnhPdfPath = 'uploads/' + req.files['cnh_pdf'][0].filename;
             } else {
-                return res.status(400).json({ success: false, message: 'CNH é obrigatória.' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'CNH é obrigatória.'
+                });
             }
             if (req.files['cert_transporte_escolar'] && req.files['cert_transporte_escolar'].length > 0) {
                 certTransporteEscolarPath = 'uploads/' + req.files['cert_transporte_escolar'][0].filename;
@@ -1101,19 +1486,19 @@ app.post(
             }
 
             const insertQuery = `
-        INSERT INTO motoristas (
-          nome_motorista, cpf, rg, data_nascimento, telefone, email, endereco,
-          cidade, estado, cep, numero_cnh, categoria_cnh, validade_cnh,
-          fornecedor_id, cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros,
-          data_validade_transporte_escolar, data_validade_transporte_passageiros
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7,
-          $8, $9, $10, $11, $12, $13,
-          $14, $15, $16, $17,
-          $18, $19
-        )
-        RETURNING id;
-      `;
+                INSERT INTO motoristas (
+                    nome_motorista, cpf, rg, data_nascimento, telefone, email, endereco,
+                    cidade, estado, cep, numero_cnh, categoria_cnh, validade_cnh,
+                    fornecedor_id, cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros,
+                    data_validade_transporte_escolar, data_validade_transporte_passageiros
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7,
+                    $8, $9, $10, $11, $12, $13,
+                    $14, $15, $16, $17,
+                    $18, $19
+                )
+                RETURNING id;
+            `;
             const values = [
                 nome_motorista,
                 cpf,
@@ -1137,11 +1522,30 @@ app.post(
             ];
             const result = await pool.query(insertQuery, values);
             if (result.rows.length === 0) {
-                return res.status(500).json({ success: false, message: 'Erro ao cadastrar motorista.' });
+                return res.status(500).json({
+                    success: false,
+                    message: 'Erro ao cadastrar motorista.'
+                });
             }
-            res.json({ success: true, message: 'Motorista cadastrado com sucesso!' });
+            const novoMotoristaId = result.rows[0].id;
+
+            // NOTIFICAÇÃO
+            const mensagem = `Motorista cadastrado: ${nome_motorista}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'CREATE', 'motoristas', $2, $3)`,
+                [userId, novoMotoristaId, mensagem]
+            );
+
+            res.json({
+                success: true,
+                message: 'Motorista cadastrado com sucesso!'
+            });
         } catch (error) {
-            res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+            res.status(500).json({
+                success: false,
+                message: 'Erro interno do servidor.'
+            });
         }
     }
 );
@@ -1150,13 +1554,16 @@ app.get('/api/motoristas/download/:type/:id', async (req, res) => {
     try {
         const { type, id } = req.params;
         const query = `
-      SELECT cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros
-      FROM motoristas
-      WHERE id = $1;
-    `;
+            SELECT cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros
+            FROM motoristas
+            WHERE id = $1;
+        `;
         const result = await pool.query(query, [id]);
         if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Motorista não encontrado.' });
+            return res.status(404).json({
+                success: false,
+                message: 'Motorista não encontrado.'
+            });
         }
         const motorista = result.rows[0];
         let filePath = null;
@@ -1172,13 +1579,16 @@ app.get('/api/motoristas/download/:type/:id', async (req, res) => {
                 filePath = motorista.cert_transporte_passageiros;
                 break;
             default:
-                return res.status(400).json({ success: false, message: 'Tipo de documento inválido.' });
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tipo de documento inválido.'
+                });
         }
 
         if (!filePath) {
             return res.status(404).json({
                 success: false,
-                message: 'Documento não encontrado para este motorista.',
+                message: 'Documento não encontrado para este motorista.'
             });
         }
 
@@ -1186,14 +1596,14 @@ app.get('/api/motoristas/download/:type/:id', async (req, res) => {
         if (!fs.existsSync(absolutePath)) {
             return res.status(404).json({
                 success: false,
-                message: 'Arquivo não encontrado no servidor.',
+                message: 'Arquivo não encontrado no servidor.'
             });
         }
         res.download(absolutePath);
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Erro interno do servidor ao tentar baixar o arquivo.',
+            message: 'Erro interno do servidor ao tentar baixar o arquivo.'
         });
     }
 });
@@ -1203,33 +1613,48 @@ app.get('/api/motoristas/:id', async (req, res) => {
         const { id } = req.params;
         const numericId = parseInt(id, 10);
         if (isNaN(numericId)) {
-            return res.status(400).json({ success: false, message: 'ID inválido' });
+            return res.status(400).json({
+                success: false,
+                message: 'ID inválido'
+            });
         }
         const query = `SELECT * FROM motoristas WHERE id = $1`;
         const result = await pool.query(query, [numericId]);
         if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Motorista não encontrado' });
+            return res.status(404).json({
+                success: false,
+                message: 'Motorista não encontrado'
+            });
         }
         return res.json(result.rows[0]);
     } catch (error) {
         console.error('Erro ao buscar motorista:', error);
-        return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
+        });
     }
 });
 
 // ====================================================================================
-// LOGIN / CHECK CPF / DEFINIR SENHA (MOTORISTAS, caso usem app mobile etc.)
+// LOGIN / CHECK CPF / DEFINIR SENHA (MOTORISTAS, se for usar app etc.)
 // ====================================================================================
 app.post('/api/motoristas/login', async (req, res) => {
     try {
         const { cpf, senha } = req.body;
         if (!cpf) {
-            return res.status(400).json({ success: false, message: 'CPF é obrigatório' });
+            return res.status(400).json({
+                success: false,
+                message: 'CPF é obrigatório'
+            });
         }
         const queryMotorista = 'SELECT id, senha FROM motoristas WHERE cpf = $1 LIMIT 1';
         const result = await pool.query(queryMotorista, [cpf]);
         if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Motorista não encontrado' });
+            return res.status(404).json({
+                success: false,
+                message: 'Motorista não encontrado'
+            });
         }
         const motorista = result.rows[0];
         if (!motorista.senha) {
@@ -1246,7 +1671,10 @@ app.post('/api/motoristas/login', async (req, res) => {
             });
         }
         if (motorista.senha !== senha) {
-            return res.status(401).json({ success: false, message: 'Senha incorreta' });
+            return res.status(401).json({
+                success: false,
+                message: 'Senha incorreta'
+            });
         }
         return res.status(200).json({
             success: true,
@@ -1255,7 +1683,10 @@ app.post('/api/motoristas/login', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
+        });
     }
 });
 
@@ -1263,12 +1694,18 @@ app.post('/api/motoristas/definir-senha', async (req, res) => {
     try {
         const { cpf, novaSenha } = req.body;
         if (!cpf || !novaSenha) {
-            return res.status(400).json({ success: false, message: 'CPF e novaSenha são obrigatórios' });
+            return res.status(400).json({
+                success: false,
+                message: 'CPF e novaSenha são obrigatórios'
+            });
         }
         const queryMotorista = 'SELECT id FROM motoristas WHERE cpf = $1 LIMIT 1';
         const result = await pool.query(queryMotorista, [cpf]);
         if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Motorista não encontrado' });
+            return res.status(404).json({
+                success: false,
+                message: 'Motorista não encontrado'
+            });
         }
         const updateQuery = 'UPDATE motoristas SET senha = $1 WHERE cpf = $2';
         await pool.query(updateQuery, [novaSenha, cpf]);
@@ -1279,7 +1716,10 @@ app.post('/api/motoristas/definir-senha', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
+        });
     }
 });
 
@@ -1287,7 +1727,10 @@ app.post('/api/motoristas/check-cpf', async (req, res) => {
     try {
         const { cpf } = req.body;
         if (!cpf) {
-            return res.status(400).json({ success: false, message: 'CPF é obrigatório' });
+            return res.status(400).json({
+                success: false,
+                message: 'CPF é obrigatório'
+            });
         }
         const queryMotorista = 'SELECT id, senha FROM motoristas WHERE cpf = $1 LIMIT 1';
         const result = await pool.query(queryMotorista, [cpf]);
@@ -1301,7 +1744,10 @@ app.post('/api/motoristas/check-cpf', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor'
+        });
     }
 });
 
@@ -1325,17 +1771,18 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
 
         const zoneamentosPonto = JSON.parse(req.body.zoneamentosPonto || '[]');
 
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
         const insertPontoQuery = `
-      INSERT INTO pontos (
-        nome_ponto, latitude, longitude, area,
-        logradouro, numero, complemento, ponto_referencia,
-        bairro, cep
-      )
-      VALUES ($1, $2, $3, $4,
-              $5, $6, $7, $8,
-              $9, $10)
-      RETURNING id;
-    `;
+            INSERT INTO pontos (
+                nome_ponto, latitude, longitude, area,
+                logradouro, numero, complemento, ponto_referencia,
+                bairro, cep
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id;
+        `;
         const values = [
             nomePonto,
             latitudePonto ? parseFloat(latitudePonto) : null,
@@ -1350,51 +1797,69 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
         ];
         const result = await pool.query(insertPontoQuery, values);
         if (result.rows.length === 0) {
-            return res.status(500).json({ success: false, message: 'Erro ao cadastrar ponto.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao cadastrar ponto.'
+            });
         }
         const pontoId = result.rows[0].id;
 
         if (zoneamentosPonto.length > 0) {
             const insertZonaPontoQuery = `
-        INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
-        VALUES ($1, $2);
-      `;
+                INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+                VALUES ($1, $2);
+            `;
             for (const zid of zoneamentosPonto) {
                 await pool.query(insertZonaPontoQuery, [pontoId, zid]);
             }
         }
-        res.json({ success: true, message: 'Ponto de parada cadastrado com sucesso!' });
+
+        // NOTIFICAÇÃO
+        const mensagem = `Ponto de parada criado: ${nomePonto}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'CREATE', 'pontos', $2, $3)`,
+            [userId, pontoId, mensagem]
+        );
+
+        res.json({
+            success: true,
+            message: 'Ponto de parada cadastrado com sucesso!'
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
 app.get('/api/pontos', async (req, res) => {
     try {
         const query = `
-      SELECT p.id,
-             p.nome_ponto,
-             p.latitude,
-             p.longitude,
-             p.area,
-             p.logradouro,
-             p.numero,
-             p.complemento,
-             p.ponto_referencia,
-             p.bairro,
-             p.cep,
-             COALESCE(
-               json_agg(
-                 json_build_object('id', z.id, 'nome', z.nome)
-               ) FILTER (WHERE z.id IS NOT NULL),
-               '[]'
-             ) AS zoneamentos
-      FROM pontos p
-      LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-      LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
-      GROUP BY p.id
-      ORDER BY p.id;
-    `;
+            SELECT p.id,
+                   p.nome_ponto,
+                   p.latitude,
+                   p.longitude,
+                   p.area,
+                   p.logradouro,
+                   p.numero,
+                   p.complemento,
+                   p.ponto_referencia,
+                   p.bairro,
+                   p.cep,
+                   COALESCE(
+                     json_agg(
+                       json_build_object('id', z.id, 'nome', z.nome)
+                     ) FILTER (WHERE z.id IS NOT NULL),
+                     '[]'
+                   ) AS zoneamentos
+            FROM pontos p
+            LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+            LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
+            GROUP BY p.id
+            ORDER BY p.id;
+        `;
         const result = await pool.query(query);
         const pontos = result.rows.map((row) => ({
             id: row.id,
@@ -1412,22 +1877,158 @@ app.get('/api/pontos', async (req, res) => {
         }));
         res.json(pontos);
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
 app.delete('/api/pontos/:id', async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Quem está fazendo a ação?
+        const userId = req.session?.userId || null;
+
+        // Buscar nome do ponto antes de excluir
+        const busca = await pool.query('SELECT nome_ponto FROM pontos WHERE id = $1', [id]);
+        if (busca.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Ponto não encontrado.'
+            });
+        }
+        const nomePonto = busca.rows[0].nome_ponto;
+
         const deleteQuery = 'DELETE FROM pontos WHERE id = $1';
         const result = await pool.query(deleteQuery, [id]);
         if (result.rowCount > 0) {
-            res.json({ success: true, message: 'Ponto excluído com sucesso!' });
+            // NOTIFICAÇÃO
+            const mensagem = `Ponto de parada excluído: ${nomePonto}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'DELETE', 'pontos', $2, $3)`,
+                [userId, id, mensagem]
+            );
+
+            res.json({
+                success: true,
+                message: 'Ponto excluído com sucesso!'
+            });
         } else {
-            res.status(404).json({ success: false, message: 'Ponto não encontrado.' });
+            res.status(404).json({
+                success: false,
+                message: 'Ponto não encontrado.'
+            });
         }
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
+    }
+});
+
+// ====================================================================================
+// ENDPOINT DE NOTIFICAÇÕES
+// ====================================================================================
+app.get('/api/notificacoes', async (req, res) => {
+    try {
+        // Verifica se o usuário está logado
+        if (!req.session || !req.session.userId) {
+            return res.json({ success: false, message: 'Não logado' });
+        }
+        const userId = req.session.userId;
+
+        // Consulta as 10 notificações mais recentes para esse user
+        // ou notificações cujo user_id é NULL (notificações gerais).
+        const query = `
+            SELECT id,
+                   acao,
+                   tabela,
+                   registro_id,
+                   mensagem,
+                   datahora,
+                   is_read
+            FROM notificacoes
+            WHERE user_id = $1 OR user_id IS NULL
+            ORDER BY datahora DESC
+            LIMIT 10
+        `;
+        const { rows } = await pool.query(query, [userId]);
+
+        // Formata o "tempo" relativo (ex.: "Há 15 minutos")
+        const now = Date.now();
+        const notifications = rows.map((r) => {
+            const diffMs = now - r.datahora.getTime();
+            const diffMin = Math.floor(diffMs / 60000);
+
+            let tempoStr = `Há ${diffMin} minuto(s)`;
+            if (diffMin >= 60) {
+                const horas = Math.floor(diffMin / 60);
+                tempoStr = `Há ${horas} hora(s)`;
+            }
+
+            return {
+                id: r.id,
+                acao: r.acao,
+                tabela: r.tabela,
+                registro_id: r.registro_id,
+                mensagem: r.mensagem,
+                datahora: r.datahora,   // data/hora real do banco
+                is_read: r.is_read,     // para o front saber se está lida ou não
+                tempo: tempoStr,        // ex.: "Há 12 minutos"
+            };
+        });
+
+        return res.json({
+            success: true,
+            notifications,
+        });
+    } catch (err) {
+        console.error('Erro ao buscar notificacoes:', err);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
+    }
+});
+
+// Marcar uma ou várias notificações como lidas
+app.patch('/api/notificacoes/marcar-lido', async (req, res) => {
+    try {
+        // 1) Verifica se o usuário está logado (opcional, dependendo da sua lógica)
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ success: false, message: 'Não logado' });
+        }
+        const userId = req.session.userId;
+
+        // 2) Recebe um array com os IDs das notificações do front-end
+        const { notificacaoIds } = req.body;
+        if (!Array.isArray(notificacaoIds) || notificacaoIds.length === 0) {
+            return res
+                .status(400)
+                .json({ success: false, message: 'Nenhum ID de notificação fornecido.' });
+        }
+
+        // 3) Atualiza no banco
+        // Caso deseje garantir que o user atual só possa marcar notificações dele:
+        //   "UPDATE notificacoes SET is_read = TRUE
+        //    WHERE id = ANY($1) AND (user_id = $2 OR user_id IS NULL)"
+        // Se quiser que ele possa marcar qualquer uma, basta remover a checagem do user.
+        const updateQuery = `
+        UPDATE notificacoes
+        SET is_read = TRUE
+        WHERE id = ANY($1)
+          AND (user_id = $2 OR user_id IS NULL)
+      `;
+        await pool.query(updateQuery, [notificacaoIds, userId]);
+
+        return res.json({ success: true, message: 'Notificações marcadas como lidas.' });
+    } catch (error) {
+        console.error('Erro ao marcar notificações como lidas:', error);
+        return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
 
@@ -1452,12 +2053,15 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Dados incompletos.' });
         }
 
+        // Obtém o userId para log (pode ser null se não estiver logado)
+        const userId = req.session?.userId || null;
+
         const insertRotaQuery = `
-      INSERT INTO rotas_simples
-      (identificador, descricao, partida_lat, partida_lng, chegada_lat, chegada_lng, area_zona)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id;
-    `;
+            INSERT INTO rotas_simples
+            (identificador, descricao, partida_lat, partida_lng, chegada_lat, chegada_lng, area_zona)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id;
+        `;
         const rotaValues = [
             identificador,
             descricao,
@@ -1475,9 +2079,9 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
 
         if (pontosParada && Array.isArray(pontosParada)) {
             const insertPontoQuery = `
-        INSERT INTO rotas_pontos (rota_id, ponto_id)
-        VALUES ($1, $2);
-      `;
+                INSERT INTO rotas_pontos (rota_id, ponto_id)
+                VALUES ($1, $2);
+            `;
             for (const pId of pontosParada) {
                 await pool.query(insertPontoQuery, [rotaId, pId]);
             }
@@ -1485,13 +2089,22 @@ app.post('/api/rotas/cadastrar-simples', async (req, res) => {
 
         if (escolas && Array.isArray(escolas)) {
             const insertEscolaQuery = `
-        INSERT INTO rotas_escolas (rota_id, escola_id)
-        VALUES ($1, $2);
-      `;
+                INSERT INTO rotas_escolas (rota_id, escola_id)
+                VALUES ($1, $2);
+            `;
             for (const eId of escolas) {
                 await pool.query(insertEscolaQuery, [rotaId, eId]);
             }
         }
+
+        // REGISTRAR NOTIFICAÇÃO DE CRIAÇÃO
+        const mensagem = `Rota simples criada: ${identificador}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'CREATE', 'rotas_simples', $2, $3)`,
+            [userId, rotaId, mensagem]
+        );
+
         res.json({ success: true, message: 'Rota cadastrada com sucesso!', id: rotaId });
     } catch (error) {
         console.error('Erro ao cadastrar rota simples:', error);
@@ -1507,14 +2120,14 @@ app.get('/api/estatisticas-transporte', async (req, res) => {
         const rotasRuralPorMes = new Array(12).fill(0);
 
         const query = `
-      SELECT
-        EXTRACT(MONTH FROM created_at)::int AS mes,
-        area_zona,
-        COUNT(*) AS total
-      FROM rotas_simples
-      GROUP BY 1, area_zona
-      ORDER BY 1;
-    `;
+            SELECT
+                EXTRACT(MONTH FROM created_at)::int AS mes,
+                area_zona,
+                COUNT(*) AS total
+            FROM rotas_simples
+            GROUP BY 1, area_zona
+            ORDER BY 1;
+        `;
         const { rows } = await pool.query(query);
 
         rows.forEach((item) => {
@@ -1545,17 +2158,17 @@ app.get('/api/estatisticas-transporte', async (req, res) => {
 app.get('/api/rotas_simples', async (req, res) => {
     try {
         const query = `
-      SELECT 
-        id,
-        identificador,
-        descricao,
-        partida_lat AS "partidaLat",
-        partida_lng AS "partidaLng",
-        chegada_lat AS "chegadaLat",
-        chegada_lng AS "chegadaLng"
-      FROM rotas_simples
-      ORDER BY id;
-    `;
+            SELECT 
+                id,
+                identificador,
+                descricao,
+                partida_lat AS "partidaLat",
+                partida_lng AS "partidaLng",
+                chegada_lat AS "chegadaLat",
+                chegada_lng AS "chegadaLng"
+            FROM rotas_simples
+            ORDER BY id;
+        `;
         const result = await pool.query(query);
         return res.json(result.rows);
     } catch (error) {
@@ -1568,16 +2181,16 @@ app.get('/api/rotas_simples/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const rotaQuery = `
-      SELECT 
-        id,
-        partida_lat AS "partidaLat",
-        partida_lng AS "partidaLng",
-        chegada_lat AS "chegadaLat",
-        chegada_lng AS "chegadaLng"
-      FROM rotas_simples
-      WHERE id = $1
-      LIMIT 1;
-    `;
+            SELECT 
+                id,
+                partida_lat AS "partidaLat",
+                partida_lng AS "partidaLng",
+                chegada_lat AS "chegadaLat",
+                chegada_lng AS "chegadaLng"
+            FROM rotas_simples
+            WHERE id = $1
+            LIMIT 1;
+        `;
         const rotaResult = await pool.query(rotaQuery, [id]);
         if (rotaResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Rota não encontrada.' });
@@ -1585,19 +2198,19 @@ app.get('/api/rotas_simples/:id', async (req, res) => {
         const rota = rotaResult.rows[0];
 
         const pontosParadaQuery = `
-      SELECT p.id, p.nome_ponto, p.latitude, p.longitude
-      FROM rotas_pontos rp
-      JOIN pontos p ON p.id = rp.ponto_id
-      WHERE rp.rota_id = $1;
-    `;
+            SELECT p.id, p.nome_ponto, p.latitude, p.longitude
+            FROM rotas_pontos rp
+            JOIN pontos p ON p.id = rp.ponto_id
+            WHERE rp.rota_id = $1;
+        `;
         const pontosResult = await pool.query(pontosParadaQuery, [id]);
 
         const escolasQuery = `
-      SELECT e.id, e.nome, e.latitude, e.longitude
-      FROM rotas_escolas re
-      JOIN escolas e ON e.id = re.escola_id
-      WHERE re.rota_id = $1;
-    `;
+            SELECT e.id, e.nome, e.latitude, e.longitude
+            FROM rotas_escolas re
+            JOIN escolas e ON e.id = re.escola_id
+            WHERE re.rota_id = $1;
+        `;
         const escolasResult = await pool.query(escolasQuery, [id]);
 
         const detalhesRota = {
@@ -1637,13 +2250,24 @@ app.post('/api/motoristas/atribuir-rota', async (req, res) => {
                 message: 'Parâmetros motorista_id e rota_id são obrigatórios.',
             });
         }
+
+        // Log
+        const userId = req.session?.userId || null;
+
         const insertQuery = `
-      INSERT INTO motoristas_rotas (motorista_id, rota_id)
-      VALUES ($1, $2)
-      RETURNING id;
-    `;
+            INSERT INTO motoristas_rotas (motorista_id, rota_id)
+            VALUES ($1, $2)
+            RETURNING id;
+        `;
         const result = await pool.query(insertQuery, [motorista_id, rota_id]);
         if (result.rowCount > 0) {
+            // Notificação de "atribuição" (opcionalmente pode ser "CREATE" ou "UPDATE")
+            const mensagem = `Rota ${rota_id} atribuída ao motorista ${motorista_id}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'CREATE', 'motoristas_rotas', $2, $3)`,
+                [userId, result.rows[0].id, mensagem]
+            );
             return res.json({ success: true, message: 'Rota atribuída com sucesso!' });
         } else {
             return res.status(500).json({ success: false, message: 'Não foi possível atribuir a rota.' });
@@ -1658,14 +2282,34 @@ app.post('/api/motoristas/atribuir-rota', async (req, res) => {
 });
 
 app.post('/api/monitores/atribuir-rota', async (req, res) => {
-    const { monitor_id, rota_id } = req.body;
     try {
+        const { monitor_id, rota_id } = req.body;
+        if (!monitor_id || !rota_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Parâmetros monitor_id e rota_id são obrigatórios.',
+            });
+        }
+
+        // Log
+        const userId = req.session?.userId || null;
+
         await pool.query('INSERT INTO monitores_rotas (monitor_id, rota_id) VALUES ($1, $2)', [
             monitor_id,
             rota_id,
         ]);
-        res.json({ success: true });
+
+        // Notificação
+        const mensagem = `Rota ${rota_id} atribuída ao monitor ${monitor_id}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'CREATE', 'monitores_rotas', $2, $3)`,
+            [userId, rota_id, mensagem] // ou ID do insert, se quisesse
+        );
+
+        res.json({ success: true, message: 'Rota atribuída ao monitor com sucesso!' });
     } catch (error) {
+        console.error('Erro ao atribuir rota para monitor:', error);
         res.json({ success: false, message: error.message });
     }
 });
@@ -1680,11 +2324,11 @@ app.get('/api/motoristas/rota', async (req, res) => {
             return res.status(400).json({ success: false, message: 'motoristaId é obrigatório' });
         }
         const rotaIdQuery = `
-      SELECT rota_id
-      FROM motoristas_rotas
-      WHERE motorista_id = $1
-      LIMIT 1;
-    `;
+            SELECT rota_id
+            FROM motoristas_rotas
+            WHERE motorista_id = $1
+            LIMIT 1;
+        `;
         const rotaIdResult = await pool.query(rotaIdQuery, [motoristaId]);
         if (rotaIdResult.rows.length === 0) {
             return res.json({ success: true, message: 'Nenhuma rota encontrada', pontos: [] });
@@ -1692,15 +2336,15 @@ app.get('/api/motoristas/rota', async (req, res) => {
         const rotaId = rotaIdResult.rows[0].rota_id;
 
         const rotaDadosQuery = `
-      SELECT
-        partida_lat,
-        partida_lng,
-        chegada_lat,
-        chegada_lng
-      FROM rotas_simples
-      WHERE id = $1
-      LIMIT 1;
-    `;
+            SELECT
+                partida_lat,
+                partida_lng,
+                chegada_lat,
+                chegada_lng
+            FROM rotas_simples
+            WHERE id = $1
+            LIMIT 1;
+        `;
         const rotaDadosRes = await pool.query(rotaDadosQuery, [rotaId]);
         if (rotaDadosRes.rows.length === 0) {
             return res.json({ success: true, message: 'Rota não encontrada', pontos: [] });
@@ -1708,12 +2352,12 @@ app.get('/api/motoristas/rota', async (req, res) => {
         const rd = rotaDadosRes.rows[0];
 
         const pontosQuery = `
-      SELECT p.latitude, p.longitude
-      FROM rotas_pontos rp
-      JOIN pontos p ON p.id = rp.ponto_id
-      WHERE rp.rota_id = $1
-      ORDER BY rp.id;
-    `;
+            SELECT p.latitude, p.longitude
+            FROM rotas_pontos rp
+            JOIN pontos p ON p.id = rp.ponto_id
+            WHERE rp.rota_id = $1
+            ORDER BY rp.id;
+        `;
         const pontosRes = await pool.query(pontosQuery, [rotaId]);
         const pontosParada = pontosRes.rows.map((row) => ({
             lat: row.latitude ? parseFloat(row.latitude) : 0,
@@ -1721,12 +2365,12 @@ app.get('/api/motoristas/rota', async (req, res) => {
         }));
 
         const escolasQuery = `
-      SELECT e.latitude, e.longitude
-      FROM rotas_escolas re
-      JOIN escolas e ON e.id = re.escola_id
-      WHERE re.rota_id = $1
-      ORDER BY re.id;
-    `;
+            SELECT e.latitude, e.longitude
+            FROM rotas_escolas re
+            JOIN escolas e ON e.id = re.escola_id
+            WHERE re.rota_id = $1
+            ORDER BY re.id;
+        `;
         const escolasRes = await pool.query(escolasQuery, [rotaId]);
         const escolasPontos = escolasRes.rows.map((row) => ({
             lat: row.latitude ? parseFloat(row.latitude) : 0,
@@ -1760,10 +2404,10 @@ app.get('/api/motoristas/rota', async (req, res) => {
 app.get('/api/dashboard', async (req, res) => {
     try {
         const alunosAtivos = await pool.query(`
-      SELECT COUNT(*)::int AS count
-      FROM alunos_ativos
-      WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
-    `);
+            SELECT COUNT(*)::int AS count
+            FROM alunos_ativos
+            WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
+        `);
         const rotasAtivas = await pool.query(`SELECT COUNT(*)::int AS count FROM rotas_simples`);
         const zoneamentosCount = await pool.query(`SELECT COUNT(*)::int AS count FROM zoneamentos`);
         const motoristasCount = await pool.query(`SELECT COUNT(*)::int AS count FROM motoristas`);
@@ -1852,28 +2496,28 @@ app.get('/api/download-rotas-todas', async (req, res) => {
         }
 
         const rotasQuery = `
-      SELECT 
-        rs.id,
-        rs.identificador,
-        rs.descricao,
-        rs.partida_lat,
-        rs.partida_lng,
-        rs.chegada_lat,
-        rs.chegada_lng,
-        COALESCE(json_agg(
-          json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
-        ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
-        COALESCE(json_agg(
-          json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
-        ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
-      FROM rotas_simples rs
-      LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
-      LEFT JOIN pontos p ON p.id = rp.ponto_id
-      LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
-      LEFT JOIN escolas e ON e.id = re.escola_id
-      GROUP BY rs.id
-      ORDER BY rs.id;
-    `;
+            SELECT 
+                rs.id,
+                rs.identificador,
+                rs.descricao,
+                rs.partida_lat,
+                rs.partida_lng,
+                rs.chegada_lat,
+                rs.chegada_lng,
+                COALESCE(json_agg(
+                  json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
+                ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
+                COALESCE(json_agg(
+                  json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
+                ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
+            FROM rotas_simples rs
+            LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
+            LEFT JOIN pontos p ON p.id = rp.ponto_id
+            LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
+            LEFT JOIN escolas e ON e.id = re.escola_id
+            GROUP BY rs.id
+            ORDER BY rs.id;
+        `;
         const result = await pool.query(rotasQuery);
         if (result.rows.length === 0) {
             return res.status(404).send('Nenhuma rota encontrada.');
@@ -1959,29 +2603,29 @@ app.get('/api/download-rota/:id', async (req, res) => {
         }
 
         const rotaQuery = `
-      SELECT 
-        rs.id,
-        rs.identificador,
-        rs.descricao,
-        rs.partida_lat,
-        rs.partida_lng,
-        rs.chegada_lat,
-        rs.chegada_lng,
-        COALESCE(json_agg(
-          json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
-        ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
-        COALESCE(json_agg(
-          json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
-        ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
-      FROM rotas_simples rs
-      LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
-      LEFT JOIN pontos p ON p.id = rp.ponto_id
-      LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
-      LEFT JOIN escolas e ON e.id = re.escola_id
-      WHERE rs.id = $1
-      GROUP BY rs.id
-      LIMIT 1;
-    `;
+            SELECT 
+                rs.id,
+                rs.identificador,
+                rs.descricao,
+                rs.partida_lat,
+                rs.partida_lng,
+                rs.chegada_lat,
+                rs.chegada_lng,
+                COALESCE(json_agg(
+                  json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
+                ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
+                COALESCE(json_agg(
+                  json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
+                ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
+            FROM rotas_simples rs
+            LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
+            LEFT JOIN pontos p ON p.id = rp.ponto_id
+            LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
+            LEFT JOIN escolas e ON e.id = re.escola_id
+            WHERE rs.id = $1
+            GROUP BY rs.id
+            LIMIT 1;
+        `;
         const result = await pool.query(rotaQuery, [id]);
         if (result.rows.length === 0) {
             return res.status(404).send('Rota não encontrada.');
@@ -2057,54 +2701,51 @@ app.get('/api/download-rota/:id', async (req, res) => {
     }
 });
 
-// ====================================================================================
-// ROTAS SIMPLES DETALHADAS
-// ====================================================================================
 app.get('/api/rotas-simples-detalhes', async (req, res) => {
     try {
         const query = `
-      WITH re AS (
-        SELECT 
-          r.id AS rota_id,
-          r.identificador,
-          r.descricao,
-          r.area_zona,
+            WITH re AS (
+                SELECT 
+                    r.id AS rota_id,
+                    r.identificador,
+                    r.descricao,
+                    r.area_zona,
 
-          array_agg(DISTINCT p.id) FILTER (WHERE p.id IS NOT NULL) AS pontos_ids,
-          array_agg(DISTINCT p.nome_ponto) FILTER (WHERE p.id IS NOT NULL) AS pontos_nomes,
+                    array_agg(DISTINCT p.id) FILTER (WHERE p.id IS NOT NULL) AS pontos_ids,
+                    array_agg(DISTINCT p.nome_ponto) FILTER (WHERE p.id IS NOT NULL) AS pontos_nomes,
 
-          array_agg(DISTINCT z.id) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_ids,
-          array_agg(DISTINCT z.nome) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_nomes,
+                    array_agg(DISTINCT z.id) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_ids,
+                    array_agg(DISTINCT z.nome) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_nomes,
 
-          array_agg(DISTINCT e.id) FILTER (WHERE e.id IS NOT NULL) AS escolas_ids,
-          array_agg(DISTINCT e.nome) FILTER (WHERE e.id IS NOT NULL) AS escolas_nomes
+                    array_agg(DISTINCT e.id) FILTER (WHERE e.id IS NOT NULL) AS escolas_ids,
+                    array_agg(DISTINCT e.nome) FILTER (WHERE e.id IS NOT NULL) AS escolas_nomes
 
-        FROM rotas_simples r
-        LEFT JOIN rotas_pontos rp ON rp.rota_id = r.id
-        LEFT JOIN pontos p ON p.id = rp.ponto_id
-        LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-        LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
+                FROM rotas_simples r
+                LEFT JOIN rotas_pontos rp ON rp.rota_id = r.id
+                LEFT JOIN pontos p ON p.id = rp.ponto_id
+                LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+                LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
 
-        LEFT JOIN rotas_escolas re2 ON re2.rota_id = r.id
-        LEFT JOIN escolas e ON e.id = re2.escola_id
+                LEFT JOIN rotas_escolas re2 ON re2.rota_id = r.id
+                LEFT JOIN escolas e ON e.id = re2.escola_id
 
-        GROUP BY r.id
-      )
-      SELECT 
-        rota_id AS id,
-        identificador,
-        descricao,
-        area_zona,
+                GROUP BY r.id
+            )
+            SELECT 
+                rota_id AS id,
+                identificador,
+                descricao,
+                area_zona,
 
-        pontos_ids,
-        pontos_nomes,
-        zoneamentos_ids,
-        zoneamentos_nomes,
-        escolas_ids,
-        escolas_nomes
-      FROM re
-      ORDER BY rota_id;
-    `;
+                pontos_ids,
+                pontos_nomes,
+                zoneamentos_ids,
+                zoneamentos_nomes,
+                escolas_ids,
+                escolas_nomes
+            FROM re
+            ORDER BY rota_id;
+        `;
         const result = await pool.query(query);
 
         const data = result.rows.map((row) => {
@@ -2161,12 +2802,12 @@ app.get('/api/motoristas/veiculo/:motoristaId', async (req, res) => {
     try {
         const { motoristaId } = req.params;
         const query = `
-      SELECT f.*
-      FROM frota f
-      INNER JOIN frota_motoristas fm ON fm.frota_id = f.id
-      WHERE fm.motorista_id = $1
-      LIMIT 1;
-    `;
+            SELECT f.*
+            FROM frota f
+            INNER JOIN frota_motoristas fm ON fm.frota_id = f.id
+            WHERE fm.motorista_id = $1
+            LIMIT 1;
+        `;
         const result = await pool.query(query, [motoristaId]);
         if (result.rows.length === 0) {
             return res.json({
@@ -2251,74 +2892,77 @@ app.post('/api/checklists_onibus/salvar', async (req, res) => {
             obs_retorno,
         } = req.body;
 
+        // userId para log
+        const userId = req.session?.userId || null;
+
         const selectQuery = `
-      SELECT id FROM checklists_onibus
-      WHERE motorista_id=$1 AND frota_id=$2 AND data_checklist=$3
-      LIMIT 1
-    `;
+            SELECT id FROM checklists_onibus
+            WHERE motorista_id=$1 AND frota_id=$2 AND data_checklist=$3
+            LIMIT 1
+        `;
         const selectResult = await pool.query(selectQuery, [motorista_id, frota_id, data_checklist]);
 
         if (selectResult.rows.length > 0) {
             // UPDATE
             const checklistId = selectResult.rows[0].id;
             const updateQuery = `
-        UPDATE checklists_onibus
-        SET
-          horario_saida = $1,
-          horario_retorno = $2,
-          quilometragem_final = $3,
-          cnh_valida = $4,
-          crlv_atualizado = $5,
-          aut_cert_escolar = $6,
-          pneus_calibragem = $7,
-          pneus_estado = $8,
-          pneu_estepe = $9,
-          fluido_oleo_motor = $10,
-          fluido_freio = $11,
-          fluido_radiador = $12,
-          fluido_parabrisa = $13,
-          freio_pe = $14,
-          freio_mao = $15,
-          farois = $16,
-          lanternas = $17,
-          setas = $18,
-          luz_freio = $19,
-          luz_re = $20,
-          iluminacao_interna = $21,
-          extintor = $22,
-          cintos = $23,
-          martelo_emergencia = $24,
-          kit_primeiros_socorros = $25,
-          lataria_pintura = $26,
-          vidros_limpos = $27,
-          retrovisores_ok = $28,
-          limpador_para_brisa = $29,
-          sinalizacao_externa = $30,
-          interior_limpo = $31,
-          combustivel_suficiente = $32,
-          triangulo_sinalizacao = $33,
-          macaco_chave_roda = $34,
-          material_limpeza = $35,
-          acessibilidade = $36,
-          obs_saida = $37,
-          combustivel_verificar = $38,
-          abastecimento = $39,
-          pneus_desgaste = $40,
-          lataria_avarias = $41,
-          interior_limpeza_retorno = $42,
-          extintor_retorno = $43,
-          cintos_retorno = $44,
-          kit_primeiros_socorros_retorno = $45,
-          equip_obrigatorio_retorno = $46,
-          equip_acessorio_retorno = $47,
-          problemas_mecanicos = $48,
-          incidentes = $49,
-          problema_portas_janelas = $50,
-          manutencao_preventiva = $51,
-          pronto_prox_dia = $52,
-          obs_retorno = $53
-        WHERE id=$54
-      `;
+                UPDATE checklists_onibus
+                SET
+                  horario_saida = $1,
+                  horario_retorno = $2,
+                  quilometragem_final = $3,
+                  cnh_valida = $4,
+                  crlv_atualizado = $5,
+                  aut_cert_escolar = $6,
+                  pneus_calibragem = $7,
+                  pneus_estado = $8,
+                  pneu_estepe = $9,
+                  fluido_oleo_motor = $10,
+                  fluido_freio = $11,
+                  fluido_radiador = $12,
+                  fluido_parabrisa = $13,
+                  freio_pe = $14,
+                  freio_mao = $15,
+                  farois = $16,
+                  lanternas = $17,
+                  setas = $18,
+                  luz_freio = $19,
+                  luz_re = $20,
+                  iluminacao_interna = $21,
+                  extintor = $22,
+                  cintos = $23,
+                  martelo_emergencia = $24,
+                  kit_primeiros_socorros = $25,
+                  lataria_pintura = $26,
+                  vidros_limpos = $27,
+                  retrovisores_ok = $28,
+                  limpador_para_brisa = $29,
+                  sinalizacao_externa = $30,
+                  interior_limpo = $31,
+                  combustivel_suficiente = $32,
+                  triangulo_sinalizacao = $33,
+                  macaco_chave_roda = $34,
+                  material_limpeza = $35,
+                  acessibilidade = $36,
+                  obs_saida = $37,
+                  combustivel_verificar = $38,
+                  abastecimento = $39,
+                  pneus_desgaste = $40,
+                  lataria_avarias = $41,
+                  interior_limpeza_retorno = $42,
+                  extintor_retorno = $43,
+                  cintos_retorno = $44,
+                  kit_primeiros_socorros_retorno = $45,
+                  equip_obrigatorio_retorno = $46,
+                  equip_acessorio_retorno = $47,
+                  problemas_mecanicos = $48,
+                  incidentes = $49,
+                  problema_portas_janelas = $50,
+                  manutencao_preventiva = $51,
+                  pronto_prox_dia = $52,
+                  obs_retorno = $53
+                WHERE id=$54
+            `;
             const updateValues = [
                 horario_saida || null,
                 horario_retorno || null,
@@ -2390,49 +3034,58 @@ app.post('/api/checklists_onibus/salvar', async (req, res) => {
                 checklistId,
             ];
             await pool.query(updateQuery, updateValues);
+
+            // Notificação: UPDATE
+            const mensagem = `Checklist atualizado (ID: ${checklistId}) para motorista ${motorista_id}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'UPDATE', 'checklists_onibus', $2, $3)`,
+                [userId, checklistId, mensagem]
+            );
+
             return res.json({ success: true, message: 'Checklist atualizado com sucesso!' });
         } else {
             // INSERT
             const insertQuery = `
-        INSERT INTO checklists_onibus (
-          motorista_id, frota_id, data_checklist,
-          horario_saida, horario_retorno, quilometragem_final,
-          cnh_valida, crlv_atualizado, aut_cert_escolar,
-          pneus_calibragem, pneus_estado, pneu_estepe,
-          fluido_oleo_motor, fluido_freio, fluido_radiador, fluido_parabrisa,
-          freio_pe, freio_mao,
-          farois, lanternas, setas, luz_freio, luz_re, iluminacao_interna,
-          extintor, cintos, martelo_emergencia, kit_primeiros_socorros,
-          lataria_pintura, vidros_limpos, retrovisores_ok, limpador_para_brisa,
-          sinalizacao_externa, interior_limpo,
-          combustivel_suficiente, triangulo_sinalizacao, macaco_chave_roda,
-          material_limpeza, acessibilidade, obs_saida,
-          combustivel_verificar, abastecimento, pneus_desgaste, lataria_avarias,
-          interior_limpeza_retorno, extintor_retorno, cintos_retorno, kit_primeiros_socorros_retorno,
-          equip_obrigatorio_retorno, equip_acessorio_retorno,
-          problemas_mecanicos, incidentes, problema_portas_janelas,
-          manutencao_preventiva, pronto_prox_dia, obs_retorno
-        ) VALUES (
-          $1, $2, $3,
-          $4, $5, $6,
-          $7, $8, $9,
-          $10, $11, $12,
-          $13, $14, $15, $16,
-          $17, $18,
-          $19, $20, $21, $22, $23, $24,
-          $25, $26, $27, $28,
-          $29, $30, $31, $32,
-          $33, $34,
-          $35, $36, $37,
-          $38, $39, $40,
-          $41, $42, $43, $44,
-          $45, $46, $47, $48,
-          $49, $50,
-          $51, $52, $53,
-          $54, $55, $56
-        )
-        RETURNING id
-      `;
+                INSERT INTO checklists_onibus (
+                  motorista_id, frota_id, data_checklist,
+                  horario_saida, horario_retorno, quilometragem_final,
+                  cnh_valida, crlv_atualizado, aut_cert_escolar,
+                  pneus_calibragem, pneus_estado, pneu_estepe,
+                  fluido_oleo_motor, fluido_freio, fluido_radiador, fluido_parabrisa,
+                  freio_pe, freio_mao,
+                  farois, lanternas, setas, luz_freio, luz_re, iluminacao_interna,
+                  extintor, cintos, martelo_emergencia, kit_primeiros_socorros,
+                  lataria_pintura, vidros_limpos, retrovisores_ok, limpador_para_brisa,
+                  sinalizacao_externa, interior_limpo,
+                  combustivel_suficiente, triangulo_sinalizacao, macaco_chave_roda,
+                  material_limpeza, acessibilidade, obs_saida,
+                  combustivel_verificar, abastecimento, pneus_desgaste, lataria_avarias,
+                  interior_limpeza_retorno, extintor_retorno, cintos_retorno, kit_primeiros_socorros_retorno,
+                  equip_obrigatorio_retorno, equip_acessorio_retorno,
+                  problemas_mecanicos, incidentes, problema_portas_janelas,
+                  manutencao_preventiva, pronto_prox_dia, obs_retorno
+                ) VALUES (
+                  $1, $2, $3,
+                  $4, $5, $6,
+                  $7, $8, $9,
+                  $10, $11, $12,
+                  $13, $14, $15, $16,
+                  $17, $18,
+                  $19, $20, $21, $22, $23, $24,
+                  $25, $26, $27, $28,
+                  $29, $30, $31, $32,
+                  $33, $34,
+                  $35, $36, $37,
+                  $38, $39, $40,
+                  $41, $42, $43, $44,
+                  $45, $46, $47, $48,
+                  $49, $50,
+                  $51, $52, $53,
+                  $54, $55, $56
+                )
+                RETURNING id
+            `;
             const insertValues = [
                 motorista_id,
                 frota_id,
@@ -2505,10 +3158,19 @@ app.post('/api/checklists_onibus/salvar', async (req, res) => {
             ];
             const result = await pool.query(insertQuery, insertValues);
             if (result.rows.length > 0) {
+                const newChecklistId = result.rows[0].id;
+                // Notificação: CREATE
+                const mensagem = `Checklist criado (ID: ${newChecklistId}) para motorista ${motorista_id}`;
+                await pool.query(
+                    `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                     VALUES ($1, 'CREATE', 'checklists_onibus', $2, $3)`,
+                    [userId, newChecklistId, mensagem]
+                );
+
                 return res.json({
                     success: true,
                     message: 'Checklist cadastrado com sucesso!',
-                    id: result.rows[0].id,
+                    id: newChecklistId,
                 });
             } else {
                 return res.status(500).json({
@@ -2533,13 +3195,13 @@ app.get('/api/checklists_onibus', async (req, res) => {
             });
         }
         const query = `
-      SELECT *
-      FROM checklists_onibus
-      WHERE motorista_id=$1
-        AND frota_id=$2
-        AND data_checklist=$3
-      LIMIT 1
-    `;
+            SELECT *
+            FROM checklists_onibus
+            WHERE motorista_id=$1
+              AND frota_id=$2
+              AND data_checklist=$3
+            LIMIT 1
+        `;
         const values = [motorista_id, frota_id, data_checklist];
         const result = await pool.query(query, values);
         if (result.rows.length === 0) {
@@ -2598,6 +3260,9 @@ app.post(
             let laudoDeficienciaPath = null;
             let comprovanteEnderecoPath = null;
 
+            // userId para notificação
+            const userId = req.session?.userId || null;
+
             if (req.files['laudo_deficiencia'] && req.files['laudo_deficiencia'].length > 0) {
                 laudoDeficienciaPath = `uploads/${req.files['laudo_deficiencia'][0].filename}`;
             }
@@ -2609,28 +3274,28 @@ app.post(
             const deficienciaBool = deficiencia === 'sim';
 
             const insertQuery = `
-        INSERT INTO cocessao_rota (
-          nome_responsavel,
-          cpf_responsavel,
-          celular_responsavel,
-          id_matricula_aluno,
-          escola_id,
-          cep,
-          numero,
-          endereco,
-          zoneamento,
-          deficiencia,
-          laudo_deficiencia_path,
-          comprovante_endereco_path,
-          latitude,
-          longitude,
-          observacoes,
-          criterio_direito
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
-                $9, $10, $11, $12, $13, $14, $15, $16)
-        RETURNING id
-      `;
+                INSERT INTO cocessao_rota (
+                    nome_responsavel,
+                    cpf_responsavel,
+                    celular_responsavel,
+                    id_matricula_aluno,
+                    escola_id,
+                    cep,
+                    numero,
+                    endereco,
+                    zoneamento,
+                    deficiencia,
+                    laudo_deficiencia_path,
+                    comprovante_endereco_path,
+                    latitude,
+                    longitude,
+                    observacoes,
+                    criterio_direito
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+                        $9, $10, $11, $12, $13, $14, $15, $16)
+                RETURNING id
+            `;
             const values = [
                 nome_responsavel,
                 cpf_responsavel,
@@ -2652,10 +3317,20 @@ app.post(
             const result = await pool.query(insertQuery, values);
 
             if (result.rows.length > 0) {
+                const newId = result.rows[0].id;
+
+                // Notificação
+                const mensagem = `Nova solicitação de rota para aluno: matricula ${id_matricula_aluno}`;
+                await pool.query(
+                    `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                     VALUES ($1, 'CREATE', 'cocessao_rota', $2, $3)`,
+                    [userId, newId, mensagem]
+                );
+
                 return res.json({
                     success: true,
                     message: 'Solicitação salva com sucesso na tabela cocessao_rota!',
-                    id: result.rows[0].id,
+                    id: newId,
                 });
             } else {
                 return res.status(500).json({
@@ -2677,10 +3352,22 @@ app.post(
 app.delete('/api/rotas-simples/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const deleteQuery = 'DELETE FROM rotas_simples WHERE id = $1 RETURNING id';
+
+        // userId para log
+        const userId = req.session?.userId || null;
+
+        const deleteQuery = 'DELETE FROM rotas_simples WHERE id = $1 RETURNING id, identificador';
         const result = await pool.query(deleteQuery, [id]);
 
         if (result.rowCount > 0) {
+            const { identificador } = result.rows[0];
+            // NOTIFICAÇÃO
+            const mensagem = `Rota simples excluída: ${identificador}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'DELETE', 'rotas_simples', $2, $3)`,
+                [userId, id, mensagem]
+            );
             return res.json({ success: true, message: 'Rota excluída com sucesso!' });
         } else {
             return res.status(404).json({ success: false, message: 'Rota não encontrada.' });
@@ -2718,6 +3405,9 @@ app.put(
                 criterio_direito,
             } = req.body;
 
+            // userId para log
+            const userId = req.session?.userId || null;
+
             let laudoDeficienciaPath = null;
             let comprovanteEnderecoPath = null;
             if (req.files['laudo_deficiencia'] && req.files['laudo_deficiencia'].length > 0) {
@@ -2743,26 +3433,26 @@ app.put(
             const deficienciaBool = deficiencia === 'sim';
 
             const updateQuery = `
-        UPDATE cocessao_rota
-        SET
-          nome_responsavel = $1,
-          cpf_responsavel = $2,
-          celular_responsavel = $3,
-          id_matricula_aluno = $4,
-          escola_id = $5,
-          cep = $6,
-          numero = $7,
-          endereco = $8,
-          zoneamento = $9,
-          deficiencia = $10,
-          laudo_deficiencia_path = $11,
-          comprovante_endereco_path = $12,
-          latitude = $13,
-          longitude = $14,
-          observacoes = $15,
-          criterio_direito = $16
-        WHERE id = $17
-      `;
+                UPDATE cocessao_rota
+                SET
+                  nome_responsavel = $1,
+                  cpf_responsavel = $2,
+                  celular_responsavel = $3,
+                  id_matricula_aluno = $4,
+                  escola_id = $5,
+                  cep = $6,
+                  numero = $7,
+                  endereco = $8,
+                  zoneamento = $9,
+                  deficiencia = $10,
+                  laudo_deficiencia_path = $11,
+                  comprovante_endereco_path = $12,
+                  latitude = $13,
+                  longitude = $14,
+                  observacoes = $15,
+                  criterio_direito = $16
+                WHERE id = $17
+            `;
             const values = [
                 nome_responsavel,
                 cpf_responsavel,
@@ -2784,6 +3474,15 @@ app.put(
             ];
 
             await pool.query(updateQuery, values);
+
+            // NOTIFICAÇÃO
+            const mensagem = `Solicitação de rota (ID: ${id}) atualizada. Responsável: ${nome_responsavel}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'UPDATE', 'cocessao_rota', $2, $3)`,
+                [userId, id, mensagem]
+            );
+
             return res.json({ success: true, message: 'Solicitação atualizada com sucesso!' });
         } catch (error) {
             console.error('Erro ao atualizar solicitação:', error);
@@ -2796,9 +3495,28 @@ app.put(
 app.delete('/api/cocessao-rota/:id', async (req, res) => {
     try {
         const { id } = req.params;
+
+        // userId para log
+        const userId = req.session?.userId || null;
+
+        // Buscar algo p/ mensagem
+        const busca = await pool.query('SELECT nome_responsavel FROM cocessao_rota WHERE id=$1', [id]);
+        if (busca.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Solicitação não encontrada.' });
+        }
+        const nomeResponsavel = busca.rows[0].nome_responsavel;
+
         const deleteQuery = 'DELETE FROM cocessao_rota WHERE id = $1';
         const result = await pool.query(deleteQuery, [id]);
         if (result.rowCount > 0) {
+            // NOTIFICAÇÃO
+            const mensagem = `Solicitação de rota excluída (ID: ${id}). Responsável: ${nomeResponsavel}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'DELETE', 'cocessao_rota', $2, $3)`,
+                [userId, id, mensagem]
+            );
+
             return res.json({ success: true, message: 'Solicitação excluída com sucesso!' });
         } else {
             return res.status(404).json({ success: false, message: 'Solicitação não encontrada.' });
@@ -2836,30 +3554,46 @@ app.post('/api/memorandos/cadastrar', memorandoUpload.none(), async (req, res) =
         });
     }
 
+    // userId para notificação
+    const userId = req.session?.userId || null;
     const data_criacao = moment().format('YYYY-MM-DD');
 
     try {
         const insertQuery = `
-      INSERT INTO memorandos
-      (tipo_memorando, destinatario, corpo, data_criacao)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id;
-    `;
+            INSERT INTO memorandos
+            (tipo_memorando, destinatario, corpo, data_criacao)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id;
+        `;
         const values = [tipo_memorando, destinatario, corpo, data_criacao];
         const result = await pool.query(insertQuery, values);
 
-        const newId = result.rows[0].id;
+        if (result.rows.length > 0) {
+            const newId = result.rows[0].id;
+            // NOTIFICAÇÃO
+            const mensagem = `Memorando criado: Tipo ${tipo_memorando}, destinatário: ${destinatario}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+                 VALUES ($1, 'CREATE', 'memorandos', $2, $3)`,
+                [userId, newId, mensagem]
+            );
 
-        return res.json({
-            success: true,
-            memorando: {
-                id: newId,
-                tipo_memorando,
-                destinatario,
-                corpo,
-                data_criacao,
-            },
-        });
+            return res.json({
+                success: true,
+                memorando: {
+                    id: newId,
+                    tipo_memorando,
+                    destinatario,
+                    corpo,
+                    data_criacao,
+                },
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao cadastrar memorando (retorno inesperado).',
+            });
+        }
     } catch (error) {
         console.error('Erro ao cadastrar memorando:', error);
         return res.status(500).json({
@@ -3104,6 +3838,19 @@ app.get('/api/memorandos/:id', async (req, res) => {
 app.delete('/api/memorandos/:id', async (req, res) => {
     const { id } = req.params;
     try {
+        // userId para notificação
+        const userId = req.session?.userId || null;
+
+        // Buscar algo p/ mensagem
+        const buscaMem = await pool.query('SELECT tipo_memorando FROM memorandos WHERE id = $1', [id]);
+        if (buscaMem.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Memorando não encontrado.',
+            });
+        }
+        const tipo = buscaMem.rows[0].tipo_memorando;
+
         const result = await pool.query('DELETE FROM memorandos WHERE id = $1 RETURNING *', [id]);
         if (result.rowCount === 0) {
             return res.status(404).json({
@@ -3111,6 +3858,15 @@ app.delete('/api/memorandos/:id', async (req, res) => {
                 message: 'Memorando não encontrado.',
             });
         }
+
+        // Notificação
+        const mensagem = `Memorando excluído: Tipo ${tipo}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'DELETE', 'memorandos', $2, $3)`,
+            [userId, id, mensagem]
+        );
+
         return res.json({
             success: true,
             message: 'Memorando excluído com sucesso.',
@@ -3249,6 +4005,10 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
         if (!escolaId) {
             return res.json({ success: false, message: 'É necessário informar uma escola.' });
         }
+
+        // userId para log
+        const userId = req.session?.userId || null;
+
         const buscaEscola = await pool.query(`SELECT id FROM escolas WHERE id = $1`, [escolaId]);
         if (buscaEscola.rows.length === 0) {
             return res.json({ success: false, message: 'Escola não encontrada.' });
@@ -3286,13 +4046,13 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
 
             await pool.query(
                 `INSERT INTO alunos_ativos(
-          id_matricula, escola_id, ano, modalidade, formato_letivo, turma,
-          pessoa_nome, cpf, transporte_escolar_poder_publico, cep, bairro,
-          filiacao_1, numero_telefone, filiacao_2, responsavel, deficiencia
-        )
-        VALUES ($1, $2, $3, $4, $5, $6,
-                $7, $8, $9, $10, $11,
-                $12, $13, $14, $15, $16)`,
+                    id_matricula, escola_id, ano, modalidade, formato_letivo, turma,
+                    pessoa_nome, cpf, transporte_escolar_poder_publico, cep, bairro,
+                    filiacao_1, numero_telefone, filiacao_2, responsavel, deficiencia
+                )
+                VALUES ($1, $2, $3, $4, $5, $6,
+                        $7, $8, $9, $10, $11,
+                        $12, $13, $14, $15, $16)`,
                 [
                     id_matricula || null,
                     escolaId,
@@ -3314,6 +4074,14 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
             );
         }
 
+        // Notificação: "import" de alunos
+        const mensagem = `Importados ${alunos.length} alunos para a escola ID ${escolaId}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
+            [userId, mensagem]
+        );
+
         return res.json({ success: true, message: 'Alunos importados com sucesso!' });
     } catch (err) {
         console.error(err);
@@ -3324,12 +4092,12 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
 app.get('/api/alunos-ativos', async (req, res) => {
     try {
         const query = `
-      SELECT a.*,
-             e.nome AS escola_nome
-      FROM alunos_ativos a
-      LEFT JOIN escolas e ON e.id = a.escola_id
-      ORDER BY a.id DESC
-    `;
+            SELECT a.*,
+                   e.nome AS escola_nome
+            FROM alunos_ativos a
+            LEFT JOIN escolas e ON e.id = a.escola_id
+            ORDER BY a.id DESC
+        `;
         const result = await pool.query(query);
         return res.json(result.rows);
     } catch (err) {
