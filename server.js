@@ -17,13 +17,19 @@ const { v4: uuidv4 } = require('uuid');
 const moment = require('moment');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun, Header, Footer } = require('docx');
 const PDFDocument = require('pdfkit');
+const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
+const bcrypt = require('bcrypt');
 
 
 const app = express();
 
+
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use('/assets', express.static(path.join(__dirname, 'public', 'assets')));
+app.use('/pages', isAuthenticated, express.static(path.join(__dirname, 'public', 'pages')));
 
 // --------------------------------------------------------------------------------
 // CONFIGURAÇÃO DO BANCO DE DADOS
@@ -35,7 +41,19 @@ const pool = new Pool({
     password: 'DeD-140619',
     port: 5430,
 });
-
+app.use(session({
+    store: new pgSession({
+        pool: pool,             // Reutiliza seu Pool do PostgreSQL
+        tableName: 'session',   // Tabela para armazenar as sessões
+    }),
+    secret: 'DeD-140619', // Troque por algo seguro em produção
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000, // 24 horas
+        secure: false               // Se estiver usando HTTPS em prod, coloque true
+    }
+}));
 app.use(cors({ origin: '*' }));
 
 // --------------------------------------------------------------------------------
@@ -45,6 +63,48 @@ const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
+
+
+function isAuthenticated(req, res, next) {
+    // Primeiro verifica se existe usuário logado
+    if (!req.session || !req.session.userId) {
+        return res.redirect('/');
+    }
+
+    // Se o usuário for ID 1, dá acesso total (usuário master)
+    if (req.session.userId === 1) {
+        return next();
+    }
+
+    // Para outros IDs, precisamos verificar se o campo "init" na tabela está "true"
+    pool.query('SELECT init FROM usuarios WHERE id = $1', [req.session.userId])
+        .then((result) => {
+            if (result.rows.length === 0) {
+                // Usuário não encontrado no BD
+                return res.redirect('/');
+            }
+
+            const { init } = result.rows[0];
+            if (init === true) {
+                // Se "init" for true, permite acesso
+                return next();
+            } else {
+                // Caso contrário, bloqueia
+                return res.status(403).send('Acesso negado: usuário sem permissão.');
+            }
+        })
+        .catch((error) => {
+            console.error('Erro ao verificar permissões:', error);
+            return res.status(500).send('Erro interno do servidor.');
+        });
+}
+
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        res.clearCookie('connect.sid');
+        return res.redirect('/');
+    });
+});
 
 const memorandoUpload = multer();
 
@@ -66,7 +126,7 @@ const uploadMonitores = multer({ storage: storage });
 // ROTA PRINCIPAL
 // --------------------------------------------------------------------------------
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/pages/transporte-escolar/dashboard-escolar.html'));
+    res.sendFile(path.join(__dirname, 'public/login-cadastro.html'));
 });
 
 // --------------------------------------------------------------------------------
@@ -108,7 +168,138 @@ async function convertToGeoJSON(filePath, originalname) {
     }
     throw new Error('Formato de arquivo não suportado.');
 }
+app.post('/api/cadastrar-usuario', async (req, res) => {
+    try {
+        const { nome_completo, cpf_cnpj, telefone, email, senha } = req.body;
 
+        // Validar se já existe e-mail cadastrado
+        const checkUser = await pool.query(
+            'SELECT id FROM usuarios WHERE email = $1 LIMIT 1',
+            [email]
+        );
+        if (checkUser.rows.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Este e-mail já está em uso. Tente outro.'
+            });
+        }
+
+        // Remove qualquer pontuação do cpf_cnpj
+        const docNumeros = (cpf_cnpj || '').replace(/\D/g, ''); // só dígitos
+        let cpfValue = null;
+        let cnpjValue = null;
+
+        // Verifica se é CPF (11 dígitos) ou CNPJ (14 dígitos)
+        if (docNumeros.length === 11) {
+            cpfValue = docNumeros;
+        } else if (docNumeros.length === 14) {
+            cnpjValue = docNumeros;
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'Documento inválido: deve ter 11 dígitos (CPF) ou 14 (CNPJ).'
+            });
+        }
+
+        // Criptografar senha
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(senha, saltRounds);
+
+        // Inserir no banco
+        const insertQuery = `
+        INSERT INTO usuarios (
+          nome_completo, cpf, cnpj, telefone, email, senha, ativo
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id
+      `;
+        // Se quiser ativar automaticamente, use 'ativo = true'
+        const values = [
+            nome_completo,
+            cpfValue,
+            cnpjValue,
+            telefone,
+            email,
+            hashedPassword,
+            true
+        ];
+
+        const result = await pool.query(insertQuery, values);
+        if (result.rows.length > 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'Cadastro realizado com sucesso! Aguarde ativação ou permissões.'
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                message: 'Não foi possível cadastrar o usuário (erro interno).'
+            });
+        }
+
+    } catch (error) {
+        console.error('Erro ao cadastrar usuário:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro ao cadastrar usuário. Tente novamente.'
+        });
+    }
+});
+
+
+// -----------------------------------
+// ROTA: LOGIN
+// -----------------------------------
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, senha } = req.body;
+
+        // Buscar usuário
+        const userQuery = 'SELECT id, senha, ativo FROM usuarios WHERE email = $1 LIMIT 1';
+        const result = await pool.query(userQuery, [email]);
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({
+                success: false,
+                message: 'Usuário não encontrado.'
+            });
+        }
+
+        const usuario = result.rows[0];
+        if (!usuario.ativo) {
+            return res.status(403).json({
+                success: false,
+                message: 'Este usuário ainda não está ativo no sistema.'
+            });
+        }
+
+        // Comparar senha usando bcrypt
+        const match = await bcrypt.compare(senha, usuario.senha);
+        if (!match) {
+            return res.status(401).json({
+                success: false,
+                message: 'Senha incorreta.'
+            });
+        }
+
+        // Se chegou aqui, login ok. Salvar userId na sessão (se estiver usando express-session):
+        req.session.userId = usuario.id;
+
+        // Retornar sucesso
+        return res.status(200).json({
+            success: true,
+            message: 'Login bem sucedido!',
+            redirectUrl: '/pages/transporte-escolar/dashboard-escolar.html'
+        });
+
+    } catch (error) {
+        console.error('Erro ao efetuar login:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao efetuar login.'
+        });
+    }
+});
 // ====================================================================================
 //                              ZONEAMENTOS
 // ====================================================================================

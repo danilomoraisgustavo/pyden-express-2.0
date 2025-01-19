@@ -766,72 +766,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Novos Alunos -->
-          <div class="row">
-            <div class="col-md-4">
-              <div class="card card-round">
-                <div class="card-body">
-                  <div class="card-head-row card-tools-still-right">
-                    <div class="card-title">Novos Alunos</div>
-                    <div class="card-tools">
-                      <div class="dropdown">
-                        <button class="btn btn-icon btn-clean me-0" type="button" id="dropdownMenuButton"
-                          data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                          <i class="fas fa-ellipsis-h"></i>
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                          <a class="dropdown-item" href="#">Ações</a>
-                          <a class="dropdown-item" href="#">Outra ação</a>
-                          <a class="dropdown-item" href="#">Algo mais aqui</a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-list py-4" id="novos-alunos-lista"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Quilometragem Estimada -->
-            <div class="col-md-8">
-              <div class="card card-round">
-                <div class="card-header">
-                  <div class="card-head-row card-tools-still-right">
-                    <div class="card-title">Quilometragem Estimada</div>
-                    <div class="card-tools">
-                      <div class="dropdown">
-                        <button class="btn btn-icon btn-clean me-0" type="button" id="dropdownMenuButton"
-                          data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                          <i class="fas fa-ellipsis-h"></i>
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                          <a class="dropdown-item" href="#">Ações</a>
-                          <a class="dropdown-item" href="#">Outra ação</a>
-                          <a class="dropdown-item" href="#">Algo mais aqui</a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="card-body p-0">
-                  <div class="table-responsive">
-                    <table class="table align-items-center mb-0" id="tabela-quilometragem">
-                      <thead class="thead-light">
-                        <tr>
-                          <th scope="col">Veículo</th>
-                          <th scope="col" class="text-end">Quilometragem Atual</th>
-                          <th scope="col" class="text-end">Quilometragem Estimada</th>
-                          <th scope="col" class="text-end">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody id="tabela-quilometragem-corpo"></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1307,67 +1241,8 @@
       document.getElementById('fornecedores-total').textContent = data.fornecedores_total || 0;
       document.getElementById('pontos-total').textContent = data.pontos_total || 0;
 
+    };
 
-      const geolocTabela = document.getElementById('geolocalizacao-tabela');
-      if (geolocTabela) {
-        geolocTabela.innerHTML = '';
-        data.geolocalizacao.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>
-              <div class="flag">
-                <img src="../../assets/img/flags/${item.flag}" alt="${item.nome}" />
-              </div>
-            </td>
-            <td>${item.nome}</td>
-            <td class="text-end">${item.valor}</td>
-            <td class="text-end">${item.percentual}%</td>
-          `;
-          geolocTabela.appendChild(tr);
-        });
-      }
-
-      const novosAlunosLista = document.getElementById('novos-alunos-lista');
-      novosAlunosLista.innerHTML = '';
-      data.novos_alunos.forEach(aluno => {
-        const div = document.createElement('div');
-        div.classList.add('item-list');
-        const avatar = aluno.imagem ? `<img src="${aluno.imagem}" alt="..." class="avatar-img rounded-circle" />` : `<span class="avatar-title rounded-circle border border-white">${aluno.iniciais}</span>`;
-        div.innerHTML = `
-          <div class="avatar">
-            ${avatar}
-          </div>
-          <div class="info-user ms-3">
-            <div class="username">${aluno.nome}</div>
-            <div class="status">${aluno.curso}</div>
-          </div>
-          <button class="btn btn-icon btn-link op-8 me-1">
-            <i class="far fa-envelope"></i>
-          </button>
-          <button class="btn btn-icon btn-link btn-danger op-8">
-            <i class="fas fa-ban"></i>
-          </button>
-        `;
-        novosAlunosLista.appendChild(div);
-      });
-
-      const tabelaQuilometragemCorpo = document.getElementById('tabela-quilometragem-corpo');
-      tabelaQuilometragemCorpo.innerHTML = '';
-      data.quilometragem.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <th scope="row">
-            <i class="fas fa-bus me-2 text-primary"></i> ${item.veiculo}
-          </th>
-          <td class="text-end">${item.atual} km</td>
-          <td class="text-end">${item.estimada} km</td>
-          <td class="text-end">
-            <span class="badge badge-${item.status_classe}">${item.status}</span>
-          </td>
-        `;
-        tabelaQuilometragemCorpo.appendChild(tr);
-      });
-    }
 
     document.addEventListener('DOMContentLoaded', carregarDadosDashboard);
 

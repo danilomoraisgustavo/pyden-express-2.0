@@ -362,3 +362,22 @@ CREATE TABLE IF NOT EXISTS alunos_ativos (
   responsavel VARCHAR(255),
   deficiencia TEXT[]
 );
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id SERIAL PRIMARY KEY,
+    nome_completo VARCHAR(255) NOT NULL,
+    cpf VARCHAR(14) NOT NULL,
+    telefone VARCHAR(20) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    senha VARCHAR(255) NOT NULL,
+    ativo BOOLEAN DEFAULT FALSE,
+    permissoes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS session (
+  sid varchar NOT NULL COLLATE "default",
+  sess json NOT NULL,
+  expire timestamp(6) NOT NULL,
+  CONSTRAINT session_pkey PRIMARY KEY (sid)
+);
+CREATE INDEX ON session (expire);

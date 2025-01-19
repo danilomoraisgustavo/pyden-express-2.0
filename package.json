@@ -1,9 +1,12 @@
 {
   "dependencies": {
     "@mapbox/togeojson": "^0.16.2",
+    "bcrypt": "^5.1.1",
+    "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "docx": "^9.1.1",
     "express": "^4.21.2",
+    "express-session": "^1.18.1",
     "fs": "^0.0.1-security",
     "jszip": "^3.10.1",
     "moment": "^2.30.1",
