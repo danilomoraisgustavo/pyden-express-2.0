@@ -96,7 +96,7 @@ function isAuthenticated(req, res, next) {
             return res.status(500).send('Erro interno do servidor.');
         });
 }
-
+console.log("DEBUG: DATABASE_URL =", process.env.DATABASE_URL);
 // --------------------------------------------------------------------------------
 // ARQUIVOS ESTÁTICOS
 // --------------------------------------------------------------------------------
