@@ -127,7 +127,23 @@ const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
-
+const storageUsuarios = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // Cria diretório se não existir
+        const dir = path.join(__dirname, 'uploads', 'usuarios');
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        // Nome do arquivo com timestamp
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = path.extname(file.originalname);
+        cb(null, 'user-' + uniqueSuffix + ext);
+    },
+});
+const uploadUsuarios = multer({ storage: storageUsuarios });
 const memorandoUpload = multer();
 
 const storage = multer.diskStorage({
