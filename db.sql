@@ -371,14 +371,26 @@ CREATE TABLE IF NOT EXISTS alunos_ativos (
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     nome_completo VARCHAR(255) NOT NULL,
-    cpf VARCHAR(14),       -- Aceita até 14 dígitos (padrão: xxx.xxx.xxx-xx)
-    cnpj VARCHAR(18),      -- Aceita até 18 dígitos (padrão: xx.xxx.xxx/xxxx-xx)
+    cpf VARCHAR(14),                   -- Ex: 000.000.000-00
+    cnpj VARCHAR(18),                  -- Ex: 00.000.000/0000-00
     telefone VARCHAR(20) NOT NULL,
     email VARCHAR(100) NOT NULL,
     senha VARCHAR(255) NOT NULL,
-    init BOOLEAN DEFAULT FALSE,  -- Indica se o usuário está liberado (true/false)
-    permissoes TEXT             -- Se precisar de alguma estrutura de permissões extras
+    init BOOLEAN DEFAULT FALSE,        -- Indica se o usuário está ativo/liberado
+    permissoes TEXT,                   -- Lista de permissões em formato de texto (JSON ou CSV)
+    rg VARCHAR(20),                    -- Documento adicional (RG, etc.)
+    endereco VARCHAR(255),
+    cidade VARCHAR(100),
+    estado VARCHAR(100),
+    cep VARCHAR(20),
+    foto_perfil VARCHAR(255),         -- Caminho ou URL da foto do perfil
+    pergunta_seguranca VARCHAR(255),
+    autenticacao_dois_fatores VARCHAR(50),  -- Ex: "off", "sms", "email", "app"
+    tema_preferido VARCHAR(50),       -- Ex: "claro" ou "escuro"
+    notificacoes_email VARCHAR(50),    -- Ex: "todas", "media", "importantes", "nenhuma"
+    linguagem_preferida VARCHAR(10)    -- Ex: "pt-br", "en", "es"
 );
+
 
 -- (Opcional) criar índice único para não permitir emails duplicados:
 -- CREATE UNIQUE INDEX

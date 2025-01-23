@@ -184,6 +184,339 @@ async function convertToGeoJSON(filePath, originalname) {
 // --------------------------------------------------------------------------------
 // ROTA: CADASTRAR USUÁRIO
 // --------------------------------------------------------------------------------
+app.get('/api/usuarios/perfil', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const query = `
+        SELECT
+          id,
+          nome_completo,
+          cpf,
+          cnpj,
+          telefone,
+          email,
+          rg,
+          data_nascimento,
+          cep,
+          cidade,
+          estado,
+          logradouro,
+          numero,
+          complemento,
+          link_foto_perfil,
+          doc_rg_path,
+          doc_contrato_path,
+          preferencia_tema,
+          notificacoes_email,
+          linguagem,
+          auth_dois_fatores,
+          pergunta_seguranca
+        FROM usuarios
+        WHERE id = $1
+        LIMIT 1
+      `;
+        const result = await pool.query(query, [userId]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuário não encontrado.',
+            });
+        }
+        return res.json({
+            success: true,
+            data: result.rows[0],
+        });
+    } catch (error) {
+        console.error('Erro ao buscar perfil:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao buscar perfil do usuário.',
+        });
+    }
+});
+
+app.put('/api/usuarios/perfil', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const {
+            nome_completo,
+            cpf,
+            cnpj,
+            telefone,
+            email,
+            rg,
+            data_nascimento,
+            cep,
+            cidade,
+            estado,
+            logradouro,
+            numero,
+            complemento,
+        } = req.body;
+
+        const query = `
+        UPDATE usuarios
+        SET
+          nome_completo = $1,
+          cpf = $2,
+          cnpj = $3,
+          telefone = $4,
+          email = $5,
+          rg = $6,
+          data_nascimento = $7,
+          cep = $8,
+          cidade = $9,
+          estado = $10,
+          logradouro = $11,
+          numero = $12,
+          complemento = $13
+        WHERE id = $14
+        RETURNING id
+      `;
+        const values = [
+            nome_completo || null,
+            cpf || null,
+            cnpj || null,
+            telefone || null,
+            email || null,
+            rg || null,
+            data_nascimento || null,
+            cep || null,
+            cidade || null,
+            estado || null,
+            logradouro || null,
+            numero || null,
+            complemento || null,
+            userId,
+        ];
+        const result = await pool.query(query, values);
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuário não encontrado para atualizar.',
+            });
+        }
+
+        // Você pode inserir notificação aqui, se desejar:
+        // ...
+
+        return res.json({
+            success: true,
+            message: 'Perfil atualizado com sucesso!',
+        });
+    } catch (error) {
+        console.error('Erro ao atualizar perfil:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao atualizar perfil.',
+        });
+    }
+});
+
+app.put('/api/usuarios/preferencias', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const {
+            preferencia_tema,
+            notificacoes_email,
+            linguagem,
+        } = req.body;
+
+        const query = `
+        UPDATE usuarios
+        SET
+          preferencia_tema = $1,
+          notificacoes_email = $2,
+          linguagem = $3
+        WHERE id = $4
+        RETURNING id
+      `;
+        const values = [
+            preferencia_tema || null,
+            notificacoes_email || null,
+            linguagem || null,
+            userId,
+        ];
+        const result = await pool.query(query, values);
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuário não encontrado para atualizar preferências.',
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'Preferências do usuário atualizadas com sucesso!',
+        });
+    } catch (error) {
+        console.error('Erro ao atualizar preferências:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao atualizar preferências.',
+        });
+    }
+});
+
+app.put(
+    '/api/usuarios/documentos',
+    isAuthenticated,
+    uploadUsuarios.fields([
+        { name: 'profilePic', maxCount: 1 },
+        { name: 'docRg', maxCount: 1 },
+        { name: 'docContrato', maxCount: 1 },
+    ]),
+    async (req, res) => {
+        try {
+            const userId = req.session.userId;
+
+            let linkFotoPerfil = null;
+            let docRgPath = null;
+            let docContratoPath = null;
+
+            if (req.files['profilePic'] && req.files['profilePic'].length > 0) {
+                linkFotoPerfil = 'uploads/usuarios/' + req.files['profilePic'][0].filename;
+            }
+            if (req.files['docRg'] && req.files['docRg'].length > 0) {
+                docRgPath = 'uploads/usuarios/' + req.files['docRg'][0].filename;
+            }
+            if (req.files['docContrato'] && req.files['docContrato'].length > 0) {
+                docContratoPath = 'uploads/usuarios/' + req.files['docContrato'][0].filename;
+            }
+
+            // Se desejar, pesquise os valores antigos do usuário
+            // para excluir arquivos anteriores, se isso fizer sentido.
+
+            // Montar o fragmento de UPDATE só para os campos enviados:
+            const fieldsToSet = [];
+            const values = [];
+            let idx = 1;
+
+            if (linkFotoPerfil) {
+                fieldsToSet.push(` link_foto_perfil = $${idx++}`);
+                values.push(linkFotoPerfil);
+            }
+            if (docRgPath) {
+                fieldsToSet.push(` doc_rg_path = $${idx++}`);
+                values.push(docRgPath);
+            }
+            if (docContratoPath) {
+                fieldsToSet.push(` doc_contrato_path = $${idx++}`);
+                values.push(docContratoPath);
+            }
+            if (fieldsToSet.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Nenhum arquivo enviado.',
+                });
+            }
+
+            const query = `
+          UPDATE usuarios
+          SET ${fieldsToSet.join(',')}
+          WHERE id = $${idx}
+          RETURNING id
+        `;
+            values.push(userId);
+
+            const result = await pool.query(query, values);
+            if (result.rowCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Usuário não encontrado para atualizar documentos.',
+                });
+            }
+
+            return res.json({
+                success: true,
+                message: 'Documentos/Foto atualizados com sucesso!',
+            });
+        } catch (error) {
+            console.error('Erro ao atualizar documentos de usuário:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Erro interno ao atualizar documentos do usuário.',
+            });
+        }
+    }
+);
+
+// Exemplo de rota para atualização de segurança do usuário com bcrypt:
+app.put('/api/usuarios/seguranca', isAuthenticated, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const {
+            nova_senha,
+            auth_dois_fatores,
+            pergunta_seguranca,
+        } = req.body;
+
+        let updateFields = '';
+        const values = [];
+        let index = 1;
+
+        // Se o usuário forneceu nova senha, vamos criptografá-la com bcrypt
+        if (nova_senha) {
+            const bcrypt = require('bcrypt');
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(nova_senha, saltRounds);
+
+            updateFields += ` senha = $${index++},`;
+            values.push(hashedPassword);
+        }
+
+        if (auth_dois_fatores !== undefined) {
+            updateFields += ` auth_dois_fatores = $${index++},`;
+            values.push(auth_dois_fatores);
+        }
+
+        if (pergunta_seguranca !== undefined) {
+            updateFields += ` pergunta_seguranca = $${index++},`;
+            values.push(pergunta_seguranca);
+        }
+
+        if (!updateFields) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nenhum campo de segurança fornecido para atualizar.',
+            });
+        }
+
+        // Remove a última vírgula
+        updateFields = updateFields.slice(0, -1);
+
+        // Monta a query dinâmica
+        const query = `
+        UPDATE usuarios
+        SET ${updateFields}
+        WHERE id = $${index}
+        RETURNING id
+      `;
+
+        values.push(userId);
+
+        const result = await pool.query(query, values);
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Usuário não encontrado para atualizar segurança.',
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'Configurações de segurança atualizadas com sucesso!',
+        });
+    } catch (error) {
+        console.error('Erro ao atualizar segurança:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao atualizar segurança do usuário.',
+        });
+    }
+});
+
+
 app.post('/api/cadastrar-usuario', async (req, res) => {
     try {
         const { nome_completo, cpf_cnpj, telefone, email, senha } = req.body;
