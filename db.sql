@@ -169,8 +169,10 @@ CREATE TABLE rotas_simples (
     partida_lng DOUBLE PRECISION NOT NULL,
     chegada_lat DOUBLE PRECISION,
     chegada_lng DOUBLE PRECISION,
+    area_zona VARCHAR(50),         -- <- ADICIONE ESTA LINHA
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
 
 --------------------------------------------------------------------------------
 -- RELAÇÃO: rotas_pontos
