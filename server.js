@@ -594,95 +594,11 @@ app.post('/api/zoneamento/importar', upload.single('file'), async (req, res) => 
 // ====================================================================================
 // ESCOLAS
 // ====================================================================================
-app.post('/api/escolas/cadastrar', async (req, res) => {
-    try {
-        const {
-            latitude,
-            longitude,
-            area,
-            logradouro,
-            numero,
-            complemento,
-            pontoReferencia,
-            bairro,
-            cep,
-            nomeEscola,
-            codigoINEP,
-        } = req.body;
-
-        const regime = req.body['regime[]'] || [];
-        const nivel = req.body['nivel[]'] || [];
-        const horario = req.body['horario[]'] || [];
-        const zoneamentosSelecionados = JSON.parse(req.body.zoneamentosSelecionados || '[]');
-
-        // Quem está fazendo a ação?
-        const userId = req.session?.userId || null;
-
-        const insertEscolaQuery = `
-            INSERT INTO escolas (
-                nome, codigo_inep, latitude, longitude, area,
-                logradouro, numero, complemento, ponto_referencia,
-                bairro, cep, regime, nivel, horario
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-            RETURNING id;
-        `;
-        const values = [
-            nomeEscola,
-            codigoINEP || null,
-            latitude ? parseFloat(latitude) : null,
-            longitude ? parseFloat(longitude) : null,
-            area,
-            logradouro || null,
-            numero || null,
-            complemento || null,
-            pontoReferencia || null,
-            bairro || null,
-            cep || null,
-            regime.join(','),
-            nivel.join(','),
-            horario.join(','),
-        ];
-        const result = await pool.query(insertEscolaQuery, values);
-        if (result.rows.length === 0) {
-            return res.status(500).json({
-                success: false,
-                message: 'Erro ao cadastrar escola.'
-            });
-        }
-        const escolaId = result.rows[0].id;
-
-        if (zoneamentosSelecionados.length > 0) {
-            const insertZonaEscolaQuery = `
-                INSERT INTO escolas_zoneamentos (escola_id, zoneamento_id)
-                VALUES ($1, $2);
-            `;
-            for (const zid of zoneamentosSelecionados) {
-                await pool.query(insertZonaEscolaQuery, [escolaId, zid]);
-            }
-        }
-
-        // NOTIFICAÇÃO
-        const mensagem = `Escola criada: ${nomeEscola}`;
-        await pool.query(
-            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-             VALUES ($1, 'CREATE', 'escolas', $2, $3)`,
-            [userId, escolaId, mensagem]
-        );
-
-        res.json({
-            success: true,
-            message: 'Escola cadastrada com sucesso!'
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Erro interno do servidor.'
-        });
-    }
-});
-
-app.get('/api/escolas', async (req, res) => {
+/***************************************************************************
+ * Carregar dados de uma única escola: GET /api/escolas/:id
+ **************************************************************************/
+app.get('/api/escolas/:id', async (req, res) => {
+    const { id } = req.params;
     try {
         const query = `
             SELECT e.id, e.nome, e.codigo_inep, e.latitude, e.longitude, e.area,
@@ -697,11 +613,21 @@ app.get('/api/escolas', async (req, res) => {
             FROM escolas e
             LEFT JOIN escolas_zoneamentos ez ON ez.escola_id = e.id
             LEFT JOIN zoneamentos z ON z.id = ez.zoneamento_id
+            WHERE e.id = $1
             GROUP BY e.id
             ORDER BY e.id;
         `;
-        const result = await pool.query(query);
-        const escolas = result.rows.map((row) => ({
+        const result = await pool.query(query, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Escola não encontrada.'
+            });
+        }
+
+        const row = result.rows[0];
+        const escola = {
             id: row.id,
             nome: row.nome,
             codigo_inep: row.codigo_inep,
@@ -717,9 +643,10 @@ app.get('/api/escolas', async (req, res) => {
             regime: (row.regime || '').split(',').filter((r) => r),
             nivel: (row.nivel || '').split(',').filter((n) => n),
             horario: (row.horario || '').split(',').filter((h) => h),
-            zoneamentos: row.zoneamentos,
-        }));
-        res.json(escolas);
+            zoneamentos: row.zoneamentos
+        };
+
+        res.json(escola);
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -728,6 +655,9 @@ app.get('/api/escolas', async (req, res) => {
     }
 });
 
+/***************************************************************************
+ * Editar escola: PUT /api/escolas/editar
+ **************************************************************************/
 app.put('/api/escolas/editar', async (req, res) => {
     try {
         const {
@@ -742,42 +672,92 @@ app.put('/api/escolas/editar', async (req, res) => {
             editBairro,
             editCep,
             editNomeEscola,
-            editCodigoINEP,
-            'editRegime[]': editRegime,
-            'editNivel[]': editNivel,
-            'editHorario[]': editHorario,
-            zoneamentosEditSelecionados
+            editCodigoINEP
         } = req.body;
 
-        // Buscar a escola pelo ID (ajuste para seu banco de dados)
-        const escola = await Escola.findByPk(editEscolaId);
-        if (!escola) {
+        const editRegime = req.body['editRegime[]'] || [];
+        const editNivel = req.body['editNivel[]'] || [];
+        const editHorario = req.body['editHorario[]'] || [];
+        const zoneamentosEditSelecionados = JSON.parse(req.body.zoneamentosEditSelecionados || '[]');
+
+        // Quem está fazendo a ação (caso precise registrar em notificações)
+        const userId = req.session?.userId || null;
+
+        // Primeiro, verificar se a escola existe
+        const checkQuery = `SELECT id FROM escolas WHERE id = $1`;
+        const checkResult = await pool.query(checkQuery, [editEscolaId]);
+        if (checkResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Escola não encontrada.' });
         }
 
-        // Atualizar atributos
-        escola.latitude = editLatitude;
-        escola.longitude = editLongitude;
-        escola.area = editArea;
-        escola.logradouro = editLogradouro;
-        escola.numero = editNumero;
-        escola.complemento = editComplemento;
-        escola.ponto_referencia = editPontoReferencia;
-        escola.bairro = editBairro;
-        escola.cep = editCep;
-        escola.nome = editNomeEscola;
-        escola.codigo_inep = editCodigoINEP;
-        escola.regime = editRegime || [];
-        escola.nivel = editNivel || [];
-        escola.horario = editHorario || [];
-
-        await escola.save();
-
-        // Se houver relacionamento M:N com zoneamentos, atualizar também
-        if (zoneamentosEditSelecionados) {
-            const idsZoneamentos = JSON.parse(zoneamentosEditSelecionados);
-            // Exemplo usando Sequelize: await escola.setZoneamentos(idsZoneamentos);
+        // Atualizar a tabela escolas
+        const updateEscolaQuery = `
+            UPDATE escolas
+            SET
+                latitude = $1,
+                longitude = $2,
+                area = $3,
+                logradouro = $4,
+                numero = $5,
+                complemento = $6,
+                ponto_referencia = $7,
+                bairro = $8,
+                cep = $9,
+                nome = $10,
+                codigo_inep = $11,
+                regime = $12,
+                nivel = $13,
+                horario = $14
+            WHERE id = $15
+            RETURNING id, nome;
+        `;
+        const values = [
+            editLatitude ? parseFloat(editLatitude) : null,
+            editLongitude ? parseFloat(editLongitude) : null,
+            editArea || null,
+            editLogradouro || null,
+            editNumero || null,
+            editComplemento || null,
+            editPontoReferencia || null,
+            editBairro || null,
+            editCep || null,
+            editNomeEscola,
+            editCodigoINEP || null,
+            editRegime.join(','),
+            editNivel.join(','),
+            editHorario.join(','),
+            editEscolaId
+        ];
+        const updateResult = await pool.query(updateEscolaQuery, values);
+        if (updateResult.rows.length === 0) {
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao atualizar escola.'
+            });
         }
+
+        // Gerenciar zoneamentos: exclui as relações antigas e insere as novas
+        const deleteZonaEscolaQuery = `DELETE FROM escolas_zoneamentos WHERE escola_id = $1`;
+        await pool.query(deleteZonaEscolaQuery, [editEscolaId]);
+
+        if (zoneamentosEditSelecionados.length > 0) {
+            const insertZonaEscolaQuery = `
+                INSERT INTO escolas_zoneamentos (escola_id, zoneamento_id)
+                VALUES ($1, $2);
+            `;
+            for (const zid of zoneamentosEditSelecionados) {
+                await pool.query(insertZonaEscolaQuery, [editEscolaId, zid]);
+            }
+        }
+
+        // Notificação
+        const editedEscolaNome = updateResult.rows[0].nome;
+        const mensagem = `Escola editada: ${editedEscolaNome}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'UPDATE', 'escolas', $2, $3)`,
+            [userId, editEscolaId, mensagem]
+        );
 
         res.json({ success: true, message: 'Escola atualizada com sucesso!' });
     } catch (error) {
@@ -786,22 +766,46 @@ app.put('/api/escolas/editar', async (req, res) => {
     }
 });
 
+/***************************************************************************
+ * Excluir escola: DELETE /api/escolas/excluir/:id
+ **************************************************************************/
 app.delete('/api/escolas/excluir/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        // Buscar a escola pelo ID (ajuste para seu banco de dados)
-        const escola = await Escola.findByPk(id);
-        if (!escola) {
+        // Verificar se a escola existe
+        const checkQuery = `SELECT id, nome FROM escolas WHERE id = $1`;
+        const checkResult = await pool.query(checkQuery, [id]);
+        if (checkResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Escola não encontrada.' });
         }
 
-        await escola.destroy();
+        // Quem está fazendo a ação (para inserir notificação)
+        const userId = req.session?.userId || null;
+        const nomeEscola = checkResult.rows[0].nome;
+
+        // Excluir zoneamentos relacionados
+        const deleteZonaEscolaQuery = `DELETE FROM escolas_zoneamentos WHERE escola_id = $1`;
+        await pool.query(deleteZonaEscolaQuery, [id]);
+
+        // Excluir a escola
+        const deleteQuery = `DELETE FROM escolas WHERE id = $1`;
+        await pool.query(deleteQuery, [id]);
+
+        // Notificação
+        const mensagem = `Escola excluída: ${nomeEscola}`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'DELETE', 'escolas', $2, $3)`,
+            [userId, id, mensagem]
+        );
+
         res.json({ success: true, message: 'Escola excluída com sucesso!' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Erro ao excluir escola.' });
     }
 });
+
 
 // ====================================================================================
 // FORNECEDORES
