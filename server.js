@@ -390,74 +390,81 @@ app.get('/api/usuario-logado', async (req, res) => {
 // ====================================================================================
 app.post('/api/zoneamento/cadastrar', async (req, res) => {
     try {
-        const nome = req.body.nome_zoneamento;
-        const geojsonStr = req.body.geojson;
-
-        if (!nome || !geojsonStr) {
-            return res.status(400).json({
-                success: false,
-                message: 'Nome do zoneamento ou GeoJSON não fornecidos.'
-            });
-        }
-
-        let geojson;
-        try {
-            geojson = JSON.parse(geojsonStr);
-        } catch (err) {
-            return res.status(400).json({
-                success: false,
-                message: 'GeoJSON inválido.'
-            });
-        }
-
-        if (!geojson.type || geojson.type !== 'Feature' || !geojson.geometry || geojson.geometry.type !== 'Polygon') {
-            return res.status(400).json({
-                success: false,
-                message: 'GeoJSON não é um polígono válido.'
-            });
-        }
-
-        // Quem está fazendo a ação?
-        const userId = req.session?.userId || null;
-
-        const insertQuery = `
-            INSERT INTO zoneamentos (nome, geom)
-            VALUES($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
-            RETURNING id;
-        `;
-        const values = [nome, JSON.stringify(geojson.geometry)];
-        const result = await pool.query(insertQuery, values);
-
-        if (result.rows.length > 0) {
-            const newId = result.rows[0].id;
-            // REGISTRA NOTIFICAÇÃO
-            const mensagem = `Zoneamento criado: ${nome}`;
-            const acao = 'CREATE';
-            const tabela = 'zoneamentos';
-            await pool.query(
-                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-                 VALUES ($1, $2, $3, $4, $5)`,
-                [userId, acao, tabela, newId, mensagem]
-            );
-
-            res.json({
-                success: true,
-                message: 'Zoneamento cadastrado com sucesso!',
-                id: newId
-            });
-        } else {
-            res.status(500).json({
-                success: false,
-                message: 'Erro ao cadastrar zoneamento.'
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Erro interno do servidor.'
+      const { nome_zoneamento, geojson } = req.body;
+  
+      if (!nome_zoneamento || !geojson) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nome do zoneamento ou GeoJSON não fornecidos.'
         });
+      }
+  
+      let parsed;
+      try {
+        parsed = JSON.parse(geojson);
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: 'GeoJSON inválido.'
+        });
+      }
+  
+      if (!parsed.type || parsed.type !== 'Feature' || !parsed.geometry) {
+        return res.status(400).json({
+          success: false,
+          message: 'GeoJSON inválido ou sem geometry.'
+        });
+      }
+  
+      // Permitir Polygon ou LineString
+      const validTypes = ['Polygon', 'LineString'];
+      if (!validTypes.includes(parsed.geometry.type)) {
+        return res.status(400).json({
+          success: false,
+          message: 'GeoJSON deve ser Polygon ou LineString.'
+        });
+      }
+  
+      const userId = req.session?.userId || null;
+  
+      // Insere
+      const insertQuery = `
+        INSERT INTO zoneamentos (nome, geom)
+        VALUES ($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
+        RETURNING id;
+      `;
+      const insertValues = [nome_zoneamento, JSON.stringify(parsed.geometry)];
+      const result = await pool.query(insertQuery, insertValues);
+  
+      if (result.rows.length > 0) {
+        const newId = result.rows[0].id;
+        // Notificação
+        const mensagem = `Zoneamento criado: ${nome_zoneamento}`;
+        await pool.query(
+          `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+           VALUES ($1, 'CREATE', 'zoneamentos', $2, $3)`,
+          [userId, newId, mensagem]
+        );
+        return res.json({
+          success: true,
+          message: 'Zoneamento cadastrado com sucesso!',
+          id: newId
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao cadastrar zoneamento.'
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor.'
+      });
     }
-});
+  });
+  
 
 app.get('/api/zoneamentos', async (req, res) => {
     try {
@@ -1760,7 +1767,7 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
             latitudePonto,
             longitudePonto,
             area,
-            nomePonto,
+            // nomePonto,  // <- Removemos ou ignoramos do form
             logradouroPonto,
             numeroPonto,
             complementoPonto,
@@ -1770,21 +1777,23 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
         } = req.body;
 
         const zoneamentosPonto = JSON.parse(req.body.zoneamentosPonto || '[]');
-
-        // Quem está fazendo a ação?
         const userId = req.session?.userId || null;
 
+        // 1) INSERIR o ponto, definindo nome_ponto como NULL (ou algo temporário).
         const insertPontoQuery = `
             INSERT INTO pontos (
                 nome_ponto, latitude, longitude, area,
                 logradouro, numero, complemento, ponto_referencia,
                 bairro, cep
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id;
+            VALUES (
+                NULL, $1, $2, $3,
+                $4, $5, $6, $7,
+                $8, $9
+            )
+            RETURNING id
         `;
         const values = [
-            nomePonto,
             latitudePonto ? parseFloat(latitudePonto) : null,
             longitudePonto ? parseFloat(longitudePonto) : null,
             area,
@@ -1797,13 +1806,17 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
         ];
         const result = await pool.query(insertPontoQuery, values);
         if (result.rows.length === 0) {
-            return res.status(500).json({
-                success: false,
-                message: 'Erro ao cadastrar ponto.'
-            });
+            return res.status(500).json({ success: false, message: 'Erro ao cadastrar ponto.' });
         }
         const pontoId = result.rows[0].id;
 
+        // 2) ATUALIZAR o nome_ponto para ser igual ao ID.
+        await pool.query(
+            'UPDATE pontos SET nome_ponto = $1 WHERE id = $2',
+            [pontoId.toString(), pontoId]
+        );
+
+        // 3) Se tiver zoneamentos selecionados, inserir na tabela intermediária
         if (zoneamentosPonto.length > 0) {
             const insertZonaPontoQuery = `
                 INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
@@ -1814,25 +1827,24 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
             }
         }
 
-        // NOTIFICAÇÃO
-        const mensagem = `Ponto de parada criado: ${nomePonto}`;
+        // 4) Notificação
+        const mensagem = `Ponto de parada criado. ID = ${pontoId} (nome_ponto igual ao ID)`;
         await pool.query(
             `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
              VALUES ($1, 'CREATE', 'pontos', $2, $3)`,
             [userId, pontoId, mensagem]
         );
 
-        res.json({
+        return res.json({
             success: true,
             message: 'Ponto de parada cadastrado com sucesso!'
         });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Erro interno do servidor.'
-        });
+        console.error('Erro interno:', error);
+        return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
+
 
 app.get('/api/pontos', async (req, res) => {
     try {
