@@ -390,81 +390,81 @@ app.get('/api/usuario-logado', async (req, res) => {
 // ====================================================================================
 app.post('/api/zoneamento/cadastrar', async (req, res) => {
     try {
-      const { nome_zoneamento, geojson } = req.body;
-  
-      if (!nome_zoneamento || !geojson) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nome do zoneamento ou GeoJSON não fornecidos.'
-        });
-      }
-  
-      let parsed;
-      try {
-        parsed = JSON.parse(geojson);
-      } catch (err) {
-        return res.status(400).json({
-          success: false,
-          message: 'GeoJSON inválido.'
-        });
-      }
-  
-      if (!parsed.type || parsed.type !== 'Feature' || !parsed.geometry) {
-        return res.status(400).json({
-          success: false,
-          message: 'GeoJSON inválido ou sem geometry.'
-        });
-      }
-  
-      // Permitir Polygon ou LineString
-      const validTypes = ['Polygon', 'LineString'];
-      if (!validTypes.includes(parsed.geometry.type)) {
-        return res.status(400).json({
-          success: false,
-          message: 'GeoJSON deve ser Polygon ou LineString.'
-        });
-      }
-  
-      const userId = req.session?.userId || null;
-  
-      // Insere
-      const insertQuery = `
+        const { nome_zoneamento, geojson } = req.body;
+
+        if (!nome_zoneamento || !geojson) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nome do zoneamento ou GeoJSON não fornecidos.'
+            });
+        }
+
+        let parsed;
+        try {
+            parsed = JSON.parse(geojson);
+        } catch (err) {
+            return res.status(400).json({
+                success: false,
+                message: 'GeoJSON inválido.'
+            });
+        }
+
+        if (!parsed.type || parsed.type !== 'Feature' || !parsed.geometry) {
+            return res.status(400).json({
+                success: false,
+                message: 'GeoJSON inválido ou sem geometry.'
+            });
+        }
+
+        // Permitir Polygon ou LineString
+        const validTypes = ['Polygon', 'LineString'];
+        if (!validTypes.includes(parsed.geometry.type)) {
+            return res.status(400).json({
+                success: false,
+                message: 'GeoJSON deve ser Polygon ou LineString.'
+            });
+        }
+
+        const userId = req.session?.userId || null;
+
+        // Insere
+        const insertQuery = `
         INSERT INTO zoneamentos (nome, geom)
         VALUES ($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
         RETURNING id;
       `;
-      const insertValues = [nome_zoneamento, JSON.stringify(parsed.geometry)];
-      const result = await pool.query(insertQuery, insertValues);
-  
-      if (result.rows.length > 0) {
-        const newId = result.rows[0].id;
-        // Notificação
-        const mensagem = `Zoneamento criado: ${nome_zoneamento}`;
-        await pool.query(
-          `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+        const insertValues = [nome_zoneamento, JSON.stringify(parsed.geometry)];
+        const result = await pool.query(insertQuery, insertValues);
+
+        if (result.rows.length > 0) {
+            const newId = result.rows[0].id;
+            // Notificação
+            const mensagem = `Zoneamento criado: ${nome_zoneamento}`;
+            await pool.query(
+                `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
            VALUES ($1, 'CREATE', 'zoneamentos', $2, $3)`,
-          [userId, newId, mensagem]
-        );
-        return res.json({
-          success: true,
-          message: 'Zoneamento cadastrado com sucesso!',
-          id: newId
-        });
-      } else {
-        return res.status(500).json({
-          success: false,
-          message: 'Erro ao cadastrar zoneamento.'
-        });
-      }
+                [userId, newId, mensagem]
+            );
+            return res.json({
+                success: true,
+                message: 'Zoneamento cadastrado com sucesso!',
+                id: newId
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao cadastrar zoneamento.'
+            });
+        }
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor.'
-      });
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
-  });
-  
+});
+
 
 app.get('/api/zoneamentos', async (req, res) => {
     try {
@@ -1779,7 +1779,8 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
         const zoneamentosPonto = JSON.parse(req.body.zoneamentosPonto || '[]');
         const userId = req.session?.userId || null;
 
-        // 1) INSERIR o ponto, definindo nome_ponto como NULL (ou algo temporário).
+        // 1) INSERIR o ponto, definindo nome_ponto como 'TEMP' (em vez de NULL),
+        //    para não violar a constraint NOT NULL.
         const insertPontoQuery = `
             INSERT INTO pontos (
                 nome_ponto, latitude, longitude, area,
@@ -1787,7 +1788,7 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
                 bairro, cep
             )
             VALUES (
-                NULL, $1, $2, $3,
+                'TEMP', $1, $2, $3,
                 $4, $5, $6, $7,
                 $8, $9
             )
@@ -1806,11 +1807,14 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
         ];
         const result = await pool.query(insertPontoQuery, values);
         if (result.rows.length === 0) {
-            return res.status(500).json({ success: false, message: 'Erro ao cadastrar ponto.' });
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao cadastrar ponto.'
+            });
         }
         const pontoId = result.rows[0].id;
 
-        // 2) ATUALIZAR o nome_ponto para ser igual ao ID.
+        // 2) ATUALIZAR o nome_ponto para ser igual ao ID (string).
         await pool.query(
             'UPDATE pontos SET nome_ponto = $1 WHERE id = $2',
             [pontoId.toString(), pontoId]
@@ -1820,14 +1824,14 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
         if (zoneamentosPonto.length > 0) {
             const insertZonaPontoQuery = `
                 INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
-                VALUES ($1, $2);
+                VALUES ($1, $2)
             `;
             for (const zid of zoneamentosPonto) {
                 await pool.query(insertZonaPontoQuery, [pontoId, zid]);
             }
         }
 
-        // 4) Notificação
+        // 4) Registrar notificação (opcional).
         const mensagem = `Ponto de parada criado. ID = ${pontoId} (nome_ponto igual ao ID)`;
         await pool.query(
             `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1840,8 +1844,11 @@ app.post('/api/pontos/cadastrar', async (req, res) => {
             message: 'Ponto de parada cadastrado com sucesso!'
         });
     } catch (error) {
-        console.error('Erro interno:', error);
-        return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        console.error('Erro interno ao cadastrar ponto:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor.'
+        });
     }
 });
 
