@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Listar Zoneamento</title>
@@ -32,33 +31,29 @@
   <link rel="stylesheet" href="../../assets/css/demo.css" />
 
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=drawing"></script>
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=drawing"
+  ></script>
 
   <style>
     #map {
       height: 500px;
       width: 100%;
     }
-
     .required-label::after {
       content: " *";
       color: red;
     }
-
     .map-instructions {
       font-size: 14px;
       margin-bottom: 10px;
     }
-
     .select2-container {
       width: 100% !important;
     }
   </style>
 </head>
-
 <body>
   <div class="wrapper">
-    <!-- SIDEBAR -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
@@ -250,7 +245,6 @@
                       <span class="sub-item">Listar Escolas</span>
                     </a>
                   </li>
-
                 </ul>
               </div>
             </li>
@@ -518,15 +512,13 @@
         </div>
       </div>
     </div>
-    <!-- END SIDEBAR -->
 
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
             <a href="/" class="logo">
-              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
-                height="20" />
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
             </a>
             <div class="nav-toggle">
               <button class="btn btn-toggle toggle-sidebar">
@@ -544,15 +536,10 @@
 
         <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
           <div class="container-fluid">
-            <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-
-              <!-- =====================================
-             ÍCONE MENSAGENS (exemplo)
-        ===================================== -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button" data-bs-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
                   <i class="fa fa-envelope"></i>
                 </a>
                 <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
@@ -565,7 +552,6 @@
                   <li>
                     <div class="message-notif-scroll scrollbar-outer">
                       <div class="notif-center">
-                        <!-- Exemplos de mensagens fixas ou carregadas via JS -->
                         <a href="#">
                           <div class="notif-img">
                             <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
@@ -576,7 +562,6 @@
                             <span class="time">Há 5 minutos</span>
                           </div>
                         </a>
-                        <!-- ... -->
                       </div>
                     </div>
                   </li>
@@ -589,9 +574,6 @@
                 </ul>
               </li>
 
-              <!-- =====================================
-             ÍCONE NOTIFICAÇÕES (DINÂMICO)
-        ===================================== -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
                   aria-haspopup="true" aria-expanded="false">
@@ -606,9 +588,7 @@
                   </li>
                   <li>
                     <div class="notif-scroll scrollbar-outer">
-                      <div class="notif-center" id="notifList">
-                        <!-- Conteúdo gerado dinamicamente -->
-                      </div>
+                      <div class="notif-center" id="notifList"></div>
                     </div>
                   </li>
                   <li>
@@ -620,9 +600,6 @@
                 </ul>
               </li>
 
-              <!-- =====================================
-             ÍCONE AÇÕES RÁPIDAS
-        ===================================== -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -636,7 +613,6 @@
                   <div class="quick-actions-scroll scrollbar-outer">
                     <div class="quick-actions-items">
                       <div class="row m-0">
-                        <!-- Exemplo de cards para algumas páginas existentes -->
                         <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
                           <div class="quick-actions-item">
                             <div class="avatar-item bg-primary rounded-circle">
@@ -669,16 +645,12 @@
                             <span class="text">Listar Frota</span>
                           </div>
                         </a>
-                        <!-- ... Adicione mais se quiser -->
                       </div>
                     </div>
                   </div>
                 </div>
               </li>
 
-              <!-- =====================================
-             DROPDOWN USUÁRIO
-        ===================================== -->
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
@@ -699,8 +671,7 @@
                         <div class="u-text">
                           <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
                           <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
-                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
-                            Perfil</a>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
                         </div>
                       </div>
                     </li>
@@ -754,7 +725,6 @@
                 </div>
                 <div class="card-body">
                   <div class="mb-3">
-
                     <select id="zoneamentoSelect" class="form-control mt-2">
                       <option value="">Selecione um zoneamento</option>
                     </select>
@@ -765,7 +735,6 @@
             </div>
           </div>
 
-          <!-- Tabela de Zoneamentos -->
           <div class="row mt-4">
             <div class="col-md-12">
               <div class="card">
@@ -790,7 +759,6 @@
                         </tr>
                       </tfoot>
                       <tbody>
-                        <!-- Dados preenchidos via JavaScript -->
                       </tbody>
                     </table>
                   </div>
@@ -800,7 +768,6 @@
           </div>
         </div>
       </div>
-
 
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
@@ -812,10 +779,14 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#"> Help </a>
+                <a class="nav-link" href="#">
+                  Help
+                </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#"> Licenses </a>
+                <a class="nav-link" href="#">
+                  Licenses
+                </a>
               </li>
             </ul>
           </nav>
@@ -838,14 +809,14 @@
   <script src="../../assets/js/usuario.js"></script>
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
-  <!-- Datatables -->
   <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
   <script src="../../assets/js/setting-demo2.js"></script>
   <script>
     let map;
     let zoneamentos = [];
-    let polygons = [];
+    let overlays = [];
+    let infoWindow;
 
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
@@ -853,6 +824,7 @@
         zoom: 13,
         mapTypeId: 'satellite'
       });
+      infoWindow = new google.maps.InfoWindow();
     }
 
     function showNotification(type, message, title = "") {
@@ -884,9 +856,7 @@
     function loadZoneamentos() {
       fetch('/api/zoneamentos')
         .then(res => {
-          if (!res.ok) {
-            throw new Error('Erro ao carregar zoneamentos');
-          }
+          if (!res.ok) throw new Error('Erro ao carregar zoneamentos');
           return res.json();
         })
         .then(data => {
@@ -914,21 +884,25 @@
 
       zoneamentos.forEach(z => {
         const row = `
-                <tr>
-                    <td>${z.id}</td>
-                    <td>${z.nome}</td>
-                    <td>
-                        <div class="form-button-action">
-                            <button type="button" class="btn btn-link btn-primary btn-lg" onclick="focusZoneamento(${z.id})" data-bs-toggle="tooltip" title="Focar no Mapa">
-                                <i class="fa fa-map-marker-alt"></i>
-                            </button>
-                            <button type="button" class="btn btn-link btn-danger btn-lg" onclick="deleteZoneamento(${z.id})" data-bs-toggle="tooltip" title="Excluir Zoneamento">
-                                <i class="fa fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
+          <tr>
+            <td>${z.id}</td>
+            <td>${z.nome}</td>
+            <td>
+              <div class="form-button-action">
+                <button type="button" class="btn btn-link btn-primary btn-lg"
+                  onclick="focusZoneamento(${z.id})" data-bs-toggle="tooltip"
+                  title="Focar no Mapa">
+                  <i class="fa fa-map-marker-alt"></i>
+                </button>
+                <button type="button" class="btn btn-link btn-danger btn-lg"
+                  onclick="deleteZoneamento(${z.id})" data-bs-toggle="tooltip"
+                  title="Excluir Zoneamento">
+                  <i class="fa fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
         tableBody.append(row);
       });
 
@@ -958,7 +932,145 @@
           emptyTable: "Nenhum dado disponível na tabela"
         }
       });
+    }
 
+    function drawAllZoneamentos() {
+      overlays.forEach(o => o.setMap(null));
+      overlays = [];
+      let bounds = new google.maps.LatLngBounds();
+      let somethingDrawn = false;
+
+      zoneamentos.forEach(z => {
+        if (!z.geojson) return;
+
+        if (z.geojson.type === 'Polygon') {
+          const coords = z.geojson.coordinates[0].map(c => ({ lat: c[1], lng: c[0] }));
+          const poly = new google.maps.Polygon({
+            paths: coords,
+            fillColor: '#1E90FF',
+            fillOpacity: 0.2,
+            strokeWeight: 2,
+            strokeColor: '#1E90FF',
+            map: map
+          });
+          coords.forEach(c => bounds.extend(c));
+          overlays.push(poly);
+          somethingDrawn = true;
+
+          google.maps.event.addListener(poly, 'click', (event) => {
+            const contentString = `
+              <div>
+                <h5>${z.nome}</h5>
+                <p><strong>ID:</strong> ${z.id}</p>
+                <p><strong>Tipo:</strong> Polygon</p>
+              </div>
+            `;
+            infoWindow.setContent(contentString);
+            infoWindow.setPosition(event.latLng);
+            infoWindow.open(map);
+          });
+
+        } else if (z.geojson.type === 'LineString') {
+          const coords = z.geojson.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+          const line = new google.maps.Polyline({
+            path: coords,
+            strokeWeight: 3,
+            strokeColor: '#FF1493',
+            map: map
+          });
+          coords.forEach(c => bounds.extend(c));
+          overlays.push(line);
+          somethingDrawn = true;
+
+          google.maps.event.addListener(line, 'click', (event) => {
+            const contentString = `
+              <div>
+                <h5>${z.nome}</h5>
+                <p><strong>ID:</strong> ${z.id}</p>
+                <p><strong>Tipo:</strong> LineString</p>
+              </div>
+            `;
+            infoWindow.setContent(contentString);
+            infoWindow.setPosition(event.latLng);
+            infoWindow.open(map);
+          });
+        }
+      });
+
+      if (somethingDrawn) {
+        map.fitBounds(bounds);
+      } else {
+        showNotification('info', 'Nenhum zoneamento disponível para exibir.');
+      }
+    }
+
+    function drawSingleZoneamento(z) {
+      overlays.forEach(o => o.setMap(null));
+      overlays = [];
+
+      if (!z || !z.geojson) {
+        showNotification('warning', 'O zoneamento selecionado não possui geometria.');
+        return;
+      }
+
+      const tipo = z.geojson.type;
+      let bounds = new google.maps.LatLngBounds();
+
+      if (tipo === 'Polygon') {
+        const coords = z.geojson.coordinates[0].map(c => ({ lat: c[1], lng: c[0] }));
+        const poly = new google.maps.Polygon({
+          paths: coords,
+          fillColor: '#1E90FF',
+          fillOpacity: 0.2,
+          strokeWeight: 2,
+          strokeColor: '#1E90FF',
+          map: map
+        });
+        overlays.push(poly);
+        coords.forEach(pt => bounds.extend(pt));
+        map.fitBounds(bounds);
+
+        google.maps.event.addListener(poly, 'click', (event) => {
+          const contentString = `
+            <div>
+              <h5>${z.nome}</h5>
+              <p><strong>ID:</strong> ${z.id}</p>
+              <p><strong>Tipo:</strong> Polygon</p>
+            </div>
+          `;
+          infoWindow.setContent(contentString);
+          infoWindow.setPosition(event.latLng);
+          infoWindow.open(map);
+        });
+
+      } else if (tipo === 'LineString') {
+        const coords = z.geojson.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+        const line = new google.maps.Polyline({
+          path: coords,
+          strokeWeight: 3,
+          strokeColor: '#FF1493',
+          map: map
+        });
+        overlays.push(line);
+        coords.forEach(pt => bounds.extend(pt));
+        map.fitBounds(bounds);
+
+        google.maps.event.addListener(line, 'click', (event) => {
+          const contentString = `
+            <div>
+              <h5>${z.nome}</h5>
+              <p><strong>ID:</strong> ${z.id}</p>
+              <p><strong>Tipo:</strong> LineString</p>
+            </div>
+          `;
+          infoWindow.setContent(contentString);
+          infoWindow.setPosition(event.latLng);
+          infoWindow.open(map);
+        });
+
+      } else {
+        showNotification('warning', 'O zoneamento selecionado não é Polygon nem LineString.');
+      }
     }
 
     function focusZoneamento(id) {
@@ -968,91 +1080,8 @@
       document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function drawAllZoneamentos() {
-      polygons.forEach(p => p.setMap(null));
-      polygons = [];
-      let bounds = new google.maps.LatLngBounds();
-      let somethingDrawn = false;
-
-      zoneamentos.forEach(z => {
-        if (!z.geojson) return;
-
-        // Se for Polygon
-        if (z.geojson.type === 'Polygon') {
-          const coords = z.geojson.coordinates[0].map(coord => ({
-            lat: coord[1],
-            lng: coord[0],
-          }));
-          const poly = new google.maps.Polygon({
-            paths: coords,
-            fillColor: '#1E90FF',
-            fillOpacity: 0.2,
-            strokeWeight: 2,
-            strokeColor: '#1E90FF',
-            map: map,
-          });
-          coords.forEach(c => bounds.extend(c));
-          polygons.push(poly);
-          somethingDrawn = true;
-
-          // Se for LineString
-        } else if (z.geojson.type === 'LineString') {
-          const coords = z.geojson.coordinates.map(coord => ({
-            lat: coord[1],
-            lng: coord[0],
-          }));
-          const line = new google.maps.Polyline({
-            path: coords,
-            strokeWeight: 3,
-            strokeColor: '#FF1493',
-            map: map,
-          });
-          coords.forEach(c => bounds.extend(c));
-          polygons.push(line);  // 'polygons' é só um array de overlays
-          somethingDrawn = true;
-        }
-
-      }); // fim do forEach
-
-      if (somethingDrawn) {
-        map.fitBounds(bounds);
-      } else {
-        showNotification('info', 'Nenhum zoneamento disponível para exibir.');
-      }
-    }
-
-
-    function drawSingleZoneamento(z) {
-      polygons.forEach(p => p.setMap(null));
-      polygons = [];
-      if (!z || !z.geojson || z.geojson.type !== 'Polygon') {
-        showNotification('warning', 'O zoneamento selecionado não possui polígonos válidos.');
-        return;
-      }
-
-      const coords = z.geojson.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
-      const poly = new google.maps.Polygon({
-        paths: coords,
-        fillColor: '#1E90FF',
-        fillOpacity: 0.2,
-        strokeWeight: 2,
-        strokeColor: '#1E90FF',
-        clickable: true,
-        editable: false,
-        zIndex: 1,
-        map: map
-      });
-      polygons.push(poly);
-
-      const bounds = new google.maps.LatLngBounds();
-      coords.forEach(c => bounds.extend(c));
-      map.fitBounds(bounds);
-    }
-
     function deleteZoneamento(id) {
-      fetch('/api/zoneamento/' + id, {
-        method: 'DELETE'
-      })
+      fetch('/api/zoneamento/' + id, { method: 'DELETE' })
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -1083,21 +1112,24 @@
         drawSingleZoneamento(z);
       });
 
-      document.getElementById('zoneamentoSearch').addEventListener('input', function () {
-        const searchTerm = this.value.toLowerCase();
-        const select = document.getElementById('zoneamentoSelect');
-        select.innerHTML = '<option value="">Selecione um zoneamento</option>';
-        zoneamentos
-          .filter(z => z.nome.toLowerCase().includes(searchTerm))
-          .forEach(z => {
-            const option = document.createElement('option');
-            option.value = z.id;
-            option.textContent = z.nome;
-            select.appendChild(option);
-          });
-      });
+      // Se existir campo de busca no HTML (caso queira filtrar):
+      const searchInput = document.getElementById('zoneamentoSearch');
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          const searchTerm = this.value.toLowerCase();
+          const select = document.getElementById('zoneamentoSelect');
+          select.innerHTML = '<option value="">Selecione um zoneamento</option>';
+          zoneamentos
+            .filter(z => z.nome.toLowerCase().includes(searchTerm))
+            .forEach(z => {
+              const option = document.createElement('option');
+              option.value = z.id;
+              option.textContent = z.nome;
+              select.appendChild(option);
+            });
+        });
+      }
     });
   </script>
 </body>
-
 </html>
