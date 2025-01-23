@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Listar Zoneamento</title>
@@ -31,27 +32,30 @@
   <link rel="stylesheet" href="../../assets/css/demo.css" />
 
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=drawing"
-  ></script>
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=drawing"></script>
 
   <style>
     #map {
       height: 500px;
       width: 100%;
     }
+
     .required-label::after {
       content: " *";
       color: red;
     }
+
     .map-instructions {
       font-size: 14px;
       margin-bottom: 10px;
     }
+
     .select2-container {
       width: 100% !important;
     }
   </style>
 </head>
+
 <body>
   <div class="wrapper">
     <div class="sidebar" data-background-color="dark">
@@ -518,7 +522,8 @@
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
             <a href="/" class="logo">
-              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                height="20" />
             </a>
             <div class="nav-toggle">
               <button class="btn btn-toggle toggle-sidebar">
@@ -538,8 +543,8 @@
           <div class="container-fluid">
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
               <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button" data-bs-toggle="dropdown"
-                  aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   <i class="fa fa-envelope"></i>
                 </a>
                 <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
@@ -671,7 +676,8 @@
                         <div class="u-text">
                           <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
                           <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
-                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
+                            Perfil</a>
                         </div>
                       </div>
                     </li>
@@ -961,8 +967,6 @@
             const contentString = `
               <div>
                 <h5>${z.nome}</h5>
-                <p><strong>ID:</strong> ${z.id}</p>
-                <p><strong>Tipo:</strong> Polygon</p>
               </div>
             `;
             infoWindow.setContent(contentString);
@@ -986,8 +990,6 @@
             const contentString = `
               <div>
                 <h5>${z.nome}</h5>
-                <p><strong>ID:</strong> ${z.id}</p>
-                <p><strong>Tipo:</strong> LineString</p>
               </div>
             `;
             infoWindow.setContent(contentString);
@@ -1034,8 +1036,6 @@
           const contentString = `
             <div>
               <h5>${z.nome}</h5>
-              <p><strong>ID:</strong> ${z.id}</p>
-              <p><strong>Tipo:</strong> Polygon</p>
             </div>
           `;
           infoWindow.setContent(contentString);
@@ -1059,8 +1059,6 @@
           const contentString = `
             <div>
               <h5>${z.nome}</h5>
-              <p><strong>ID:</strong> ${z.id}</p>
-              <p><strong>Tipo:</strong> LineString</p>
             </div>
           `;
           infoWindow.setContent(contentString);
@@ -1112,7 +1110,7 @@
         drawSingleZoneamento(z);
       });
 
-      // Se existir campo de busca no HTML (caso queira filtrar):
+      // Caso queira ter um campo de busca:
       const searchInput = document.getElementById('zoneamentoSearch');
       if (searchInput) {
         searchInput.addEventListener('input', function () {
@@ -1132,4 +1130,5 @@
     });
   </script>
 </body>
+
 </html>
