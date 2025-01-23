@@ -58,7 +58,8 @@
     }
 
     /* Estilos do formulário de Cadastrar Escola (ajustes para o modal) */
-    #mapCadastrarEscola {
+    #mapCadastrarEscola,
+    #mapEditarEscola {
       height: 400px;
       width: 100%;
       margin-bottom: 20px;
@@ -291,7 +292,6 @@
                       <span class="sub-item">Listar Escolas</span>
                     </a>
                   </li>
-                  
                 </ul>
               </div>
             </li>
@@ -562,273 +562,193 @@
     <!-- END SIDEBAR -->
 
     <div class="main-panel">
-<div class="main-header" style="top: 0;">
-  <div class="main-header-logo">
-    <div class="logo-header" data-background-color="dark">
-      <a href="/" class="logo">
-        <img
-          src="../../assets/img/pydenadmin/logo_light.png"
-          alt="navbar brand"
-          class="navbar-brand"
-          height="20"
-        />
-      </a>
-      <div class="nav-toggle">
-        <button class="btn btn-toggle toggle-sidebar">
-          <i class="gg-menu-right"></i>
-        </button>
-        <button class="btn btn-toggle sidenav-toggler">
-          <i class="gg-menu-left"></i>
-        </button>
-      </div>
-      <button class="topbar-toggler more">
-        <i class="gg-more-vertical-alt"></i>
-      </button>
-    </div>
-  </div>
-
-  <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
-    <div class="container-fluid">
-      <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
-      <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-
-        <!-- =====================================
-             ÍCONE MENSAGENS (exemplo)
-        ===================================== -->
-        <li class="nav-item topbar-icon dropdown hidden-caret">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            id="messageDropdown"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-haspopup="true"
-            aria-expanded="false"
-          >
-            <i class="fa fa-envelope"></i>
-          </a>
-          <ul
-            class="dropdown-menu messages-notif-box animated fadeIn"
-            aria-labelledby="messageDropdown"
-          >
-            <li>
-              <div class="dropdown-title d-flex justify-content-between align-items-center">
-                Mensagens
-                <a href="#" class="small">Marcar todas como lidas</a>
-              </div>
-            </li>
-            <li>
-              <div class="message-notif-scroll scrollbar-outer">
-                <div class="notif-center">
-                  <!-- Exemplos de mensagens fixas ou carregadas via JS -->
-                  <a href="#">
-                    <div class="notif-img">
-                      <img
-                        src="../../assets/img/jm_denis.jpg"
-                        alt="Img Profile"
-                      />
-                    </div>
-                    <div class="notif-content">
-                      <span class="subject">Jimmy Denis</span>
-                      <span class="block">Como você está?</span>
-                      <span class="time">Há 5 minutos</span>
-                    </div>
-                  </a>
-                  <!-- ... -->
-                </div>
-              </div>
-            </li>
-            <li>
-              <a class="see-all" href="javascript:void(0);">
-                Ver todas as mensagens
-                <i class="fa fa-angle-right"></i>
-              </a>
-            </li>
-          </ul>
-        </li>
-
-        <!-- =====================================
-             ÍCONE NOTIFICAÇÕES (DINÂMICO)
-        ===================================== -->
-        <li class="nav-item topbar-icon dropdown hidden-caret">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            id="notifDropdown"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-haspopup="true"
-            aria-expanded="false"
-          >
-            <i class="fa fa-bell"></i>
-            <span class="notification" id="notifCount">0</span>
-          </a>
-          <ul
-            class="dropdown-menu notif-box animated fadeIn"
-            aria-labelledby="notifDropdown"
-          >
-            <li>
-              <div class="dropdown-title" id="notifTitle">
-                Você não tem novas notificações
-              </div>
-            </li>
-            <li>
-              <div class="notif-scroll scrollbar-outer">
-                <div class="notif-center" id="notifList">
-                  <!-- Conteúdo gerado dinamicamente -->
-                </div>
-              </div>
-            </li>
-            <li>
-              <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
-                Ver todas as notificações
-                <i class="fa fa-angle-right"></i>
-              </a>
-            </li>
-          </ul>
-        </li>
-
-        <!-- =====================================
-             ÍCONE AÇÕES RÁPIDAS
-        ===================================== -->
-        <li class="nav-item topbar-icon dropdown hidden-caret">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            id="quickActionsDropdown"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-haspopup="true"
-            aria-expanded="false"
-          >
-            <i class="fas fa-layer-group"></i>
-          </a>
-          <div class="dropdown-menu quick-actions animated fadeIn">
-            <div class="quick-actions-header">
-              <span class="title mb-1">Ações Rápidas</span>
-              <span class="subtitle op-7">Atalhos</span>
+      <div class="main-header" style="top: 0;">
+        <div class="main-header-logo">
+          <div class="logo-header" data-background-color="dark">
+            <a href="/" class="logo">
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                height="20" />
+            </a>
+            <div class="nav-toggle">
+              <button class="btn btn-toggle toggle-sidebar">
+                <i class="gg-menu-right"></i>
+              </button>
+              <button class="btn btn-toggle sidenav-toggler">
+                <i class="gg-menu-left"></i>
+              </button>
             </div>
-            <div class="quick-actions-scroll scrollbar-outer">
-              <div class="quick-actions-items">
-                <div class="row m-0">
-                  <!-- Exemplo de cards para algumas páginas existentes -->
-                  <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
-                    <div class="quick-actions-item">
-                      <div class="avatar-item bg-primary rounded-circle">
-                        <i class="fas fa-school"></i>
-                      </div>
-                      <span class="text">Cad. Escola</span>
-                    </div>
-                  </a>
-                  <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/monitores-cadastrar.html">
-                    <div class="quick-actions-item">
-                      <div class="avatar-item bg-success rounded-circle">
-                        <i class="fas fa-user-check"></i>
-                      </div>
-                      <span class="text">Cad. Monitor</span>
-                    </div>
-                  </a>
-                  <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/rotas-listar.html">
-                    <div class="quick-actions-item">
-                      <div class="avatar-item bg-warning rounded-circle">
-                        <i class="fas fa-route"></i>
-                      </div>
-                      <span class="text">Listar Rotas</span>
-                    </div>
-                  </a>
-                  <a class="col-6 col-md-4 p-0" href="/pages/transporte-administrativo/frota-listar.html">
-                    <div class="quick-actions-item">
-                      <div class="avatar-item bg-info rounded-circle">
-                        <i class="fas fa-warehouse"></i>
-                      </div>
-                      <span class="text">Listar Frota</span>
-                    </div>
-                  </a>
-                  <!-- ... Adicione mais se quiser -->
-                </div>
-              </div>
-            </div>
+            <button class="topbar-toggler more">
+              <i class="gg-more-vertical-alt"></i>
+            </button>
           </div>
-        </li>
+        </div>
 
-        <!-- =====================================
-             DROPDOWN USUÁRIO
-        ===================================== -->
-        <li class="nav-item topbar-user dropdown hidden-caret">
-          <a
-            class="dropdown-toggle profile-pic"
-            data-bs-toggle="dropdown"
-            href="#"
-            aria-expanded="false"
-          >
-            <div class="avatar-sm">
-              <img
-                src="../../assets/img/profile.jpg"
-                alt="..."
-                class="avatar-img rounded-circle"
-              />
-            </div>
-            <span class="profile-username">
-              <span class="op-7">Olá,</span>
-              <span class="fw-bold" id="dropdownUserName">Carregando...</span>
-            </span>
-          </a>
-          <ul class="dropdown-menu dropdown-user animated fadeIn">
-            <div class="dropdown-user-scroll scrollbar-outer">
-              <li>
-                <div class="user-box">
-                  <div class="avatar-lg">
-                    <img
-                      src="../../assets/img/profile.jpg"
-                      alt="image profile"
-                      class="avatar-img rounded"
-                    />
+        <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+          <div class="container-fluid">
+            <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
+            <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+
+              <!-- ÍCONE MENSAGENS (exemplo) -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-envelope"></i>
+                </a>
+                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
+                  <li>
+                    <div class="dropdown-title d-flex justify-content-between align-items-center">
+                      Mensagens
+                      <a href="#" class="small">Marcar todas como lidas</a>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="message-notif-scroll scrollbar-outer">
+                      <div class="notif-center">
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="subject">Jimmy Denis</span>
+                            <span class="block">Como você está?</span>
+                            <span class="time">Há 5 minutos</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);">
+                      Ver todas as mensagens
+                      <i class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <!-- ÍCONE NOTIFICAÇÕES (DINÂMICO) -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-bell"></i>
+                  <span class="notification" id="notifCount">0</span>
+                </a>
+                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
+                  <li>
+                    <div class="dropdown-title" id="notifTitle">
+                      Você não tem novas notificações
+                    </div>
+                  </li>
+                  <li>
+                    <div class="notif-scroll scrollbar-outer">
+                      <div class="notif-center" id="notifList">
+                        <!-- Conteúdo gerado dinamicamente -->
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
+                      Ver todas as notificações
+                      <i class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <!-- ÍCONE AÇÕES RÁPIDAS -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-layer-group"></i>
+                </a>
+                <div class="dropdown-menu quick-actions animated fadeIn">
+                  <div class="quick-actions-header">
+                    <span class="title mb-1">Ações Rápidas</span>
+                    <span class="subtitle op-7">Atalhos</span>
                   </div>
-                  <div class="u-text">
-                    <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
-                    <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
-                    <a
-                      href="/pages/usuarios/meu-perfil.html"
-                      class="btn btn-xs btn-secondary btn-sm"
-                      >Ver Perfil</a
-                    >
+                  <div class="quick-actions-scroll scrollbar-outer">
+                    <div class="quick-actions-items">
+                      <div class="row m-0">
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-primary rounded-circle">
+                              <i class="fas fa-school"></i>
+                            </div>
+                            <span class="text">Cad. Escola</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/monitores-cadastrar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-success rounded-circle">
+                              <i class="fas fa-user-check"></i>
+                            </div>
+                            <span class="text">Cad. Monitor</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/rotas-listar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-warning rounded-circle">
+                              <i class="fas fa-route"></i>
+                            </div>
+                            <span class="text">Listar Rotas</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-administrativo/frota-listar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-info rounded-circle">
+                              <i class="fas fa-warehouse"></i>
+                            </div>
+                            <span class="text">Listar Frota</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </li>
-              <li>
-                <div class="dropdown-divider"></div>
-                <a
-                  class="dropdown-item"
-                  href="/pages/usuarios/meu-perfil.html"
-                  >Meu Perfil</a
-                >
-                <a
-                  class="dropdown-item"
-                  href="/pages/usuarios/caixa-entrada.html"
-                  >Caixa de Entrada</a
-                >
-                <div class="dropdown-divider"></div>
-                <a
-                  class="dropdown-item"
-                  href="/pages/usuarios/configuracoes.html"
-                  >Configurações</a
-                >
-                <div class="dropdown-divider"></div>
-                <a
-                  class="dropdown-item"
-                  href="#"
-                  id="logoutLink"
-                  >Sair</a
-                >
-              </li>
-            </div>
-          </ul>
-        </li>
-      </ul>
-    </div>
-  </nav>
-</div>
 
+              <!-- DROPDOWN USUÁRIO -->
+              <li class="nav-item topbar-user dropdown hidden-caret">
+                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                  <div class="avatar-sm">
+                    <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
+                  </div>
+                  <span class="profile-username">
+                    <span class="op-7">Olá,</span>
+                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
+                  </span>
+                </a>
+                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                  <div class="dropdown-user-scroll scrollbar-outer">
+                    <li>
+                      <div class="user-box">
+                        <div class="avatar-lg">
+                          <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
+                        </div>
+                        <div class="u-text">
+                          <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
+                          <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
+                            Perfil</a>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu Perfil</a>
+                      <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/configuracoes.html">Configurações</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
+                    </li>
+                  </div>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </div>
 
       <div class="container">
         <div class="page-inner">
@@ -861,8 +781,6 @@
               <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                   <div class="card-title">Visualização de Escolas</div>
-                  <!-- Botão para abrir o modal de Cadastro de Escola -->
-                
                 </div>
                 <div class="card-body">
                   <div class="mb-3">
@@ -887,7 +805,8 @@
                   <h4 class="card-title">Lista de Escolas</h4>
                 </div><br>
                 <div class="text-end px-3 pb-2">
-                  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCadastrarEscola">
+                  <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                    data-bs-target="#modalCadastrarEscola">
                     Cadastrar Escola
                   </button>
                 </div>
@@ -1094,6 +1013,187 @@
       </div>
       <!-- Fim do Modal -->
 
+      <!-- Modal de Edição de Escola -->
+      <div class="modal fade" id="modalEditarEscola" tabindex="-1" aria-labelledby="modalEditarEscolaLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title fw-bold" id="modalEditarEscolaLabel">Editar Escola</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+              <form id="escola-edit-form">
+                <input type="hidden" id="editEscolaId" name="editEscolaId">
+
+                <h5>Localização da Escola</h5>
+                <div id="mapEditarEscola"></div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="editLatitude" class="form-label">Latitude:</label>
+                    <input type="text" id="editLatitude" name="editLatitude" class="form-control" readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="editLongitude" class="form-label">Longitude:</label>
+                    <input type="text" id="editLongitude" name="editLongitude" class="form-control" readonly>
+                  </div>
+                </div>
+
+                <h5>Endereço</h5>
+                <div class="mb-3">
+                  <label class="form-label">A escola está localizada em: *</label><br>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="editArea" id="editAreaUrbana" value="urbana"
+                      required>
+                    <label class="form-check-label" for="editAreaUrbana">Área Urbana</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="editArea" id="editAreaRural" value="rural"
+                      required>
+                    <label class="form-check-label" for="editAreaRural">Área Rural</label>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="editLogradouro" class="form-label">Logradouro</label>
+                    <input type="text" id="editLogradouro" name="editLogradouro" class="form-control">
+                  </div>
+                  <div class="col-md-2 mb-3">
+                    <label for="editNumero" class="form-label">Número</label>
+                    <input type="text" id="editNumero" name="editNumero" class="form-control">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="editComplemento" class="form-label">Complemento</label>
+                    <input type="text" id="editComplemento" name="editComplemento" class="form-control">
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="editPontoReferencia" class="form-label">Ponto de Referência</label>
+                    <input type="text" id="editPontoReferencia" name="editPontoReferencia" class="form-control">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="editBairro" class="form-label">Bairro</label>
+                    <input type="text" id="editBairro" name="editBairro" class="form-control">
+                  </div>
+                  <div class="col-md-2 mb-3">
+                    <label for="editCep" class="form-label">CEP</label>
+                    <input type="text" id="editCep" name="editCep" class="form-control">
+                  </div>
+                </div>
+
+                <h5>Informações da Escola</h5>
+                <div class="mb-3">
+                  <label for="editNomeEscola" class="form-label">Nome da Escola</label>
+                  <input type="text" id="editNomeEscola" name="editNomeEscola" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                  <label for="editCodigoINEP" class="form-label">Código INEP</label>
+                  <input type="text" id="editCodigoINEP" name="editCodigoINEP" class="form-control">
+                  <small>
+                    <a href="https://anonymousdata.inep.gov.br/analytics/saw.dll?Dashboard&PortalPath=%2Fshared%2FCenso%20da%20Educa%C3%A7%C3%A3o%20B%C3%A1sica%2F_portal%2FCat%C3%A1logo%20de%20Escolas&Page=Lista%20das%20Escolas&P1=dashboard&Action=Navigate&ViewState=1o8flktgo4bckim0ib6eum96kq&P16=NavRuleDefault&NavFromViewID=d%3Adashboard~p%3Asf156n9k0qs70741"
+                      target="_blank">
+                      Clique aqui para saber o código INEP
+                    </a>
+                  </small>
+                </div>
+
+                <h5>Tipo de Ensino da Escola</h5>
+                <div class="mb-3">
+                  <label class="form-label">Em relação ao regime, a escola oferta ensino:</label><br>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editRegime[]" value="Regular"
+                      id="editRegRegular">
+                    <label class="form-check-label" for="editRegRegular">Regular</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editRegime[]" value="EJA" id="editRegEJA">
+                    <label class="form-check-label" for="editRegEJA">EJA</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editRegime[]" value="Profissionalizante"
+                      id="editRegProf">
+                    <label class="form-check-label" for="editRegProf">Profissionalizante</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editRegime[]" value="Especial"
+                      id="editRegEspecial">
+                    <label class="form-check-label" for="editRegEspecial">Especial</label>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Em relação ao nível, a escola oferta ensino:</label><br>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editNivel[]" value="Infantil"
+                      id="editNivInfantil">
+                    <label class="form-check-label" for="editNivInfantil">Infantil</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editNivel[]" value="Fundamental"
+                      id="editNivFund">
+                    <label class="form-check-label" for="editNivFund">Fundamental</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editNivel[]" value="Médio" id="editNivMedio">
+                    <label class="form-check-label" for="editNivMedio">Médio</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editNivel[]" value="Superior"
+                      id="editNivSuperior">
+                    <label class="form-check-label" for="editNivSuperior">Superior</label>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Em relação ao horário de funcionamento, a escola funciona:</label><br>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editHorario[]" value="Manhã"
+                      id="editHorManha">
+                    <label class="form-check-label" for="editHorManha">Manhã</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editHorario[]" value="Tarde"
+                      id="editHorTarde">
+                    <label class="form-check-label" for="editHorTarde">Tarde</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="editHorario[]" value="Noite"
+                      id="editHorNoite">
+                    <label class="form-check-label" for="editHorNoite">Noite</label>
+                  </div>
+                </div>
+
+                <h5>Lista de Zoneamentos</h5>
+                <div class="dual-list-container">
+                  <div class="dual-list-box">
+                    <input type="text" id="editFiltroEsq" class="form-control" placeholder="Filtro">
+                    <select id="editListaEsq" multiple class="form-control"></select>
+                  </div>
+                  <div class="dual-list-buttons">
+                    <button type="button" class="btn btn-primary" id="editAddBtn">Adicionar →</button>
+                    <button type="button" class="btn btn-danger" id="editRemoveBtn">← Remover</button>
+                  </div>
+                  <div class="dual-list-box">
+                    <input type="text" id="editFiltroDir" class="form-control" placeholder="Filtro">
+                    <select id="editListaDir" multiple class="form-control"></select>
+                  </div>
+                </div>
+
+                <input type="hidden" name="zoneamentosEditSelecionados" id="zoneamentosEditSelecionados">
+
+                <div class="mt-4">
+                  <button type="submit" class="btn btn-success">Atualizar Escola</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Fim do Modal de Edição -->
+
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
           <nav class="pull-left">
@@ -1126,7 +1226,7 @@
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
-<script src="../../assets/js/usuario.js"></script>
+  <script src="../../assets/js/usuario.js"></script>
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
   <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
@@ -1264,6 +1364,12 @@
                 <button type="button" class="btn btn-link btn-primary btn-lg" onclick="focusEscola(${e.id})" data-bs-toggle="tooltip" title="Focar no Mapa">
                   <i class="fa fa-map-marker-alt"></i>
                 </button>
+                <button type="button" class="btn btn-link btn-warning btn-lg" onclick="openModalEditarEscola(${e.id})" data-bs-toggle="tooltip" title="Editar Escola">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-link btn-danger btn-lg" onclick="deleteEscola(${e.id})" data-bs-toggle="tooltip" title="Excluir Escola">
+                  <i class="fa fa-trash"></i>
+                </button>
               </div>
             </td>
           </tr>
@@ -1313,6 +1419,122 @@
       if (marker) {
         google.maps.event.trigger(marker, 'click');
       }
+    }
+
+    function openModalEditarEscola(id) {
+      // Limpa o form do modal de edição antes
+      document.getElementById('escola-edit-form').reset();
+      document.getElementById('editListaEsq').innerHTML = '';
+      document.getElementById('editListaDir').innerHTML = '';
+
+      // Obter os dados da escola para preencher
+      fetch(`/api/escolas/${id}`)
+        .then(res => res.json())
+        .then(escola => {
+          // Preenche campos
+          document.getElementById('editEscolaId').value = escola.id;
+          document.getElementById('editLatitude').value = escola.latitude || '';
+          document.getElementById('editLongitude').value = escola.longitude || '';
+
+          if (escola.area === 'rural') {
+            document.getElementById('editAreaRural').checked = true;
+          } else {
+            document.getElementById('editAreaUrbana').checked = true;
+          }
+
+          document.getElementById('editLogradouro').value = escola.logradouro || '';
+          document.getElementById('editNumero').value = escola.numero || '';
+          document.getElementById('editComplemento').value = escola.complemento || '';
+          document.getElementById('editPontoReferencia').value = escola.ponto_referencia || '';
+          document.getElementById('editBairro').value = escola.bairro || '';
+          document.getElementById('editCep').value = escola.cep || '';
+          document.getElementById('editNomeEscola').value = escola.nome || '';
+          document.getElementById('editCodigoINEP').value = escola.codigo_inep || '';
+
+          // Marcar checkboxes de regime
+          if (escola.regime) {
+            const regimes = escola.regime;
+            document.getElementById('editRegRegular').checked = regimes.includes('Regular');
+            document.getElementById('editRegEJA').checked = regimes.includes('EJA');
+            document.getElementById('editRegProf').checked = regimes.includes('Profissionalizante');
+            document.getElementById('editRegEspecial').checked = regimes.includes('Especial');
+          }
+
+          // Marcar checkboxes de nível
+          if (escola.nivel) {
+            const niveis = escola.nivel;
+            document.getElementById('editNivInfantil').checked = niveis.includes('Infantil');
+            document.getElementById('editNivFund').checked = niveis.includes('Fundamental');
+            document.getElementById('editNivMedio').checked = niveis.includes('Médio');
+            document.getElementById('editNivSuperior').checked = niveis.includes('Superior');
+          }
+
+          // Marcar checkboxes de horário
+          if (escola.horario) {
+            const horarios = escola.horario;
+            document.getElementById('editHorManha').checked = horarios.includes('Manhã');
+            document.getElementById('editHorTarde').checked = horarios.includes('Tarde');
+            document.getElementById('editHorNoite').checked = horarios.includes('Noite');
+          }
+
+          // Carrega todos os zoneamentos para a lista "Esquerda"
+          fetch('/api/zoneamentos')
+            .then(res => res.json())
+            .then(todosZoneamentos => {
+              const listaEsq = document.getElementById('editListaEsq');
+              const listaDir = document.getElementById('editListaDir');
+              listaEsq.innerHTML = '';
+              listaDir.innerHTML = '';
+
+              if (!escola.zoneamentos) {
+                escola.zoneamentos = [];
+              }
+              const zoneamentosEscolaIds = escola.zoneamentos.map(z => z.id);
+
+              todosZoneamentos.forEach(z => {
+                const option = document.createElement('option');
+                option.value = z.id;
+                option.textContent = z.nome;
+                // Se a escola possuir esse zoneamento, joga para a lista da direita
+                if (zoneamentosEscolaIds.includes(z.id)) {
+                  listaDir.appendChild(option);
+                } else {
+                  listaEsq.appendChild(option);
+                }
+              });
+            })
+            .catch(err => console.error(err));
+
+          // Inicializa o mapa de edição após preencher dados
+          initMapEditarEscola(escola.latitude, escola.longitude);
+
+          // Abre o modal
+          $('#modalEditarEscola').modal('show');
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Não foi possível carregar os dados da escola.');
+        });
+    }
+
+    function deleteEscola(id) {
+      if (!confirm('Tem certeza que deseja excluir esta escola?')) {
+        return;
+      }
+      fetch(`/api/escolas/excluir/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(resp => {
+          if (resp.success) {
+            showNotification('success', 'Escola excluída com sucesso!');
+            loadEscolas();
+          } else {
+            showNotification('danger', 'Erro ao excluir escola.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao excluir escola.');
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -1458,7 +1680,7 @@
     }
 
     $(document).ready(function () {
-      // Dual list filters
+      // Dual list filters (cadastro)
       $('#filtroEsq').on('input', function () {
         filterOptionsCadastrarEscola(this, document.getElementById('listaEsq'));
       });
@@ -1466,7 +1688,7 @@
         filterOptionsCadastrarEscola(this, document.getElementById('listaDir'));
       });
 
-      // Botões de adicionar / remover zoneamentos
+      // Botões de adicionar / remover zoneamentos (cadastro)
       $('#addBtn').click(function () {
         const listaEsq = document.getElementById('listaEsq');
         const listaDir = document.getElementById('listaDir');
@@ -1489,7 +1711,7 @@
         }
       });
 
-      // Carregar lista de zoneamentos
+      // Carregar lista de zoneamentos (cadastro)
       fetch('/api/zoneamentos')
         .then(res => res.json())
         .then(data => {
@@ -1526,7 +1748,6 @@
             if (data.success) {
               showNotificationCadastrarEscola('success', 'Escola cadastrada com sucesso!');
               $('#modalCadastrarEscola').modal('hide');
-              // Recarrega a lista de escolas no mapa e na tabela:
               loadEscolas();
             } else {
               showNotificationCadastrarEscola('danger', 'Erro ao cadastrar escola: ' + data.message);
@@ -1539,6 +1760,183 @@
       });
     });
   </script>
+
+  <!-- Scripts do Modal de Edição de Escola -->
+  <script>
+    let mapEditarEscola;
+    let markerEditarEscola;
+    let geocoderEditarEscola;
+
+    function initMapEditarEscola(lat, lng) {
+      geocoderEditarEscola = new google.maps.Geocoder();
+      const latitude = parseFloat(lat) || -6.530066;
+      const longitude = parseFloat(lng) || -49.851630;
+
+      mapEditarEscola = new google.maps.Map(document.getElementById('mapEditarEscola'), {
+        center: { lat: latitude, lng: longitude },
+        zoom: 13,
+        mapTypeId: 'satellite'
+      });
+
+      // Se existir latitude e longitude válidos, coloca um marcador
+      if (!isNaN(latitude) && !isNaN(longitude)) {
+        markerEditarEscola = new google.maps.Marker({
+          position: { lat: latitude, lng: longitude },
+          map: mapEditarEscola
+        });
+      }
+
+      mapEditarEscola.addListener('click', function (event) {
+        const latEdit = event.latLng.lat();
+        const lngEdit = event.latLng.lng();
+        if (markerEditarEscola) {
+          markerEditarEscola.setPosition(event.latLng);
+        } else {
+          markerEditarEscola = new google.maps.Marker({
+            position: event.latLng,
+            map: mapEditarEscola
+          });
+        }
+        document.getElementById('editLatitude').value = latEdit;
+        document.getElementById('editLongitude').value = lngEdit;
+
+        geocoderEditarEscola.geocode({ location: { lat: latEdit, lng: lngEdit } }, function (results, status) {
+          if (status === 'OK' && results[0]) {
+            let addressComponents = results[0].address_components;
+            let cep = '', bairro = '', logradouro = '', numero = '';
+
+            addressComponents.forEach(comp => {
+              if (comp.types.includes('route')) {
+                logradouro = comp.long_name;
+              }
+              if (comp.types.includes('street_number')) {
+                numero = comp.long_name;
+              }
+              if (comp.types.includes('sublocality') || comp.types.includes('administrative_area_level_2')) {
+                bairro = comp.long_name;
+              }
+            });
+
+            document.getElementById('editLogradouro').value = logradouro || '';
+            document.getElementById('editNumero').value = numero || '';
+            document.getElementById('editBairro').value = bairro || '';
+
+            geocoderEditarEscola.geocode({ address: logradouro + ', ' + bairro }, function (resPostal, statPostal) {
+              if (statPostal === 'OK' && resPostal[0]) {
+                let pc = resPostal[0].address_components.find(c => c.types.includes('postal_code'));
+                if (pc) {
+                  document.getElementById('editCep').value = pc.long_name;
+                }
+              }
+            });
+          } else {
+            console.error('Geocode falhou devido a: ' + status);
+          }
+        });
+      });
+    }
+
+    function showNotificationEditarEscola(type, message, title = "") {
+      $.notify({
+        title: title ? title + ' ' : '',
+        message: message,
+        icon: type === 'success' ? 'fa fa-check-circle' :
+          type === 'danger' ? 'fa fa-exclamation-circle' :
+            type === 'warning' ? 'fa fa-exclamation-triangle' :
+              type === 'info' ? 'fa fa-info-circle' : ''
+      }, {
+        type: type,
+        placement: {
+          from: "top",
+          align: "right"
+        },
+        offset: 20,
+        spacing: 10,
+        z_index: 1031,
+        delay: 3000,
+        timer: 1000,
+        animate: {
+          enter: 'animated fadeInDown',
+          exit: 'animated fadeOutUp'
+        }
+      });
+    }
+
+    function filterOptionsEditarEscola(input, select) {
+      const filterVal = input.value.toLowerCase();
+      for (let i = 0; i < select.options.length; i++) {
+        const txt = select.options[i].text.toLowerCase();
+        select.options[i].style.display = txt.includes(filterVal) ? 'block' : 'none';
+      }
+    }
+
+    $(document).ready(function () {
+      // Dual list filters (edição)
+      $('#editFiltroEsq').on('input', function () {
+        filterOptionsEditarEscola(this, document.getElementById('editListaEsq'));
+      });
+      $('#editFiltroDir').on('input', function () {
+        filterOptionsEditarEscola(this, document.getElementById('editListaDir'));
+      });
+
+      // Botões de adicionar / remover zoneamentos (edição)
+      $('#editAddBtn').click(function () {
+        const listaEsq = document.getElementById('editListaEsq');
+        const listaDir = document.getElementById('editListaDir');
+        for (let i = listaEsq.options.length - 1; i >= 0; i--) {
+          if (listaEsq.options[i].selected && listaEsq.options[i].style.display !== 'none') {
+            const option = listaEsq.options[i];
+            listaDir.appendChild(option);
+          }
+        }
+      });
+
+      $('#editRemoveBtn').click(function () {
+        const listaEsq = document.getElementById('editListaEsq');
+        const listaDir = document.getElementById('editListaDir');
+        for (let i = listaDir.options.length - 1; i >= 0; i--) {
+          if (listaDir.options[i].selected && listaDir.options[i].style.display !== 'none') {
+            const option = listaDir.options[i];
+            listaEsq.appendChild(option);
+          }
+        }
+      });
+
+      // Submissão do formulário de edição de escola
+      $('#escola-edit-form').on('submit', function (e) {
+        e.preventDefault();
+
+        const listaDir = document.getElementById('editListaDir');
+        const selecionados = [];
+        for (let i = 0; i < listaDir.options.length; i++) {
+          selecionados.push(listaDir.options[i].value);
+        }
+        document.getElementById('zoneamentosEditSelecionados').value = JSON.stringify(selecionados);
+
+        const formData = $(this).serialize();
+        fetch('/api/escolas/editar', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showNotificationEditarEscola('success', 'Escola atualizada com sucesso!');
+              $('#modalEditarEscola').modal('hide');
+              loadEscolas();
+            } else {
+              showNotificationEditarEscola('danger', 'Erro ao atualizar escola: ' + data.message);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            showNotificationEditarEscola('danger', 'Erro ao atualizar escola. Tente novamente.');
+          });
+      });
+    });
+  </script>
+
 </body>
 
 </html>

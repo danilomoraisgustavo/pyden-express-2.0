@@ -728,6 +728,81 @@ app.get('/api/escolas', async (req, res) => {
     }
 });
 
+app.put('/api/escolas/editar', async (req, res) => {
+    try {
+        const {
+            editEscolaId,
+            editLatitude,
+            editLongitude,
+            editArea,
+            editLogradouro,
+            editNumero,
+            editComplemento,
+            editPontoReferencia,
+            editBairro,
+            editCep,
+            editNomeEscola,
+            editCodigoINEP,
+            'editRegime[]': editRegime,
+            'editNivel[]': editNivel,
+            'editHorario[]': editHorario,
+            zoneamentosEditSelecionados
+        } = req.body;
+
+        // Buscar a escola pelo ID (ajuste para seu banco de dados)
+        const escola = await Escola.findByPk(editEscolaId);
+        if (!escola) {
+            return res.status(404).json({ success: false, message: 'Escola não encontrada.' });
+        }
+
+        // Atualizar atributos
+        escola.latitude = editLatitude;
+        escola.longitude = editLongitude;
+        escola.area = editArea;
+        escola.logradouro = editLogradouro;
+        escola.numero = editNumero;
+        escola.complemento = editComplemento;
+        escola.ponto_referencia = editPontoReferencia;
+        escola.bairro = editBairro;
+        escola.cep = editCep;
+        escola.nome = editNomeEscola;
+        escola.codigo_inep = editCodigoINEP;
+        escola.regime = editRegime || [];
+        escola.nivel = editNivel || [];
+        escola.horario = editHorario || [];
+
+        await escola.save();
+
+        // Se houver relacionamento M:N com zoneamentos, atualizar também
+        if (zoneamentosEditSelecionados) {
+            const idsZoneamentos = JSON.parse(zoneamentosEditSelecionados);
+            // Exemplo usando Sequelize: await escola.setZoneamentos(idsZoneamentos);
+        }
+
+        res.json({ success: true, message: 'Escola atualizada com sucesso!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Erro ao atualizar escola.' });
+    }
+});
+
+app.delete('/api/escolas/excluir/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Buscar a escola pelo ID (ajuste para seu banco de dados)
+        const escola = await Escola.findByPk(id);
+        if (!escola) {
+            return res.status(404).json({ success: false, message: 'Escola não encontrada.' });
+        }
+
+        await escola.destroy();
+        res.json({ success: true, message: 'Escola excluída com sucesso!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Erro ao excluir escola.' });
+    }
+});
+
 // ====================================================================================
 // FORNECEDORES
 // ====================================================================================
@@ -4124,6 +4199,8 @@ app.get('/api/alunos-ativos', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Erro ao buscar alunos.' });
     }
 });
+
+
 
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
