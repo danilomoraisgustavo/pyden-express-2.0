@@ -4442,117 +4442,117 @@ app.delete('/api/memorandos/:id', async (req, res) => {
 app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query('SELECT * FROM memorandos WHERE id = $1', [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Memorando não encontrado.' });
-        }
-        const memorando = result.rows[0];
-
-        const doc = new PDFDocument({ size: 'A4', margin: 50 });
-        res.setHeader('Content-Disposition', `inline; filename=memorando_${id}.pdf`);
-        res.setHeader('Content-Type', 'application/pdf');
-        doc.pipe(res);
-
-        // LOGO ESQUERDA
-        const logoPath = path.join(__dirname, 'public', 'assets', 'img', 'logo_memorando1.png');
-        if (fs.existsSync(logoPath)) {
-            doc.image(logoPath, 50, 20, { width: 60 });
-        }
-
-        // TEXTO DIREITA
-        doc.fontSize(11)
-            .font('Helvetica-Bold')
-            .text(
-                'ESTADO DO PARÁ\n' +
-                'PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n' +
-                'SECRETARIA MUNICIPAL DE EDUCAÇÃO',
-                250,
-                20,
-                { width: 300, align: 'right' }
-            );
-
-        // SEPARADOR
-        const separadorPath = path.join(__dirname, 'public', 'assets', 'img', 'memorando_separador.png');
-        if (fs.existsSync(separadorPath)) {
-            const separadorX = (doc.page.width - 510) / 2;
-            const separadorY = 90;
-            doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-        }
-
-        doc.restore();
-        doc.y = 130;
-        doc.x = 50;
-
-        // TÍTULO
-        doc.fontSize(12)
-            .font('Helvetica-Bold')
-            .text(`MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA DE EDUCACAO`, {
-                align: 'justify',
-            })
-            .moveDown();
-
-        // CORPO
-        doc.fontSize(12)
-            .font('Helvetica')
-            .text(`A: ${memorando.destinatario}`, { align: 'justify' })
-            .text(`Assunto: ${memorando.tipo_memorando}`, { align: 'justify' })
-            .moveDown()
-            .text('Prezados(as),', { align: 'justify' })
-            .moveDown()
-            .text(memorando.corpo, { align: 'justify' })
-            .moveDown();
-
-        // ESPAÇO E ASSINATURA
-        const spaceNeededForSignature = 100;
-        if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-            doc.addPage();
-        }
-
-        const signatureY = doc.page.height - 270;
-        doc.y = signatureY;
-        doc.x = 50;
-        doc.fontSize(12)
-            .font('Helvetica')
-            .text('Atenciosamente,', { align: 'justify' })
-            .moveDown(2)
-            .text('DANILO DE MORAIS GUSTAVO', { align: 'center' })
-            .text('Gestor de Transporte Escolar', { align: 'center' })
-            .text('Portaria 118/2023 - GP', { align: 'center' });
-
-        // RODAPÉ
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        if (fs.existsSync(separadorPath)) {
-            doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-        }
-
-        const logo2Path = path.join(__dirname, 'public', 'assets', 'img', 'memorando_logo2.png');
-        if (fs.existsSync(logo2Path)) {
-            const logo2X = (doc.page.width - 160) / 2;
-            const logo2Y = doc.page.height - 150;
-            doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-        }
-
-        doc.fontSize(10)
-            .font('Helvetica')
-            .text('SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED', 50, doc.page.height - 85, {
-                width: doc.page.width - 100,
-                align: 'center',
-            })
-            .text('Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA', {
-                align: 'center',
-            })
-            .text('Telefone: (94) 99293-4500', { align: 'center' });
-
-        doc.end();
+      const result = await pool.query('SELECT * FROM memorandos WHERE id = $1', [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, message: 'Memorando não encontrado.' });
+      }
+      const memorando = result.rows[0];
+  
+      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      res.setHeader('Content-Disposition', `inline; filename=memorando_${id}.pdf`);
+      res.setHeader('Content-Type', 'application/pdf');
+      doc.pipe(res);
+  
+      // LOGO ESQUERDA
+      const logoPath = path.join(__dirname, 'public', 'assets', 'img', 'logo_memorando1.png');
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 50, 20, { width: 60 });
+      }
+  
+      // TEXTO DIREITA
+      doc.fontSize(11)
+        .font('Helvetica-Bold')
+        .text(
+          'ESTADO DO PARÁ\n' +
+          'PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n' +
+          'SECRETARIA MUNICIPAL DE EDUCAÇÃO',
+          250,
+          20,
+          { width: 300, align: 'right' }
+        );
+  
+      // SEPARADOR
+      const separadorPath = path.join(__dirname, 'public', 'assets', 'img', 'memorando_separador.png');
+      if (fs.existsSync(separadorPath)) {
+        const separadorX = (doc.page.width - 510) / 2;
+        const separadorY = 90;
+        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+      }
+  
+      doc.y = 130;
+      doc.x = 50;
+  
+      // TÍTULO
+      doc.fontSize(12)
+        .font('Helvetica-Bold')
+        .text(`MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA DE EDUCACAO`, {
+          align: 'justify',
+        })
+        .moveDown();
+  
+      // CORPO
+      doc.fontSize(12)
+        .font('Helvetica')
+        .text(`A: ${memorando.destinatario}`, { align: 'justify' })
+        .text(`Assunto: ${memorando.tipo_memorando}`, { align: 'justify' })
+        .moveDown()
+        .text('Prezados(as),', { align: 'justify' })
+        .moveDown()
+        .text(memorando.corpo, { align: 'justify' })
+        .moveDown();
+  
+      // ESPAÇO E ASSINATURA
+      const spaceNeededForSignature = 100;
+      if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+        doc.addPage();
+      }
+  
+      const signatureY = doc.page.height - 270;
+      doc.y = signatureY;
+      doc.x = 50;
+      doc.fontSize(12)
+        .font('Helvetica')
+        .text('Atenciosamente,', { align: 'justify' })
+        .moveDown(2)
+        .text('DANILO DE MORAIS GUSTAVO', { align: 'center' })
+        .text('Gestor de Transporte Escolar', { align: 'center' })
+        .text('Portaria 118/2023 - GP', { align: 'center' });
+  
+      // RODAPÉ
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      if (fs.existsSync(separadorPath)) {
+        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+      }
+  
+      const logo2Path = path.join(__dirname, 'public', 'assets', 'img', 'memorando_logo2.png');
+      if (fs.existsSync(logo2Path)) {
+        const logo2X = (doc.page.width - 160) / 2;
+        const logo2Y = doc.page.height - 150;
+        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+      }
+  
+      doc.fontSize(10)
+        .font('Helvetica')
+        .text('SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED', 50, doc.page.height - 85, {
+          width: doc.page.width - 100,
+          align: 'center',
+        })
+        .text('Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA', {
+          align: 'center',
+        })
+        .text('Telefone: (94) 99293-4500', { align: 'center' });
+  
+      doc.end();
     } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Erro ao gerar PDF.',
-        });
+      console.error('Erro ao gerar PDF:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao gerar PDF.',
+      });
     }
-});
+  });
+  
 
 // Import alunos ativos
 app.post('/api/import-alunos-ativos', async (req, res) => {
