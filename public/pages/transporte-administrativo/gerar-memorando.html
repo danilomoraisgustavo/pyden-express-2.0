@@ -549,7 +549,6 @@
                   <li>
                     <div class="message-notif-scroll scrollbar-outer">
                       <div class="notif-center">
-                        <!-- Exemplo de mensagens fixas ou carregadas via JS -->
                         <a href="#">
                           <div class="notif-img">
                             <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
@@ -560,7 +559,6 @@
                             <span class="time">Há 5 minutos</span>
                           </div>
                         </a>
-                        <!-- ... -->
                       </div>
                     </div>
                   </li>
@@ -589,7 +587,6 @@
                   <li>
                     <div class="notif-scroll scrollbar-outer">
                       <div class="notif-center" id="notifList">
-                        <!-- Conteúdo gerado dinamicamente -->
                       </div>
                     </div>
                   </li>
@@ -616,7 +613,6 @@
                   <div class="quick-actions-scroll scrollbar-outer">
                     <div class="quick-actions-items">
                       <div class="row m-0">
-                        <!-- Exemplo de cards para algumas páginas existentes -->
                         <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
                           <div class="quick-actions-item">
                             <div class="avatar-item bg-primary rounded-circle">
@@ -649,7 +645,6 @@
                             <span class="text">Listar Frota</span>
                           </div>
                         </a>
-                        <!-- ... Adicione mais se quiser -->
                       </div>
                     </div>
                   </div>
@@ -756,7 +751,6 @@
                         </tr>
                       </tfoot>
                       <tbody>
-                        <!-- Dados preenchidos via JavaScript -->
                       </tbody>
                     </table>
                   </div>
@@ -779,7 +773,6 @@
                     <div class="row mb-3">
                       <div class="col-md-12">
                         <label for="tipo_memorando" class="form-label fw-bold">Tipo de Memorando</label>
-                        <!-- Radios em 3 colunas -->
                         <div class="row">
                           <div class="col-md-4">
                             <div class="form-check">
@@ -833,7 +826,6 @@
                             </div>
                           </div>
                         </div>
-                        <!-- fim row -->
                       </div>
                     </div>
 
@@ -1113,7 +1105,6 @@
     document.addEventListener('DOMContentLoaded', function () {
       loadMemorandos();
 
-      // Submeter novo memorando
       document.getElementById('memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);

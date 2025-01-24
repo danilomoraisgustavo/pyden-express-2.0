@@ -4491,6 +4491,8 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
         .moveDown();
   
       // CORPO
+      // Remove possíveis caracteres \r para evitar símbolos estranhos
+      const corpoAjustado = memorando.corpo.replace(/\r\n/g, '\n').replace(/\r/g, '');
       doc.fontSize(12)
         .font('Helvetica')
         .text(`A: ${memorando.destinatario}`, { align: 'justify' })
@@ -4498,7 +4500,7 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
         .moveDown()
         .text('Prezados(as),', { align: 'justify' })
         .moveDown()
-        .text(memorando.corpo, { align: 'justify' })
+        .text(corpoAjustado, { align: 'justify' })
         .moveDown();
   
       // ESPAÇO E ASSINATURA
@@ -4553,7 +4555,6 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
     }
   });
   
-
 // Import alunos ativos
 app.post('/api/import-alunos-ativos', async (req, res) => {
     try {
