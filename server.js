@@ -698,66 +698,38 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/usuario-logado', async (req, res) => {
     try {
-        // Se a sessão não existir ou o usuário não estiver logado
         if (!req.session || !req.session.userId) {
             return res.json({
                 success: false,
-                message: 'Usuário não está logado.',
+                message: 'Usuário não está logado.'
             });
         }
-
-        // Consulta completa, mas omitindo a senha.
-        // Ajuste caso queira retirar ou incluir outros campos.
         const userQuery = `
-        SELECT
-          id,
-          nome_completo,
-          cpf,
-          cnpj,
-          telefone,
-          email,
-          init,
-          permissoes,
-          rg,
-          endereco,
-          cidade,
-          estado,
-          cep,
-          foto_perfil,
-          pergunta_seguranca,
-          autenticacao_dois_fatores,
-          tema_preferido,
-          notificacoes_email,
-          linguagem_preferida
-        FROM usuarios
-        WHERE id = $1
-        LIMIT 1
-      `;
-
+            SELECT nome_completo, email
+            FROM usuarios
+            WHERE id = $1
+            LIMIT 1
+        `;
         const result = await pool.query(userQuery, [req.session.userId]);
-
-        // Se não encontrar o usuário
         if (result.rows.length === 0) {
             return res.json({
                 success: false,
-                message: 'Usuário não encontrado no banco.',
+                message: 'Usuário não encontrado no banco.'
             });
         }
 
-        // Monta o objeto do usuário retornado
         const usuario = result.rows[0];
-
-        // Retorne tudo, exceto a senha
         return res.json({
             success: true,
-            data: usuario,
+            nome_completo: usuario.nome_completo,
+            email: usuario.email
         });
 
     } catch (error) {
         console.error('Erro ao buscar /api/usuario-logado:', error);
         return res.status(500).json({
             success: false,
-            message: 'Erro interno do servidor.',
+            message: 'Erro interno do servidor.'
         });
     }
 });
