@@ -4276,7 +4276,7 @@ app.get('/api/memorandos/:id/gerar-docx', async (req, res) => {
                 alignment: AlignmentType.JUSTIFIED,
                 children: [
                     new TextRun({
-                        text: `MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA DE EDUCACAO`,
+                        text: `MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
                         bold: true,
                         size: 24,
                     }),
@@ -4485,7 +4485,7 @@ app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
       // TÍTULO
       doc.fontSize(12)
         .font('Helvetica-Bold')
-        .text(`MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA DE EDUCACAO`, {
+        .text(`MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, {
           align: 'justify',
         })
         .moveDown();
