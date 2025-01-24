@@ -704,12 +704,31 @@ app.get('/api/usuario-logado', async (req, res) => {
                 message: 'Usuário não está logado.'
             });
         }
+
+        // Traga todos os campos que você quer (SEM a senha).
         const userQuery = `
-            SELECT nome_completo, email
-            FROM usuarios
-            WHERE id = $1
-            LIMIT 1
-        `;
+        SELECT
+          id,
+          nome_completo,
+          cpf,
+          cnpj,
+          telefone,
+          email,
+          rg,
+          endereco,
+          cidade,
+          estado,
+          cep,
+          foto_perfil,
+          pergunta_seguranca,
+          autenticacao_dois_fatores,
+          tema_preferido,
+          notificacoes_email,
+          linguagem_preferida
+        FROM usuarios
+        WHERE id = $1
+        LIMIT 1
+      `;
         const result = await pool.query(userQuery, [req.session.userId]);
         if (result.rows.length === 0) {
             return res.json({
@@ -719,12 +738,29 @@ app.get('/api/usuario-logado', async (req, res) => {
         }
 
         const usuario = result.rows[0];
+
+        // Retornando campos soltos, como antes (nome_completo, email etc.),
+        // mas agora também incluindo outros. Ajuste conforme necessidade:
         return res.json({
             success: true,
-            nome_completo: usuario.nome_completo,
-            email: usuario.email
+            id: usuario.id,
+            nome_completo: usuario.nome_completo,  // mesmo nome de antes
+            email: usuario.email,                  // mesmo nome de antes
+            cpf: usuario.cpf,
+            cnpj: usuario.cnpj,
+            telefone: usuario.telefone,
+            rg: usuario.rg,
+            endereco: usuario.endereco,
+            cidade: usuario.cidade,
+            estado: usuario.estado,
+            cep: usuario.cep,
+            foto_perfil: usuario.foto_perfil,
+            pergunta_seguranca: usuario.pergunta_seguranca,
+            autenticacao_dois_fatores: usuario.autenticacao_dois_fatores,
+            tema_preferido: usuario.tema_preferido,
+            notificacoes_email: usuario.notificacoes_email,
+            linguagem_preferida: usuario.linguagem_preferida
         });
-
     } catch (error) {
         console.error('Erro ao buscar /api/usuario-logado:', error);
         return res.status(500).json({
@@ -733,6 +769,7 @@ app.get('/api/usuario-logado', async (req, res) => {
         });
     }
 });
+
 
 // ====================================================================================
 // ZONEAMENTOS
