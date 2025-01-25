@@ -36,8 +36,8 @@ const PDFDocument = require('pdfkit');
 // CONFIGURAÇÃO DO EXPRESS
 // --------------------------------------------------------------------------------
 const app = express();
-app.use(express.json({ limit: '500mb' }));
-app.use(express.urlencoded({ limit: '500mb', extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors({ origin: '*' }));
 
 // --------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ limits: { fileSize: 50 * 1024 * 1024 }, dest: 'uploads/' });
 const uploadFrota = multer({ storage: storage });
 const uploadMonitores = multer({ storage: storage });
 
@@ -4442,138 +4442,156 @@ app.delete('/api/memorandos/:id', async (req, res) => {
 app.get('/api/memorandos/:id/gerar-pdf', async (req, res) => {
     const { id } = req.params;
     try {
-      const result = await pool.query('SELECT * FROM memorandos WHERE id = $1', [id]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ success: false, message: 'Memorando não encontrado.' });
-      }
-      const memorando = result.rows[0];
-  
-      const doc = new PDFDocument({ size: 'A4', margin: 50 });
-      res.setHeader('Content-Disposition', `inline; filename=memorando_${id}.pdf`);
-      res.setHeader('Content-Type', 'application/pdf');
-      doc.pipe(res);
-  
-      // LOGO ESQUERDA
-      const logoPath = path.join(__dirname, 'public', 'assets', 'img', 'logo_memorando1.png');
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-  
-      // TEXTO DIREITA
-      doc.fontSize(11)
-        .font('Helvetica-Bold')
-        .text(
-          'ESTADO DO PARÁ\n' +
-          'PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n' +
-          'SECRETARIA MUNICIPAL DE EDUCAÇÃO',
-          250,
-          20,
-          { width: 300, align: 'right' }
-        );
-  
-      // SEPARADOR
-      const separadorPath = path.join(__dirname, 'public', 'assets', 'img', 'memorando_separador.png');
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-  
-      doc.y = 130;
-      doc.x = 50;
-  
-      // TÍTULO
-      doc.fontSize(12)
-        .font('Helvetica-Bold')
-        .text(`MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, {
-          align: 'justify',
-        })
-        .moveDown();
-  
-      // CORPO
-      // Remove possíveis caracteres \r para evitar símbolos estranhos
-      const corpoAjustado = memorando.corpo.replace(/\r\n/g, '\n').replace(/\r/g, '');
-      doc.fontSize(12)
-        .font('Helvetica')
-        .text(`A: ${memorando.destinatario}`, { align: 'justify' })
-        .text(`Assunto: ${memorando.tipo_memorando}`, { align: 'justify' })
-        .moveDown()
-        .text('Prezados(as),', { align: 'justify' })
-        .moveDown()
-        .text(corpoAjustado, { align: 'justify' })
-        .moveDown();
-  
-      // ESPAÇO E ASSINATURA
-      const spaceNeededForSignature = 100;
-      if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-        doc.addPage();
-      }
-  
-      const signatureY = doc.page.height - 270;
-      doc.y = signatureY;
-      doc.x = 50;
-      doc.fontSize(12)
-        .font('Helvetica')
-        .text('Atenciosamente,', { align: 'justify' })
-        .moveDown(2)
-        .text('DANILO DE MORAIS GUSTAVO', { align: 'center' })
-        .text('Gestor de Transporte Escolar', { align: 'center' })
-        .text('Portaria 118/2023 - GP', { align: 'center' });
-  
-      // RODAPÉ
-      const footerSepX = (doc.page.width - 510) / 2;
-      const footerSepY = doc.page.height - 160;
-      if (fs.existsSync(separadorPath)) {
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-  
-      const logo2Path = path.join(__dirname, 'public', 'assets', 'img', 'memorando_logo2.png');
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-  
-      doc.fontSize(10)
-        .font('Helvetica')
-        .text('SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED', 50, doc.page.height - 85, {
-          width: doc.page.width - 100,
-          align: 'center',
-        })
-        .text('Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA', {
-          align: 'center',
-        })
-        .text('Telefone: (94) 99293-4500', { align: 'center' });
-  
-      doc.end();
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro ao gerar PDF.',
-      });
-    }
-  });
-  
-// Import alunos ativos
-app.post('/api/import-alunos-ativos', async (req, res) => {
-    try {
-        const { alunos, escolaId } = req.body;
-        if (!alunos || !Array.isArray(alunos)) {
-            return res.json({ success: false, message: 'Dados inválidos.' });
+        const result = await pool.query('SELECT * FROM memorandos WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Memorando não encontrado.' });
         }
+        const memorando = result.rows[0];
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Disposition', `inline; filename=memorando_${id}.pdf`);
+        res.setHeader('Content-Type', 'application/pdf');
+        doc.pipe(res);
+
+        // LOGO ESQUERDA
+        const logoPath = path.join(__dirname, 'public', 'assets', 'img', 'logo_memorando1.png');
+        if (fs.existsSync(logoPath)) {
+            doc.image(logoPath, 50, 20, { width: 60 });
+        }
+
+        // TEXTO DIREITA
+        doc.fontSize(11)
+            .font('Helvetica-Bold')
+            .text(
+                'ESTADO DO PARÁ\n' +
+                'PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n' +
+                'SECRETARIA MUNICIPAL DE EDUCAÇÃO',
+                250,
+                20,
+                { width: 300, align: 'right' }
+            );
+
+        // SEPARADOR
+        const separadorPath = path.join(__dirname, 'public', 'assets', 'img', 'memorando_separador.png');
+        if (fs.existsSync(separadorPath)) {
+            const separadorX = (doc.page.width - 510) / 2;
+            const separadorY = 90;
+            doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+        }
+
+        doc.y = 130;
+        doc.x = 50;
+
+        // TÍTULO
+        doc.fontSize(12)
+            .font('Helvetica-Bold')
+            .text(`MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, {
+                align: 'justify',
+            })
+            .moveDown();
+
+        // CORPO
+        // Remove possíveis caracteres \r para evitar símbolos estranhos
+        const corpoAjustado = memorando.corpo.replace(/\r\n/g, '\n').replace(/\r/g, '');
+        doc.fontSize(12)
+            .font('Helvetica')
+            .text(`A: ${memorando.destinatario}`, { align: 'justify' })
+            .text(`Assunto: ${memorando.tipo_memorando}`, { align: 'justify' })
+            .moveDown()
+            .text('Prezados(as),', { align: 'justify' })
+            .moveDown()
+            .text(corpoAjustado, { align: 'justify' })
+            .moveDown();
+
+        // ESPAÇO E ASSINATURA
+        const spaceNeededForSignature = 100;
+        if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+            doc.addPage();
+        }
+
+        const signatureY = doc.page.height - 270;
+        doc.y = signatureY;
+        doc.x = 50;
+        doc.fontSize(12)
+            .font('Helvetica')
+            .text('Atenciosamente,', { align: 'justify' })
+            .moveDown(2)
+            .text('DANILO DE MORAIS GUSTAVO', { align: 'center' })
+            .text('Gestor de Transporte Escolar', { align: 'center' })
+            .text('Portaria 118/2023 - GP', { align: 'center' });
+
+        // RODAPÉ
+        const footerSepX = (doc.page.width - 510) / 2;
+        const footerSepY = doc.page.height - 160;
+        if (fs.existsSync(separadorPath)) {
+            doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+        }
+
+        const logo2Path = path.join(__dirname, 'public', 'assets', 'img', 'memorando_logo2.png');
+        if (fs.existsSync(logo2Path)) {
+            const logo2X = (doc.page.width - 160) / 2;
+            const logo2Y = doc.page.height - 150;
+            doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+        }
+
+        doc.fontSize(10)
+            .font('Helvetica')
+            .text('SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED', 50, doc.page.height - 85, {
+                width: doc.page.width - 100,
+                align: 'center',
+            })
+            .text('Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA', {
+                align: 'center',
+            })
+            .text('Telefone: (94) 99293-4500', { align: 'center' });
+
+        doc.end();
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar PDF.',
+        });
+    }
+});
+
+// Import alunos ativos
+app.post('/api/import-alunos-ativos', upload.single('file'), async (req, res) => {
+    try {
+        const { escolaId } = req.body;
+
+        // Verifica se a escola foi informada
         if (!escolaId) {
             return res.json({ success: false, message: 'É necessário informar uma escola.' });
         }
 
-        // userId para log
+        // Verifica se o arquivo veio no request
+        if (!req.file) {
+            return res.json({ success: false, message: 'Nenhum arquivo foi enviado.' });
+        }
+
+        // Lê o buffer do arquivo e converte o XLSX para JSON
+        const buffer = req.file.buffer;
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const firstSheet = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheet];
+        const alunos = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+        // Verifica se a planilha contém dados
+        if (!Array.isArray(alunos) || !alunos.length) {
+            return res.json({ success: false, message: 'Nenhum dado encontrado no XLSX.' });
+        }
+
+        // userId para log (caso não exista sessão, fica null)
         const userId = req.session?.userId || null;
 
+        // Verifica se a escola existe
         const buscaEscola = await pool.query(`SELECT id FROM escolas WHERE id = $1`, [escolaId]);
         if (buscaEscola.rows.length === 0) {
             return res.json({ success: false, message: 'Escola não encontrada.' });
         }
 
+        // Faz o loop dos alunos para inserir no banco
         for (const aluno of alunos) {
             const {
                 id_matricula,
@@ -4606,13 +4624,13 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
 
             await pool.query(
                 `INSERT INTO alunos_ativos(
-                    id_matricula, escola_id, ano, modalidade, formato_letivo, turma,
-                    pessoa_nome, cpf, transporte_escolar_poder_publico, cep, bairro,
-                    filiacao_1, numero_telefone, filiacao_2, responsavel, deficiencia
-                )
-                VALUES ($1, $2, $3, $4, $5, $6,
-                        $7, $8, $9, $10, $11,
-                        $12, $13, $14, $15, $16)`,
+            id_matricula, escola_id, ano, modalidade, formato_letivo, turma,
+            pessoa_nome, cpf, transporte_escolar_poder_publico, cep, bairro,
+            filiacao_1, numero_telefone, filiacao_2, responsavel, deficiencia
+          )
+          VALUES ($1, $2, $3, $4, $5, $6,
+                  $7, $8, $9, $10, $11,
+                  $12, $13, $14, $15, $16)`,
                 [
                     id_matricula || null,
                     escolaId,
@@ -4634,11 +4652,11 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
             );
         }
 
-        // Notificação: "import" de alunos
+        // Insere notificação
         const mensagem = `Importados ${alunos.length} alunos para a escola ID ${escolaId}`;
         await pool.query(
             `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-             VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
+         VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
             [userId, mensagem]
         );
 
