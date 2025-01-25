@@ -1152,7 +1152,7 @@
             const bairro = dataViaCep.bairro || '';
             const localidade = dataViaCep.localidade || '';
             const uf = dataViaCep.uf || '';
-            const numeroFormatado = ''; 
+            const numeroFormatado = '';
             const enderecoCompleto = `${logradouro} ${numeroFormatado}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
 
             geocoder.geocode({ address: enderecoCompleto }, function (results, status) {
