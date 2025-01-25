@@ -3790,33 +3790,7 @@ app.get('/api/cocessao-rota', async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
-app.get('/api/alunos-transporte-publico', async (req, res) => {
-    try {
-        const query = `
-            SELECT
-              id,
-              id_matricula,
-              pessoa_nome,
-              transporte_escolar_poder_publico,
-              cep
-            FROM alunos_ativos
-            WHERE LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')
-              AND cep IS NOT NULL
-              AND cep <> ''
-        `;
-        const result = await pool.query(query);
-        return res.json({
-            success: true,
-            data: result.rows
-        });
-    } catch (error) {
-        console.error('Erro ao buscar alunos para mapear:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Erro interno ao buscar alunos para mapear.'
-        });
-    }
-});
+
 app.post(
     '/api/enviar-solicitacao',
     upload.fields([
@@ -3932,6 +3906,33 @@ app.post(
         }
     }
 );
+app.get('/api/alunos-transporte-publico', async (req, res) => {
+    try {
+        const query = `
+            SELECT
+              id,
+              id_matricula,
+              pessoa_nome,
+              transporte_escolar_poder_publico,
+              cep
+            FROM alunos_ativos
+            WHERE LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')
+              AND cep IS NOT NULL
+              AND cep <> ''
+        `;
+        const result = await pool.query(query);
+        return res.json({
+            success: true,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Erro ao buscar alunos para mapear:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno ao buscar alunos para mapear.'
+        });
+    }
+});
 
 // Excluir rota
 app.delete('/api/rotas-simples/:id', async (req, res) => {
