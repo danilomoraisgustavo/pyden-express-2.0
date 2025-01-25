@@ -784,6 +784,7 @@
             </button>
           </div>
 
+          <!-- MODAL DE IMPORTAÇÃO -->
           <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
               <div class="modal-content">
@@ -810,14 +811,33 @@
             </div>
           </div>
 
+          <!-- MODAL PARA MAPEAR ALUNOS -->
           <div class="modal fade" id="modalMapear" tabindex="-1" aria-labelledby="modalMapearLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="modalMapearLabel">Mapa de Alunos (Estadual/Municipal)</h5>
+                  <h5 class="modal-title" id="modalMapearLabel">Mapa de Alunos</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                  <!-- FORMULÁRIO DE FILTRO -->
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label for="selectEscolaMap" class="form-label">Filtrar por Escola</label>
+                      <select class="form-select" id="selectEscolaMap">
+                        <option value="">Todas as Escolas</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="buscarAlunoInput" class="form-label">Buscar por ID, Nome ou CPF</label>
+                      <input type="text" class="form-control" id="buscarAlunoInput" placeholder="Ex: 12345 ou João ou 000.000.000-00" />
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <button id="btnFiltrarMapa" class="btn btn-primary">Buscar/Filtrar</button>
+                  </div>
+
                   <div id="map"></div>
                 </div>
                 <div class="modal-footer">
@@ -827,6 +847,7 @@
             </div>
           </div>
 
+          <!-- TABELA DE ALUNOS -->
           <div class="row mt-4">
             <div class="col-md-12">
               <div class="card">
@@ -920,6 +941,7 @@
   <script src="../../assets/js/setting-demo2.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
+  <!-- GOOGLE MAPS API -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&v=beta&libraries=marker">
   </script>
 
@@ -929,34 +951,18 @@
     let dataTable = null;
     let alunosData = [];
 
-    function showNotification(type, message) {
-      $.notify({
-        message: message,
-        icon:
-          type === 'success' ? 'fa fa-check-circle' :
-            type === 'danger' ? 'fa fa-exclamation-circle' :
-              'fa fa-info-circle'
-      }, {
-        type: type,
-        placement: { from: "top", align: "right" },
-        offset: 20,
-        spacing: 10,
-        z_index: 1031,
-        delay: 3000,
-        timer: 1000,
-        animate: {
-          enter: 'animated fadeInDown',
-          exit: 'animated fadeOutUp'
-        }
-      });
-    }
+    // MAPA
+    let map = null;
+    let geocoder = null;
 
+    // Carrega as escolas (geral) para importação
     function carregarEscolas() {
       fetch('/api/escolas')
         .then(res => res.json())
         .then(data => {
           escolasLista = data;
           popularSelectEscolas();
+          popularSelectEscolasMap();
         })
         .catch(err => {
           console.error(err);
@@ -964,6 +970,7 @@
         });
     }
 
+    // Popular o select da importação
     function popularSelectEscolas() {
       const select = document.getElementById('escolaSelect');
       select.innerHTML = '<option value="">Selecione a Escola</option>';
@@ -975,58 +982,19 @@
       });
     }
 
-    function handleFileImport(evt) {
-      const file = evt.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const data = e.target.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const firstSheet = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheet];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-        dadosXLSX = jsonData;
-      };
-      reader.readAsBinaryString(file);
+    // Popular o select de escolas do MAPA
+    function popularSelectEscolasMap() {
+      const selectMap = document.getElementById('selectEscolaMap');
+      selectMap.innerHTML = '<option value="">Todas as Escolas</option>';
+      escolasLista.forEach(escola => {
+        const option = document.createElement('option');
+        option.value = escola.id;
+        option.textContent = `${escola.nome} (ID: ${escola.id})`;
+        selectMap.appendChild(option);
+      });
     }
 
-    function enviarImportacao() {
-      const escolaIdSelecionada = document.getElementById('escolaSelect').value;
-      if (!escolaIdSelecionada) {
-        showNotification('danger', 'Selecione uma escola antes de importar.');
-        return;
-      }
-      if (!dadosXLSX.length) {
-        showNotification('danger', 'Nenhum arquivo importado ainda.');
-        return;
-      }
-
-      const body = {
-        escolaId: escolaIdSelecionada,
-        alunos: dadosXLSX
-      };
-
-      fetch('/api/import-alunos-ativos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
-        .then(res => res.json())
-        .then(resp => {
-          if (resp.success) {
-            showNotification('success', resp.message || 'Importação realizada com sucesso!');
-            $('#modalImportar').modal('hide');
-            carregarAlunosBD();
-          } else {
-            showNotification('danger', resp.message || 'Ocorreu um erro na importação.');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Erro ao enviar os dados ao servidor.');
-        });
-    }
-
+    // Carrega alunos gerais
     function carregarAlunosBD() {
       fetch('/api/alunos-ativos')
         .then(res => res.json())
@@ -1040,6 +1008,7 @@
         });
     }
 
+    // Popular tabela
     function popularTabela(alunos) {
       const tbody = $("#alunos-table tbody");
       tbody.empty();
@@ -1097,9 +1066,60 @@
       });
     }
 
-    let map = null;
-    let geocoder = null;
+    // Import XLSX
+    function handleFileImport(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = e.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const firstSheet = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheet];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        dadosXLSX = jsonData;
+      };
+      reader.readAsBinaryString(file);
+    }
 
+    function enviarImportacao() {
+      const escolaIdSelecionada = document.getElementById('escolaSelect').value;
+      if (!escolaIdSelecionada) {
+        showNotification('danger', 'Selecione uma escola antes de importar.');
+        return;
+      }
+      if (!dadosXLSX.length) {
+        showNotification('danger', 'Nenhum arquivo importado ainda.');
+        return;
+      }
+
+      const body = {
+        escolaId: escolaIdSelecionada,
+        alunos: dadosXLSX
+      };
+
+      fetch('/api/import-alunos-ativos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+        .then(res => res.json())
+        .then(resp => {
+          if (resp.success) {
+            showNotification('success', resp.message || 'Importação realizada com sucesso!');
+            $('#modalImportar').modal('hide');
+            carregarAlunosBD();
+          } else {
+            showNotification('danger', resp.message || 'Ocorreu um erro na importação.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao enviar os dados ao servidor.');
+        });
+    }
+
+    // Mapa
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: -3.135366, lng: -60.023207 },
@@ -1113,39 +1133,60 @@
       if (!map) {
         initMap();
       }
-      fetch('/api/alunos-transporte-publico')
+    });
+
+    // Ao clicar no botão filtrar/buscar
+    $(document).on('click', '#btnFiltrarMapa', function () {
+      const escolaSelecionada = $('#selectEscolaMap').val();
+      const busca = $('#buscarAlunoInput').val().trim();
+
+      const queryParams = new URLSearchParams();
+      if (escolaSelecionada) queryParams.append('escola_id', escolaSelecionada);
+      if (busca) queryParams.append('busca', busca);
+
+      // Endpoint custom com parametros GET
+      fetch('/api/alunos-mapa?' + queryParams.toString())
         .then(res => res.json())
         .then(resp => {
-          if (resp.success && resp.data) {
+          if (resp.success && Array.isArray(resp.data)) {
             plotarAlunosMapa(resp.data);
           } else {
-            showNotification('danger', 'Não há alunos para mapear ou ocorreu um erro.');
+            showNotification('info', 'Nenhum aluno encontrado com esses filtros.');
           }
         })
         .catch(err => {
           console.error(err);
-          showNotification('danger', 'Erro ao buscar alunos para mapear.');
+          showNotification('danger', 'Erro ao filtrar alunos no mapa.');
         });
-    }).on('hide.bs.modal', function () {
     });
 
     function plotarAlunosMapa(alunos) {
+      if (!map || !geocoder) return;
       const bounds = new google.maps.LatLngBounds();
-      let contagemMarcadores = 0;
+      let contagem = 0;
+
+      // Limpar marcadores se quiser
+      // (Não há um "clear" nativo no AdvancedMarker, é preciso gerenciar instâncias ou recriar o mapa)
+      // Aqui faremos só recriar o "map" para limpar
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: -3.135366, lng: -60.023207 },
+        zoom: 5,
+        mapId: 'ca7a0e55f44be727'
+      });
 
       alunos.forEach(al => {
         const cepLimpo = (al.cep || '').replace(/\D/g, '');
         if (!cepLimpo || cepLimpo.length !== 8) {
-          contagemMarcadores++;
-          if (contagemMarcadores === alunos.length) map.fitBounds(bounds);
+          contagem++;
+          if (contagem === alunos.length) map.fitBounds(bounds);
           return;
         }
         fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
           .then(res => res.json())
           .then(dataViaCep => {
             if (dataViaCep.erro) {
-              contagemMarcadores++;
-              if (contagemMarcadores === alunos.length) map.fitBounds(bounds);
+              contagem++;
+              if (contagem === alunos.length) map.fitBounds(bounds);
               return;
             }
             const logradouro = dataViaCep.logradouro || '';
@@ -1153,27 +1194,27 @@
             const localidade = dataViaCep.localidade || '';
             const uf = dataViaCep.uf || '';
             const numeroFormatado = '';
-            const enderecoCompleto = `${logradouro} ${numeroFormatado}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
+            const endCompleto = `${logradouro} ${numeroFormatado}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
 
-            geocoder.geocode({ address: enderecoCompleto }, function (results, status) {
+            geocoder.geocode({ address: endCompleto }, function (results, status) {
               if (status === 'OK' && results[0]) {
-                const location = results[0].geometry.location;
+                const loc = results[0].geometry.location;
                 new google.maps.marker.AdvancedMarkerElement({
                   map,
-                  position: location,
+                  position: loc,
                   title: (al.pessoa_nome || 'Aluno') + ' - ' + (al.transporte_escolar_poder_publico || ''),
                 });
-                bounds.extend(location);
+                bounds.extend(loc);
               }
-              contagemMarcadores++;
-              if (contagemMarcadores === alunos.length) {
+              contagem++;
+              if (contagem === alunos.length) {
                 map.fitBounds(bounds);
               }
             });
           })
           .catch(() => {
-            contagemMarcadores++;
-            if (contagemMarcadores === alunos.length) map.fitBounds(bounds);
+            contagem++;
+            if (contagem === alunos.length) map.fitBounds(bounds);
           });
       });
     }
@@ -1181,9 +1222,11 @@
     $(document).ready(function () {
       carregarEscolas();
       carregarAlunosBD();
+
       $("#fileInput").on("change", handleFileImport);
       $("#importarBtn").on("click", enviarImportacao);
     });
   </script>
+
 </body>
 </html>
