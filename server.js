@@ -2488,6 +2488,102 @@ app.delete('/api/pontos/:id', async (req, res) => {
         });
     }
 });
+// =============================================
+// EDITAR PONTO DE PARADA
+// =============================================
+app.put('/api/pontos/atualizar/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            latitudePontoEdit,
+            longitudePontoEdit,
+            areaEdit,
+            logradouroPontoEdit,
+            numeroPontoEdit,
+            complementoPontoEdit,
+            pontoReferenciaPontoEdit,
+            bairroPontoEdit,
+            cepPontoEdit
+        } = req.body;
+
+        // Recebe o array de zoneamentos (JSON) enviado pelo front
+        const zoneamentosPontoEdit = JSON.parse(req.body.zoneamentosPontoEdit || '[]');
+
+        // Usuário que está editando (para salvar notificação, se desejar)
+        const userId = req.session?.userId || null;
+
+        // 1) Verifica se o ponto existe
+        const buscaPonto = await pool.query('SELECT id, nome_ponto FROM pontos WHERE id = $1', [id]);
+        if (buscaPonto.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Ponto não encontrado.' });
+        }
+
+        // 2) Atualiza campos na tabela 'pontos'
+        const updatePontoQuery = `
+            UPDATE pontos
+            SET
+                latitude = $1,
+                longitude = $2,
+                area = $3,
+                logradouro = $4,
+                numero = $5,
+                complemento = $6,
+                ponto_referencia = $7,
+                bairro = $8,
+                cep = $9
+            WHERE id = $10
+            RETURNING id, nome_ponto
+        `;
+        const updateValues = [
+            latitudePontoEdit ? parseFloat(latitudePontoEdit) : null,
+            longitudePontoEdit ? parseFloat(longitudePontoEdit) : null,
+            areaEdit || null,
+            logradouroPontoEdit || null,
+            numeroPontoEdit || null,
+            complementoPontoEdit || null,
+            pontoReferenciaPontoEdit || null,
+            bairroPontoEdit || null,
+            cepPontoEdit || null,
+            id
+        ];
+        const updateResult = await pool.query(updatePontoQuery, updateValues);
+
+        if (updateResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Falha ao atualizar (ponto inexistente).' });
+        }
+
+        // 3) Remove antigos relacionamentos de zoneamentos
+        await pool.query('DELETE FROM pontos_zoneamentos WHERE ponto_id = $1', [id]);
+
+        // 4) Se existirem zoneamentos selecionados, insere novamente
+        if (zoneamentosPontoEdit.length > 0) {
+            const insertZonaPontoQuery = `
+                INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+                VALUES ($1, $2)
+            `;
+            for (const zid of zoneamentosPontoEdit) {
+                await pool.query(insertZonaPontoQuery, [id, zid]);
+            }
+        }
+
+        // 5) Registro de notificação (opcional)
+        const nomePonto = updateResult.rows[0].nome_ponto;
+        const mensagem = `Ponto de parada ID ${id} (nome_ponto: ${nomePonto}) foi atualizado.`;
+        await pool.query(
+            `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'UPDATE', 'pontos', $2, $3)`,
+            [userId, id, mensagem]
+        );
+
+        return res.json({ success: true, message: 'Ponto atualizado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao atualizar ponto:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor ao atualizar ponto.'
+        });
+    }
+});
 
 // ====================================================================================
 // ENDPOINT DE NOTIFICAÇÕES
