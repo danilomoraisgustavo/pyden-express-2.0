@@ -3938,6 +3938,7 @@ app.get('/api/alunos-mapa', async (req, res) => {
     try {
         const { escola_id, busca } = req.query;
 
+        // Filtro básico: só alunos que têm transporte público e CEP preenchido
         let whereClauses = [
             "LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')",
             "cep IS NOT NULL AND cep <> ''"
@@ -3945,17 +3946,19 @@ app.get('/api/alunos-mapa', async (req, res) => {
         let values = [];
         let idx = 1;
 
+        // Se veio escola_id, filtra
         if (escola_id) {
             whereClauses.push(`escola_id = $${idx++}`);
             values.push(escola_id);
         }
 
+        // Se veio busca (id_matricula, nome ou cpf), filtra
         if (busca) {
             whereClauses.push(`(
-                CAST(id_matricula AS TEXT) ILIKE $${idx}
-                OR pessoa_nome ILIKE $${idx}
-                OR cpf ILIKE $${idx}
-            )`);
+            CAST(id_matricula AS TEXT) ILIKE $${idx}
+            OR pessoa_nome ILIKE $${idx}
+            OR cpf ILIKE $${idx}
+        )`);
             values.push(`%${busca}%`);
             idx++;
         }
@@ -3963,17 +3966,20 @@ app.get('/api/alunos-mapa', async (req, res) => {
         const whereString = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
         const query = `
-            SELECT
-              id,
-              id_matricula,
-              pessoa_nome,
-              transporte_escolar_poder_publico,
-              cep
-            FROM alunos_ativos
-            ${whereString}
-            ORDER BY id ASC
-        `;
-        
+        SELECT
+          id,
+          id_matricula,
+          escola_id,
+          pessoa_nome,
+          cpf,
+          transporte_escolar_poder_publico,
+          cep,
+          bairro
+        FROM alunos_ativos
+        ${whereString}
+        ORDER BY id ASC
+      `;
+
         const result = await pool.query(query, values);
 
         return res.json({
