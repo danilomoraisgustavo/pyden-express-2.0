@@ -3936,58 +3936,50 @@ app.get('/api/alunos-transporte-publico', async (req, res) => {
 
 app.get('/api/alunos-mapa', async (req, res) => {
     try {
-        // Extrai parâmetros de query
         const { escola_id, busca } = req.query;
 
-        // Monta partes da WHERE
-        let whereClauses = [];
+        let whereClauses = [
+            "LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')",
+            "cep IS NOT NULL AND cep <> ''"
+        ];
         let values = [];
         let idx = 1;
 
-        // Sempre filtra por transporte MUNICIPAL ou ESTADUAL e CEP não vazio
-        whereClauses.push(`LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')`);
-        whereClauses.push(`cep IS NOT NULL AND cep <> ''`);
-
-        // Se tiver escola_id
         if (escola_id) {
             whereClauses.push(`escola_id = $${idx++}`);
             values.push(escola_id);
         }
 
-        // Se tiver busca, aplica no id_matricula, pessoa_nome ou cpf
         if (busca) {
             whereClauses.push(`(
-                CAST(id_matricula AS TEXT) ILIKE $${idx} 
-                OR pessoa_nome ILIKE $${idx} 
+                CAST(id_matricula AS TEXT) ILIKE $${idx}
+                OR pessoa_nome ILIKE $${idx}
                 OR cpf ILIKE $${idx}
             )`);
             values.push(`%${busca}%`);
             idx++;
         }
 
-        // Concatena tudo
-        const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+        const whereString = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-        // Query final
         const query = `
             SELECT
-                id,
-                id_matricula,
-                pessoa_nome,
-                transporte_escolar_poder_publico,
-                cep
+              id,
+              id_matricula,
+              pessoa_nome,
+              transporte_escolar_poder_publico,
+              cep
             FROM alunos_ativos
             ${whereString}
             ORDER BY id ASC
         `;
-
+        
         const result = await pool.query(query, values);
 
         return res.json({
             success: true,
             data: result.rows
         });
-
     } catch (error) {
         console.error('Erro ao buscar alunos para mapear:', error);
         return res.status(500).json({

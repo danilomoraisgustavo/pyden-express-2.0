@@ -1165,9 +1165,7 @@
       const bounds = new google.maps.LatLngBounds();
       let contagem = 0;
 
-      // Limpar marcadores se quiser
-      // (Não há um "clear" nativo no AdvancedMarker, é preciso gerenciar instâncias ou recriar o mapa)
-      // Aqui faremos só recriar o "map" para limpar
+      // Limpar marcadores: recria o mapa para "resetar"
       map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: -3.135366, lng: -60.023207 },
         zoom: 5,
@@ -1216,6 +1214,29 @@
             contagem++;
             if (contagem === alunos.length) map.fitBounds(bounds);
           });
+      });
+    }
+
+    // Notificação
+    function showNotification(type, message) {
+      $.notify({
+        message: message,
+        icon:
+          type === 'success' ? 'fa fa-check-circle' :
+            type === 'danger' ? 'fa fa-exclamation-circle' :
+              'fa fa-info-circle'
+      }, {
+        type: type,
+        placement: { from: "top", align: "right" },
+        offset: 20,
+        spacing: 10,
+        z_index: 1031,
+        delay: 3000,
+        timer: 1000,
+        animate: {
+          enter: 'animated fadeInDown',
+          exit: 'animated fadeOutUp'
+        }
       });
     }
 
