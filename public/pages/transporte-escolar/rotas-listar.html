@@ -1291,7 +1291,6 @@
             }
           });
 
-          // Se tiver chegada, coloca por último; senão, a origem permanece
           if (detalhes.chegadaLat && detalhes.chegadaLng) {
             routeCoords.push({ lat: detalhes.chegadaLat, lng: detalhes.chegadaLng });
           } else {
@@ -1303,30 +1302,61 @@
             return;
           }
 
-          // Monta array de lat,lng em ordem
-          // Exemplo: "comgooglemaps://?daddr=-6.52,-49.84&waypoints=-6.53,-49.85|-6.54,-49.86"
-          // Para links na web + mobile, podemos usar "https://www.google.com/maps/dir/?api=1&dir_action=navigate"
-          // e enumerar paradas na sequência (origin -> waypoints -> destination).
+          // Verifica se é dispositivo mobile
+          const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+          // origin
           const origin = routeCoords[0];
+          // destination
           const destination = routeCoords[routeCoords.length - 1];
           const midPoints = routeCoords.slice(1, routeCoords.length - 1);
 
-          let shareLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
-          shareLink += `&origin=${encodeURIComponent(origin.lat + ',' + origin.lng)}`;
-          shareLink += `&destination=${encodeURIComponent(destination.lat + ',' + destination.lng)}`;
+          if (isMobile) {
+            // Tenta abrir pelo deep link "comgooglemaps://"
+            // com fallback para Maps web
+            let deepLink = `comgooglemaps://?saddr=${origin.lat},${origin.lng}&daddr=${destination.lat},${destination.lng}`;
 
-          if (midPoints.length > 0) {
-            const wps = midPoints.map(m => `${m.lat},${m.lng}`).join('|');
-            shareLink += `&waypoints=${encodeURIComponent(wps)}`;
+            if (midPoints.length > 0) {
+              const wps = midPoints.map(m => `${m.lat},${m.lng}`).join('|');
+              deepLink += `&waypoints=${encodeURIComponent(wps)}`;
+            }
+            deepLink += `&directionsmode=driving`;
+
+            // Monta link fallback web
+            let fallbackLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
+            fallbackLink += `&origin=${encodeURIComponent(origin.lat + ',' + origin.lng)}`;
+            fallbackLink += `&destination=${encodeURIComponent(destination.lat + ',' + destination.lng)}`;
+            if (midPoints.length > 0) {
+              const wps2 = midPoints.map(m => `${m.lat},${m.lng}`).join('|');
+              fallbackLink += `&waypoints=${encodeURIComponent(wps2)}`;
+            }
+
+            // Tenta abrir deep link
+            window.location.href = deepLink;
+
+            // Espera um tempo e redireciona para fallback
+            setTimeout(() => {
+              window.location.href = fallbackLink;
+            }, 1000);
+          } else {
+            // Desktop fallback
+            let shareLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
+            shareLink += `&origin=${encodeURIComponent(origin.lat + ',' + origin.lng)}`;
+            shareLink += `&destination=${encodeURIComponent(destination.lat + ',' + destination.lng)}`;
+
+            if (midPoints.length > 0) {
+              const wps = midPoints.map(m => `${m.lat},${m.lng}`).join('|');
+              shareLink += `&waypoints=${encodeURIComponent(wps)}`;
+            }
+
+            navigator.clipboard.writeText(shareLink)
+              .then(() => {
+                showNotification('info', 'Link do trajeto copiado para a área de transferência!');
+              })
+              .catch(() => {
+                showNotification('warning', 'Não foi possível copiar o link automaticamente.');
+              });
           }
-
-          navigator.clipboard.writeText(shareLink)
-            .then(() => {
-              showNotification('info', 'Link do trajeto copiado para a área de transferência!');
-            })
-            .catch(() => {
-              showNotification('warning', 'Não foi possível copiar o link automaticamente.');
-            });
         })
         .catch(err => {
           console.error(err);
