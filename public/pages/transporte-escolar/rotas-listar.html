@@ -63,8 +63,7 @@
       display: inline-block;
     }
 
-    .dataTables_wrapper .row>div:nth-child(1) {
-    }
+    .dataTables_wrapper .row>div:nth-child(1) {}
 
     .dataTables_wrapper .row>div:nth-child(2) {
       display: flex !important;
@@ -554,12 +553,8 @@
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
             <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
-              <img
-                src="../../assets/img/pydenadmin/logo_light.png"
-                alt="navbar brand"
-                class="navbar-brand"
-                height="20"
-              />
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                height="20" />
             </a>
             <div class="nav-toggle">
               <button class="btn btn-toggle toggle-sidebar">
@@ -579,21 +574,11 @@
           <div class="container-fluid">
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
               <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a
-                  class="nav-link dropdown-toggle"
-                  href="#"
-                  id="messageDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
+                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   <i class="fa fa-envelope"></i>
                 </a>
-                <ul
-                  class="dropdown-menu messages-notif-box animated fadeIn"
-                  aria-labelledby="messageDropdown"
-                >
+                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
                   <li>
                     <div class="dropdown-title d-flex justify-content-between align-items-center">
                       Mensagens
@@ -605,10 +590,7 @@
                       <div class="notif-center">
                         <a href="#">
                           <div class="notif-img">
-                            <img
-                              src="../../assets/img/jm_denis.jpg"
-                              alt="Img Profile"
-                            />
+                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
                           </div>
                           <div class="notif-content">
                             <span class="subject">Jimmy Denis</span>
@@ -628,22 +610,12 @@
                 </ul>
               </li>
               <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a
-                  class="nav-link dropdown-toggle"
-                  href="#"
-                  id="notifDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
+                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
                   <i class="fa fa-bell"></i>
                   <span class="notification" id="notifCount">0</span>
                 </a>
-                <ul
-                  class="dropdown-menu notif-box animated fadeIn"
-                  aria-labelledby="notifDropdown"
-                >
+                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
                   <li>
                     <div class="dropdown-title" id="notifTitle">
                       Você não tem novas notificações
@@ -663,15 +635,8 @@
                 </ul>
               </li>
               <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a
-                  class="nav-link dropdown-toggle"
-                  href="#"
-                  id="quickActionsDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                >
+                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   <i class="fas fa-layer-group"></i>
                 </a>
                 <div class="dropdown-menu quick-actions animated fadeIn">
@@ -714,24 +679,16 @@
                             <span class="text">Listar Frota</span>
                           </div>
                         </a>
+                        <!-- ... -->
                       </div>
                     </div>
                   </div>
                 </div>
               </li>
               <li class="nav-item topbar-user dropdown hidden-caret">
-                <a
-                  class="dropdown-toggle profile-pic"
-                  data-bs-toggle="dropdown"
-                  href="#"
-                  aria-expanded="false"
-                >
+                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
-                    <img
-                      src="../../assets/img/profile.jpg"
-                      alt="..."
-                      class="avatar-img rounded-circle"
-                    />
+                    <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
                   </div>
                   <span class="profile-username">
                     <span class="op-7">Olá,</span>
@@ -743,19 +700,13 @@
                     <li>
                       <div class="user-box">
                         <div class="avatar-lg">
-                          <img
-                            src="../../assets/img/profile.jpg"
-                            alt="image profile"
-                            class="avatar-img rounded"
-                          />
+                          <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
                         </div>
                         <div class="u-text">
                           <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
                           <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
-                          <a
-                            href="/pages/usuarios/meu-perfil.html"
-                            class="btn btn-xs btn-secondary btn-sm"
-                          >Ver Perfil</a>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
+                            Perfil</a>
                         </div>
                       </div>
                     </li>
@@ -894,7 +845,6 @@
                 <input type="text" class="form-control" id="descricao" name="descricao" required />
               </div>
             </div>
-
             <div class="mb-3">
               <label for="area_zona" class="form-label">É zona rural ou urbana?</label>
               <select class="form-control" id="area_zona" name="area_zona" required>
@@ -902,7 +852,6 @@
                 <option value="RURAL">Rural</option>
               </select>
             </div>
-
             <input type="hidden" id="partidaLat" name="partidaLat" />
             <input type="hidden" id="partidaLng" name="partidaLng" />
             <input type="hidden" id="pontosParadaSelecionados" name="pontosParadaSelecionados" />
@@ -1328,36 +1277,56 @@
             showNotification('warning', 'A rota não possui ponto de partida definido.');
             return;
           }
-          const origin = `${detalhes.partidaLat},${detalhes.partidaLng}`;
-          let finalDest = (detalhes.chegadaLat && detalhes.chegadaLng)
-            ? `${detalhes.chegadaLat},${detalhes.chegadaLng}`
-            : origin;
+          const routeCoords = [];
+          routeCoords.push({ lat: detalhes.partidaLat, lng: detalhes.partidaLng });
 
-          let coords = [];
-          coords.push(origin);
-          detalhes.pontosParada.forEach(pt => {
+          (detalhes.pontosParada || []).forEach(pt => {
             if (pt.latitude && pt.longitude) {
-              coords.push(`${pt.latitude},${pt.longitude}`);
+              routeCoords.push({ lat: pt.latitude, lng: pt.longitude });
             }
           });
-          detalhes.escolas.forEach(es => {
+          (detalhes.escolas || []).forEach(es => {
             if (es.latitude && es.longitude) {
-              coords.push(`${es.latitude},${es.longitude}`);
+              routeCoords.push({ lat: es.latitude, lng: es.longitude });
             }
           });
-          coords.push(finalDest);
 
-          // Formato /dir/ORIGEM/WP1/WP2/.../DESTINO
-          // (Assim a rota exibe a sequência corretamente.)
-          let baseUrl = 'https://www.google.com/maps/dir';
-          const chain = coords.join('/');
-          let url = `${baseUrl}/${encodeURIComponent(chain)}/?travelmode=driving`;
+          // Se tiver chegada, coloca por último; senão, a origem permanece
+          if (detalhes.chegadaLat && detalhes.chegadaLng) {
+            routeCoords.push({ lat: detalhes.chegadaLat, lng: detalhes.chegadaLng });
+          } else {
+            routeCoords.push({ lat: detalhes.partidaLat, lng: detalhes.partidaLng });
+          }
 
-          navigator.clipboard.writeText(url).then(() => {
-            showNotification('info', 'Link do trajeto copiado para a área de transferência!');
-          }).catch(() => {
-            showNotification('warning', 'Não foi possível copiar o link automaticamente.');
-          });
+          if (routeCoords.length < 2) {
+            showNotification('warning', 'A rota não possui paradas suficientes para compartilhar.');
+            return;
+          }
+
+          // Monta array de lat,lng em ordem
+          // Exemplo: "comgooglemaps://?daddr=-6.52,-49.84&waypoints=-6.53,-49.85|-6.54,-49.86"
+          // Para links na web + mobile, podemos usar "https://www.google.com/maps/dir/?api=1&dir_action=navigate"
+          // e enumerar paradas na sequência (origin -> waypoints -> destination).
+          const origin = routeCoords[0];
+          const destination = routeCoords[routeCoords.length - 1];
+          const midPoints = routeCoords.slice(1, routeCoords.length - 1);
+
+          let shareLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
+          shareLink += `&origin=${encodeURIComponent(origin.lat + ',' + origin.lng)}`;
+          shareLink += `&destination=${encodeURIComponent(destination.lat + ',' + destination.lng)}`;
+
+          if (midPoints.length > 0) {
+            const wps = midPoints.map(m => `${m.lat},${m.lng}`).join('|');
+            shareLink += `&waypoints=${encodeURIComponent(wps)}`;
+          }
+
+          navigator.clipboard.writeText(shareLink)
+            .then(() => {
+              showNotification('info', 'Link do trajeto copiado para a área de transferência!');
+            })
+            .catch(() => {
+              showNotification('warning', 'Não foi possível copiar o link automaticamente.');
+            });
         })
         .catch(err => {
           console.error(err);
