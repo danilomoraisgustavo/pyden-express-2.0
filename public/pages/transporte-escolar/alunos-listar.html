@@ -782,6 +782,46 @@
             </div>
           </div>
 
+          <!-- FILTROS ACIMA DA TABELA -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <div class="row g-3">
+                <!-- Filtro Escola -->
+                <div class="col-md-3">
+                  <label for="filtroEscola" class="form-label">Filtrar por Escola</label>
+                  <select id="filtroEscola" class="form-select">
+                    <option value="">Todas</option>
+                    <!-- Será populado dinamicamente -->
+                  </select>
+                </div>
+
+                <!-- Filtro Bairro -->
+                <div class="col-md-3">
+                  <label for="filtroBairro" class="form-label">Filtrar por Bairro</label>
+                  <select id="filtroBairro" class="form-select">
+                    <option value="">Todos</option>
+                    <!-- Será populado dinamicamente -->
+                  </select>
+                </div>
+
+                <!-- Filtro CEP -->
+                <div class="col-md-3">
+                  <label for="filtroCep" class="form-label">Filtrar por CEP</label>
+                  <select id="filtroCep" class="form-select">
+                    <option value="">Todos</option>
+                    <!-- Será populado dinamicamente -->
+                  </select>
+                </div>
+
+                <!-- Busca geral (Datatables) -->
+                <div class="col-md-3">
+                  <label for="searchInput" class="form-label">Pesquisa Geral</label>
+                  <input type="text" id="searchInput" class="form-control" placeholder="Digite para pesquisar..." />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- TABELA DE ALUNOS -->
           <div class="row mt-4">
             <div class="col-md-12">
@@ -948,10 +988,19 @@
     function popularTabela(alunos) {
       const tbody = $("#alunos-table tbody");
       tbody.empty();
+
+      // Conjuntos para filtros
+      const distinctEscolas = new Set();
+      const distinctBairros = new Set();
+      const distinctCeps = new Set();
+
       alunos.forEach(item => {
+        // Montar string de deficiência
         const defString = item.deficiencia && Array.isArray(item.deficiencia)
           ? JSON.stringify(item.deficiencia)
-          : item.deficiencia || '';
+          : (item.deficiencia || '');
+
+        // Preencher linhas da tabela
         const row = `
           <tr>
             <td>${item.id_matricula || ''}</td>
@@ -973,11 +1022,18 @@
           </tr>
         `;
         tbody.append(row);
+
+        // Adicionar nos sets (para gerar opções de filtro)
+        if (item.escola_nome) distinctEscolas.add(item.escola_nome);
+        if (item.bairro) distinctBairros.add(item.bairro);
+        if (item.cep) distinctCeps.add(item.cep);
       });
 
+      // Destruir e recriar DataTable se já existir
       if (dataTable) {
         dataTable.clear().destroy();
       }
+
       dataTable = $('#alunos-table').DataTable({
         pageLength: 10,
         language: {
@@ -1000,7 +1056,62 @@
           emptyTable: "Nenhum dado disponível na tabela"
         }
       });
+
+      // Popular os selects de filtro (Escola, Bairro, CEP)
+      const filtroEscola = document.getElementById('filtroEscola');
+      const filtroBairro = document.getElementById('filtroBairro');
+      const filtroCep = document.getElementById('filtroCep');
+
+      // Limpar para repopular
+      filtroEscola.innerHTML = '<option value="">Todas</option>';
+      filtroBairro.innerHTML = '<option value="">Todos</option>';
+      filtroCep.innerHTML = '<option value="">Todos</option>';
+
+      distinctEscolas.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e;
+        opt.textContent = e;
+        filtroEscola.appendChild(opt);
+      });
+
+      distinctBairros.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = b;
+        filtroBairro.appendChild(opt);
+      });
+
+      distinctCeps.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        filtroCep.appendChild(opt);
+      });
     }
+
+    // Eventos de filtro
+    $(document).on('change', '#filtroEscola', function () {
+      const val = this.value;
+      // Coluna 1 = Escola (Nome)
+      dataTable.column(1).search(val).draw();
+    });
+
+    $(document).on('change', '#filtroBairro', function () {
+      const val = this.value;
+      // Coluna 10 = Bairro
+      dataTable.column(10).search(val).draw();
+    });
+
+    $(document).on('change', '#filtroCep', function () {
+      const val = this.value;
+      // Coluna 9 = CEP
+      dataTable.column(9).search(val).draw();
+    });
+
+    // Pesquisa geral
+    $(document).on('keyup', '#searchInput', function () {
+      dataTable.search(this.value).draw();
+    });
 
     // Import XLSX
     function handleFileImport(evt) {
@@ -1071,7 +1182,7 @@
       }
     });
 
-    // Ao clicar no botão filtrar/buscar
+    // Ao clicar no botão filtrar/buscar (no modal do mapa)
     $(document).on('click', '#btnFiltrarMapa', function () {
       const escolaSelecionada = $('#selectEscolaMap').val();
       const busca = $('#buscarAlunoInput').val().trim();
