@@ -4033,21 +4033,33 @@ app.get('/api/alunos-transporte-publico', async (req, res) => {
 app.get('/api/alunos-mapa', async (req, res) => {
     try {
         const { escola_id, busca } = req.query;
+
+        // Agora buscamos alunos cujo transporte_escolar_poder_publico não seja vazio
+        // e cujo CEP não seja nulo/vazio.
         let whereClauses = [
-            /* "LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')", */
+            "COALESCE(transporte_escolar_poder_publico, '') <> ''",
             "cep IS NOT NULL AND cep <> ''"
         ];
+
         let values = [];
         let idx = 1;
         let escolaInfo = null;
+
         if (escola_id) {
             whereClauses.push(`escola_id = $${idx++}`);
             values.push(escola_id);
-            const esc = await pool.query(`SELECT id, nome, endereco, bairro, cidade, uf FROM escolas WHERE id = $1`, [escola_id]);
+
+            const esc = await pool.query(
+                `SELECT id, nome, endereco, bairro, cidade, uf 
+           FROM escolas 
+           WHERE id = $1`,
+                [escola_id]
+            );
             if (esc.rows.length > 0) {
                 escolaInfo = esc.rows[0];
             }
         }
+
         if (busca) {
             whereClauses.push(`
           (
@@ -4059,7 +4071,11 @@ app.get('/api/alunos-mapa', async (req, res) => {
             values.push(`%${busca}%`);
             idx++;
         }
-        const whereString = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+        const whereString = whereClauses.length
+            ? `WHERE ${whereClauses.join(' AND ')}`
+            : '';
+
         const query = `
         SELECT
           id,
@@ -4074,7 +4090,9 @@ app.get('/api/alunos-mapa', async (req, res) => {
         ${whereString}
         ORDER BY id ASC
       `;
+
         const result = await pool.query(query, values);
+
         return res.json({
             success: true,
             data: result.rows,
@@ -4088,6 +4106,7 @@ app.get('/api/alunos-mapa', async (req, res) => {
         });
     }
 });
+
 
 // Excluir rota
 app.delete('/api/rotas-simples/:id', async (req, res) => {
