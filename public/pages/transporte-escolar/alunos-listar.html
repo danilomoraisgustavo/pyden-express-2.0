@@ -6,7 +6,6 @@
   <title>Importar Alunos Ativos - pydenadmin Bootstrap 5 Admin Dashboard</title>
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="public/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
-
   <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
   <script>
     WebFont.load({
@@ -16,21 +15,19 @@
           "Font Awesome 5 Solid",
           "Font Awesome 5 Regular",
           "Font Awesome 5 Brands",
-          "simple-line-icons",
+          "simple-line-icons"
         ],
-        urls: ["../../assets/css/fonts.min.css"],
+        urls: ["../../assets/css/fonts.min.css"]
       },
       active: function () {
         sessionStorage.fonts = true;
-      },
+      }
     });
   </script>
-
   <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
-
   <style>
     .required-label::after {
       content: " *";
@@ -241,7 +238,6 @@
                       <span class="sub-item">Listar Escolas</span>
                     </a>
                   </li>
-
                 </ul>
               </div>
             </li>
@@ -266,7 +262,6 @@
                 </ul>
               </div>
             </li>
-
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Transporte Administrativo</h4>
@@ -504,12 +499,10 @@
                 </ul>
               </div>
             </li>
-
           </ul>
         </div>
       </div>
     </div>
-
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
@@ -531,7 +524,6 @@
             </button>
           </div>
         </div>
-
         <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
           <div class="container-fluid">
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
@@ -571,7 +563,6 @@
                   </li>
                 </ul>
               </li>
-
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
                   aria-haspopup="true" aria-expanded="false">
@@ -597,7 +588,6 @@
                   </li>
                 </ul>
               </li>
-
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -648,7 +638,6 @@
                   </div>
                 </div>
               </li>
-
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
@@ -690,7 +679,6 @@
           </div>
         </nav>
       </div>
-
       <div class="container">
         <div class="page-inner">
           <div class="page-header">
@@ -707,7 +695,6 @@
               <li class="nav-item"><a href="#">Importar Alunos</a></li>
             </ul>
           </div>
-
           <div class="mb-3">
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
               Importar Alunos
@@ -716,8 +703,6 @@
               Mapear Alunos
             </button>
           </div>
-
-          <!-- MODAL DE IMPORTAÇÃO -->
           <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg">
@@ -744,8 +729,6 @@
               </div>
             </div>
           </div>
-
-          <!-- MODAL PARA MAPEAR ALUNOS -->
           <div class="modal fade" id="modalMapear" tabindex="-1" aria-labelledby="modalMapearLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
               <div class="modal-content">
@@ -754,7 +737,6 @@
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                  <!-- FORMULÁRIO DE FILTRO -->
                   <div class="row mb-3">
                     <div class="col-md-6">
                       <label for="selectEscolaMap" class="form-label">Filtrar por Escola</label>
@@ -768,11 +750,9 @@
                         placeholder="Ex: 12345 ou João ou 000.000.000-00" />
                     </div>
                   </div>
-
                   <div class="mb-3">
                     <button id="btnFiltrarMapa" class="btn btn-primary">Buscar/Filtrar</button>
                   </div>
-
                   <div id="map"></div>
                 </div>
                 <div class="modal-footer">
@@ -781,39 +761,27 @@
               </div>
             </div>
           </div>
-
-          <!-- FILTROS ACIMA DA TABELA -->
           <div class="card mb-4">
             <div class="card-body">
               <div class="row g-3">
-                <!-- Filtro Escola -->
                 <div class="col-md-3">
                   <label for="filtroEscola" class="form-label">Filtrar por Escola</label>
                   <select id="filtroEscola" class="form-select">
                     <option value="">Todas</option>
-                    <!-- Será populado dinamicamente -->
                   </select>
                 </div>
-
-                <!-- Filtro Bairro -->
                 <div class="col-md-3">
                   <label for="filtroBairro" class="form-label">Filtrar por Bairro</label>
                   <select id="filtroBairro" class="form-select">
                     <option value="">Todos</option>
-                    <!-- Será populado dinamicamente -->
                   </select>
                 </div>
-
-                <!-- Filtro CEP -->
                 <div class="col-md-3">
                   <label for="filtroCep" class="form-label">Filtrar por CEP</label>
                   <select id="filtroCep" class="form-select">
                     <option value="">Todos</option>
-                    <!-- Será populado dinamicamente -->
                   </select>
                 </div>
-
-                <!-- Busca geral (Datatables) -->
                 <div class="col-md-3">
                   <label for="searchInput" class="form-label">Pesquisa Geral</label>
                   <input type="text" id="searchInput" class="form-control" placeholder="Digite para pesquisar..." />
@@ -821,8 +789,6 @@
               </div>
             </div>
           </div>
-
-          <!-- TABELA DE ALUNOS -->
           <div class="row mt-4">
             <div class="col-md-12">
               <div class="card">
@@ -879,10 +845,8 @@
               </div>
             </div>
           </div>
-
         </div>
       </div>
-
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
           <nav class="pull-left">
@@ -904,7 +868,6 @@
       </footer>
     </div>
   </div>
-
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -915,23 +878,17 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
   <script src="../../assets/js/setting-demo2.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-  <!-- GOOGLE MAPS API -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&v=beta&libraries=marker">
     </script>
-
   <script>
     let dadosXLSX = [];
     let escolasLista = [];
     let dataTable = null;
     let alunosData = [];
-
-    // MAPA
     let map = null;
     let geocoder = null;
-
-    // Carrega as escolas (geral) para importação
+    let escolaLocalizacao = null;
     function carregarEscolas() {
       fetch('/api/escolas')
         .then(res => res.json())
@@ -945,8 +902,6 @@
           showNotification('danger', 'Erro ao carregar lista de escolas.');
         });
     }
-
-    // Popular o select da importação
     function popularSelectEscolas() {
       const select = document.getElementById('escolaSelect');
       select.innerHTML = '<option value="">Selecione a Escola</option>';
@@ -957,8 +912,6 @@
         select.appendChild(option);
       });
     }
-
-    // Popular o select de escolas do MAPA
     function popularSelectEscolasMap() {
       const selectMap = document.getElementById('selectEscolaMap');
       selectMap.innerHTML = '<option value="">Todas as Escolas</option>';
@@ -969,8 +922,6 @@
         selectMap.appendChild(option);
       });
     }
-
-    // Carrega alunos gerais
     function carregarAlunosBD() {
       fetch('/api/alunos-ativos')
         .then(res => res.json())
@@ -983,24 +934,16 @@
           showNotification('danger', 'Erro ao carregar dados do banco.');
         });
     }
-
-    // Popular tabela
     function popularTabela(alunos) {
       const tbody = $("#alunos-table tbody");
       tbody.empty();
-
-      // Conjuntos para filtros
       const distinctEscolas = new Set();
       const distinctBairros = new Set();
       const distinctCeps = new Set();
-
       alunos.forEach(item => {
-        // Montar string de deficiência
         const defString = item.deficiencia && Array.isArray(item.deficiencia)
           ? JSON.stringify(item.deficiencia)
           : (item.deficiencia || '');
-
-        // Preencher linhas da tabela
         const row = `
           <tr>
             <td>${item.id_matricula || ''}</td>
@@ -1022,18 +965,13 @@
           </tr>
         `;
         tbody.append(row);
-
-        // Adicionar nos sets (para gerar opções de filtro)
         if (item.escola_nome) distinctEscolas.add(item.escola_nome);
         if (item.bairro) distinctBairros.add(item.bairro);
         if (item.cep) distinctCeps.add(item.cep);
       });
-
-      // Destruir e recriar DataTable se já existir
       if (dataTable) {
         dataTable.clear().destroy();
       }
-
       dataTable = $('#alunos-table').DataTable({
         pageLength: 10,
         language: {
@@ -1056,31 +994,24 @@
           emptyTable: "Nenhum dado disponível na tabela"
         }
       });
-
-      // Popular os selects de filtro (Escola, Bairro, CEP)
       const filtroEscola = document.getElementById('filtroEscola');
       const filtroBairro = document.getElementById('filtroBairro');
       const filtroCep = document.getElementById('filtroCep');
-
-      // Limpar para repopular
       filtroEscola.innerHTML = '<option value="">Todas</option>';
       filtroBairro.innerHTML = '<option value="">Todos</option>';
       filtroCep.innerHTML = '<option value="">Todos</option>';
-
       distinctEscolas.forEach(e => {
         const opt = document.createElement('option');
         opt.value = e;
         opt.textContent = e;
         filtroEscola.appendChild(opt);
       });
-
       distinctBairros.forEach(b => {
         const opt = document.createElement('option');
         opt.value = b;
         opt.textContent = b;
         filtroBairro.appendChild(opt);
       });
-
       distinctCeps.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c;
@@ -1088,32 +1019,21 @@
         filtroCep.appendChild(opt);
       });
     }
-
-    // Eventos de filtro
     $(document).on('change', '#filtroEscola', function () {
       const val = this.value;
-      // Coluna 1 = Escola (Nome)
       dataTable.column(1).search(val).draw();
     });
-
     $(document).on('change', '#filtroBairro', function () {
       const val = this.value;
-      // Coluna 10 = Bairro
       dataTable.column(10).search(val).draw();
     });
-
     $(document).on('change', '#filtroCep', function () {
       const val = this.value;
-      // Coluna 9 = CEP
       dataTable.column(9).search(val).draw();
     });
-
-    // Pesquisa geral
     $(document).on('keyup', '#searchInput', function () {
       dataTable.search(this.value).draw();
     });
-
-    // Import XLSX
     function handleFileImport(evt) {
       const file = evt.target.files[0];
       if (!file) return;
@@ -1128,7 +1048,6 @@
       };
       reader.readAsBinaryString(file);
     }
-
     function enviarImportacao() {
       const escolaIdSelecionada = document.getElementById('escolaSelect').value;
       if (!escolaIdSelecionada) {
@@ -1139,12 +1058,10 @@
         showNotification('danger', 'Nenhum arquivo importado ainda.');
         return;
       }
-
       const body = {
         escolaId: escolaIdSelecionada,
         alunos: dadosXLSX
       };
-
       fetch('/api/import-alunos-ativos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1165,8 +1082,6 @@
           showNotification('danger', 'Erro ao enviar os dados ao servidor.');
         });
     }
-
-    // Mapa
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: -3.135366, lng: -60.023207 },
@@ -1175,26 +1090,22 @@
       });
       geocoder = new google.maps.Geocoder();
     }
-
     $('#modalMapear').on('shown.bs.modal', function () {
       if (!map) {
         initMap();
       }
     });
-
-    // Ao clicar no botão filtrar/buscar (no modal do mapa)
     $(document).on('click', '#btnFiltrarMapa', function () {
       const escolaSelecionada = $('#selectEscolaMap').val();
       const busca = $('#buscarAlunoInput').val().trim();
-
       const queryParams = new URLSearchParams();
       if (escolaSelecionada) queryParams.append('escola_id', escolaSelecionada);
       if (busca) queryParams.append('busca', busca);
-
       fetch('/api/alunos-mapa?' + queryParams.toString())
         .then(res => res.json())
         .then(resp => {
           if (resp.success && Array.isArray(resp.data)) {
+            plotarEscola(resp.escola || null);
             plotarAlunosMapa(resp.data);
           } else {
             showNotification('info', 'Nenhum aluno encontrado com esses filtros.');
@@ -1205,19 +1116,66 @@
           showNotification('danger', 'Erro ao filtrar alunos no mapa.');
         });
     });
-
+    function plotarEscola(e) {
+      if (!map || !geocoder) return;
+      if (!e) return;
+      let addr = "";
+      if (e.endereco) addr += e.endereco;
+      if (e.bairro) addr += ", " + e.bairro;
+      if (e.cidade) addr += ", " + e.cidade;
+      if (e.uf) addr += ", " + e.uf;
+      geocoder.geocode({ address: addr }, function (results, status) {
+        if (status === 'OK' && results[0]) {
+          escolaLocalizacao = results[0].geometry.location;
+          new google.maps.Marker({
+            map,
+            position: escolaLocalizacao,
+            title: e.nome
+          });
+          map.setCenter(escolaLocalizacao);
+          map.setZoom(14);
+          new google.maps.Circle({
+            strokeColor: "#FF0000",
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: "#FF0000",
+            fillOpacity: 0.35,
+            map,
+            center: escolaLocalizacao,
+            radius: 2000
+          });
+        }
+      });
+    }
     function plotarAlunosMapa(alunos) {
       if (!map || !geocoder) return;
       const bounds = new google.maps.LatLngBounds();
       let contagem = 0;
-
-      // Limpar marcadores: recria o mapa para "resetar"
       map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: -3.135366, lng: -60.023207 },
         zoom: 5,
         mapId: 'ca7a0e55f44be727'
       });
-
+      if (escolaLocalizacao) {
+        map.setCenter(escolaLocalizacao);
+        map.setZoom(14);
+        new google.maps.Circle({
+          strokeColor: "#FF0000",
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: "#FF0000",
+          fillOpacity: 0.35,
+          map,
+          center: escolaLocalizacao,
+          radius: 2000
+        });
+        new google.maps.Marker({
+          map,
+          position: escolaLocalizacao,
+          title: "Escola"
+        });
+        bounds.extend(escolaLocalizacao);
+      }
       alunos.forEach(al => {
         const cepLimpo = (al.cep || '').replace(/\D/g, '');
         if (!cepLimpo || cepLimpo.length !== 8) {
@@ -1237,16 +1195,20 @@
             const bairro = dataViaCep.bairro || '';
             const localidade = dataViaCep.localidade || '';
             const uf = dataViaCep.uf || '';
-            const numeroFormatado = '';
-            const endCompleto = `${logradouro} ${numeroFormatado}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-
+            const endCompleto = `${logradouro}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
             geocoder.geocode({ address: endCompleto }, function (results, status) {
               if (status === 'OK' && results[0]) {
                 const loc = results[0].geometry.location;
-                new google.maps.marker.AdvancedMarkerElement({
+                const marker = new google.maps.Marker({
                   map,
                   position: loc,
-                  title: (al.pessoa_nome || 'Aluno') + ' - ' + (al.transporte_escolar_poder_publico || ''),
+                  title: (al.pessoa_nome || 'Aluno')
+                });
+                const infowindow = new google.maps.InfoWindow({
+                  content: `<strong>${al.pessoa_nome || ''}</strong><br>CPF: ${al.cpf || ''}<br>Matrícula: ${al.id_matricula || ''}`
+                });
+                marker.addListener("click", () => {
+                  infowindow.open(map, marker);
                 });
                 bounds.extend(loc);
               }
@@ -1262,8 +1224,6 @@
           });
       });
     }
-
-    // Notificação
     function showNotification(type, message) {
       $.notify({
         message: message,
@@ -1285,16 +1245,13 @@
         }
       });
     }
-
     $(document).ready(function () {
       carregarEscolas();
       carregarAlunosBD();
-
       $("#fileInput").on("change", handleFileImport);
       $("#importarBtn").on("click", enviarImportacao);
     });
   </script>
-
 </body>
 
 </html>
