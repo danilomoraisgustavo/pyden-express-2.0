@@ -4034,7 +4034,7 @@ app.get('/api/alunos-mapa', async (req, res) => {
     try {
         const { escola_id, busca } = req.query;
         let whereClauses = [
-            "LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')",
+            /* "LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')", */
             "cep IS NOT NULL AND cep <> ''"
         ];
         let values = [];
