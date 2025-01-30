@@ -365,6 +365,7 @@ CREATE TABLE IF NOT EXISTS alunos_ativos (
   deficiencia TEXT[]
 );
 
+
 -- ==========================================
 -- CRIAÇÃO DA TABELA "usuarios"
 -- ==========================================
