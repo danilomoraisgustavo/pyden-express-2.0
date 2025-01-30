@@ -4034,8 +4034,7 @@ app.get('/api/alunos-mapa', async (req, res) => {
     try {
         const { escola_id, busca } = req.query;
 
-        // Agora buscamos alunos cujo transporte_escolar_poder_publico não seja vazio
-        // e cujo CEP não seja nulo/vazio.
+        // Filtro principal: transporte_escolar_poder_publico não vazio e cep preenchido
         let whereClauses = [
             "COALESCE(transporte_escolar_poder_publico, '') <> ''",
             "cep IS NOT NULL AND cep <> ''"
@@ -4045,13 +4044,30 @@ app.get('/api/alunos-mapa', async (req, res) => {
         let idx = 1;
         let escolaInfo = null;
 
+        // Se foi passado escola_id
         if (escola_id) {
             whereClauses.push(`escola_id = $${idx++}`);
             values.push(escola_id);
 
+            // Buscar dados da escola, incluindo latitude, longitude, logradouro, numero, bairro e cep
             const esc = await pool.query(
-                `SELECT id, nome, endereco, bairro, cidade, uf 
-           FROM escolas 
+                `SELECT 
+             id, 
+             nome, 
+             codigo_inep, 
+             latitude, 
+             longitude, 
+             area, 
+             logradouro, 
+             numero, 
+             complemento, 
+             ponto_referencia, 
+             bairro, 
+             cep, 
+             regime, 
+             nivel, 
+             horario
+           FROM escolas
            WHERE id = $1`,
                 [escola_id]
             );
@@ -4060,6 +4076,7 @@ app.get('/api/alunos-mapa', async (req, res) => {
             }
         }
 
+        // Se foi passado parâmetro de busca
         if (busca) {
             whereClauses.push(`
           (
@@ -4076,6 +4093,7 @@ app.get('/api/alunos-mapa', async (req, res) => {
             ? `WHERE ${whereClauses.join(' AND ')}`
             : '';
 
+        // Consulta final
         const query = `
         SELECT
           id,
@@ -4090,7 +4108,6 @@ app.get('/api/alunos-mapa', async (req, res) => {
         ${whereString}
         ORDER BY id ASC
       `;
-
         const result = await pool.query(query, values);
 
         return res.json({
