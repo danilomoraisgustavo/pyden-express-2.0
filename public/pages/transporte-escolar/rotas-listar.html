@@ -63,7 +63,8 @@
       display: inline-block;
     }
 
-    .dataTables_wrapper .row>div:nth-child(1) {}
+    .dataTables_wrapper .row>div:nth-child(1) {
+    }
 
     .dataTables_wrapper .row>div:nth-child(2) {
       display: flex !important;
@@ -762,6 +763,7 @@
                           <th>Zona</th>
                           <th>Zoneamentos (Pontos)</th>
                           <th>Escolas</th>
+                          <th>Fornecedores</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -772,6 +774,7 @@
                           <th>Zona</th>
                           <th>Zoneamentos (Pontos)</th>
                           <th>Escolas</th>
+                          <th>Fornecedores</th>
                           <th>Ações</th>
                         </tr>
                       </tfoot>
@@ -852,10 +855,20 @@
                 <option value="RURAL">Rural</option>
               </select>
             </div>
+
+            <div class="mb-3">
+              <label for="fornecedoresBuscar" class="form-label">Pesquisar Fornecedores</label>
+              <input type="text" class="form-control" id="fornecedoresBuscar" placeholder="Digite para filtrar fornecedores..." />
+              <div id="listaFornecedores" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; margin-top: 10px; padding: 5px;">
+                <!-- Lista dinâmica de fornecedores aqui -->
+              </div>
+            </div>
+
             <input type="hidden" id="partidaLat" name="partidaLat" />
             <input type="hidden" id="partidaLng" name="partidaLng" />
             <input type="hidden" id="pontosParadaSelecionados" name="pontosParadaSelecionados" />
             <input type="hidden" id="escolasSelecionadas" name="escolasSelecionadas" />
+            <input type="hidden" id="fornecedoresSelecionados" name="fornecedoresSelecionados" />
 
             <div class="mt-3">
               <strong>Legenda:</strong>
@@ -926,15 +939,18 @@
 
     let escolasData = [];
     let pontosData = [];
+    let fornecedoresData = [];
     let escolaMarkers = [];
     let pontoMarkers = [];
     let escolasSelecionadas = [];
     let pontosParadaSelecionados = [];
+    let fornecedoresSelecionados = [];
 
     let modalMapView = null;
     let directionsService = null;
     let directionsRenderer = null;
     let currentRotaId = null;
+    let rotasTable;
 
     function showNotification(type, message) {
       let icon = 'fa fa-bell';
@@ -958,15 +974,18 @@
     function loadEscolasEPontos() {
       const escolasPromise = fetch('/api/escolas').then(r => r.json());
       const pontosPromise = fetch('/api/pontos').then(r => r.json());
-      Promise.all([escolasPromise, pontosPromise])
-        .then(([escData, ptData]) => {
+      const fornecedoresPromise = fetch('/api/fornecedores').then(r => r.json());
+      Promise.all([escolasPromise, pontosPromise, fornecedoresPromise])
+        .then(([escData, ptData, fornData]) => {
           escolasData = escData;
           pontosData = ptData;
+          fornecedoresData = fornData;
           placeEscolas();
+          initFornecedoresList();
         })
         .catch(err => {
           console.error(err);
-          showNotification('danger', 'Erro ao carregar Escolas ou Pontos.');
+          showNotification('danger', 'Erro ao carregar Escolas, Pontos ou Fornecedores.');
         });
     }
 
@@ -1043,6 +1062,40 @@
       });
     }
 
+    function initFornecedoresList() {
+      const lista = document.getElementById('listaFornecedores');
+      lista.innerHTML = '';
+      fornecedoresData.forEach(forn => {
+        const item = document.createElement('div');
+        item.style.padding = '5px';
+        item.style.cursor = 'pointer';
+        item.innerHTML = `
+          <input type="checkbox" data-id="${forn.id}" style="margin-right:5px;" />
+          <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
+        `;
+        item.querySelector('input').addEventListener('change', function () {
+          const fid = parseInt(this.getAttribute('data-id'), 10);
+          if (this.checked) {
+            if (!fornecedoresSelecionados.includes(fid)) {
+              fornecedoresSelecionados.push(fid);
+            }
+          } else {
+            fornecedoresSelecionados = fornecedoresSelecionados.filter(x => x !== fid);
+          }
+        });
+        lista.appendChild(item);
+      });
+
+      document.getElementById('fornecedoresBuscar').addEventListener('keyup', function () {
+        const search = this.value.toLowerCase();
+        const children = lista.querySelectorAll('div');
+        children.forEach(child => {
+          const txt = child.innerText.toLowerCase();
+          child.style.display = txt.includes(search) ? 'block' : 'none';
+        });
+      });
+    }
+
     function initMapCreate() {
       mapCreate = new google.maps.Map(document.getElementById('map-modal-create'), {
         center: { lat: -6.530066, lng: -49.851630 },
@@ -1108,6 +1161,7 @@
         chegadaLng: parseFloat(partidaLng),
         pontosParada: pontosParadaSelecionados,
         escolas: escolasSelecionadas,
+        fornecedores: fornecedoresSelecionados,
         areaZona: areaZona
       };
 
@@ -1131,6 +1185,7 @@
             pontoMarkers = [];
             escolasSelecionadas = [];
             pontosParadaSelecionados = [];
+            fornecedoresSelecionados = [];
             $('#modalNovaRota').modal('hide');
             loadRotas();
           } else {
@@ -1143,7 +1198,6 @@
         });
     });
 
-    let rotasTable;
     function loadRotas() {
       fetch('/api/rotas-simples-detalhes')
         .then(r => r.json())
@@ -1155,6 +1209,9 @@
             const zoneamentosNomes = rt.zoneamentos.map(z => z.nome).join(', ');
             const escolasNomes = rt.escolas.map(e => e.nome).join(', ');
             const rowData = encodeURIComponent(JSON.stringify(rt));
+            const fornecedoresNomes = rt.fornecedores && rt.fornecedores.length
+              ? rt.fornecedores.map(f => f.nome_fornecedor).join(', ')
+              : '';
 
             const row = `
               <tr>
@@ -1163,6 +1220,7 @@
                 <td>${rt.area_zona || ''}</td>
                 <td>${zoneamentosNomes || ''}</td>
                 <td>${escolasNomes || ''}</td>
+                <td>${fornecedoresNomes || ''}</td>
                 <td>
                   <div class="form-button-action">
                     <div class="btn-group dropend">
@@ -1302,27 +1360,20 @@
             return;
           }
 
-          // Verifica se é dispositivo mobile
           const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-          // origin
           const origin = routeCoords[0];
-          // destination
           const destination = routeCoords[routeCoords.length - 1];
           const midPoints = routeCoords.slice(1, routeCoords.length - 1);
 
           if (isMobile) {
-            // Tenta abrir pelo deep link "comgooglemaps://"
-            // com fallback para Maps web
             let deepLink = `comgooglemaps://?saddr=${origin.lat},${origin.lng}&daddr=${destination.lat},${destination.lng}`;
-
             if (midPoints.length > 0) {
               const wps = midPoints.map(m => `${m.lat},${m.lng}`).join('|');
               deepLink += `&waypoints=${encodeURIComponent(wps)}`;
             }
             deepLink += `&directionsmode=driving`;
 
-            // Monta link fallback web
             let fallbackLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
             fallbackLink += `&origin=${encodeURIComponent(origin.lat + ',' + origin.lng)}`;
             fallbackLink += `&destination=${encodeURIComponent(destination.lat + ',' + destination.lng)}`;
@@ -1331,15 +1382,11 @@
               fallbackLink += `&waypoints=${encodeURIComponent(wps2)}`;
             }
 
-            // Tenta abrir deep link
             window.location.href = deepLink;
-
-            // Espera um tempo e redireciona para fallback
             setTimeout(() => {
               window.location.href = fallbackLink;
             }, 1000);
           } else {
-            // Desktop fallback
             let shareLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
             shareLink += `&origin=${encodeURIComponent(origin.lat + ',' + origin.lng)}`;
             shareLink += `&destination=${encodeURIComponent(destination.lat + ',' + destination.lng)}`;
