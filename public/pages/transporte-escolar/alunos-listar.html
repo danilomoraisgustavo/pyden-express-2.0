@@ -52,11 +52,48 @@
         width: 100%;
         height: 500px;
       }
+      .spinner-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.4);
+        z-index: 9999;
+      }
+      .spinner {
+        background-image: linear-gradient(
+          rgb(186, 66, 255) 35%,
+          rgb(0, 225, 255)
+        );
+        width: 100px;
+        height: 100px;
+        animation: spinning82341 1.7s linear infinite;
+        text-align: center;
+        border-radius: 50px;
+        filter: blur(1px);
+        box-shadow: 0px -5px 20px 0px rgb(186, 66, 255),
+          0px 5px 20px 0px rgb(0, 225, 255);
+      }
+      .spinner1 {
+        background-color: rgb(36, 36, 36);
+        width: 100px;
+        height: 100px;
+        border-radius: 50px;
+        filter: blur(10px);
+      }
+      @keyframes spinning82341 {
+        to {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
     <div class="wrapper">
-      <!-- SIDEBAR -->
       <div class="sidebar" data-background-color="dark">
         <div class="sidebar-logo">
           <div class="logo-header" data-background-color="dark">
@@ -362,7 +399,6 @@
                   </ul>
                 </div>
               </li>
-
               <li class="nav-section">
                 <span class="sidebar-mini-icon"
                   ><i class="fa fa-ellipsis-h"></i
@@ -694,7 +730,6 @@
           </div>
         </div>
       </div>
-      <!-- END SIDEBAR -->
 
       <div class="main-panel">
         <div class="main-header" style="top: 0">
@@ -729,7 +764,6 @@
             class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
           >
             <div class="container-fluid">
-              <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
               <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
                 <li class="nav-item topbar-icon dropdown hidden-caret">
                   <a
@@ -939,9 +973,8 @@
                             <a
                               href="/pages/usuarios/meu-perfil.html"
                               class="btn btn-xs btn-secondary btn-sm"
+                              >Ver Perfil</a
                             >
-                              Ver Perfil
-                            </a>
                           </div>
                         </div>
                       </li>
@@ -1267,7 +1300,12 @@
       </div>
     </div>
 
-    <!-- Modal Editar Aluno -->
+    <div id="globalLoader" class="spinner-container">
+      <div class="spinner">
+        <div class="spinner1"></div>
+      </div>
+    </div>
+
     <div
       class="modal fade"
       id="modalEditarAluno"
@@ -1417,7 +1455,6 @@
       </div>
     </div>
 
-    <!-- Modal Localizar Aluno -->
     <div
       class="modal fade"
       id="modalLocalizarAluno"
@@ -1478,7 +1515,15 @@
       let alunoAtual = null;
       let escolaLocAluno = null;
 
+      function showLoader() {
+        document.getElementById("globalLoader").style.display = "flex";
+      }
+      function hideLoader() {
+        document.getElementById("globalLoader").style.display = "none";
+      }
+
       function carregarEscolas() {
+        showLoader();
         fetch("/api/escolas")
           .then((res) => res.json())
           .then((data) => {
@@ -1489,6 +1534,9 @@
           .catch((err) => {
             console.error(err);
             showNotification("danger", "Erro ao carregar lista de escolas.");
+          })
+          .finally(() => {
+            hideLoader();
           });
       }
 
@@ -1515,6 +1563,7 @@
       }
 
       function carregarAlunosBD() {
+        showLoader();
         fetch("/api/alunos-ativos")
           .then((res) => res.json())
           .then((data) => {
@@ -1524,6 +1573,9 @@
           .catch((err) => {
             console.error(err);
             showNotification("danger", "Erro ao carregar dados do banco.");
+          })
+          .finally(() => {
+            hideLoader();
           });
       }
 
@@ -1682,6 +1734,7 @@
           showNotification("danger", "Nenhum arquivo importado ainda.");
           return;
         }
+        showLoader();
         const body = {
           escolaId: escolaIdSelecionada,
           alunos: dadosXLSX,
@@ -1710,6 +1763,9 @@
           .catch((err) => {
             console.error(err);
             showNotification("danger", "Erro ao enviar os dados ao servidor.");
+          })
+          .finally(() => {
+            hideLoader();
           });
       }
 
@@ -1736,6 +1792,7 @@
           queryParams.append("escola_id", escolaSelecionada);
         if (busca) queryParams.append("busca", busca);
 
+        showLoader();
         fetch("/api/alunos-mapa?" + queryParams.toString())
           .then((res) => res.json())
           .then((resp) => {
@@ -1752,6 +1809,9 @@
           .catch((err) => {
             console.error(err);
             showNotification("danger", "Erro ao filtrar alunos no mapa.");
+          })
+          .finally(() => {
+            hideLoader();
           });
       });
 
@@ -1815,7 +1875,6 @@
         const bounds = new google.maps.LatLngBounds();
         let contagem = 0;
 
-        // Recria o mapa dentro do modal para cada busca
         map = new google.maps.Map(document.getElementById("map"), {
           center: { lat: -3.135366, lng: -60.023207 },
           zoom: 5,
@@ -1846,7 +1905,6 @@
         alunos.forEach((al) => {
           const cepLimpo = (al.cep || "").replace(/\D/g, "");
           let numeroEnd = (al.numero_pessoa_endereco || "").trim();
-          // Normaliza casos como s/n, sn, s-n, etc.
           let numeroTratado = numeroEnd.toLowerCase();
           if (
             numeroTratado.includes("s/n") ||
@@ -1854,18 +1912,14 @@
             numeroTratado.includes("sem numero") ||
             numeroTratado.includes("sem número")
           ) {
-            // Mantém "S/N" ou algo que indique 'sem número'
             numeroEnd = "S/N";
           }
 
-          // Se o CEP não for válido, pula
           if (cepLimpo.length !== 8) {
             contagem++;
             if (contagem === alunos.length) map.fitBounds(bounds);
             return;
           }
-
-          // ViaCEP
           fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
             .then((res) => res.json())
             .then((dataViaCep) => {
@@ -1879,7 +1933,6 @@
               const localidade = dataViaCep.localidade || "";
               const uf = dataViaCep.uf || "";
 
-              // Monta endereço completo
               const endCompleto =
                 `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
               geocoder.geocode(
@@ -2003,6 +2056,7 @@
             responsavel: $("#editarResponsavel").val(),
             deficiencia: $("#editarDeficiencia").val(),
           };
+          showLoader();
           fetch("/api/alunos-ativos/" + body.id, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -2024,6 +2078,9 @@
             .catch((err) => {
               console.error(err);
               showNotification("danger", "Erro ao atualizar aluno.");
+            })
+            .finally(() => {
+              hideLoader();
             });
         });
 
@@ -2043,6 +2100,7 @@
           const tr = $(this).closest("tr");
           const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
           const alunoId = dataObj.id;
+          showLoader();
           fetch("/api/alunos-ativos/" + alunoId, {
             method: "DELETE",
           })
@@ -2058,6 +2116,9 @@
             .catch((err) => {
               console.error(err);
               showNotification("danger", "Erro ao excluir aluno.");
+            })
+            .finally(() => {
+              hideLoader();
             });
         });
       });
@@ -2160,6 +2221,7 @@
         }
 
         if (cepFormatado.length === 8) {
+          geocoderAluno = geocoderAluno || new google.maps.Geocoder();
           fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`)
             .then((res) => res.json())
             .then((viaData) => {
