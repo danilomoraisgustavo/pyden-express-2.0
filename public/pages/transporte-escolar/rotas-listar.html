@@ -1601,6 +1601,8 @@
       function reloadPontos() {
         pontoMarkers.forEach((m) => m.setMap(null));
         pontoMarkers = [];
+        // MANTER os pontos já selecionados caso queira,
+        // mas se quiser limpar sempre, faça:
         pontosParadaSelecionados = [];
 
         if (escolasSelecionadas.length === 0) return;
@@ -1616,7 +1618,9 @@
         });
 
         pontosData.forEach((p) => {
-          const hasZone = p.zoneamentos.some((z) => zoneSet.has(z.id));
+          // Evitar erro se zoneamentos for undefined
+          const ptZoneamentos = p.zoneamentos || [];
+          const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
           if (hasZone) {
             const lat = parseFloat(p.latitude);
             const lng = parseFloat(p.longitude);
@@ -1659,9 +1663,9 @@
           item.style.padding = "5px";
           item.style.cursor = "pointer";
           item.innerHTML = `
-          <input type="checkbox" data-id="${forn.id}" style="margin-right:5px;" />
-          <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
-        `;
+            <input type="checkbox" data-id="${forn.id}" style="margin-right:5px;" />
+            <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
+          `;
           item.querySelector("input").addEventListener("change", function () {
             const fid = parseInt(this.getAttribute("data-id"), 10);
             if (this.checked) {
@@ -1817,10 +1821,12 @@
             tableBody.empty();
 
             rotas.forEach((rt) => {
-              const zoneamentosNomes = rt.zoneamentos
+              const zoneamentosNomes = (rt.zoneamentos || [])
                 .map((z) => z.nome)
                 .join(", ");
-              const escolasNomes = rt.escolas.map((e) => e.nome).join(", ");
+              const escolasNomes = (rt.escolas || [])
+                .map((e) => e.nome)
+                .join(", ");
               const fornecedoresNomes =
                 rt.fornecedores && rt.fornecedores.length
                   ? rt.fornecedores.map((f) => f.nome_fornecedor).join(", ")
@@ -2115,7 +2121,7 @@
                 };
 
                 const waypoints = [];
-                detalhesRota.pontosParada.forEach((pt) => {
+                (detalhesRota.pontosParada || []).forEach((pt) => {
                   waypoints.push({
                     location: new google.maps.LatLng(
                       parseFloat(pt.latitude),
@@ -2124,7 +2130,7 @@
                     stopover: true,
                   });
                 });
-                detalhesRota.escolas.forEach((es) => {
+                (detalhesRota.escolas || []).forEach((es) => {
                   waypoints.push({
                     location: new google.maps.LatLng(
                       parseFloat(es.latitude),
@@ -2272,17 +2278,17 @@
                 mapEdit.setZoom(13);
               }
 
-              detalhes.escolas.forEach((e) => {
+              // Evitar erro se estiver vazio
+              (detalhes.escolas || []).forEach((e) => {
                 editEscolasSelecionadas.push(e.id);
               });
-              detalhes.pontosParada.forEach((p) => {
+              (detalhes.pontosParada || []).forEach((p) => {
                 editPontosParadaSelecionados.push(p.id);
               });
-              detalhes.fornecedores.forEach((f) => {
+              (detalhes.fornecedores || []).forEach((f) => {
                 editFornecedoresSelecionados.push(f.id);
               });
 
-              // Carregar novamente os dados de escola/ponto/fornecedores
               const ePromise = fetch("/api/escolas").then((rr) => rr.json());
               const pPromise = fetch("/api/pontos").then((rr) => rr.json());
               const fPromise = fetch("/api/fornecedores").then((rr) =>
@@ -2325,11 +2331,11 @@
           item.style.cursor = "pointer";
           const isChecked = editFornecedoresSelecionados.includes(forn.id);
           item.innerHTML = `
-          <input type="checkbox" data-id="${
-            forn.id
-          }" style="margin-right:5px;" ${isChecked ? "checked" : ""} />
-          <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
-        `;
+            <input type="checkbox" data-id="${
+              forn.id
+            }" style="margin-right:5px;" ${isChecked ? "checked" : ""} />
+            <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
+          `;
           item.querySelector("input").addEventListener("change", function () {
             const fid = parseInt(this.getAttribute("data-id"), 10);
             if (this.checked) {
@@ -2405,7 +2411,9 @@
         });
 
         editRotasPontosData.forEach((p) => {
-          const hasZone = p.zoneamentos.some((z) => zoneSet.has(z.id));
+          // Corrigir caso zoneamentos seja undefined
+          const ptZoneamentos = p.zoneamentos || [];
+          const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
           if (hasZone) {
             const lat = parseFloat(p.latitude);
             const lng = parseFloat(p.longitude);
