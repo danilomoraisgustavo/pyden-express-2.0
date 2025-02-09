@@ -48,6 +48,10 @@
         width: 100%;
         height: 500px;
       }
+      #mapAluno {
+        width: 100%;
+        height: 500px;
+      }
     </style>
   </head>
   <body>
@@ -348,12 +352,12 @@
                             <th>CEP</th>
                             <th>Bairro</th>
                             <th>Número Endereço</th>
-                            <!-- NOVA COLUNA NO FRONT -->
                             <th>Filiação 1</th>
                             <th>Telefone</th>
                             <th>Filiação 2</th>
                             <th>Responsável</th>
                             <th>Deficiência</th>
+                            <th>Ações</th>
                           </tr>
                         </thead>
                         <tfoot>
@@ -370,12 +374,12 @@
                             <th>CEP</th>
                             <th>Bairro</th>
                             <th>Número Endereço</th>
-                            <!-- NOVA COLUNA NO FRONT -->
                             <th>Filiação 1</th>
                             <th>Telefone</th>
                             <th>Filiação 2</th>
                             <th>Responsável</th>
                             <th>Deficiência</th>
+                            <th>Ações</th>
                           </tr>
                         </tfoot>
                         <tbody></tbody>
@@ -412,6 +416,194 @@
         </footer>
       </div>
     </div>
+
+    <!-- Modal Editar Aluno -->
+    <div
+      class="modal fade"
+      id="modalEditarAluno"
+      tabindex="-1"
+      aria-labelledby="modalEditarAlunoLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalEditarAlunoLabel">Editar Aluno</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="formEditarAluno">
+              <input type="hidden" id="editarAlunoId" />
+              <div class="mb-3">
+                <label for="editarIdMatricula" class="form-label"
+                  >ID Matrícula</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editarIdMatricula"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="editarEscolaId" class="form-label"
+                  >Escola (ID)</label
+                >
+                <input type="text" class="form-control" id="editarEscolaId" />
+              </div>
+              <div class="mb-3">
+                <label for="editarAno" class="form-label">Ano</label>
+                <input type="text" class="form-control" id="editarAno" />
+              </div>
+              <div class="mb-3">
+                <label for="editarModalidade" class="form-label"
+                  >Modalidade</label
+                >
+                <input type="text" class="form-control" id="editarModalidade" />
+              </div>
+              <div class="mb-3">
+                <label for="editarFormatoLetivo" class="form-label"
+                  >Formato Letivo</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editarFormatoLetivo"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="editarTurma" class="form-label">Turma</label>
+                <input type="text" class="form-control" id="editarTurma" />
+              </div>
+              <div class="mb-3">
+                <label for="editarNomeAluno" class="form-label"
+                  >Nome Aluno</label
+                >
+                <input type="text" class="form-control" id="editarNomeAluno" />
+              </div>
+              <div class="mb-3">
+                <label for="editarCpf" class="form-label">CPF</label>
+                <input type="text" class="form-control" id="editarCpf" />
+              </div>
+              <div class="mb-3">
+                <label for="editarTransporte" class="form-label"
+                  >Transp. Escolar</label
+                >
+                <input type="text" class="form-control" id="editarTransporte" />
+              </div>
+              <div class="mb-3">
+                <label for="editarCep" class="form-label">CEP</label>
+                <input type="text" class="form-control" id="editarCep" />
+              </div>
+              <div class="mb-3">
+                <label for="editarBairro" class="form-label">Bairro</label>
+                <input type="text" class="form-control" id="editarBairro" />
+              </div>
+              <div class="mb-3">
+                <label for="editarNumeroEndereco" class="form-label"
+                  >Número Endereço</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editarNumeroEndereco"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="editarFiliacao1" class="form-label"
+                  >Filiação 1</label
+                >
+                <input type="text" class="form-control" id="editarFiliacao1" />
+              </div>
+              <div class="mb-3">
+                <label for="editarTelefone" class="form-label">Telefone</label>
+                <input type="text" class="form-control" id="editarTelefone" />
+              </div>
+              <div class="mb-3">
+                <label for="editarFiliacao2" class="form-label"
+                  >Filiação 2</label
+                >
+                <input type="text" class="form-control" id="editarFiliacao2" />
+              </div>
+              <div class="mb-3">
+                <label for="editarResponsavel" class="form-label"
+                  >Responsável</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editarResponsavel"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="editarDeficiencia" class="form-label"
+                  >Deficiência (JSON)</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editarDeficiencia"
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Fechar
+            </button>
+            <button type="button" class="btn btn-primary" id="btnSalvarEdicao">
+              Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Localizar Aluno -->
+    <div
+      class="modal fade"
+      id="modalLocalizarAluno"
+      tabindex="-1"
+      aria-labelledby="modalLocalizarAlunoLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalLocalizarAlunoLabel">
+              Localizar Aluno
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div id="mapAluno"></div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="../../assets/js/core/popper.min.js"></script>
     <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -431,6 +623,10 @@
       let map = null;
       let geocoder = null;
       let escolaLocalizacao = null;
+      let mapAluno = null;
+      let geocoderAluno = null;
+      let alunoAtual = null;
+      let escolaLocAluno = null;
 
       function carregarEscolas() {
         fetch("/api/escolas")
@@ -496,28 +692,37 @@
               : item.deficiencia || "";
 
           const row = `
-          <tr>
-            <td>${item.id_matricula || ""}</td>
-            <td>${item.escola_nome || ""}</td>
-            <td>${item.ano || ""}</td>
-            <td>${item.modalidade || ""}</td>
-            <td>${item.formato_letivo || ""}</td>
-            <td>${item.turma || ""}</td>
-            <td>${item.pessoa_nome || ""}</td>
-            <td>${item.cpf || ""}</td>
-            <td>${item.transporte_escolar_poder_publico || ""}</td>
-            <td>${item.cep || ""}</td>
-            <td>${item.bairro || ""}</td>
-            <td>${
-              item.numero_pessoa_endereco || ""
-            }</td> <!-- NOVO CAMPO NA TABELA -->
-            <td>${item.filiacao_1 || ""}</td>
-            <td>${item.numero_telefone || ""}</td>
-            <td>${item.filiacao_2 || ""}</td>
-            <td>${item.responsavel || ""}</td>
-            <td>${defString}</td>
-          </tr>
-        `;
+            <tr data-id="${item.id}" data-obj='${JSON.stringify(item)}'>
+              <td>${item.id_matricula || ""}</td>
+              <td>${item.escola_nome || ""}</td>
+              <td>${item.ano || ""}</td>
+              <td>${item.modalidade || ""}</td>
+              <td>${item.formato_letivo || ""}</td>
+              <td>${item.turma || ""}</td>
+              <td>${item.pessoa_nome || ""}</td>
+              <td>${item.cpf || ""}</td>
+              <td>${item.transporte_escolar_poder_publico || ""}</td>
+              <td>${item.cep || ""}</td>
+              <td>${item.bairro || ""}</td>
+              <td>${item.numero_pessoa_endereco || ""}</td>
+              <td>${item.filiacao_1 || ""}</td>
+              <td>${item.numero_telefone || ""}</td>
+              <td>${item.filiacao_2 || ""}</td>
+              <td>${item.responsavel || ""}</td>
+              <td>${defString}</td>
+              <td>
+                <button class="btn btn-sm btn-warning btn-editar" title="Editar">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-info btn-localizar" title="Localizar">
+                  <i class="fa fa-map-marker-alt"></i>
+                </button>
+                <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `;
           tbody.append(row);
 
           if (item.escola_nome) distinctEscolas.add(item.escola_nome);
@@ -875,7 +1080,237 @@
         carregarAlunosBD();
         $("#fileInput").on("change", handleFileImport);
         $("#importarBtn").on("click", enviarImportacao);
+
+        $(document).on("click", ".btn-editar", function () {
+          const tr = $(this).closest("tr");
+          const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
+          alunoAtual = dataObj.id;
+          $("#editarAlunoId").val(dataObj.id);
+          $("#editarIdMatricula").val(dataObj.id_matricula || "");
+          $("#editarEscolaId").val(dataObj.escola_id || "");
+          $("#editarAno").val(dataObj.ano || "");
+          $("#editarModalidade").val(dataObj.modalidade || "");
+          $("#editarFormatoLetivo").val(dataObj.formato_letivo || "");
+          $("#editarTurma").val(dataObj.turma || "");
+          $("#editarNomeAluno").val(dataObj.pessoa_nome || "");
+          $("#editarCpf").val(dataObj.cpf || "");
+          $("#editarTransporte").val(
+            dataObj.transporte_escolar_poder_publico || ""
+          );
+          $("#editarCep").val(dataObj.cep || "");
+          $("#editarBairro").val(dataObj.bairro || "");
+          $("#editarNumeroEndereco").val(dataObj.numero_pessoa_endereco || "");
+          $("#editarFiliacao1").val(dataObj.filiacao_1 || "");
+          $("#editarTelefone").val(dataObj.numero_telefone || "");
+          $("#editarFiliacao2").val(dataObj.filiacao_2 || "");
+          $("#editarResponsavel").val(dataObj.responsavel || "");
+          if (dataObj.deficiencia && Array.isArray(dataObj.deficiencia)) {
+            $("#editarDeficiencia").val(JSON.stringify(dataObj.deficiencia));
+          } else {
+            $("#editarDeficiencia").val(dataObj.deficiencia || "");
+          }
+          $("#modalEditarAluno").modal("show");
+        });
+
+        $("#btnSalvarEdicao").on("click", function () {
+          const body = {
+            id: $("#editarAlunoId").val(),
+            id_matricula: $("#editarIdMatricula").val(),
+            escola_id: $("#editarEscolaId").val(),
+            ano: $("#editarAno").val(),
+            modalidade: $("#editarModalidade").val(),
+            formato_letivo: $("#editarFormatoLetivo").val(),
+            turma: $("#editarTurma").val(),
+            pessoa_nome: $("#editarNomeAluno").val(),
+            cpf: $("#editarCpf").val(),
+            transporte_escolar_poder_publico: $("#editarTransporte").val(),
+            cep: $("#editarCep").val(),
+            bairro: $("#editarBairro").val(),
+            numero_pessoa_endereco: $("#editarNumeroEndereco").val(),
+            filiacao_1: $("#editarFiliacao1").val(),
+            numero_telefone: $("#editarTelefone").val(),
+            filiacao_2: $("#editarFiliacao2").val(),
+            responsavel: $("#editarResponsavel").val(),
+            deficiencia: $("#editarDeficiencia").val(),
+          };
+          fetch("/api/alunos-ativos/" + body.id, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          })
+            .then((res) => res.json())
+            .then((resp) => {
+              if (resp.success) {
+                showNotification("success", "Aluno atualizado com sucesso!");
+                $("#modalEditarAluno").modal("hide");
+                carregarAlunosBD();
+              } else {
+                showNotification(
+                  "danger",
+                  resp.message || "Erro ao atualizar."
+                );
+              }
+            })
+            .catch((err) => {
+              console.error(err);
+              showNotification("danger", "Erro ao atualizar aluno.");
+            });
+        });
+
+        $(document).on("click", ".btn-localizar", function () {
+          const tr = $(this).closest("tr");
+          const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
+          alunoAtual = dataObj.id;
+          escolaLocAluno = dataObj.escola_id || null;
+          $("#modalLocalizarAluno").modal("show");
+          setTimeout(() => {
+            initMapAluno(dataObj);
+          }, 500);
+        });
+
+        $(document).on("click", ".btn-excluir", function () {
+          if (!confirm("Deseja realmente excluir este aluno?")) return;
+          const tr = $(this).closest("tr");
+          const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
+          const alunoId = dataObj.id;
+          fetch("/api/alunos-ativos/" + alunoId, {
+            method: "DELETE",
+          })
+            .then((res) => res.json())
+            .then((resp) => {
+              if (resp.success) {
+                showNotification("success", "Aluno excluído com sucesso!");
+                carregarAlunosBD();
+              } else {
+                showNotification("danger", resp.message || "Erro ao excluir.");
+              }
+            })
+            .catch((err) => {
+              console.error(err);
+              showNotification("danger", "Erro ao excluir aluno.");
+            });
+        });
       });
+
+      function initMapAluno(aluno) {
+        if (!mapAluno) {
+          mapAluno = new google.maps.Map(document.getElementById("mapAluno"), {
+            center: { lat: -3.135366, lng: -60.023207 },
+            zoom: 5,
+            mapId: "ca7a0e55f44be727",
+          });
+          geocoderAluno = new google.maps.Geocoder();
+        } else {
+          mapAluno = new google.maps.Map(document.getElementById("mapAluno"), {
+            center: { lat: -3.135366, lng: -60.023207 },
+            zoom: 5,
+            mapId: "ca7a0e55f44be727",
+          });
+        }
+
+        let centerEscola = null;
+        fetch("/api/escolas/" + (aluno.escola_id || 0))
+          .then((res) => res.json())
+          .then((infoEscola) => {
+            if (infoEscola && infoEscola.id) {
+              if (infoEscola.latitude && infoEscola.longitude) {
+                centerEscola = new google.maps.LatLng(
+                  infoEscola.latitude,
+                  infoEscola.longitude
+                );
+                new google.maps.Marker({
+                  map: mapAluno,
+                  position: centerEscola,
+                  title: infoEscola.nome || "Escola",
+                });
+                mapAluno.setCenter(centerEscola);
+                mapAluno.setZoom(14);
+                new google.maps.Circle({
+                  strokeColor: "#FF0000",
+                  strokeOpacity: 0.8,
+                  strokeWeight: 2,
+                  fillColor: "#FF0000",
+                  fillOpacity: 0.35,
+                  map: mapAluno,
+                  center: centerEscola,
+                  radius: 2000,
+                });
+                localizarAlunoEndereco(aluno, centerEscola);
+              } else {
+                const addr = `${infoEscola.logradouro || ""}, ${
+                  infoEscola.numero || ""
+                }, ${infoEscola.bairro || ""}, ${infoEscola.cep || ""}`;
+                geocoderAluno.geocode(
+                  { address: addr },
+                  function (results, status) {
+                    if (status === "OK" && results[0]) {
+                      centerEscola = results[0].geometry.location;
+                      new google.maps.Marker({
+                        map: mapAluno,
+                        position: centerEscola,
+                        title: infoEscola.nome || "Escola",
+                      });
+                      mapAluno.setCenter(centerEscola);
+                      mapAluno.setZoom(14);
+                      new google.maps.Circle({
+                        strokeColor: "#FF0000",
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: "#FF0000",
+                        fillOpacity: 0.35,
+                        map: mapAluno,
+                        center: centerEscola,
+                        radius: 2000,
+                      });
+                    }
+                    localizarAlunoEndereco(aluno, centerEscola);
+                  }
+                );
+              }
+            } else {
+              localizarAlunoEndereco(aluno, null);
+            }
+          })
+          .catch(() => {
+            localizarAlunoEndereco(aluno, null);
+          });
+      }
+
+      function localizarAlunoEndereco(aluno, centerEscola) {
+        const cepFormatado = (aluno.cep || "").replace(/\D/g, "");
+        const numero = aluno.numero_pessoa_endereco || "";
+        if (cepFormatado.length === 8) {
+          fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`)
+            .then((res) => res.json())
+            .then((viaData) => {
+              if (!viaData.erro) {
+                const end = `${viaData.logradouro || ""}, ${numero}, ${
+                  viaData.bairro || ""
+                }, ${viaData.localidade || ""} - ${
+                  viaData.uf || ""
+                }, Brasil`.trim();
+                geocoderAluno.geocode(
+                  { address: end },
+                  function (results, status) {
+                    if (status === "OK" && results[0]) {
+                      const posAluno = results[0].geometry.location;
+                      new google.maps.Marker({
+                        map: mapAluno,
+                        position: posAluno,
+                        title: aluno.pessoa_nome || "Aluno",
+                      });
+                      if (!centerEscola) {
+                        mapAluno.setCenter(posAluno);
+                        mapAluno.setZoom(14);
+                      }
+                    }
+                  }
+                );
+              }
+            })
+            .catch(() => {});
+        }
+      }
     </script>
   </body>
 </html>

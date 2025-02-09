@@ -5346,6 +5346,131 @@ app.get("/api/alunos-ativos", async (req, res) => {
   }
 });
 
+app.delete("/api/alunos-ativos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar se o aluno existe
+    const check = await pool.query(
+      "SELECT id FROM alunos_ativos WHERE id = $1",
+      [id]
+    );
+    if (check.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno não encontrado." });
+    }
+
+    await pool.query("DELETE FROM alunos_ativos WHERE id = $1", [id]);
+    return res.json({ success: true, message: "Aluno excluído com sucesso." });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao excluir o aluno." });
+  }
+});
+
+app.put("/api/alunos-ativos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      id_matricula,
+      escola_id,
+      ano,
+      modalidade,
+      formato_letivo,
+      turma,
+      pessoa_nome,
+      cpf,
+      transporte_escolar_poder_publico,
+      cep,
+      bairro,
+      numero_pessoa_endereco,
+      filiacao_1,
+      numero_telefone,
+      filiacao_2,
+      responsavel,
+      deficiencia,
+    } = req.body;
+
+    // Se deficiencia for string JSON, converter para array se possível
+    let defArray = null;
+    try {
+      if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
+        defArray = JSON.parse(deficiencia);
+      } else if (Array.isArray(deficiencia)) {
+        defArray = deficiencia;
+      }
+    } catch {
+      defArray = null;
+    }
+
+    // Verificar se o aluno existe
+    const check = await pool.query(
+      "SELECT id FROM alunos_ativos WHERE id = $1",
+      [id]
+    );
+    if (check.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno não encontrado." });
+    }
+
+    const query = `
+        UPDATE alunos_ativos
+        SET
+          id_matricula = $1,
+          escola_id = $2,
+          ano = $3,
+          modalidade = $4,
+          formato_letivo = $5,
+          turma = $6,
+          pessoa_nome = $7,
+          cpf = $8,
+          transporte_escolar_poder_publico = $9,
+          cep = $10,
+          bairro = $11,
+          numero_pessoa_endereco = $12,
+          filiacao_1 = $13,
+          numero_telefone = $14,
+          filiacao_2 = $15,
+          responsavel = $16,
+          deficiencia = $17
+        WHERE id = $18
+      `;
+    await pool.query(query, [
+      id_matricula || null,
+      escola_id || null,
+      ano || null,
+      modalidade || null,
+      formato_letivo || null,
+      turma || null,
+      pessoa_nome || null,
+      cpf || null,
+      transporte_escolar_poder_publico || null,
+      cep || null,
+      bairro || null,
+      numero_pessoa_endereco || null,
+      filiacao_1 || null,
+      numero_telefone || null,
+      filiacao_2 || null,
+      responsavel || null,
+      defArray,
+      id,
+    ]);
+
+    return res.json({
+      success: true,
+      message: "Aluno atualizado com sucesso.",
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao atualizar o aluno." });
+  }
+});
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
 // --------------------------------------------------------------------------------
