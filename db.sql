@@ -345,6 +345,8 @@ CREATE TABLE IF NOT EXISTS memorandos (
 );
 
 
+-- Atualização da estrutura da tabela (incluindo a nova coluna numero_pessoa_endereco)
+
 CREATE TABLE IF NOT EXISTS alunos_ativos (
   id SERIAL PRIMARY KEY,
   id_matricula INTEGER,
@@ -358,12 +360,14 @@ CREATE TABLE IF NOT EXISTS alunos_ativos (
   transporte_escolar_poder_publico VARCHAR(255),
   cep VARCHAR(50),
   bairro VARCHAR(255),
+  numero_pessoa_endereco VARCHAR(50),
   filiacao_1 VARCHAR(255),
   numero_telefone VARCHAR(50),
   filiacao_2 VARCHAR(255),
   responsavel VARCHAR(255),
   deficiencia TEXT[]
 );
+
 
 
 -- ==========================================
