@@ -3732,6 +3732,94 @@ app.get("/api/rotas-simples-detalhes", async (req, res) => {
   }
 });
 
+app.put("/api/rotas-simples/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      identificador,
+      descricao,
+      partidaLat,
+      partidaLng,
+      chegadaLat,
+      chegadaLng,
+      pontosParada = [],
+      escolas = [],
+      fornecedores = [],
+      areaZona,
+    } = req.body;
+
+    // 1. Verificar se a rota existe
+    const buscaRota = await pool.query(
+      "SELECT id FROM rotas_simples WHERE id = $1",
+      [id]
+    );
+    if (buscaRota.rows.length === 0) {
+      return res.json({ success: false, message: "Rota não encontrada." });
+    }
+
+    // 2. Atualizar dados básicos da rota (tabela rotas_simples)
+    await pool.query(
+      `
+          UPDATE rotas_simples
+          SET 
+            identificador = $1,
+            descricao = $2,
+            partida_lat = $3,
+            partida_lng = $4,
+            chegada_lat = $5,
+            chegada_lng = $6,
+            area_zona = $7
+          WHERE id = $8
+        `,
+      [
+        identificador,
+        descricao,
+        partidaLat || null,
+        partidaLng || null,
+        chegadaLat || null,
+        chegadaLng || null,
+        areaZona,
+        id,
+      ]
+    );
+
+    // 3. Atualizar relacionamento da tabela de ligação rotas_pontos
+    await pool.query("DELETE FROM rotas_pontos WHERE rota_id = $1", [id]);
+    for (const ptId of pontosParada) {
+      await pool.query(
+        "INSERT INTO rotas_pontos (rota_id, ponto_id) VALUES ($1, $2)",
+        [id, ptId]
+      );
+    }
+
+    // 4. Atualizar relacionamento da tabela de ligação rotas_escolas
+    await pool.query("DELETE FROM rotas_escolas WHERE rota_id = $1", [id]);
+    for (const escId of escolas) {
+      await pool.query(
+        "INSERT INTO rotas_escolas (rota_id, escola_id) VALUES ($1, $2)",
+        [id, escId]
+      );
+    }
+
+    // 5. Atualizar relacionamento da tabela de ligação rotas_fornecedores
+    await pool.query("DELETE FROM rotas_fornecedores WHERE rota_id = $1", [id]);
+    for (const fId of fornecedores) {
+      await pool.query(
+        "INSERT INTO rotas_fornecedores (rota_id, fornecedor_id) VALUES ($1, $2)",
+        [id, fId]
+      );
+    }
+
+    return res.json({ success: true, message: "Rota atualizada com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao atualizar rota:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao atualizar rota.",
+    });
+  }
+});
+
 // ====================================================================================
 // VEÍCULO POR MOTORISTA
 // ====================================================================================
