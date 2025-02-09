@@ -1078,21 +1078,34 @@ app.post("/api/escolas/cadastrar", async (req, res) => {
 app.get("/api/escolas", async (req, res) => {
   try {
     const query = `
-            SELECT e.id, e.nome, e.codigo_inep, e.latitude, e.longitude, e.area,
-                   e.logradouro, e.numero, e.complemento, e.ponto_referencia,
-                   e.bairro, e.cep, e.regime, e.nivel, e.horario,
-                   COALESCE(
-                     json_agg(
-                       json_build_object('id', z.id, 'nome', z.nome)
-                     ) FILTER (WHERE z.id IS NOT NULL),
-                     '[]'
-                   ) AS zoneamentos
-            FROM escolas e
-            LEFT JOIN escolas_zoneamentos ez ON ez.escola_id = e.id
-            LEFT JOIN zoneamentos z ON z.id = ez.zoneamento_id
-            GROUP BY e.id
-            ORDER BY e.id;
-        `;
+        SELECT
+          e.id,
+          e.nome,
+          e.codigo_inep,
+          e.latitude,
+          e.longitude,
+          e.area,
+          e.logradouro,
+          e.numero,
+          e.complemento,
+          e.ponto_referencia,
+          e.bairro,
+          e.cep,
+          e.regime,
+          e.nivel,
+          e.horario,
+          COALESCE(
+            json_agg(
+              json_build_object('id', z.id, 'nome', z.nome)
+            ) FILTER (WHERE z.id IS NOT NULL),
+            '[]'
+          ) AS zoneamentos
+        FROM escolas e
+        LEFT JOIN escolas_zoneamentos ez ON ez.escola_id = e.id
+        LEFT JOIN zoneamentos z ON z.id = ez.zoneamento_id
+        GROUP BY e.id
+        ORDER BY e.id;
+      `;
     const result = await pool.query(query);
     const escolas = result.rows.map((row) => ({
       id: row.id,
@@ -1114,6 +1127,7 @@ app.get("/api/escolas", async (req, res) => {
     }));
     res.json(escolas);
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "Erro interno do servidor.",
@@ -4323,7 +4337,7 @@ app.get("/api/alunos-mapa", async (req, res) => {
   try {
     const { escola_id, busca } = req.query;
 
-    // Filtro principal: transporte_escolar_poder_publico não vazio e cep preenchido
+    // Filtro principal
     let whereClauses = [
       "COALESCE(transporte_escolar_poder_publico, '') <> ''",
       "cep IS NOT NULL AND cep <> ''",
@@ -4333,28 +4347,26 @@ app.get("/api/alunos-mapa", async (req, res) => {
     let idx = 1;
     let escolaInfo = null;
 
-    // Se foi passado escola_id
     if (escola_id) {
       whereClauses.push(`escola_id = $${idx++}`);
       values.push(escola_id);
 
-      // Buscar dados da escola, incluindo latitude, longitude, logradouro, numero, bairro e cep
       const esc = await pool.query(
-        `SELECT 
-             id, 
-             nome, 
-             codigo_inep, 
-             latitude, 
-             longitude, 
-             area, 
-             logradouro, 
-             numero, 
-             complemento, 
-             ponto_referencia, 
-             bairro, 
-             cep, 
-             regime, 
-             nivel, 
+        `SELECT
+             id,
+             nome,
+             codigo_inep,
+             latitude,
+             longitude,
+             area,
+             logradouro,
+             numero,
+             complemento,
+             ponto_referencia,
+             bairro,
+             cep,
+             regime,
+             nivel,
              horario
            FROM escolas
            WHERE id = $1`,
@@ -4365,7 +4377,6 @@ app.get("/api/alunos-mapa", async (req, res) => {
       }
     }
 
-    // Se foi passado parâmetro de busca
     if (busca) {
       whereClauses.push(`
           (
@@ -4382,7 +4393,6 @@ app.get("/api/alunos-mapa", async (req, res) => {
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
 
-    // Consulta final
     const query = `
         SELECT
           id,
@@ -5330,27 +5340,26 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
     const query = `
-            SELECT a.*,
-                   e.nome AS escola_nome
-            FROM alunos_ativos a
-            LEFT JOIN escolas e ON e.id = a.escola_id
-            ORDER BY a.id DESC
-        `;
+        SELECT a.*,
+               e.nome AS escola_nome
+        FROM alunos_ativos a
+        LEFT JOIN escolas e ON e.id = a.escola_id
+        ORDER BY a.id DESC
+      `;
     const result = await pool.query(query);
     return res.json(result.rows);
   } catch (err) {
     console.error(err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Erro ao buscar alunos." });
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao buscar alunos.",
+    });
   }
 });
 
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Verificar se o aluno existe
     const check = await pool.query(
       "SELECT id FROM alunos_ativos WHERE id = $1",
       [id]
@@ -5360,14 +5369,14 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
         .status(404)
         .json({ success: false, message: "Aluno não encontrado." });
     }
-
     await pool.query("DELETE FROM alunos_ativos WHERE id = $1", [id]);
     return res.json({ success: true, message: "Aluno excluído com sucesso." });
   } catch (err) {
     console.error(err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Erro ao excluir o aluno." });
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao excluir o aluno.",
+    });
   }
 });
 
@@ -5394,7 +5403,6 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
       deficiencia,
     } = req.body;
 
-    // Se deficiencia for string JSON, converter para array se possível
     let defArray = null;
     try {
       if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
@@ -5406,7 +5414,6 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
       defArray = null;
     }
 
-    // Verificar se o aluno existe
     const check = await pool.query(
       "SELECT id FROM alunos_ativos WHERE id = $1",
       [id]
@@ -5466,11 +5473,13 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Erro ao atualizar o aluno." });
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao atualizar o aluno.",
+    });
   }
 });
+
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
 // --------------------------------------------------------------------------------
