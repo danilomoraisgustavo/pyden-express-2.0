@@ -5568,6 +5568,66 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
+
+//Rota teste
+app.post("/api/alunos_rotas/atribuir", async (req, res) => {
+  try {
+    const { aluno_id, rota_id, ponto_id } = req.body;
+
+    if (!aluno_id || !rota_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Parâmetros aluno_id e rota_id são obrigatórios.",
+      });
+    }
+
+    // Exemplo: Checar capacidade (não exceder 50 alunos)
+    const checaCapacidade = await pool.query(
+      "SELECT COUNT(*)::int AS total FROM alunos_rotas WHERE rota_id = $1",
+      [rota_id]
+    );
+    if (checaCapacidade.rows[0].total >= 50) {
+      return res.status(400).json({
+        success: false,
+        message: "Esta rota já atingiu o limite de 50 alunos.",
+      });
+    }
+
+    // Verifica se já existe um vínculo do aluno com alguma rota (depende da sua regra de negócio)
+    // ...
+    
+    // Insere o vínculo
+    const insertQuery = `
+      INSERT INTO alunos_rotas (aluno_id, rota_id, ponto_id)
+      VALUES ($1, $2, $3)
+      RETURNING id
+    `;
+    const result = await pool.query(insertQuery, [
+      aluno_id,
+      rota_id,
+      ponto_id || null,
+    ]);
+
+    // Opcional: notificação
+    // ...
+
+    return res.json({
+      success: true,
+      message: "Aluno atribuído à rota com sucesso!",
+      id: result.rows[0].id,
+    });
+  } catch (error) {
+    console.error("Erro ao atribuir aluno à rota:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor.",
+    });
+  }
+});
+
+
+
+
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
 // --------------------------------------------------------------------------------

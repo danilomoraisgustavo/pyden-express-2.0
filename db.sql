@@ -421,6 +421,16 @@ CREATE TABLE IF NOT EXISTS notificacoes (
 );
 
 
+CREATE TABLE IF NOT EXISTS alunos_rotas (
+  id SERIAL PRIMARY KEY,
+  aluno_id INT NOT NULL,
+  rota_id INT NOT NULL,
+  ponto_id INT,
+  data_vinculo DATE DEFAULT CURRENT_DATE,
+  FOREIGN KEY (aluno_id) REFERENCES alunos_ativos(id) ON DELETE CASCADE,
+  FOREIGN KEY (rota_id) REFERENCES rotas_simples(id) ON DELETE CASCADE,
+  FOREIGN KEY (ponto_id) REFERENCES pontos(id) ON DELETE SET NULL
+);
 
 
 
