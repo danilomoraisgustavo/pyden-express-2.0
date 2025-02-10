@@ -80,7 +80,7 @@
 
         async function carregarEscolas() {
             try {
-                const resp = await fetch(`${API_URL}/api/escolas`);
+                const resp = await fetch(`/api/escolas`);
                 const data = await resp.json();
                 data.forEach(escola => {
                     const opt = document.createElement("option");
@@ -95,7 +95,7 @@
 
         async function carregarRotas() {
             try {
-                const resp = await fetch(`${API_URL}/api/rotas_simples`);
+                const resp = await fetch(`/api/rotas_simples`);
                 const data = await resp.json();
                 rotasDisponiveis = data;
                 rotasDisponiveis.forEach(rota => {
@@ -114,7 +114,7 @@
             // Supondo que /api/alunos-mapa?escola_id=XX retorne todos os alunos dessa escola
             // que usam transporte
             try {
-                const resp = await fetch(`${API_URL}/api/alunos-mapa?escola_id=${escolaId}`);
+                const resp = await fetch(`/api/alunos-mapa?escola_id=${escolaId}`);
                 const json = await resp.json();
                 if (!json.success) {
                     console.error("Erro ao buscar alunos:", json.message);
@@ -198,7 +198,7 @@
                 };
 
                 try {
-                    const resp = await fetch(`${API_URL}/api/alunos_rotas/atribuir`, {
+                    const resp = await fetch(`/api/alunos_rotas/atribuir`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(body),
