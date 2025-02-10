@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Associar Alunos a Rotas</title>
+</head>
+
+<body>
+
+    <h1>Associar Alunos a Rotas</h1>
+
+    <label for="selectEscola">Selecione a Escola:</label>
+    <select id="selectEscola">
+        <!-- Preencha dinamicamente ou de forma estática -->
+        <option value="1">Escola 1</option>
+        <option value="2">Escola 2</option>
+        <!-- etc... -->
+    </select>
+
+    <button id="btnCarregar">Carregar Associações</button>
+
+    <div id="resultado"></div>
+
+    <script>
+        document.getElementById('btnCarregar').addEventListener('click', async () => {
+            const escolaId = document.getElementById('selectEscola').value;
+            const url = `/associar-alunos-rota/${escolaId}`;
+
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+
+                // Limpar área de resultado
+                const divRes = document.getElementById('resultado');
+                divRes.innerHTML = '';
+
+                // Montar apresentação por rota
+                const rotasMap = {};
+                data.rotas.forEach(r => {
+                    rotasMap[r.id] = { identificador: r.identificador, alunos: [] };
+                });
+
+                data.associacoes.forEach(assoc => {
+                    assoc.rotas.forEach(rid => {
+                        if (rotasMap[rid]) {
+                            rotasMap[rid].alunos.push(assoc.nome);
+                        }
+                    });
+                });
+
+                for (let rid in rotasMap) {
+                    const rotaInfo = rotasMap[rid];
+                    const rotaElem = document.createElement('div');
+                    rotaElem.style.border = '1px solid #ccc';
+                    rotaElem.style.margin = '10px';
+                    rotaElem.style.padding = '10px';
+                    rotaElem.innerHTML = `
+            <h2>Rota: ${rotaInfo.identificador}</h2>
+            <ul>
+              ${rotaInfo.alunos.map(a => `<li>${a}</li>`).join('')}
+            </ul>
+          `;
+                    divRes.appendChild(rotaElem);
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar');
+            }
+        });
+    </script>
+</body>
+
+</html>

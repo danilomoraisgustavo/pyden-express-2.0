@@ -5568,6 +5568,95 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
+// Rota Teste
+// Exemplo de rota em seu servidor Express
+app.get('/associar-alunos-rota/:escolaId', async (req, res) => {
+  const { escolaId } = req.params;
+
+  try {
+    // 1) Rotas que atendem a escola
+    const rotasEscola = await pool.query(`
+      SELECT r.*
+      FROM rotas_simples r
+      JOIN rotas_escolas re ON re.rota_id = r.id
+      WHERE re.escola_id = $1
+    `, [escolaId]);
+
+    // 2) Alunos ativos com transporte "Municipal" ou "Estadual"
+    const alunos = await pool.query(`
+      SELECT *
+      FROM alunos_ativos
+      WHERE escola_id = $1
+        AND transporte_escolar_poder_publico IN ('Municipal','Estadual')
+    `, [escolaId]);
+
+    // 3) Processamento de cada aluno para descobrir rota pela zona
+    let associacoes = [];
+
+    for (const aluno of alunos.rows) {
+      // (Exemplo) Obter lat/lng via CEP + número (função fictícia getCoordinates)
+      const { latitude, longitude } = await getCoordinates(aluno.cep, aluno.numero_pessoa_endereco);
+
+      // Descobrir o zoneamento via PostGIS (verifica se ponto está dentro de geom)
+      const zona = await pool.query(`
+        SELECT id
+        FROM zoneamentos
+        WHERE ST_Contains(
+          geom,
+          ST_SetSRID(ST_MakePoint($1, $2), 4326)
+        )
+        LIMIT 1
+      `, [longitude, latitude]); // Atenção à ordem: ST_MakePoint(lon, lat)
+
+      if (zona.rows.length > 0) {
+        const zoneamentoId = zona.rows[0].id;
+
+        // Encontrar pontos nessa zona
+        const pontosZona = await pool.query(`
+          SELECT ponto_id
+          FROM pontos_zoneamentos
+          WHERE zoneamento_id = $1
+        `, [zoneamentoId]);
+
+        // Encontrar rotas que passem por esses pontos
+        const rotasZona = await pool.query(`
+          SELECT DISTINCT rota_id
+          FROM rotas_pontos
+          WHERE ponto_id = ANY($1)
+        `, [pontosZona.rows.map(p => p.ponto_id)]);
+
+        // Filtrar apenas as rotas que também atendem a escola (já obtidas acima)
+        const rotasValidas = rotasZona.rows
+          .map(r => r.rota_id)
+          .filter(rid => rotasEscola.rows.some(re => re.id === rid));
+
+        // Monte objeto de associação (aluno -> rotas possíveis)
+        associacoes.push({
+          aluno_id: aluno.id,
+          nome: aluno.pessoa_nome,
+          rotas: rotasValidas
+        });
+      } else {
+        // Caso não encontre zona
+        associacoes.push({
+          aluno_id: aluno.id,
+          nome: aluno.pessoa_nome,
+          rotas: []
+        });
+      }
+    }
+
+    // 4) Retorno final
+    res.json({
+      escolaId,
+      rotas: rotasEscola.rows,
+      associacoes
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao processar associacao de alunos às rotas.' });
+  }
+});
+
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
 // --------------------------------------------------------------------------------
