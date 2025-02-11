@@ -1766,6 +1766,7 @@
             if (resp.success) {
               showNotification("success", "Localização salva com sucesso!");
               $("#modalLocalizarAluno").modal("hide");
+              carregarAlunosBD();
             } else {
               showNotification(
                 "danger",
