@@ -345,7 +345,7 @@
                   </li>
                   <li>
                     <a href="../../pages/transporte-administrativo/funcionarios-cargos.html">
-                      <span class="sub-item">Funções e Cargos</span>
+                      <span class="sub-item">Funções & Cargos</span>
                     </a>
                   </li>
                   <li>
@@ -376,7 +376,7 @@
                   </li>
                   <li>
                     <a href="../../pages/transporte-administrativo/motoristas-licencas.html">
-                      <span class="sub-item">Licenças e Certificações</span>
+                      <span class="sub-item">Licenças & Certificações</span>
                     </a>
                   </li>
                 </ul>
@@ -1403,8 +1403,7 @@
       const escolaSelecionada = $("#selectEscolaMap").val();
       const busca = $("#buscarAlunoInput").val().trim();
       const queryParams = new URLSearchParams();
-      if (escolaSelecionada)
-        queryParams.append("escola_id", escolaSelecionada);
+      if (escolaSelecionada) queryParams.append("escola_id", escolaSelecionada);
       if (busca) queryParams.append("busca", busca);
 
       showLoader();
@@ -1519,42 +1518,56 @@
         bounds.extend(escolaLocalizacao);
       }
 
-      alunos.forEach((al) => {
-        const cepLimpo = (al.cep || "").replace(/\D/g, "");
-        let numeroEnd = (al.numero_pessoa_endereco || "").trim();
-        let numeroTratado = numeroEnd.toLowerCase();
-        if (
-          numeroTratado.includes("s/n") ||
-          numeroTratado === "sn" ||
-          numeroTratado.includes("sem numero") ||
-          numeroTratado.includes("sem número")
-        ) {
-          numeroEnd = "S/N";
-        }
+      const chunkSize = 10;
+      const chunks = [];
+      for (let i = 0; i < alunos.length; i += chunkSize) {
+        chunks.push(alunos.slice(i, i + chunkSize));
+      }
 
-        if (cepLimpo.length !== 8) {
-          contagem++;
-          if (contagem === alunos.length) map.fitBounds(bounds);
+      function processChunk(index) {
+        if (index >= chunks.length) {
+          if (!bounds.isEmpty()) {
+            map.fitBounds(bounds);
+          }
           return;
         }
-        fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
-          .then((res) => res.json())
-          .then((dataViaCep) => {
-            if (dataViaCep.erro) {
-              contagem++;
-              if (contagem === alunos.length) map.fitBounds(bounds);
-              return;
-            }
-            const logradouro = dataViaCep.logradouro || "";
-            const bairro = dataViaCep.bairro || "";
-            const localidade = dataViaCep.localidade || "";
-            const uf = dataViaCep.uf || "";
+        const chunk = chunks[index];
+        let promises = chunk.map((al) => processAluno(al, bounds));
+        Promise.all(promises).then(() => {
+          processChunk(index + 1);
+        });
+      }
 
-            const endCompleto =
-              `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-            geocoder.geocode(
-              { address: endCompleto },
-              function (results, status) {
+      function processAluno(al, bounds) {
+        return new Promise((resolve) => {
+          const cepLimpo = (al.cep || "").replace(/\D/g, "");
+          let numeroEnd = (al.numero_pessoa_endereco || "").trim().toLowerCase();
+          if (
+            numeroEnd.includes("s/n") ||
+            numeroEnd === "sn" ||
+            numeroEnd.includes("sem numero") ||
+            numeroEnd.includes("sem número")
+          ) {
+            numeroEnd = "S/N";
+          }
+          if (cepLimpo.length !== 8) {
+            resolve();
+            return;
+          }
+          fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+            .then((res) => res.json())
+            .then((dataViaCep) => {
+              if (dataViaCep.erro) {
+                resolve();
+                return;
+              }
+              const logradouro = dataViaCep.logradouro || "";
+              const bairro = dataViaCep.bairro || "";
+              const localidade = dataViaCep.localidade || "";
+              const uf = dataViaCep.uf || "";
+
+              const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
+              geocoder.geocode({ address: endCompleto }, function (results, status) {
                 if (status === "OK" && results[0]) {
                   const loc = results[0].geometry.location;
                   const marker = new google.maps.Marker({
@@ -1572,18 +1585,15 @@
                   });
                   bounds.extend(loc);
                 }
-                contagem++;
-                if (contagem === alunos.length) {
-                  map.fitBounds(bounds);
-                }
-              }
-            );
-          })
-          .catch(() => {
-            contagem++;
-            if (contagem === alunos.length) map.fitBounds(bounds);
-          });
-      });
+                resolve();
+              });
+            })
+            .catch(() => {
+              resolve();
+            });
+        });
+      }
+      processChunk(0);
     }
 
     function showNotification(type, message) {
@@ -1794,7 +1804,6 @@
           });
       });
 
-      // BOTÃO PARA COMPLETAR LOCALIZAÇÃO DE ALUNOS COM TRANSPORTE 'MUNICIPAL' OU 'ESTADUAL'
       $("#btnCompletarMunicipalEstadual").on("click", async function () {
         showLoader();
         let promises = [];
@@ -1821,26 +1830,45 @@
         }
 
         try {
-          for (const al of alunosFiltrados) {
-            const cepLimpo = (al.cep || "").replace(/\D/g, "");
-            if (cepLimpo.length !== 8) {
-              continue;
+          const chunkSize = 20;
+          const chunks = [];
+          for (let i = 0; i < alunosFiltrados.length; i += chunkSize) {
+            chunks.push(alunosFiltrados.slice(i, i + chunkSize));
+          }
+
+          async function processChunk(index) {
+            if (index >= chunks.length) {
+              showNotification(
+                "success",
+                "Processo de localização concluído. Atualizando lista..."
+              );
+              carregarAlunosBD();
+              return;
             }
+            const chunk = chunks[index];
+            const chunkPromises = [];
+            for (const al of chunk) {
+              chunkPromises.push(handleAlunoGeo(al));
+            }
+            await Promise.all(chunkPromises);
+            processChunk(index + 1);
+          }
+
+          async function handleAlunoGeo(al) {
+            const cepLimpo = (al.cep || "").replace(/\D/g, "");
+            if (cepLimpo.length !== 8) return;
             const numeroEnd = tratarNumero(al.numero_pessoa_endereco || "");
             const viaData = await fetch(
               `https://viacep.com.br/ws/${cepLimpo}/json/`
             ).then((res) => res.json());
 
-            if (viaData.erro) {
-              continue;
-            }
+            if (viaData.erro) return;
 
             const logradouro = viaData.logradouro || "";
             const bairro = viaData.bairro || "";
             const localidade = viaData.localidade || "";
             const uf = viaData.uf || "";
             const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-
             const geoResult = await geocodeAddress(endCompleto);
             if (geoResult) {
               const { lat, lng } = geoResult;
@@ -1849,8 +1877,7 @@
                 latitude: lat,
                 longitude: lng,
               };
-              // PUT em cada um
-              const p = fetch("/api/alunos-ativos/" + al.id, {
+              return fetch("/api/alunos-ativos/" + al.id, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
@@ -1868,15 +1895,10 @@
                 .catch((err) => {
                   console.error("Erro ao atualizar ID:", al.id, err);
                 });
-              promises.push(p);
             }
           }
-          await Promise.all(promises);
-          showNotification(
-            "success",
-            "Processo de localização concluído. Atualizando lista..."
-          );
-          carregarAlunosBD();
+
+          await processChunk(0);
         } catch (err) {
           console.error(err);
           showNotification(
@@ -1913,7 +1935,10 @@
         if (!geocoderAluno) {
           geocoderAluno = new google.maps.Geocoder();
         }
-        geocoderAluno.geocode({ location: e.latLng }, function (results, status) {
+        geocoderAluno.geocode({ location: e.latLng }, function (
+          results,
+          status
+        ) {
           if (status === "OK" && results[0]) {
             placeAlunoMarker(e.latLng, true);
           } else {
