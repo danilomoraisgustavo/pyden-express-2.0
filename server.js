@@ -5569,6 +5569,85 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
 });
 
 // =============================================
+// ENDPOINT: SOLICITAR CONCESSÃO DE ROTA
+// (Inserir dados do formulário do modal)
+// =============================================
+app.post("/api/alunos/concessao-rota", async (req, res) => {
+  try {
+    const {
+      nome_responsavel,
+      cpf_responsavel,
+      celular_responsavel,
+      id_matricula_aluno,
+      escola_id,
+      cep,
+      numero,
+      endereco,
+      zoneamento,
+      deficiencia,
+      longitude,
+      latitude,
+      observacoes,
+    } = req.body;
+
+    // Exemplo de upload de arquivo (laudo_deficiencia, comprovante_endereco) se desejar:
+    // No front-end, usar formData e multer aqui no back-end. Exemplo:
+    // app.post("/api/alunos/concessao-rota", upload.fields([...]), async (req, res) => { ... }
+    // e então acessar req.files["laudo_deficiencia"], etc.
+
+    // Simulação de inserir na tabela cocessao_rota ou similar:
+    const insertQuery = `
+      INSERT INTO cocessao_rota (
+        nome_responsavel,
+        cpf_responsavel,
+        celular_responsavel,
+        id_matricula_aluno,
+        escola_id,
+        cep,
+        numero,
+        endereco,
+        zoneamento,
+        deficiencia,
+        longitude,
+        latitude,
+        observacoes
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING id
+    `;
+    const values = [
+      nome_responsavel || null,
+      cpf_responsavel || null,
+      celular_responsavel || null,
+      id_matricula_aluno || null,
+      escola_id ? parseInt(escola_id, 10) : null,
+      cep || null,
+      numero || null,
+      endereco || null,
+      zoneamento === "sim", // boolean
+      deficiencia === "sim", // boolean
+      longitude ? parseFloat(longitude) : null,
+      latitude ? parseFloat(latitude) : null,
+      observacoes || null,
+    ];
+
+    const result = await pool.query(insertQuery, values);
+
+    return res.json({
+      success: true,
+      message: "Solicitação de concessão de rota registrada com sucesso!",
+      novoId: result.rows[0].id,
+    });
+  } catch (error) {
+    console.error("Erro ao inserir solicitação de rota:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao inserir solicitação de rota.",
+    });
+  }
+});
+
+// =============================================
 // ENDPOINT: LISTAR ALUNOS QUE USAM TRANSPORTE
 // =============================================
 app.get("/api/alunos-transporte", async (req, res) => {
@@ -5638,7 +5717,6 @@ app.get("/api/alunos-transporte", async (req, res) => {
 // =============================================
 app.post("/api/atribuir-pontos", async (req, res) => {
   try {
-    // Recebemos a escola_id para filtrar os alunos e as rotas/pontos relacionados
     const { escola_id } = req.body;
     if (!escola_id) {
       return res.status(400).json({
@@ -5669,8 +5747,7 @@ app.post("/api/atribuir-pontos", async (req, res) => {
     if (rotasResult.rows.length === 0) {
       return res.json({
         success: true,
-        message:
-          "Nenhuma rota associada a esta escola. Alunos não serão atribuídos.",
+        message: "Nenhuma rota associada a esta escola. Alunos não serão atribuídos.",
       });
     }
     const rotaIds = rotasResult.rows.map((r) => r.rota_id);
@@ -5683,19 +5760,16 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       WHERE rp.rota_id = ANY($1)
     `;
     const pontosResult = await pool.query(pontosQuery, [rotaIds]);
-    const listaPontos = pontosResult.rows; // Cada objeto: { id, nome_ponto, latitude, longitude, rota_id }
+    const listaPontos = pontosResult.rows;
 
     if (listaPontos.length === 0) {
       return res.json({
         success: true,
-        message:
-          "Nenhum ponto de parada associado às rotas desta escola. Alunos não serão atribuídos.",
+        message: "Nenhum ponto de parada associado às rotas desta escola. Alunos não serão atribuídos.",
       });
     }
 
     // 3) Buscar alunos que usam transporte, para a escola_id
-    //    e que ainda não tenham um ponto_atribuido OU vamos recalcular sempre?
-    //    Aqui iremos recalcular sempre.
     const alunosQuery = `
       SELECT
         id,
@@ -5715,25 +5789,12 @@ app.post("/api/atribuir-pontos", async (req, res) => {
     if (alunos.length === 0) {
       return res.json({
         success: true,
-        message:
-          "Nenhum aluno usando transporte encontrado para esta escola.",
+        message: "Nenhum aluno usando transporte encontrado para esta escola.",
       });
     }
 
-    // 4) Precisamos converter o endereço do aluno (cep + bairro + número) em coordenadas
-    //    e achar o ponto de parada mais próximo que pertença a ALGUMA das rotas da escola.
-    //    Isso requer um geocoder. Mas nessa demo, podemos simular.
-
-    // Obs: Se for preciso usar API real do Google, faríamos a request e depois calculamos a distância.
-    //      Aqui, deixaremos um pseudo-cálculo de distâncias ou assumimos que as colunas de lat/lng do aluno
-    //      já foram preenchidas em "alunos_ativos" e iremos só calcular a distância.
-
-    // 4a) Vamos supor que já existe latitude_aluno e longitude_aluno
-    //     (você pode ter uma trigger para preencher. Mas aqui faremos suposição.)
-    //     Se não existirem, não atribuímos.
-    // 4b) Calcular distância "Haversine" ou algo simples e achar menor.
-
-    // Função de distância haversine:
+    // 4) Precisamos de colunas lat_aluno, lng_aluno (ou geocodificar).
+    //    Exemplo de função Haversine:
     function haversineDist(lat1, lon1, lat2, lon2) {
       const R = 6371; // raio da Terra em km
       const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -5749,17 +5810,8 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       return d; // retorna em km
     }
 
-    // Precisamos de colunas lat_aluno, lng_aluno. Se não existem, iremos ignorar o aluno.
-    // Se existirem, iremos achar o ponto mais próximo do array listaPontos
-    // MAS SOMENTE ponto cujo rota_id está em rotaIds (i.e. rota para a MESMA escola).
-    // Nota: se a tabela "alunos_ativos" não tiver lat/lng, a gente teria que geocodificar via CEP (externo).
-    //       Exemplo de uso: fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`) + geocoder.
-    //       Aqui, iremos demonstrar a lógica.
-
     let qtdAtribuidos = 0;
     for (const aluno of alunos) {
-      // Se a tabela não tem colunas lat_aluno/lng_aluno, pule ou faça a geocodificação
-      // Para ficar no exemplo, supomos que existam colunas lat_aluno e lng_aluno
       const buscaCoords = await pool.query(
         `SELECT lat_aluno, lng_aluno FROM alunos_ativos WHERE id = $1`,
         [aluno.id]
@@ -5769,15 +5821,13 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       }
       const { lat_aluno, lng_aluno } = buscaCoords.rows[0];
       if (lat_aluno == null || lng_aluno == null) {
-        // Se não tem coords, não atribui
+        // Sem coordenadas => não atribui
         continue;
       }
 
       let menorDist = Infinity;
       let pontoEscolhido = null;
-
       for (const p of listaPontos) {
-        // p.latitude, p.longitude
         const dist = haversineDist(
           parseFloat(lat_aluno),
           parseFloat(lng_aluno),
@@ -5791,7 +5841,6 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       }
 
       if (pontoEscolhido) {
-        // Salvar esse "pontoEscolhido" no aluno
         await pool.query(
           "UPDATE alunos_ativos SET ponto_atribuido = $1 WHERE id = $2",
           [pontoEscolhido.nome_ponto, aluno.id]
@@ -5800,7 +5849,6 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       }
     }
 
-    // Retornar quantos foram atribuídos
     return res.json({
       success: true,
       message: `Pontos atribuídos com sucesso para ${qtdAtribuidos} aluno(s).`,
