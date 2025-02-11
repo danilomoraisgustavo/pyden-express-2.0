@@ -4425,92 +4425,72 @@ app.get("/api/alunos-transporte-publico", async (req, res) => {
 app.get("/api/alunos-mapa", async (req, res) => {
   try {
     const { escola_id, busca } = req.query;
-
-    // Filtro principal
-    let whereClauses = [
-      "COALESCE(transporte_escolar_poder_publico, '') <> ''",
-      "cep IS NOT NULL AND cep <> ''",
-    ];
-
-    let values = [];
-    let idx = 1;
-    let escolaInfo = null;
+    let sql = `
+      SELECT a.*,
+             e.nome AS escola_nome,
+             e.logradouro AS escola_logradouro,
+             e.numero AS escola_numero,
+             e.bairro AS escola_bairro,
+             e.cep AS escola_cep,
+             e.latitude AS escola_latitude,
+             e.longitude AS escola_longitude
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE 1=1
+    `;
+    const params = [];
 
     if (escola_id) {
-      whereClauses.push(`escola_id = $${idx++}`);
-      values.push(escola_id);
-
-      const esc = await pool.query(
-        `SELECT
-             id,
-             nome,
-             codigo_inep,
-             latitude,
-             longitude,
-             area,
-             logradouro,
-             numero,
-             complemento,
-             ponto_referencia,
-             bairro,
-             cep,
-             regime,
-             nivel,
-             horario
-           FROM escolas
-           WHERE id = $1`,
-        [escola_id]
-      );
-      if (esc.rows.length > 0) {
-        escolaInfo = esc.rows[0];
-      }
+      params.push(escola_id);
+      sql += ` AND a.escola_id = $${params.length}`;
     }
 
     if (busca) {
-      whereClauses.push(`
-          (
-            CAST(id_matricula AS TEXT) ILIKE $${idx}
-            OR pessoa_nome ILIKE $${idx}
-            OR cpf ILIKE $${idx}
-          )
-        `);
-      values.push(`%${busca}%`);
-      idx++;
+      const lowerBusca = `%${busca.toLowerCase()}%`;
+      params.push(lowerBusca);
+      params.push(lowerBusca);
+      params.push(lowerBusca);
+      sql += ` AND (
+        CAST(a.id_matricula AS TEXT) ILIKE $${params.length - 2}
+        OR a.pessoa_nome ILIKE $${params.length - 1}
+        OR a.cpf ILIKE $${params.length}
+      )`;
     }
 
-    const whereString = whereClauses.length
-      ? `WHERE ${whereClauses.join(" AND ")}`
-      : "";
+    sql += " ORDER BY a.id DESC";
+    const result = await pool.query(sql, params);
 
-    const query = `
-        SELECT
-          id,
-          id_matricula,
-          escola_id,
-          pessoa_nome,
-          cpf,
-          transporte_escolar_poder_publico,
-          cep,
-          bairro
-        FROM alunos_ativos
-        ${whereString}
-        ORDER BY id ASC
-      `;
-    const result = await pool.query(query, values);
+    let escola = null;
+    if (escola_id) {
+      // Traz info da escola especifica
+      const eData = result.rows.find((r) => r.escola_id == escola_id);
+      if (eData) {
+        escola = {
+          id: eData.escola_id,
+          nome: eData.escola_nome,
+          logradouro: eData.escola_logradouro,
+          numero: eData.escola_numero,
+          bairro: eData.escola_bairro,
+          cep: eData.escola_cep,
+          latitude: eData.escola_latitude,
+          longitude: eData.escola_longitude,
+        };
+      }
+    }
 
     return res.json({
       success: true,
       data: result.rows,
-      escola: escolaInfo,
+      escola,
     });
-  } catch (error) {
-    console.error("Erro ao buscar alunos para mapear:", error);
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({
       success: false,
-      message: "Erro interno ao buscar alunos para mapear.",
+      message: "Erro ao buscar alunos no mapa.",
     });
   }
-});
+});F
 
 // Excluir rota
 app.delete("/api/rotas-simples/:id", async (req, res) => {
@@ -5512,34 +5492,46 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
         defArray = deficiencia;
       }
     } catch {
-      // permanece como estava antes
+      // mantém defArray como está
     }
 
-    const newIdMatricula = id_matricula !== undefined ? id_matricula : oldData.id_matricula;
+    const newIdMatricula =
+      id_matricula !== undefined ? id_matricula : oldData.id_matricula;
     const newEscolaId = escola_id !== undefined ? escola_id : oldData.escola_id;
     const newAno = ano !== undefined ? ano : oldData.ano;
-    const newModalidade = modalidade !== undefined ? modalidade : oldData.modalidade;
-    const newFormatoLetivo = formato_letivo !== undefined ? formato_letivo : oldData.formato_letivo;
+    const newModalidade =
+      modalidade !== undefined ? modalidade : oldData.modalidade;
+    const newFormatoLetivo =
+      formato_letivo !== undefined ? formato_letivo : oldData.formato_letivo;
     const newTurma = turma !== undefined ? turma : oldData.turma;
-    const newPessoaNome = pessoa_nome !== undefined ? pessoa_nome : oldData.pessoa_nome;
+    const newPessoaNome =
+      pessoa_nome !== undefined ? pessoa_nome : oldData.pessoa_nome;
     const newCpf = cpf !== undefined ? cpf : oldData.cpf;
-    const newTransp = transporte_escolar_poder_publico !== undefined
-      ? transporte_escolar_poder_publico
-      : oldData.transporte_escolar_poder_publico;
+    const newTransp =
+      transporte_escolar_poder_publico !== undefined
+        ? transporte_escolar_poder_publico
+        : oldData.transporte_escolar_poder_publico;
     const newCep = cep !== undefined ? cep : oldData.cep;
     const newBairro = bairro !== undefined ? bairro : oldData.bairro;
-    const newNumEndereco = numero_pessoa_endereco !== undefined
-      ? numero_pessoa_endereco
-      : oldData.numero_pessoa_endereco;
-    const newFiliacao1 = filiacao_1 !== undefined ? filiacao_1 : oldData.filiacao_1;
-    const newTelefone = numero_telefone !== undefined
-      ? numero_telefone
-      : oldData.numero_telefone;
-    const newFiliacao2 = filiacao_2 !== undefined ? filiacao_2 : oldData.filiacao_2;
-    const newResponsavel = responsavel !== undefined ? responsavel : oldData.responsavel;
+    const newNumEndereco =
+      numero_pessoa_endereco !== undefined
+        ? numero_pessoa_endereco
+        : oldData.numero_pessoa_endereco;
+    const newFiliacao1 =
+      filiacao_1 !== undefined ? filiacao_1 : oldData.filiacao_1;
+    const newTelefone =
+      numero_telefone !== undefined
+        ? numero_telefone
+        : oldData.numero_telefone;
+    const newFiliacao2 =
+      filiacao_2 !== undefined ? filiacao_2 : oldData.filiacao_2;
+    const newResponsavel =
+      responsavel !== undefined ? responsavel : oldData.responsavel;
     const newDeficiencia = defArray !== null ? defArray : oldData.deficiencia;
-    const newLatitude = latitude !== undefined ? latitude : oldData.latitude;
-    const newLongitude = longitude !== undefined ? longitude : oldData.longitude;
+    const newLatitude =
+      latitude !== undefined ? latitude : oldData.latitude;
+    const newLongitude =
+      longitude !== undefined ? longitude : oldData.longitude;
 
     const query = `
       UPDATE alunos_ativos
