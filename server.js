@@ -5568,6 +5568,253 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
+// =============================================
+// ENDPOINT: LISTAR ALUNOS QUE USAM TRANSPORTE
+// =============================================
+app.get("/api/alunos-transporte", async (req, res) => {
+  try {
+    const { escola_id, busca } = req.query;
+
+    // Vamos filtrar apenas alunos que têm transporte_escolar_poder_publico = 'Municipal' ou 'Estadual'
+    let whereClauses = [
+      "LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')",
+    ];
+    let values = [];
+    let index = 1;
+
+    if (escola_id) {
+      whereClauses.push(`escola_id = $${index}`);
+      values.push(escola_id);
+      index++;
+    }
+    if (busca) {
+      whereClauses.push(`
+        (
+          CAST(id_matricula AS TEXT) ILIKE $${index}
+          OR pessoa_nome ILIKE $${index}
+          OR cpf ILIKE $${index}
+        )
+      `);
+      values.push(`%${busca}%`);
+      index++;
+    }
+
+    const whereString = whereClauses.length
+      ? "WHERE " + whereClauses.join(" AND ")
+      : "";
+
+    const query = `
+      SELECT
+        a.id,
+        a.id_matricula,
+        a.escola_id,
+        e.nome AS escola_nome,
+        a.pessoa_nome,
+        a.cpf,
+        a.cep,
+        a.bairro,
+        a.numero_pessoa_endereco,
+        a.transporte_escolar_poder_publico,
+        COALESCE(a.ponto_atribuido, '') AS ponto_atribuido
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      ${whereString}
+      ORDER BY a.id DESC
+    `;
+    const result = await pool.query(query, values);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Erro ao listar alunos que usam transporte:", err);
+    res.status(500).json({
+      success: false,
+      message: "Erro interno ao listar alunos que usam transporte.",
+    });
+  }
+});
+
+// =============================================
+// ENDPOINT: ATRIBUIR PONTOS DE PARADA
+// =============================================
+app.post("/api/atribuir-pontos", async (req, res) => {
+  try {
+    // Recebemos a escola_id para filtrar os alunos e as rotas/pontos relacionados
+    const { escola_id } = req.body;
+    if (!escola_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Parâmetro escola_id é obrigatório.",
+      });
+    }
+
+    // Verificar se a escola existe
+    const checkEscola = await pool.query(
+      "SELECT id FROM escolas WHERE id = $1 LIMIT 1",
+      [escola_id]
+    );
+    if (checkEscola.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Escola não encontrada.",
+      });
+    }
+
+    // 1) Buscar rotas que atendam essa escola (tabela rotas_escolas)
+    const rotasQuery = `
+      SELECT rota_id
+      FROM rotas_escolas
+      WHERE escola_id = $1
+    `;
+    const rotasResult = await pool.query(rotasQuery, [escola_id]);
+    if (rotasResult.rows.length === 0) {
+      return res.json({
+        success: true,
+        message:
+          "Nenhuma rota associada a esta escola. Alunos não serão atribuídos.",
+      });
+    }
+    const rotaIds = rotasResult.rows.map((r) => r.rota_id);
+
+    // 2) Buscar todos os pontos associados a essas rotas (tabela rotas_pontos)
+    const pontosQuery = `
+      SELECT p.id, p.nome_ponto, p.latitude, p.longitude, rp.rota_id
+      FROM rotas_pontos rp
+      JOIN pontos p ON p.id = rp.ponto_id
+      WHERE rp.rota_id = ANY($1)
+    `;
+    const pontosResult = await pool.query(pontosQuery, [rotaIds]);
+    const listaPontos = pontosResult.rows; // Cada objeto: { id, nome_ponto, latitude, longitude, rota_id }
+
+    if (listaPontos.length === 0) {
+      return res.json({
+        success: true,
+        message:
+          "Nenhum ponto de parada associado às rotas desta escola. Alunos não serão atribuídos.",
+      });
+    }
+
+    // 3) Buscar alunos que usam transporte, para a escola_id
+    //    e que ainda não tenham um ponto_atribuido OU vamos recalcular sempre?
+    //    Aqui iremos recalcular sempre.
+    const alunosQuery = `
+      SELECT
+        id,
+        id_matricula,
+        pessoa_nome,
+        cpf,
+        cep,
+        numero_pessoa_endereco,
+        bairro,
+        transporte_escolar_poder_publico
+      FROM alunos_ativos
+      WHERE escola_id = $1
+        AND LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
+    `;
+    const alunosResult = await pool.query(alunosQuery, [escola_id]);
+    const alunos = alunosResult.rows;
+    if (alunos.length === 0) {
+      return res.json({
+        success: true,
+        message:
+          "Nenhum aluno usando transporte encontrado para esta escola.",
+      });
+    }
+
+    // 4) Precisamos converter o endereço do aluno (cep + bairro + número) em coordenadas
+    //    e achar o ponto de parada mais próximo que pertença a ALGUMA das rotas da escola.
+    //    Isso requer um geocoder. Mas nessa demo, podemos simular.
+
+    // Obs: Se for preciso usar API real do Google, faríamos a request e depois calculamos a distância.
+    //      Aqui, deixaremos um pseudo-cálculo de distâncias ou assumimos que as colunas de lat/lng do aluno
+    //      já foram preenchidas em "alunos_ativos" e iremos só calcular a distância.
+
+    // 4a) Vamos supor que já existe latitude_aluno e longitude_aluno
+    //     (você pode ter uma trigger para preencher. Mas aqui faremos suposição.)
+    //     Se não existirem, não atribuímos.
+    // 4b) Calcular distância "Haversine" ou algo simples e achar menor.
+
+    // Função de distância haversine:
+    function haversineDist(lat1, lon1, lat2, lon2) {
+      const R = 6371; // raio da Terra em km
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const d = R * c;
+      return d; // retorna em km
+    }
+
+    // Precisamos de colunas lat_aluno, lng_aluno. Se não existem, iremos ignorar o aluno.
+    // Se existirem, iremos achar o ponto mais próximo do array listaPontos
+    // MAS SOMENTE ponto cujo rota_id está em rotaIds (i.e. rota para a MESMA escola).
+    // Nota: se a tabela "alunos_ativos" não tiver lat/lng, a gente teria que geocodificar via CEP (externo).
+    //       Exemplo de uso: fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`) + geocoder.
+    //       Aqui, iremos demonstrar a lógica.
+
+    let qtdAtribuidos = 0;
+    for (const aluno of alunos) {
+      // Se a tabela não tem colunas lat_aluno/lng_aluno, pule ou faça a geocodificação
+      // Para ficar no exemplo, supomos que existam colunas lat_aluno e lng_aluno
+      const buscaCoords = await pool.query(
+        `SELECT lat_aluno, lng_aluno FROM alunos_ativos WHERE id = $1`,
+        [aluno.id]
+      );
+      if (buscaCoords.rows.length === 0) {
+        continue;
+      }
+      const { lat_aluno, lng_aluno } = buscaCoords.rows[0];
+      if (lat_aluno == null || lng_aluno == null) {
+        // Se não tem coords, não atribui
+        continue;
+      }
+
+      let menorDist = Infinity;
+      let pontoEscolhido = null;
+
+      for (const p of listaPontos) {
+        // p.latitude, p.longitude
+        const dist = haversineDist(
+          parseFloat(lat_aluno),
+          parseFloat(lng_aluno),
+          parseFloat(p.latitude),
+          parseFloat(p.longitude)
+        );
+        if (dist < menorDist) {
+          menorDist = dist;
+          pontoEscolhido = p;
+        }
+      }
+
+      if (pontoEscolhido) {
+        // Salvar esse "pontoEscolhido" no aluno
+        await pool.query(
+          "UPDATE alunos_ativos SET ponto_atribuido = $1 WHERE id = $2",
+          [pontoEscolhido.nome_ponto, aluno.id]
+        );
+        qtdAtribuidos++;
+      }
+    }
+
+    // Retornar quantos foram atribuídos
+    return res.json({
+      success: true,
+      message: `Pontos atribuídos com sucesso para ${qtdAtribuidos} aluno(s).`,
+    });
+  } catch (error) {
+    console.error("Erro ao atribuir pontos:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor ao atribuir pontos.",
+    });
+  }
+});
+
+
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
 // --------------------------------------------------------------------------------
