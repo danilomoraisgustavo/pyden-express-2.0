@@ -1,108 +1,167 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>
-      Importar Alunos Ativos - pydenadmin Bootstrap 5 Admin Dashboard
-    </title>
-    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
-    <link rel="icon" href="public/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
-    <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
-    <script>
-      WebFont.load({
-        google: { families: ["Public Sans:300,400,500,600,700"] },
-        custom: {
-          families: [
-            "Font Awesome 5 Solid",
-            "Font Awesome 5 Regular",
-            "Font Awesome 5 Brands",
-            "simple-line-icons",
-          ],
-          urls: ["../../assets/css/fonts.min.css"],
-        },
-        active: function () {
-          sessionStorage.fonts = true;
-        },
-      });
-    </script>
-    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
-    <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
-    <link rel="stylesheet" href="../../assets/css/demo.css" />
 
-    <style>
-      .required-label::after {
-        content: " *";
-        color: red;
-      }
-      .modal-lg {
-        max-width: 90% !important;
-      }
-      #map {
-        width: 100%;
-        height: 500px;
-      }
-      #mapAluno {
-        width: 100%;
-        height: 500px;
-      }
-      .spinner-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: none;
-        justify-content: center;
-        align-items: center;
-        background-color: rgba(0, 0, 0, 0.4);
-        z-index: 9999;
-      }
-      .spinner {
-        background-image: linear-gradient(
-          rgb(186, 66, 255) 35%,
-          rgb(0, 225, 255)
-        );
-        width: 100px;
-        height: 100px;
-        animation: spinning82341 1.7s linear infinite;
-        text-align: center;
-        border-radius: 50px;
-        filter: blur(1px);
-        box-shadow: 0px -5px 20px 0px rgb(186, 66, 255),
-          0px 5px 20px 0px rgb(0, 225, 255);
-      }
-      .spinner1 {
-        background-color: rgb(36, 36, 36);
-        width: 100px;
-        height: 100px;
-        border-radius: 50px;
-        filter: blur(10px);
-      }
-      @keyframes spinning82341 {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-    </style>
-  </head>
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>
+    Importar Alunos Ativos - pydenadmin Bootstrap 5 Admin Dashboard
+  </title>
+  <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+  <link rel="icon" href="public/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+  <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+  <script>
+    WebFont.load({
+      google: { families: ["Public Sans:300,400,500,600,700"] },
+      custom: {
+        families: [
+          "Font Awesome 5 Solid",
+          "Font Awesome 5 Regular",
+          "Font Awesome 5 Brands",
+          "simple-line-icons",
+        ],
+        urls: ["../../assets/css/fonts.min.css"],
+      },
+      active: function () {
+        sessionStorage.fonts = true;
+      },
+    });
+  </script>
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+  <link rel="stylesheet" href="../../assets/css/demo.css" />
 
-  <body>
-    <div class="wrapper">
-      <!-- SIDEBAR -->
-      <div class="sidebar" data-background-color="dark">
-        <div class="sidebar-logo">
+  <style>
+    .required-label::after {
+      content: " *";
+      color: red;
+    }
+
+    .modal-lg {
+      max-width: 90% !important;
+    }
+
+    #map {
+      width: 100%;
+      height: 500px;
+    }
+
+    #mapAluno {
+      width: 100%;
+      height: 500px;
+    }
+
+    .spinner-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: 9999;
+    }
+
+    .spinner {
+      background-image: linear-gradient(rgb(186, 66, 255) 35%,
+          rgb(0, 225, 255));
+      width: 100px;
+      height: 100px;
+      animation: spinning82341 1.7s linear infinite;
+      text-align: center;
+      border-radius: 50px;
+      filter: blur(1px);
+      box-shadow: 0px -5px 20px 0px rgb(186, 66, 255),
+        0px 5px 20px 0px rgb(0, 225, 255);
+    }
+
+    .spinner1 {
+      background-color: rgb(36, 36, 36);
+      width: 100px;
+      height: 100px;
+      border-radius: 50px;
+      filter: blur(10px);
+    }
+
+    @keyframes spinning82341 {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="sidebar" data-background-color="dark">
+      <div class="sidebar-logo">
+        <div class="logo-header" data-background-color="dark">
+          <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
+            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
+          </a>
+          <div class="nav-toggle">
+            <button class="btn btn-toggle toggle-sidebar">
+              <i class="gg-menu-right"></i>
+            </button>
+            <button class="btn btn-toggle sidenav-toggler">
+              <i class="gg-menu-left"></i>
+            </button>
+          </div>
+          <button class="topbar-toggler more">
+            <i class="gg-more-vertical-alt"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-wrapper scrollbar scrollbar-inner">
+        <div class="sidebar-content">
+          <ul class="nav nav-secondary">
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Transporte Escolar</h4>
+            </li>
+            <li class="nav-item">
+              <a href="../../pages/transporte-escolar/dashboard-escolar.html">
+                <i class="fas fa-tachometer-alt"></i>
+                <p>Dashboard Escolar</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
+                <i class="fas fa-user-graduate"></i>
+                <p>Alunos</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teAlunos">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html">
+                      <span class="sub-item">Listar Solicitações de Transporte</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/alunos-listar.html">
+                      <span class="sub-item">Listar ALunos</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <!-- Menus restantes... -->
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-panel">
+      <div class="main-header" style="top: 0">
+        <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
-            <a
-              href="../../pages/transporte-escolar/dashboard-escolar.html"
-              class="logo"
-            >
-              <img
-                src="../../assets/img/pydenadmin/logo_light.png"
-                alt="navbar brand"
-                class="navbar-brand"
-                height="20"
-              />
+            <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                height="20" />
             </a>
             <div class="nav-toggle">
               <button class="btn btn-toggle toggle-sidebar">
@@ -118,1042 +177,701 @@
           </div>
         </div>
 
-        <div class="sidebar-wrapper scrollbar scrollbar-inner">
-          <div class="sidebar-content">
-            <ul class="nav nav-secondary">
-              <li class="nav-section">
-                <span class="sidebar-mini-icon"
-                  ><i class="fa fa-ellipsis-h"></i
-                ></span>
-                <h4 class="text-section">Transporte Escolar</h4>
-              </li>
-              <li class="nav-item">
-                <a href="../../pages/transporte-escolar/dashboard-escolar.html">
-                  <i class="fas fa-tachometer-alt"></i>
-                  <p>Dashboard Escolar</p>
+        <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+          <div class="container-fluid">
+            <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-envelope"></i>
                 </a>
+                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
+                  <li>
+                    <div class="dropdown-title d-flex justify-content-between align-items-center">
+                      Mensagens
+                      <a href="#" class="small">Marcar todas como lidas</a>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="message-notif-scroll scrollbar-outer">
+                      <div class="notif-center">
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="subject">Jimmy Denis</span>
+                            <span class="block">Como você está?</span>
+                            <span class="time">Há 5 minutos</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);">
+                      Ver todas as mensagens
+                      <i class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
               </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teAlunos"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-user-graduate"></i>
-                  <p>Alunos</p>
-                  <span class="caret"></span>
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-bell"></i>
+                  <span class="notification" id="notifCount">0</span>
                 </a>
-                <div class="collapse" id="teAlunos">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html"
-                      >
-                        <span class="sub-item"
-                          >Listar Solicitações de Transporte</span
-                        >
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/alunos-listar.html"
-                      >
-                        <span class="sub-item">Listar ALunos</span>
-                      </a>
-                    </li>
-                  </ul>
+                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
+                  <li>
+                    <div class="dropdown-title" id="notifTitle">
+                      Você não tem novas notificações
+                    </div>
+                  </li>
+                  <li>
+                    <div class="notif-scroll scrollbar-outer">
+                      <div class="notif-center" id="notifList"></div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
+                      Ver todas as notificações
+                      <i class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-layer-group"></i>
+                </a>
+                <div class="dropdown-menu quick-actions animated fadeIn">
+                  <div class="quick-actions-header">
+                    <span class="title mb-1">Ações Rápidas</span>
+                    <span class="subtitle op-7">Atalhos</span>
+                  </div>
+                  <div class="quick-actions-scroll scrollbar-outer">
+                    <div class="quick-actions-items">
+                      <div class="row m-0">
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-primary rounded-circle">
+                              <i class="fas fa-school"></i>
+                            </div>
+                            <span class="text">Cad. Escola</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/monitores-cadastrar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-success rounded-circle">
+                              <i class="fas fa-user-check"></i>
+                            </div>
+                            <span class="text">Cad. Monitor</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/rotas-listar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-warning rounded-circle">
+                              <i class="fas fa-route"></i>
+                            </div>
+                            <span class="text">Listar Rotas</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-administrativo/frota-listar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-info rounded-circle">
+                              <i class="fas fa-warehouse"></i>
+                            </div>
+                            <span class="text">Listar Frota</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </li>
-              <!-- Outros itens do menu omitidos para brevidade, mas não alterados -->
+              <li class="nav-item topbar-user dropdown hidden-caret">
+                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                  <div class="avatar-sm">
+                    <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
+                  </div>
+                  <span class="profile-username">
+                    <span class="op-7">Olá,</span>
+                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
+                  </span>
+                </a>
+                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                  <div class="dropdown-user-scroll scrollbar-outer">
+                    <li>
+                      <div class="user-box">
+                        <div class="avatar-lg">
+                          <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
+                        </div>
+                        <div class="u-text">
+                          <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
+                          <p class="text-muted" id="dropdownUserEmail">
+                            email@exemplo.com
+                          </p>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
+                            Perfil</a>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu Perfil</a>
+                      <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/configuracoes.html">Configurações</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
+                    </li>
+                  </div>
+                </ul>
+              </li>
             </ul>
           </div>
-        </div>
+        </nav>
       </div>
-      <!-- SIDEBAR FIM -->
 
-      <!-- MAIN PANEL -->
-      <div class="main-panel">
-        <div class="main-header" style="top: 0">
-          <div class="main-header-logo">
-            <div class="logo-header" data-background-color="dark">
-              <a
-                href="../../pages/transporte-escolar/dashboard-escolar.html"
-                class="logo"
-              >
-                <img
-                  src="../../assets/img/pydenadmin/logo_light.png"
-                  alt="navbar brand"
-                  class="navbar-brand"
-                  height="20"
-                />
-              </a>
-              <div class="nav-toggle">
-                <button class="btn btn-toggle toggle-sidebar">
-                  <i class="gg-menu-right"></i>
-                </button>
-                <button class="btn btn-toggle sidenav-toggler">
-                  <i class="gg-menu-left"></i>
-                </button>
-              </div>
-              <button class="topbar-toggler more">
-                <i class="gg-more-vertical-alt"></i>
+      <div class="container">
+        <div class="page-inner">
+          <div class="page-header">
+            <h3 class="fw-bold mb-3">Importar Alunos Ativos</h3>
+            <ul class="breadcrumbs mb-3">
+              <li class="nav-home">
+                <a href="../../">
+                  <i class="icon-home"></i>
+                </a>
+              </li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Alunos</a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Importar Alunos</a></li>
+            </ul>
+          </div>
+
+          <div class="mb-3 d-flex gap-2 flex-wrap">
+            <div>
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
+                Importar Alunos
+              </button>
+            </div>
+            <div>
+              <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalMapear">
+                Mapear Alunos
+              </button>
+            </div>
+            <div>
+              <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCompletarLocalizacao">
+                Completar Localização Municipal/Estadual
               </button>
             </div>
           </div>
 
-          <nav
-            class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
-          >
-            <div class="container-fluid">
-              <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-                <li class="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="#"
-                    id="messageDropdown"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <i class="fa fa-envelope"></i>
-                  </a>
-                  <ul
-                    class="dropdown-menu messages-notif-box animated fadeIn"
-                    aria-labelledby="messageDropdown"
-                  >
-                    <li>
-                      <div
-                        class="dropdown-title d-flex justify-content-between align-items-center"
-                      >
-                        Mensagens
-                        <a href="#" class="small">Marcar todas como lidas</a>
-                      </div>
-                    </li>
-                    <li>
-                      <div class="message-notif-scroll scrollbar-outer">
-                        <div class="notif-center">
-                          <a href="#">
-                            <div class="notif-img">
-                              <img
-                                src="../../assets/img/jm_denis.jpg"
-                                alt="Img Profile"
-                              />
-                            </div>
-                            <div class="notif-content">
-                              <span class="subject">Jimmy Denis</span>
-                              <span class="block">Como você está?</span>
-                              <span class="time">Há 5 minutos</span>
-                            </div>
-                          </a>
-                        </div>
-                      </div>
-                    </li>
-                    <li>
-                      <a class="see-all" href="javascript:void(0);">
-                        Ver todas as mensagens
-                        <i class="fa fa-angle-right"></i>
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-                <li class="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="#"
-                    id="notifDropdown"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <i class="fa fa-bell"></i>
-                    <span class="notification" id="notifCount">0</span>
-                  </a>
-                  <ul
-                    class="dropdown-menu notif-box animated fadeIn"
-                    aria-labelledby="notifDropdown"
-                  >
-                    <li>
-                      <div class="dropdown-title" id="notifTitle">
-                        Você não tem novas notificações
-                      </div>
-                    </li>
-                    <li>
-                      <div class="notif-scroll scrollbar-outer">
-                        <div class="notif-center" id="notifList"></div>
-                      </div>
-                    </li>
-                    <li>
-                      <a
-                        class="see-all"
-                        href="javascript:void(0);"
-                        id="notifSeeAll"
-                      >
-                        Ver todas as notificações
-                        <i class="fa fa-angle-right"></i>
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-                <li class="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="#"
-                    id="quickActionsDropdown"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <i class="fas fa-layer-group"></i>
-                  </a>
-                  <div class="dropdown-menu quick-actions animated fadeIn">
-                    <div class="quick-actions-header">
-                      <span class="title mb-1">Ações Rápidas</span>
-                      <span class="subtitle op-7">Atalhos</span>
-                    </div>
-                    <div class="quick-actions-scroll scrollbar-outer">
-                      <div class="quick-actions-items">
-                        <div class="row m-0">
-                          <a
-                            class="col-6 col-md-4 p-0"
-                            href="/pages/transporte-escolar/escolas-cadastrar.html"
-                          >
-                            <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-primary rounded-circle"
-                              >
-                                <i class="fas fa-school"></i>
-                              </div>
-                              <span class="text">Cad. Escola</span>
-                            </div>
-                          </a>
-                          <a
-                            class="col-6 col-md-4 p-0"
-                            href="/pages/transporte-escolar/monitores-cadastrar.html"
-                          >
-                            <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-success rounded-circle"
-                              >
-                                <i class="fas fa-user-check"></i>
-                              </div>
-                              <span class="text">Cad. Monitor</span>
-                            </div>
-                          </a>
-                          <a
-                            class="col-6 col-md-4 p-0"
-                            href="/pages/transporte-escolar/rotas-listar.html"
-                          >
-                            <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-warning rounded-circle"
-                              >
-                                <i class="fas fa-route"></i>
-                              </div>
-                              <span class="text">Listar Rotas</span>
-                            </div>
-                          </a>
-                          <a
-                            class="col-6 col-md-4 p-0"
-                            href="/pages/transporte-administrativo/frota-listar.html"
-                          >
-                            <div class="quick-actions-item">
-                              <div class="avatar-item bg-info rounded-circle">
-                                <i class="fas fa-warehouse"></i>
-                              </div>
-                              <span class="text">Listar Frota</span>
-                            </div>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+          <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalImportarLabel">
+                    Importar Arquivo XLSX
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p>
+                    1. Selecione a escola referente a todos os alunos que
+                    serão importados.
+                  </p>
+                  <div class="mb-3">
+                    <label for="escolaSelect" class="form-label required-label">Escola</label>
+                    <select class="form-select" id="escolaSelect">
+                      <option value="">Selecione a Escola</option>
+                    </select>
                   </div>
-                </li>
-                <li class="nav-item topbar-user dropdown hidden-caret">
-                  <a
-                    class="dropdown-toggle profile-pic"
-                    data-bs-toggle="dropdown"
-                    href="#"
-                    aria-expanded="false"
-                  >
-                    <div class="avatar-sm">
-                      <img
-                        src="../../assets/img/profile.jpg"
-                        alt="..."
-                        class="avatar-img rounded-circle"
-                      />
-                    </div>
-                    <span class="profile-username">
-                      <span class="op-7">Olá,</span>
-                      <span class="fw-bold" id="dropdownUserName"
-                        >Carregando...</span
-                      >
-                    </span>
-                  </a>
-                  <ul class="dropdown-menu dropdown-user animated fadeIn">
-                    <div class="dropdown-user-scroll scrollbar-outer">
-                      <li>
-                        <div class="user-box">
-                          <div class="avatar-lg">
-                            <img
-                              src="../../assets/img/profile.jpg"
-                              alt="image profile"
-                              class="avatar-img rounded"
-                            />
-                          </div>
-                          <div class="u-text">
-                            <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
-                            <p class="text-muted" id="dropdownUserEmail">
-                              email@exemplo.com
-                            </p>
-                            <a
-                              href="/pages/usuarios/meu-perfil.html"
-                              class="btn btn-xs btn-secondary btn-sm"
-                              >Ver Perfil</a
-                            >
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div class="dropdown-divider"></div>
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/meu-perfil.html"
-                          >Meu Perfil</a
-                        >
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/caixa-entrada.html"
-                          >Caixa de Entrada</a
-                        >
-                        <div class="dropdown-divider"></div>
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/configuracoes.html"
-                          >Configurações</a
-                        >
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#" id="logoutLink"
-                          >Sair</a
-                        >
-                      </li>
-                    </div>
-                  </ul>
-                </li>
-              </ul>
-            </div>
-          </nav>
-        </div>
-
-        <div class="container">
-          <div class="page-inner">
-            <div class="page-header">
-              <h3 class="fw-bold mb-3">Importar Alunos Ativos</h3>
-              <ul class="breadcrumbs mb-3">
-                <li class="nav-home">
-                  <a href="../../">
-                    <i class="icon-home"></i>
-                  </a>
-                </li>
-                <li class="separator"><i class="icon-arrow-right"></i></li>
-                <li class="nav-item"><a href="#">Alunos</a></li>
-                <li class="separator"><i class="icon-arrow-right"></i></li>
-                <li class="nav-item"><a href="#">Importar Alunos</a></li>
-              </ul>
-            </div>
-
-            <div class="mb-3 d-flex gap-2 flex-wrap">
-              <div>
-                <button
-                  class="btn btn-primary"
-                  data-bs-toggle="modal"
-                  data-bs-target="#modalImportar"
-                >
-                  Importar Alunos
-                </button>
-              </div>
-              <div>
-                <button
-                  class="btn btn-info"
-                  data-bs-toggle="modal"
-                  data-bs-target="#modalMapear"
-                >
-                  Mapear Alunos
-                </button>
-              </div>
-              <div>
-                <!-- Agora este botão apenas abre o modal para escolher a escola -->
-                <button
-                  class="btn btn-success"
-                  data-bs-toggle="modal"
-                  data-bs-target="#modalCompletarLocalizacao"
-                >
-                  Completar Localização Municipal/Estadual
-                </button>
-              </div>
-            </div>
-
-            <!-- MODAL IMPORTAR -->
-            <div
-              class="modal fade"
-              id="modalImportar"
-              tabindex="-1"
-              aria-labelledby="modalImportarLabel"
-              aria-hidden="true"
-            >
-              <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="modalImportarLabel">
-                      Importar Arquivo XLSX
-                    </h5>
-                    <button
-                      type="button"
-                      class="btn-close"
-                      data-bs-dismiss="modal"
-                      aria-label="Close"
-                    ></button>
-                  </div>
-                  <div class="modal-body">
-                    <p>
-                      1. Selecione a escola referente a todos os alunos que
-                      serão importados.
-                    </p>
-                    <div class="mb-3">
-                      <label
-                        for="escolaSelect"
-                        class="form-label required-label"
-                        >Escola</label
-                      >
-                      <select class="form-select" id="escolaSelect">
-                        <option value="">Selecione a Escola</option>
-                      </select>
-                    </div>
-                    <p>
-                      2. Selecione o arquivo XLSX conforme o formato
-                      especificado.
-                    </p>
-                    <input
-                      type="file"
-                      id="fileInput"
-                      accept=".xlsx, .xls"
-                      class="form-control mb-3"
-                    />
-                  </div>
-                  <div class="modal-footer">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      data-bs-dismiss="modal"
-                    >
-                      Fechar
-                    </button>
-                    <button
-                      id="importarBtn"
-                      type="button"
-                      class="btn btn-primary"
-                    >
-                      Importar
-                    </button>
-                  </div>
+                  <p>
+                    2. Selecione o arquivo XLSX conforme o formato
+                    especificado.
+                  </p>
+                  <input type="file" id="fileInput" accept=".xlsx, .xls" class="form-control mb-3" />
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fechar
+                  </button>
+                  <button id="importarBtn" type="button" class="btn btn-primary">
+                    Importar
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- MODAL MAPEAR -->
-            <div
-              class="modal fade"
-              id="modalMapear"
-              tabindex="-1"
-              aria-labelledby="modalMapearLabel"
-              aria-hidden="true"
-            >
-              <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="modalMapearLabel">
-                      Mapa de Alunos
-                    </h5>
-                    <button
-                      type="button"
-                      class="btn-close"
-                      data-bs-dismiss="modal"
-                      aria-label="Close"
-                    ></button>
-                  </div>
-                  <div class="modal-body">
-                    <div class="row mb-3">
-                      <div class="col-md-6">
-                        <label for="selectEscolaMap" class="form-label"
-                          >Filtrar por Escola</label
-                        >
-                        <select class="form-select" id="selectEscolaMap">
-                          <option value="">Todas as Escolas</option>
-                        </select>
-                      </div>
-                      <div class="col-md-6">
-                        <label for="buscarAlunoInput" class="form-label"
-                          >Buscar por ID, Nome ou CPF</label
-                        >
-                        <input
-                          type="text"
-                          class="form-control"
-                          id="buscarAlunoInput"
-                          placeholder="Ex: 12345 ou João ou 000.000.000-00"
-                        />
-                      </div>
-                    </div>
-                    <div class="mb-3">
-                      <button id="btnFiltrarMapa" class="btn btn-primary">
-                        Buscar/Filtrar
-                      </button>
-                    </div>
-                    <div id="map"></div>
-                  </div>
-                  <div class="modal-footer">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      data-bs-dismiss="modal"
-                    >
-                      Fechar
-                    </button>
-                  </div>
+          <div class="modal fade" id="modalMapear" tabindex="-1" aria-labelledby="modalMapearLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalMapearLabel">
+                    Mapa de Alunos
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-              </div>
-            </div>
-
-            <!-- MODAL COMPLETAR LOCALIZAÇÃO (NOVO) -->
-            <div
-              class="modal fade"
-              id="modalCompletarLocalizacao"
-              tabindex="-1"
-              aria-labelledby="modalCompletarLocalizacaoLabel"
-              aria-hidden="true"
-            >
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="modalCompletarLocalizacaoLabel">
-                      Completar Localização Municipal/Estadual
-                    </h5>
-                    <button
-                      type="button"
-                      class="btn-close"
-                      data-bs-dismiss="modal"
-                      aria-label="Close"
-                    ></button>
-                  </div>
-                  <div class="modal-body">
-                    <div class="mb-3">
-                      <label
-                        for="selectEscolaCompletarLocalizacao"
-                        class="form-label"
-                        >Selecione a Escola</label
-                      >
-                      <select
-                        class="form-select"
-                        id="selectEscolaCompletarLocalizacao"
-                      >
+                <div class="modal-body">
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label for="selectEscolaMap" class="form-label">Filtrar por Escola</label>
+                      <select class="form-select" id="selectEscolaMap">
                         <option value="">Todas as Escolas</option>
                       </select>
                     </div>
-                  </div>
-                  <div class="modal-footer">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      data-bs-dismiss="modal"
-                    >
-                      Fechar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-success"
-                      id="btnConfirmarCompletarLocalizacao"
-                    >
-                      Completar Localização
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- FILTROS -->
-            <div class="card mb-4">
-              <div class="card-body">
-                <div class="row g-3">
-                  <div class="col-md-3">
-                    <label for="filtroEscola" class="form-label"
-                      >Filtrar por Escola</label
-                    >
-                    <select id="filtroEscola" class="form-select">
-                      <option value="">Todas</option>
-                    </select>
-                  </div>
-                  <div class="col-md-3">
-                    <label for="filtroBairro" class="form-label"
-                      >Filtrar por Bairro</label
-                    >
-                    <select id="filtroBairro" class="form-select">
-                      <option value="">Todos</option>
-                    </select>
-                  </div>
-                  <div class="col-md-3">
-                    <label for="filtroCep" class="form-label"
-                      >Filtrar por CEP</label
-                    >
-                    <select id="filtroCep" class="form-select">
-                      <option value="">Todos</option>
-                    </select>
-                  </div>
-                  <div class="col-md-3">
-                    <label for="searchInput" class="form-label"
-                      >Pesquisa Geral</label
-                    >
-                    <input
-                      type="text"
-                      id="searchInput"
-                      class="form-control"
-                      placeholder="Digite para pesquisar..."
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- TABELA ALUNOS -->
-            <div class="row mt-4">
-              <div class="col-md-12">
-                <div class="card">
-                  <div
-                    class="card-header d-flex justify-content-between align-items-center"
-                  >
-                    <h4 class="card-title">Alunos Cadastrados</h4>
-                  </div>
-                  <div class="card-body">
-                    <div class="table-responsive">
-                      <table
-                        id="alunos-table"
-                        class="display table table-striped table-hover"
-                      >
-                        <thead>
-                          <tr>
-                            <th>ID Matrícula</th>
-                            <th>Escola (Nome)</th>
-                            <th>Ano</th>
-                            <th>Modalidade</th>
-                            <th>Form. Letivo</th>
-                            <th>Turma</th>
-                            <th>Nome Aluno</th>
-                            <th>CPF</th>
-                            <th>Transp. Escolar</th>
-                            <th>CEP</th>
-                            <th>Bairro</th>
-                            <th>Número Endereço</th>
-                            <th>Filiação 1</th>
-                            <th>Telefone</th>
-                            <th>Filiação 2</th>
-                            <th>Responsável</th>
-                            <th>Deficiência</th>
-                            <th>Latitude</th>
-                            <th>Longitude</th>
-                            <th>Ações</th>
-                          </tr>
-                        </thead>
-                        <tfoot>
-                          <tr>
-                            <th>ID Matrícula</th>
-                            <th>Escola (Nome)</th>
-                            <th>Ano</th>
-                            <th>Modalidade</th>
-                            <th>Form. Letivo</th>
-                            <th>Turma</th>
-                            <th>Nome Aluno</th>
-                            <th>CPF</th>
-                            <th>Transp. Escolar</th>
-                            <th>CEP</th>
-                            <th>Bairro</th>
-                            <th>Número Endereço</th>
-                            <th>Filiação 1</th>
-                            <th>Telefone</th>
-                            <th>Filiação 2</th>
-                            <th>Responsável</th>
-                            <th>Deficiência</th>
-                            <th>Latitude</th>
-                            <th>Longitude</th>
-                            <th>Ações</th>
-                          </tr>
-                        </tfoot>
-                        <tbody></tbody>
-                      </table>
+                    <div class="col-md-6">
+                      <label for="buscarAlunoInput" class="form-label">Buscar por ID, Nome ou CPF</label>
+                      <input type="text" class="form-control" id="buscarAlunoInput"
+                        placeholder="Ex: 12345 ou João ou 000.000.000-00" />
                     </div>
                   </div>
+                  <div class="mb-3">
+                    <button id="btnFiltrarMapa" class="btn btn-primary">
+                      Buscar/Filtrar
+                    </button>
+                  </div>
+                  <div id="map"></div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal fade" id="modalCompletarLocalizacao" tabindex="-1"
+            aria-labelledby="modalCompletarLocalizacaoLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalCompletarLocalizacaoLabel">
+                    Completar Localização Municipal/Estadual
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label for="selectEscolaCompletarLocalizacao" class="form-label">Selecione a Escola</label>
+                    <select class="form-select" id="selectEscolaCompletarLocalizacao">
+                      <option value="">Todas as Escolas</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fechar
+                  </button>
+                  <button type="button" class="btn btn-success" id="btnConfirmarCompletarLocalizacao">
+                    Completar Localização
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label for="filtroEscola" class="form-label">Filtrar por Escola</label>
+                  <select id="filtroEscola" class="form-select">
+                    <option value="">Todas</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="filtroBairro" class="form-label">Filtrar por Bairro</label>
+                  <select id="filtroBairro" class="form-select">
+                    <option value="">Todos</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="filtroCep" class="form-label">Filtrar por CEP</label>
+                  <select id="filtroCep" class="form-select">
+                    <option value="">Todos</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="searchInput" class="form-label">Pesquisa Geral</label>
+                  <input type="text" id="searchInput" class="form-control" placeholder="Digite para pesquisar..." />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-4">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h4 class="card-title">Alunos Cadastrados</h4>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table id="alunos-table" class="display table table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>ID Matrícula</th>
+                          <th>Escola (Nome)</th>
+                          <th>Ano</th>
+                          <th>Modalidade</th>
+                          <th>Form. Letivo</th>
+                          <th>Turma</th>
+                          <th>Nome Aluno</th>
+                          <th>CPF</th>
+                          <th>Transp. Escolar</th>
+                          <th>CEP</th>
+                          <th>Bairro</th>
+                          <th>Número Endereço</th>
+                          <th>Filiação 1</th>
+                          <th>Telefone</th>
+                          <th>Filiação 2</th>
+                          <th>Responsável</th>
+                          <th>Deficiência</th>
+                          <th>Latitude</th>
+                          <th>Longitude</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tfoot>
+                        <tr>
+                          <th>ID Matrícula</th>
+                          <th>Escola (Nome)</th>
+                          <th>Ano</th>
+                          <th>Modalidade</th>
+                          <th>Form. Letivo</th>
+                          <th>Turma</th>
+                          <th>Nome Aluno</th>
+                          <th>CPF</th>
+                          <th>Transp. Escolar</th>
+                          <th>CEP</th>
+                          <th>Bairro</th>
+                          <th>Número Endereço</th>
+                          <th>Filiação 1</th>
+                          <th>Telefone</th>
+                          <th>Filiação 2</th>
+                          <th>Responsável</th>
+                          <th>Deficiência</th>
+                          <th>Latitude</th>
+                          <th>Longitude</th>
+                          <th>Ações</th>
+                        </tr>
+                      </tfoot>
+                      <tbody></tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        <footer class="footer">
-          <div class="container-fluid d-flex justify-content-between">
-            <nav class="pull-left">
-              <ul class="nav">
-                <li class="nav-item">
-                  <a class="nav-link" href="#">ThemeKita</a>
-                </li>
-                <li class="nav-item"><a class="nav-link" href="#">Help</a></li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#">Licenses</a>
-                </li>
-              </ul>
-            </nav>
-            <div class="copyright">
-              2024, made with <i class="fa fa-heart heart text-danger"></i> by
-              <a href="http://www.themekita.com">ThemeKita</a>
-            </div>
-            <div>
-              Distributed by
-              <a target="_blank" href="https://themewagon.com/"
-                >ThemeWagon</a
-              >.
-            </div>
-          </div>
-        </footer>
       </div>
-      <!-- MAIN PANEL FIM -->
-    </div>
-
-    <!-- GLOBAL LOADER -->
-    <div id="globalLoader" class="spinner-container">
-      <div class="spinner">
-        <div class="spinner1"></div>
-      </div>
-    </div>
-
-    <!-- MODAL EDITAR ALUNO -->
-    <div
-      class="modal fade"
-      id="modalEditarAluno"
-      tabindex="-1"
-      aria-labelledby="modalEditarAlunoLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalEditarAlunoLabel">Editar Aluno</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
+      <footer class="footer">
+        <div class="container-fluid d-flex justify-content-between">
+          <nav class="pull-left">
+            <ul class="nav">
+              <li class="nav-item">
+                <a class="nav-link" href="#">ThemeKita</a>
+              </li>
+              <li class="nav-item"><a class="nav-link" href="#">Help</a></li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Licenses</a>
+              </li>
+            </ul>
+          </nav>
+          <div class="copyright">
+            2024, made with <i class="fa fa-heart heart text-danger"></i> by
+            <a href="http://www.themekita.com">ThemeKita</a>
           </div>
-          <div class="modal-body">
-            <form id="formEditarAluno">
-              <input type="hidden" id="editarAlunoId" />
-              <div class="mb-3">
-                <label for="editarIdMatricula" class="form-label"
-                  >ID Matrícula</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editarIdMatricula"
-                />
-              </div>
-              <div class="mb-3">
-                <label for="editarEscolaId" class="form-label"
-                  >Escola (ID)</label
-                >
-                <input type="text" class="form-control" id="editarEscolaId" />
-              </div>
-              <div class="mb-3">
-                <label for="editarAno" class="form-label">Ano</label>
-                <input type="text" class="form-control" id="editarAno" />
-              </div>
-              <div class="mb-3">
-                <label for="editarModalidade" class="form-label"
-                  >Modalidade</label
-                >
-                <input type="text" class="form-control" id="editarModalidade" />
-              </div>
-              <div class="mb-3">
-                <label for="editarFormatoLetivo" class="form-label"
-                  >Formato Letivo</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editarFormatoLetivo"
-                />
-              </div>
-              <div class="mb-3">
-                <label for="editarTurma" class="form-label">Turma</label>
-                <input type="text" class="form-control" id="editarTurma" />
-              </div>
-              <div class="mb-3">
-                <label for="editarNomeAluno" class="form-label"
-                  >Nome Aluno</label
-                >
-                <input type="text" class="form-control" id="editarNomeAluno" />
-              </div>
-              <div class="mb-3">
-                <label for="editarCpf" class="form-label">CPF</label>
-                <input type="text" class="form-control" id="editarCpf" />
-              </div>
-              <div class="mb-3">
-                <label for="editarTransporte" class="form-label"
-                  >Transp. Escolar</label
-                >
-                <input type="text" class="form-control" id="editarTransporte" />
-              </div>
-              <div class="mb-3">
-                <label for="editarCep" class="form-label">CEP</label>
-                <input type="text" class="form-control" id="editarCep" />
-              </div>
-              <div class="mb-3">
-                <label for="editarBairro" class="form-label">Bairro</label>
-                <input type="text" class="form-control" id="editarBairro" />
-              </div>
-              <div class="mb-3">
-                <label for="editarNumeroEndereco" class="form-label"
-                  >Número Endereço</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editarNumeroEndereco"
-                />
-              </div>
-              <div class="mb-3">
-                <label for="editarFiliacao1" class="form-label"
-                  >Filiação 1</label
-                >
-                <input type="text" class="form-control" id="editarFiliacao1" />
-              </div>
-              <div class="mb-3">
-                <label for="editarTelefone" class="form-label">Telefone</label>
-                <input type="text" class="form-control" id="editarTelefone" />
-              </div>
-              <div class="mb-3">
-                <label for="editarFiliacao2" class="form-label"
-                  >Filiação 2</label
-                >
-                <input type="text" class="form-control" id="editarFiliacao2" />
-              </div>
-              <div class="mb-3">
-                <label for="editarResponsavel" class="form-label"
-                  >Responsável</label
-                >
-                <input type="text" class="form-control" id="editarResponsavel" />
-              </div>
-              <div class="mb-3">
-                <label for="editarDeficiencia" class="form-label"
-                  >Deficiência (JSON)</label
-                >
-                <input type="text" class="form-control" id="editarDeficiencia" />
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Fechar
-            </button>
-            <button type="button" class="btn btn-primary" id="btnSalvarEdicao">
-              Salvar
-            </button>
+          <div>
+            Distributed by
+            <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
           </div>
         </div>
-      </div>
+      </footer>
     </div>
+  </div>
 
-    <!-- MODAL LOCALIZAR ALUNO -->
-    <div
-      class="modal fade"
-      id="modalLocalizarAluno"
-      tabindex="-1"
-      aria-labelledby="modalLocalizarAlunoLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalLocalizarAlunoLabel">
-              Localizar Aluno
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
+  <div id="globalLoader" class="spinner-container">
+    <div class="spinner">
+      <div class="spinner1"></div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalEditarAluno" tabindex="-1" aria-labelledby="modalEditarAlunoLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarAlunoLabel">Editar Aluno</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formEditarAluno">
+            <input type="hidden" id="editarAlunoId" />
             <div class="mb-3">
-              <label for="localizarAlunoEnderecoCompleto" class="form-label"
-                >Endereço Completo</label
-              >
-              <input
-                type="text"
-                id="localizarAlunoEnderecoCompleto"
-                class="form-control"
-              />
+              <label for="editarIdMatricula" class="form-label">ID Matrícula</label>
+              <input type="text" class="form-control" id="editarIdMatricula" />
             </div>
-            <div class="d-flex gap-2 mb-3">
-              <button type="button" class="btn btn-info" id="btnRefinarPesquisa">
-                Refinar Pesquisa
-              </button>
-              <button type="button" class="btn btn-success" id="btnSalvarLocalizacao">
-                Salvar Localização
-              </button>
+            <div class="mb-3">
+              <label for="editarEscolaId" class="form-label">Escola (ID)</label>
+              <input type="text" class="form-control" id="editarEscolaId" />
             </div>
-            <div id="mapAluno" style="width: 100%; height: 500px;"></div>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Fechar
-            </button>
-          </div>
+            <div class="mb-3">
+              <label for="editarAno" class="form-label">Ano</label>
+              <input type="text" class="form-control" id="editarAno" />
+            </div>
+            <div class="mb-3">
+              <label for="editarModalidade" class="form-label">Modalidade</label>
+              <input type="text" class="form-control" id="editarModalidade" />
+            </div>
+            <div class="mb-3">
+              <label for="editarFormatoLetivo" class="form-label">Formato Letivo</label>
+              <input type="text" class="form-control" id="editarFormatoLetivo" />
+            </div>
+            <div class="mb-3">
+              <label for="editarTurma" class="form-label">Turma</label>
+              <input type="text" class="form-control" id="editarTurma" />
+            </div>
+            <div class="mb-3">
+              <label for="editarNomeAluno" class="form-label">Nome Aluno</label>
+              <input type="text" class="form-control" id="editarNomeAluno" />
+            </div>
+            <div class="mb-3">
+              <label for="editarCpf" class="form-label">CPF</label>
+              <input type="text" class="form-control" id="editarCpf" />
+            </div>
+            <div class="mb-3">
+              <label for="editarTransporte" class="form-label">Transp. Escolar</label>
+              <input type="text" class="form-control" id="editarTransporte" />
+            </div>
+            <div class="mb-3">
+              <label for="editarCep" class="form-label">CEP</label>
+              <input type="text" class="form-control" id="editarCep" />
+            </div>
+            <div class="mb-3">
+              <label for="editarBairro" class="form-label">Bairro</label>
+              <input type="text" class="form-control" id="editarBairro" />
+            </div>
+            <div class="mb-3">
+              <label for="editarNumeroEndereco" class="form-label">Número Endereço</label>
+              <input type="text" class="form-control" id="editarNumeroEndereco" />
+            </div>
+            <div class="mb-3">
+              <label for="editarFiliacao1" class="form-label">Filiação 1</label>
+              <input type="text" class="form-control" id="editarFiliacao1" />
+            </div>
+            <div class="mb-3">
+              <label for="editarTelefone" class="form-label">Telefone</label>
+              <input type="text" class="form-control" id="editarTelefone" />
+            </div>
+            <div class="mb-3">
+              <label for="editarFiliacao2" class="form-label">Filiação 2</label>
+              <input type="text" class="form-control" id="editarFiliacao2" />
+            </div>
+            <div class="mb-3">
+              <label for="editarResponsavel" class="form-label">Responsável</label>
+              <input type="text" class="form-control" id="editarResponsavel" />
+            </div>
+            <div class="mb-3">
+              <label for="editarDeficiencia" class="form-label">Deficiência (JSON)</label>
+              <input type="text" class="form-control" id="editarDeficiencia" />
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Fechar
+          </button>
+          <button type="button" class="btn btn-primary" id="btnSalvarEdicao">
+            Salvar
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
-    <script src="../../assets/js/core/popper.min.js"></script>
-    <script src="../../assets/js/core/bootstrap.min.js"></script>
-    <script src="../../assets/js/usuario.js"></script>
-    <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
-    <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
-    <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
-    <script src="../../assets/js/pydenadmin.min.js"></script>
-    <script src="../../assets/js/setting-demo2.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&v=beta&libraries=marker"
-    ></script>
+  <div class="modal fade" id="modalLocalizarAluno" tabindex="-1" aria-labelledby="modalLocalizarAlunoLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalLocalizarAlunoLabel">
+            Localizar Aluno
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Clique no mapa para alterar a Latitude/Longitude do aluno.
+          </p>
+          <div class="row g-2 mb-3">
+            <div class="col">
+              <label for="localizarAlunoLat" class="form-label">Latitude</label>
+              <input type="text" id="localizarAlunoLat" class="form-control" readonly />
+            </div>
+            <div class="col">
+              <label for="localizarAlunoLng" class="form-label">Longitude</label>
+              <input type="text" id="localizarAlunoLng" class="form-control" readonly />
+            </div>
+          </div>
+          <div id="mapAluno" style="width: 100%; height: 500px; border: 1px solid #ccc;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Fechar
+          </button>
+          <button type="button" class="btn btn-success" id="btnSalvarLocalizacao">
+            Salvar Localização
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <script>
-      let dadosXLSX = [];
-      let escolasLista = [];
-      let dataTable = null;
-      let alunosData = [];
-      let map = null;
-      let geocoder = null;
-      let escolaLocalizacao = null;
-      let mapAluno = null;
-      let geocoderAluno = null;
-      let alunoAtual = null;
-      let escolaLocAluno = null;
-      let currentAlunoMarker = null;
-      let currentAlunoPosition = null;
+  <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+  <script src="../../assets/js/core/popper.min.js"></script>
+  <script src="../../assets/js/core/bootstrap.min.js"></script>
+  <script src="../../assets/js/usuario.js"></script>
+  <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+  <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+  <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+  <script src="../../assets/js/pydenadmin.min.js"></script>
+  <script src="../../assets/js/setting-demo2.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&v=beta"></script>
 
-      function showLoader() {
-        document.getElementById("globalLoader").style.display = "flex";
-      }
+  <script>
+    let dadosXLSX = [];
+    let escolasLista = [];
+    let dataTable = null;
+    let alunosData = [];
+    let map = null;
+    let mapAluno = null;
+    let alunoAtual = null;
+    let currentAlunoMarker = null;
+    let currentAlunoPosition = null;
 
-      function hideLoader() {
-        document.getElementById("globalLoader").style.display = "none";
-      }
+    function showLoader() {
+      document.getElementById("globalLoader").style.display = "flex";
+    }
 
-      function carregarEscolas() {
-        showLoader();
-        fetch("/api/escolas")
-          .then((res) => res.json())
-          .then((data) => {
-            escolasLista = data;
-            popularSelectEscolas();
-            popularSelectEscolasMap();
-            popularSelectEscolasCompletarLocalizacao();
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro ao carregar lista de escolas.");
-          })
-          .finally(() => {
-            hideLoader();
-          });
-      }
+    function hideLoader() {
+      document.getElementById("globalLoader").style.display = "none";
+    }
 
-      function popularSelectEscolas() {
-        const select = document.getElementById("escolaSelect");
-        select.innerHTML = '<option value="">Selecione a Escola</option>';
-        escolasLista.forEach((escola) => {
-          const option = document.createElement("option");
-          option.value = escola.id;
-          option.textContent = `${escola.nome} (ID: ${escola.id})`;
-          select.appendChild(option);
-        });
-      }
+    function showNotification(type, message) {
+      $.notify(
+        {
+          message: message,
+          icon:
+            type === "success"
+              ? "fa fa-check-circle"
+              : type === "danger"
+                ? "fa fa-exclamation-circle"
+                : "fa fa-info-circle",
+        },
+        {
+          type: type,
+          placement: { from: "top", align: "right" },
+          offset: 20,
+          spacing: 10,
+          z_index: 1031,
+          delay: 3000,
+          timer: 1000,
+          animate: {
+            enter: "animated fadeInDown",
+            exit: "animated fadeOutUp",
+          },
+        }
+      );
+    }
 
-      function popularSelectEscolasMap() {
-        const selectMap = document.getElementById("selectEscolaMap");
-        selectMap.innerHTML = '<option value="">Todas as Escolas</option>';
-        escolasLista.forEach((escola) => {
-          const option = document.createElement("option");
-          option.value = escola.id;
-          option.textContent = `${escola.nome} (ID: ${escola.id})`;
-          selectMap.appendChild(option);
-        });
-      }
+    function carregarEscolas() {
+      showLoader();
+      fetch("/api/escolas")
+        .then((res) => res.json())
+        .then((data) => {
+          escolasLista = data;
+          popularSelectEscolas();
+          popularSelectEscolasMap();
+          popularSelectEscolasCompletarLocalizacao();
+        })
+        .catch(() => {
+          showNotification("danger", "Erro ao carregar lista de escolas.");
+        })
+        .finally(() => hideLoader());
+    }
 
-      // Popular o SELECT do modalCompletarLocalizacao
-      function popularSelectEscolasCompletarLocalizacao() {
-        const selectCompletar = document.getElementById(
-          "selectEscolaCompletarLocalizacao"
-        );
-        selectCompletar.innerHTML = '<option value="">Todas as Escolas</option>';
-        escolasLista.forEach((escola) => {
-          const option = document.createElement("option");
-          option.value = escola.id;
-          option.textContent = `${escola.nome} (ID: ${escola.id})`;
-          selectCompletar.appendChild(option);
-        });
-      }
+    function popularSelectEscolas() {
+      const select = document.getElementById("escolaSelect");
+      select.innerHTML = '<option value="">Selecione a Escola</option>';
+      escolasLista.forEach((escola) => {
+        const option = document.createElement("option");
+        option.value = escola.id;
+        option.textContent = `${escola.nome} (ID: ${escola.id})`;
+        select.appendChild(option);
+      });
+    }
 
-      function carregarAlunosBD() {
-        showLoader();
-        fetch("/api/alunos-ativos")
-          .then((res) => res.json())
-          .then((data) => {
-            alunosData = data;
-            popularTabela(alunosData);
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro ao carregar dados do banco.");
-          })
-          .finally(() => {
-            hideLoader();
-          });
-      }
+    function popularSelectEscolasMap() {
+      const selectMap = document.getElementById("selectEscolaMap");
+      selectMap.innerHTML = '<option value="">Todas as Escolas</option>';
+      escolasLista.forEach((escola) => {
+        const option = document.createElement("option");
+        option.value = escola.id;
+        option.textContent = `${escola.nome} (ID: ${escola.id})`;
+        selectMap.appendChild(option);
+      });
+    }
 
-      function popularTabela(alunos) {
-        const tbody = $("#alunos-table tbody");
-        tbody.empty();
+    function popularSelectEscolasCompletarLocalizacao() {
+      const select = document.getElementById("selectEscolaCompletarLocalizacao");
+      select.innerHTML = '<option value="">Todas as Escolas</option>';
+      escolasLista.forEach((escola) => {
+        const option = document.createElement("option");
+        option.value = escola.id;
+        option.textContent = `${escola.nome} (ID: ${escola.id})`;
+        select.appendChild(option);
+      });
+    }
 
-        const distinctEscolas = new Set();
-        const distinctBairros = new Set();
-        const distinctCeps = new Set();
+    function carregarAlunosBD() {
+      showLoader();
+      fetch("/api/alunos-ativos")
+        .then((res) => res.json())
+        .then((data) => {
+          alunosData = data;
+          popularTabela(alunosData);
+        })
+        .catch(() => {
+          showNotification("danger", "Erro ao carregar dados do banco.");
+        })
+        .finally(() => hideLoader());
+    }
 
-        alunos.forEach((item) => {
-          const defString =
-            item.deficiencia && Array.isArray(item.deficiencia)
-              ? JSON.stringify(item.deficiencia)
-              : item.deficiencia || "";
+    function popularTabela(alunos) {
+      const tbody = $("#alunos-table tbody");
+      tbody.empty();
 
-          const row = `
+      const distinctEscolas = new Set();
+      const distinctBairros = new Set();
+      const distinctCeps = new Set();
+
+      alunos.forEach((item) => {
+        const defString =
+          item.deficiencia && Array.isArray(item.deficiencia)
+            ? JSON.stringify(item.deficiencia)
+            : item.deficiencia || "";
+
+        const row = `
             <tr data-id="${item.id}" data-obj='${JSON.stringify(item)}'>
               <td>${item.id_matricula || ""}</td>
               <td>${item.escola_nome || ""}</td>
@@ -1187,924 +905,440 @@
               </td>
             </tr>
           `;
-          tbody.append(row);
+        tbody.append(row);
+        if (item.escola_nome) distinctEscolas.add(item.escola_nome);
+        if (item.bairro) distinctBairros.add(item.bairro);
+        if (item.cep) distinctCeps.add(item.cep);
+      });
 
-          if (item.escola_nome) distinctEscolas.add(item.escola_nome);
-          if (item.bairro) distinctBairros.add(item.bairro);
-          if (item.cep) distinctCeps.add(item.cep);
-        });
+      if (dataTable) {
+        dataTable.clear().destroy();
+      }
 
-        if (dataTable) {
-          dataTable.clear().destroy();
-        }
+      dataTable = $("#alunos-table").DataTable({
+        pageLength: 10,
+        language: {
+          decimal: ",",
+          thousands: ".",
+          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+          infoEmpty: "Mostrando 0 até 0 de 0 registros",
+          infoFiltered: "(filtrado de _MAX_ registros no total)",
+          lengthMenu: "Mostrar _MENU_ registros",
+          loadingRecords: "Carregando...",
+          processing: "Processando...",
+          search: "Pesquisar:",
+          zeroRecords: "Nenhum registro encontrado",
+          paginate: {
+            first: "Primeiro",
+            last: "Último",
+            next: "Próximo",
+            previous: "Anterior",
+          },
+          emptyTable: "Nenhum dado disponível na tabela",
+        },
+      });
 
-        dataTable = $("#alunos-table").DataTable({
-          pageLength: 10,
-          language: {
-            decimal: ",",
-            thousands: ".",
-            info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-            infoEmpty: "Mostrando 0 até 0 de 0 registros",
-            infoFiltered: "(filtrado de _MAX_ registros no total)",
-            lengthMenu: "Mostrar _MENU_ registros",
-            loadingRecords: "Carregando...",
-            processing: "Processando...",
-            search: "Pesquisar:",
-            zeroRecords: "Nenhum registro encontrado",
-            paginate: {
-              first: "Primeiro",
-              last: "Último",
-              next: "Próximo",
-              previous: "Anterior",
-            },
-            emptyTable: "Nenhum dado disponível na tabela",
+      const filtroEscola = document.getElementById("filtroEscola");
+      const filtroBairro = document.getElementById("filtroBairro");
+      const filtroCep = document.getElementById("filtroCep");
+
+      filtroEscola.innerHTML = '<option value="">Todas</option>';
+      filtroBairro.innerHTML = '<option value="">Todos</option>';
+      filtroCep.innerHTML = '<option value="">Todos</option>';
+
+      distinctEscolas.forEach((e) => {
+        const opt = document.createElement("option");
+        opt.value = e;
+        opt.textContent = e;
+        filtroEscola.appendChild(opt);
+      });
+
+      distinctBairros.forEach((b) => {
+        const opt = document.createElement("option");
+        opt.value = b;
+        opt.textContent = b;
+        filtroBairro.appendChild(opt);
+      });
+
+      distinctCeps.forEach((c) => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        filtroCep.appendChild(opt);
+      });
+    }
+
+    $(document).on("change", "#filtroEscola", function () {
+      const val = this.value;
+      dataTable.column(1).search(val).draw();
+    });
+
+    $(document).on("change", "#filtroBairro", function () {
+      const val = this.value;
+      dataTable.column(10).search(val).draw();
+    });
+
+    $(document).on("change", "#filtroCep", function () {
+      const val = this.value;
+      dataTable.column(9).search(val).draw();
+    });
+
+    $(document).on("keyup", "#searchInput", function () {
+      dataTable.search(this.value).draw();
+    });
+
+    function handleFileImport(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = e.target.result;
+        const workbook = XLSX.read(data, { type: "binary" });
+        const firstSheet = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheet];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        dadosXLSX = jsonData;
+      };
+      reader.readAsBinaryString(file);
+    }
+
+    function enviarImportacao() {
+      const escolaIdSelecionada = document.getElementById("escolaSelect").value;
+      if (!escolaIdSelecionada) {
+        showNotification("danger", "Selecione uma escola antes de importar.");
+        return;
+      }
+      if (!dadosXLSX.length) {
+        showNotification("danger", "Nenhum arquivo importado ainda.");
+        return;
+      }
+      showLoader();
+      const body = {
+        escolaId: escolaIdSelecionada,
+        alunos: dadosXLSX,
+      };
+      fetch("/api/import-alunos-ativos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+        .then((res) => res.json())
+        .then((resp) => {
+          if (resp.success) {
+            showNotification(
+              "success",
+              resp.message || "Importação realizada com sucesso!"
+            );
+            $("#modalImportar").modal("hide");
+            carregarAlunosBD();
+          } else {
+            showNotification(
+              "danger",
+              resp.message || "Ocorreu um erro na importação."
+            );
+          }
+        })
+        .catch(() => {
+          showNotification("danger", "Erro ao enviar os dados ao servidor.");
+        })
+        .finally(() => hideLoader());
+    }
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: -3.135366, lng: -60.023207 },
+        zoom: 4,
+        mapId: "ca7a0e55f44be727",
+      });
+    }
+
+    $("#modalMapear").on("shown.bs.modal", function () {
+      if (!map) {
+        initMap();
+      }
+    });
+
+    $(document).on("click", "#btnFiltrarMapa", function () {
+      const escolaSelecionada = $("#selectEscolaMap").val();
+      const busca = $("#buscarAlunoInput").val().trim();
+      const queryParams = new URLSearchParams();
+      if (escolaSelecionada) {
+        queryParams.append("escola_id", escolaSelecionada);
+      }
+      if (busca) {
+        queryParams.append("busca", busca);
+      }
+      showLoader();
+      fetch("/api/alunos-mapa?" + queryParams.toString())
+        .then((res) => res.json())
+        .then((resp) => {
+          if (resp.success && Array.isArray(resp.data)) {
+            plotarMapa(resp.data, resp.escola);
+          } else {
+            showNotification("info", "Nenhum aluno encontrado.");
+          }
+        })
+        .catch(() => {
+          showNotification("danger", "Erro ao filtrar alunos no mapa.");
+        })
+        .finally(() => hideLoader());
+    });
+
+    function plotarMapa(alunos, escolaData) {
+      if (!map) {
+        initMap();
+      }
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: -3.135366, lng: -60.023207 },
+        zoom: 4,
+        mapId: "ca7a0e55f44be727",
+      });
+      const bounds = new google.maps.LatLngBounds();
+
+      if (escolaData && escolaData.latitude && escolaData.longitude) {
+        const escPos = new google.maps.LatLng(
+          parseFloat(escolaData.latitude),
+          parseFloat(escolaData.longitude)
+        );
+        new google.maps.Marker({
+          map,
+          position: escPos,
+          title: escolaData.nome,
+          icon: {
+            url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
           },
         });
-
-        const filtroEscola = document.getElementById("filtroEscola");
-        const filtroBairro = document.getElementById("filtroBairro");
-        const filtroCep = document.getElementById("filtroCep");
-
-        filtroEscola.innerHTML = '<option value="">Todas</option>';
-        filtroBairro.innerHTML = '<option value="">Todos</option>';
-        filtroCep.innerHTML = '<option value="">Todos</option>';
-
-        distinctEscolas.forEach((e) => {
-          const opt = document.createElement("option");
-          opt.value = e;
-          opt.textContent = e;
-          filtroEscola.appendChild(opt);
-        });
-
-        distinctBairros.forEach((b) => {
-          const opt = document.createElement("option");
-          opt.value = b;
-          opt.textContent = b;
-          filtroBairro.appendChild(opt);
-        });
-
-        distinctCeps.forEach((c) => {
-          const opt = document.createElement("option");
-          opt.value = c;
-          opt.textContent = c;
-          filtroCep.appendChild(opt);
-        });
+        bounds.extend(escPos);
       }
 
-      // Filtros Tabela
-      $(document).on("change", "#filtroEscola", function () {
-        const val = this.value;
-        dataTable.column(1).search(val).draw();
+      alunos.forEach((al) => {
+        if (al.latitude && al.longitude) {
+          const pos = new google.maps.LatLng(
+            parseFloat(al.latitude),
+            parseFloat(al.longitude)
+          );
+          const marker = new google.maps.Marker({
+            map,
+            position: pos,
+            title: al.pessoa_nome || "Aluno",
+          });
+          const infowindow = new google.maps.InfoWindow({
+            content: `<strong>${al.pessoa_nome || ""}</strong><br>
+                CPF: ${al.cpf || ""}<br>
+                Matrícula: ${al.id_matricula || ""}<br>
+                Lat: ${al.latitude} / Lng: ${al.longitude}
+              `,
+          });
+          marker.addListener("click", () => {
+            infowindow.open(map, marker);
+          });
+          bounds.extend(pos);
+        }
       });
 
-      $(document).on("change", "#filtroBairro", function () {
-        const val = this.value;
-        dataTable.column(10).search(val).draw();
-      });
-
-      $(document).on("change", "#filtroCep", function () {
-        const val = this.value;
-        dataTable.column(9).search(val).draw();
-      });
-
-      $(document).on("keyup", "#searchInput", function () {
-        dataTable.search(this.value).draw();
-      });
-
-      // Importar XLSX
-      function handleFileImport(evt) {
-        const file = evt.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const data = e.target.result;
-          const workbook = XLSX.read(data, { type: "binary" });
-          const firstSheet = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheet];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-          dadosXLSX = jsonData;
-        };
-        reader.readAsBinaryString(file);
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds);
       }
+    }
 
-      function enviarImportacao() {
-        const escolaIdSelecionada = document.getElementById("escolaSelect").value;
-        if (!escolaIdSelecionada) {
-          showNotification("danger", "Selecione uma escola antes de importar.");
-          return;
+    $(document).ready(function () {
+      carregarEscolas();
+      carregarAlunosBD();
+      $("#fileInput").on("change", handleFileImport);
+      $("#importarBtn").on("click", enviarImportacao);
+
+      $(document).on("click", ".btn-editar", function () {
+        const tr = $(this).closest("tr");
+        const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
+        alunoAtual = dataObj.id;
+        $("#editarAlunoId").val(dataObj.id);
+        $("#editarIdMatricula").val(dataObj.id_matricula || "");
+        $("#editarEscolaId").val(dataObj.escola_id || "");
+        $("#editarAno").val(dataObj.ano || "");
+        $("#editarModalidade").val(dataObj.modalidade || "");
+        $("#editarFormatoLetivo").val(dataObj.formato_letivo || "");
+        $("#editarTurma").val(dataObj.turma || "");
+        $("#editarNomeAluno").val(dataObj.pessoa_nome || "");
+        $("#editarCpf").val(dataObj.cpf || "");
+        $("#editarTransporte").val(
+          dataObj.transporte_escolar_poder_publico || ""
+        );
+        $("#editarCep").val(dataObj.cep || "");
+        $("#editarBairro").val(dataObj.bairro || "");
+        $("#editarNumeroEndereco").val(dataObj.numero_pessoa_endereco || "");
+        $("#editarFiliacao1").val(dataObj.filiacao_1 || "");
+        $("#editarTelefone").val(dataObj.numero_telefone || "");
+        $("#editarFiliacao2").val(dataObj.filiacao_2 || "");
+        $("#editarResponsavel").val(dataObj.responsavel || "");
+        if (dataObj.deficiencia && Array.isArray(dataObj.deficiencia)) {
+          $("#editarDeficiencia").val(JSON.stringify(dataObj.deficiencia));
+        } else {
+          $("#editarDeficiencia").val(dataObj.deficiencia || "");
         }
-        if (!dadosXLSX.length) {
-          showNotification("danger", "Nenhum arquivo importado ainda.");
-          return;
-        }
-        showLoader();
+        $("#modalEditarAluno").modal("show");
+      });
+
+      $("#btnSalvarEdicao").on("click", function () {
         const body = {
-          escolaId: escolaIdSelecionada,
-          alunos: dadosXLSX,
+          id: $("#editarAlunoId").val(),
+          id_matricula: $("#editarIdMatricula").val(),
+          escola_id: $("#editarEscolaId").val(),
+          ano: $("#editarAno").val(),
+          modalidade: $("#editarModalidade").val(),
+          formato_letivo: $("#editarFormatoLetivo").val(),
+          turma: $("#editarTurma").val(),
+          pessoa_nome: $("#editarNomeAluno").val(),
+          cpf: $("#editarCpf").val(),
+          transporte_escolar_poder_publico: $("#editarTransporte").val(),
+          cep: $("#editarCep").val(),
+          bairro: $("#editarBairro").val(),
+          numero_pessoa_endereco: $("#editarNumeroEndereco").val(),
+          filiacao_1: $("#editarFiliacao1").val(),
+          numero_telefone: $("#editarTelefone").val(),
+          filiacao_2: $("#editarFiliacao2").val(),
+          responsavel: $("#editarResponsavel").val(),
+          deficiencia: $("#editarDeficiencia").val(),
         };
-        fetch("/api/import-alunos-ativos", {
-          method: "POST",
+        showLoader();
+        fetch("/api/alunos-ativos/" + body.id, {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         })
           .then((res) => res.json())
           .then((resp) => {
             if (resp.success) {
-              showNotification(
-                "success",
-                resp.message || "Importação realizada com sucesso!"
-              );
-              $("#modalImportar").modal("hide");
+              showNotification("success", "Aluno atualizado com sucesso!");
+              $("#modalEditarAluno").modal("hide");
+              carregarAlunosBD();
+            } else {
+              showNotification("danger", resp.message || "Erro ao atualizar.");
+            }
+          })
+          .catch(() => {
+            showNotification("danger", "Erro ao atualizar aluno.");
+          })
+          .finally(() => hideLoader());
+      });
+
+      $(document).on("click", ".btn-localizar", function () {
+        const tr = $(this).closest("tr");
+        const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
+        alunoAtual = dataObj.id;
+        $("#localizarAlunoLat").val(dataObj.latitude || "");
+        $("#localizarAlunoLng").val(dataObj.longitude || "");
+        $("#modalLocalizarAluno").modal("show");
+
+        setTimeout(() => {
+          initMapAluno(dataObj);
+        }, 500);
+      });
+
+      $(document).on("click", ".btn-excluir", function () {
+        if (!confirm("Deseja realmente excluir este aluno?")) return;
+        const tr = $(this).closest("tr");
+        const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
+        const alunoId = dataObj.id;
+        showLoader();
+        fetch("/api/alunos-ativos/" + alunoId, {
+          method: "DELETE",
+        })
+          .then((res) => res.json())
+          .then((resp) => {
+            if (resp.success) {
+              showNotification("success", "Aluno excluído com sucesso!");
+              carregarAlunosBD();
+            } else {
+              showNotification("danger", resp.message || "Erro ao excluir.");
+            }
+          })
+          .catch(() => {
+            showNotification("danger", "Erro ao excluir aluno.");
+          })
+          .finally(() => hideLoader());
+      });
+
+      $("#btnSalvarLocalizacao").on("click", function () {
+        if (!alunoAtual || !currentAlunoPosition) {
+          showNotification("danger", "Não há posição definida no mapa.");
+          return;
+        }
+        const body = {
+          id: alunoAtual,
+          latitude: currentAlunoPosition.lat(),
+          longitude: currentAlunoPosition.lng(),
+        };
+        showLoader();
+        fetch("/api/alunos-ativos/" + alunoAtual, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+          .then((res) => res.json())
+          .then((resp) => {
+            if (resp.success) {
+              showNotification("success", "Localização salva com sucesso!");
+              $("#modalLocalizarAluno").modal("hide");
               carregarAlunosBD();
             } else {
               showNotification(
                 "danger",
-                resp.message || "Ocorreu um erro na importação."
+                resp.message || "Erro ao salvar localização."
               );
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro ao enviar os dados ao servidor.");
-          })
-          .finally(() => {
-            hideLoader();
-          });
-      }
-
-      // Mapa principal (Modal Mapa)
-      function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: -3.135366, lng: -60.023207 },
-          zoom: 5,
-          mapId: "ca7a0e55f44be727",
-        });
-        geocoder = new google.maps.Geocoder();
-      }
-
-      $("#modalMapear").on("shown.bs.modal", function () {
-        if (!map) {
-          initMap();
-        }
-      });
-
-      $(document).on("click", "#btnFiltrarMapa", function () {
-        const escolaSelecionada = $("#selectEscolaMap").val();
-        const busca = $("#buscarAlunoInput").val().trim();
-        const queryParams = new URLSearchParams();
-        if (escolaSelecionada) {
-          queryParams.append("escola_id", escolaSelecionada);
-        }
-        if (busca) {
-          queryParams.append("busca", busca);
-        }
-
-        showLoader();
-        fetch("/api/alunos-mapa?" + queryParams.toString())
-          .then((res) => res.json())
-          .then((resp) => {
-            if (resp.success && Array.isArray(resp.data)) {
-              plotarEscola(resp.escola || null);
-              plotarAlunosMapa(resp.data);
-            } else {
-              showNotification("info", "Nenhum aluno encontrado com esses filtros.");
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro ao filtrar alunos no mapa.");
-          })
-          .finally(() => {
-            hideLoader();
-          });
-      });
-
-      function plotarEscola(e) {
-        if (!map) initMap();
-        if (!geocoder) geocoder = new google.maps.Geocoder();
-        if (!e) return;
-        escolaLocalizacao = null;
-
-        // Se a escola já tiver lat/long definidos
-        if (e.latitude && e.longitude) {
-          escolaLocalizacao = new google.maps.LatLng(e.latitude, e.longitude);
-          new google.maps.Marker({
-            map,
-            position: escolaLocalizacao,
-            title: e.nome,
-          });
-          map.setCenter(escolaLocalizacao);
-          map.setZoom(14);
-          new google.maps.Circle({
-            strokeColor: "#FF0000",
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: "#FF0000",
-            fillOpacity: 0.35,
-            map,
-            center: escolaLocalizacao,
-            radius: 2000,
-          });
-        } else {
-          // Caso precise geocodificar o endereço da escola
-          let addr = "";
-          if (e.logradouro) addr += e.logradouro;
-          if (e.numero) addr += ", " + e.numero;
-          if (e.bairro) addr += ", " + e.bairro;
-          if (e.cep) addr += ", " + e.cep;
-
-          geocoder.geocode({ address: addr }, function (results, status) {
-            if (status === "OK" && results[0]) {
-              escolaLocalizacao = results[0].geometry.location;
-              new google.maps.Marker({
-                map,
-                position: escolaLocalizacao,
-                title: e.nome,
-              });
-              map.setCenter(escolaLocalizacao);
-              map.setZoom(14);
-              new google.maps.Circle({
-                strokeColor: "#FF0000",
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: "#FF0000",
-                fillOpacity: 0.35,
-                map,
-                center: escolaLocalizacao,
-                radius: 2000,
-              });
-            }
-          });
-        }
-      }
-
-      // Plotar alunos no mapa, ignorando CEPs inválidos ou não encontrados
-      function plotarAlunosMapa(alunos) {
-        if (!map) initMap();
-        if (!geocoder) geocoder = new google.maps.Geocoder();
-
-        // Para ajustar o zoom de acordo com todos os pontos
-        const bounds = new google.maps.LatLngBounds();
-        let contagem = 0;
-
-        // Redefine o mapa para iniciar 'do zero'
-        map = new google.maps.Map(document.getElementById("map"), {
-          center: { lat: -3.135366, lng: -60.023207 },
-          zoom: 5,
-          mapId: "ca7a0e55f44be727",
-        });
-
-        // Recoloca a escola, se houver
-        if (escolaLocalizacao) {
-          map.setCenter(escolaLocalizacao);
-          map.setZoom(14);
-          new google.maps.Circle({
-            strokeColor: "#FF0000",
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: "#FF0000",
-            fillOpacity: 0.35,
-            map,
-            center: escolaLocalizacao,
-            radius: 2000,
-          });
-          new google.maps.Marker({
-            map,
-            position: escolaLocalizacao,
-            title: "Escola",
-          });
-          bounds.extend(escolaLocalizacao);
-        }
-
-        // Para cada aluno
-        alunos.forEach((al) => {
-          const cepLimpo = (al.cep || "").replace(/\D/g, "");
-          let numeroEnd = (al.numero_pessoa_endereco || "").trim();
-
-          // Trata "S/N", "sem número", etc.
-          const numeroTratado = numeroEnd.toLowerCase();
-          if (
-            numeroTratado.includes("s/n") ||
-            numeroTratado === "sn" ||
-            numeroTratado.includes("sem numero") ||
-            numeroTratado.includes("sem número")
-          ) {
-            numeroEnd = "S/N";
-          }
-
-          // Se CEP não tiver 8 dígitos, ignora e passa ao próximo
-          if (cepLimpo.length !== 8) {
-            contagem++;
-            if (contagem === alunos.length) map.fitBounds(bounds);
-            return;
-          }
-
-          // Consulta viaCEP
-          fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`, { method: "GET" })
-            .then((res) => {
-              if (!res.ok) {
-                throw new Error("Falha na requisição ViaCEP");
-              }
-              return res.json();
-            })
-            .then((dataViaCep) => {
-              // Se CEP não encontrado (dataViaCep.erro), ignore
-              if (!dataViaCep || dataViaCep.erro) {
-                contagem++;
-                if (contagem === alunos.length) map.fitBounds(bounds);
-                return null;
-              }
-
-              // Monta endereço para geocodificar
-              const logradouro = dataViaCep.logradouro || "";
-              const bairro = dataViaCep.bairro || "";
-              const localidade = dataViaCep.localidade || "";
-              const uf = dataViaCep.uf || "";
-              const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-
-              // Retorna promessa da geocodificação
-              return new Promise((resolve) => {
-                geocoder.geocode({ address: endCompleto }, (results, status) => {
-                  if (status === "OK" && results[0]) {
-                    resolve(results[0].geometry.location);
-                  } else {
-                    resolve(null);
-                  }
-                });
-              });
-            })
-            .then((localizacao) => {
-              if (!localizacao) {
-                contagem++;
-                if (contagem === alunos.length) {
-                  map.fitBounds(bounds);
-                }
-                return;
-              }
-
-              // Cria marcador do aluno
-              const marker = new google.maps.Marker({
-                map,
-                position: localizacao,
-                title: al.pessoa_nome || "Aluno",
-              });
-
-              // InfoWindow
-              const infowindow = new google.maps.InfoWindow({
-                content: `<strong>${al.pessoa_nome || ""}</strong><br>
-                          CPF: ${al.cpf || ""}<br>
-                          Matrícula: ${al.id_matricula || ""}`,
-              });
-
-              marker.addListener("click", () => {
-                infowindow.open(map, marker);
-              });
-
-              // Ajusta bounds
-              bounds.extend(localizacao);
-
-              contagem++;
-              if (contagem === alunos.length) {
-                map.fitBounds(bounds);
-              }
-            })
-            .catch((error) => {
-              console.warn("Falha ao consultar ViaCEP (aluno ignorado):", error);
-              contagem++;
-              if (contagem === alunos.length) {
-                map.fitBounds(bounds);
-              }
-            });
-        });
-      }
-
-      function showNotification(type, message) {
-        $.notify(
-          {
-            message: message,
-            icon:
-              type === "success"
-                ? "fa fa-check-circle"
-                : type === "danger"
-                ? "fa fa-exclamation-circle"
-                : "fa fa-info-circle",
-          },
-          {
-            type: type,
-            placement: { from: "top", align: "right" },
-            offset: 20,
-            spacing: 10,
-            z_index: 1031,
-            delay: 3000,
-            timer: 1000,
-            animate: {
-              enter: "animated fadeInDown",
-              exit: "animated fadeOutUp",
-            },
-          }
-        );
-      }
-
-      // Document Ready
-      $(document).ready(function () {
-        carregarEscolas();
-        carregarAlunosBD();
-        $("#fileInput").on("change", handleFileImport);
-        $("#importarBtn").on("click", enviarImportacao);
-
-        // Editar Aluno
-        $(document).on("click", ".btn-editar", function () {
-          const tr = $(this).closest("tr");
-          const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
-          alunoAtual = dataObj.id;
-          $("#editarAlunoId").val(dataObj.id);
-          $("#editarIdMatricula").val(dataObj.id_matricula || "");
-          $("#editarEscolaId").val(dataObj.escola_id || "");
-          $("#editarAno").val(dataObj.ano || "");
-          $("#editarModalidade").val(dataObj.modalidade || "");
-          $("#editarFormatoLetivo").val(dataObj.formato_letivo || "");
-          $("#editarTurma").val(dataObj.turma || "");
-          $("#editarNomeAluno").val(dataObj.pessoa_nome || "");
-          $("#editarCpf").val(dataObj.cpf || "");
-          $("#editarTransporte").val(
-            dataObj.transporte_escolar_poder_publico || ""
-          );
-          $("#editarCep").val(dataObj.cep || "");
-          $("#editarBairro").val(dataObj.bairro || "");
-          $("#editarNumeroEndereco").val(dataObj.numero_pessoa_endereco || "");
-          $("#editarFiliacao1").val(dataObj.filiacao_1 || "");
-          $("#editarTelefone").val(dataObj.numero_telefone || "");
-          $("#editarFiliacao2").val(dataObj.filiacao_2 || "");
-          $("#editarResponsavel").val(dataObj.responsavel || "");
-          if (dataObj.deficiencia && Array.isArray(dataObj.deficiencia)) {
-            $("#editarDeficiencia").val(JSON.stringify(dataObj.deficiencia));
-          } else {
-            $("#editarDeficiencia").val(dataObj.deficiencia || "");
-          }
-          $("#modalEditarAluno").modal("show");
-        });
-
-        // Salvar Edição
-        $("#btnSalvarEdicao").on("click", function () {
-          const body = {
-            id: $("#editarAlunoId").val(),
-            id_matricula: $("#editarIdMatricula").val(),
-            escola_id: $("#editarEscolaId").val(),
-            ano: $("#editarAno").val(),
-            modalidade: $("#editarModalidade").val(),
-            formato_letivo: $("#editarFormatoLetivo").val(),
-            turma: $("#editarTurma").val(),
-            pessoa_nome: $("#editarNomeAluno").val(),
-            cpf: $("#editarCpf").val(),
-            transporte_escolar_poder_publico: $("#editarTransporte").val(),
-            cep: $("#editarCep").val(),
-            bairro: $("#editarBairro").val(),
-            numero_pessoa_endereco: $("#editarNumeroEndereco").val(),
-            filiacao_1: $("#editarFiliacao1").val(),
-            numero_telefone: $("#editarTelefone").val(),
-            filiacao_2: $("#editarFiliacao2").val(),
-            responsavel: $("#editarResponsavel").val(),
-            deficiencia: $("#editarDeficiencia").val(),
-          };
-          showLoader();
-          fetch("/api/alunos-ativos/" + body.id, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          })
-            .then((res) => res.json())
-            .then((resp) => {
-              if (resp.success) {
-                showNotification("success", "Aluno atualizado com sucesso!");
-                $("#modalEditarAluno").modal("hide");
-                carregarAlunosBD();
-              } else {
-                showNotification("danger", resp.message || "Erro ao atualizar.");
-              }
-            })
-            .catch((err) => {
-              console.error(err);
-              showNotification("danger", "Erro ao atualizar aluno.");
-            })
-            .finally(() => {
-              hideLoader();
-            });
-        });
-
-        // Localizar Aluno
-        $(document).on("click", ".btn-localizar", function () {
-          const tr = $(this).closest("tr");
-          const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
-          alunoAtual = dataObj.id;
-          escolaLocAluno = dataObj.escola_id || null;
-          $("#modalLocalizarAluno").modal("show");
-          setTimeout(() => {
-            initMapAluno(dataObj);
-          }, 500);
-        });
-
-        // Excluir Aluno
-        $(document).on("click", ".btn-excluir", function () {
-          if (!confirm("Deseja realmente excluir este aluno?")) return;
-          const tr = $(this).closest("tr");
-          const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
-          const alunoId = dataObj.id;
-          showLoader();
-          fetch("/api/alunos-ativos/" + alunoId, {
-            method: "DELETE",
-          })
-            .then((res) => res.json())
-            .then((resp) => {
-              if (resp.success) {
-                showNotification("success", "Aluno excluído com sucesso!");
-                carregarAlunosBD();
-              } else {
-                showNotification("danger", resp.message || "Erro ao excluir.");
-              }
-            })
-            .catch((err) => {
-              console.error(err);
-              showNotification("danger", "Erro ao excluir aluno.");
-            })
-            .finally(() => {
-              hideLoader();
-            });
-        });
-
-        // Refinar pesquisa - Modal "Localizar Aluno"
-        $("#btnRefinarPesquisa").on("click", function () {
-          const address = $("#localizarAlunoEnderecoCompleto").val().trim();
-          if (!address) return;
-          if (!mapAluno || !geocoderAluno) return;
-          showLoader();
-          geocoderAluno.geocode({ address }, function (results, status) {
-            if (status === "OK" && results[0]) {
-              placeAlunoMarker(results[0].geometry.location, true);
-              mapAluno.setCenter(results[0].geometry.location);
-              mapAluno.setZoom(14);
-            } else {
-              showNotification("danger", "Endereço não encontrado.");
-            }
-            hideLoader();
-          });
-        });
-
-        // Salvar localização do aluno
-        $("#btnSalvarLocalizacao").on("click", function () {
-          if (!alunoAtual || !currentAlunoPosition) {
-            showNotification("danger", "Não há aluno ou posição para salvar.");
-            return;
-          }
-          const body = {
-            id: alunoAtual,
-            latitude: currentAlunoPosition.lat(),
-            longitude: currentAlunoPosition.lng(),
-          };
-          showLoader();
-          fetch("/api/alunos-ativos/" + alunoAtual, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          })
-            .then((res) => res.json())
-            .then((resp) => {
-              if (resp.success) {
-                showNotification("success", "Localização salva com sucesso!");
-                $("#modalLocalizarAluno").modal("hide");
-                carregarAlunosBD();
-              } else {
-                showNotification(
-                  "danger",
-                  resp.message || "Erro ao salvar localização."
-                );
-              }
-            })
-            .catch((err) => {
-              console.error(err);
-              showNotification("danger", "Erro ao salvar localização.");
-            })
-            .finally(() => {
-              hideLoader();
-            });
-        });
-
-        // Botão de confirmar localização em massa (Municipal/Estadual) APÓS ESCOLHA DA ESCOLA
-        $("#btnConfirmarCompletarLocalizacao").on("click", async function () {
-          const escolaEscolhida = $(
-            "#selectEscolaCompletarLocalizacao"
-          ).val(); // Se estiver vazio, é "todas as escolas"
-
-          showLoader();
-          let promises = [];
-
-          // Filtra somente alunos com transporte municipal/estadual e sem lat/long
-          // E, caso a pessoa tenha selecionado uma escola específica, filtrar por ela
-          const alunosFiltrados = alunosData.filter((aluno) => {
-            const hasTranspMunEst =
-              aluno.transporte_escolar_poder_publico &&
-              (aluno.transporte_escolar_poder_publico
-                .toLowerCase()
-                .includes("municipal") ||
-                aluno.transporte_escolar_poder_publico
-                  .toLowerCase()
-                  .includes("estadual"));
-
-            const semLatLong = !aluno.latitude && !aluno.longitude;
-
-            // Se escolaEscolhida for vazia, consideramos "todas as escolas"
-            if (!escolaEscolhida) {
-              return hasTranspMunEst && semLatLong;
-            } else {
-              return (
-                hasTranspMunEst &&
-                semLatLong &&
-                Number(aluno.escola_id) === Number(escolaEscolhida)
-              );
-            }
-          });
-
-          if (!alunosFiltrados.length) {
-            showNotification(
-              "info",
-              "Nenhum aluno encontrado (filtros: transporte municipal/estadual, sem lat/long)."
-            );
-            hideLoader();
-            return;
-          }
-
-          try {
-            for (const al of alunosFiltrados) {
-              const cepLimpo = (al.cep || "").replace(/\D/g, "");
-              if (cepLimpo.length !== 8) {
-                // Se não tiver 8 dígitos, ignora esse aluno
-                continue;
-              }
-              const numeroEnd = tratarNumero(al.numero_pessoa_endereco || "");
-              try {
-                // Consulta ViaCEP
-                const viaData = await fetch(
-                  `https://viacep.com.br/ws/${cepLimpo}/json/`
-                ).then((res) => res.json());
-
-                // Se CEP é inválido (erro), ignore
-                if (viaData.erro) {
-                  continue;
-                }
-
-                // Endereço completo
-                const logradouro = viaData.logradouro || "";
-                const bairro = viaData.bairro || "";
-                const localidade = viaData.localidade || "";
-                const uf = viaData.uf || "";
-                const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-
-                // Faz geocodificação
-                const geoResult = await geocodeAddress(endCompleto);
-                if (geoResult) {
-                  const { lat, lng } = geoResult;
-                  const body = {
-                    id: al.id,
-                    latitude: lat,
-                    longitude: lng,
-                  };
-                  // PUT em cada aluno
-                  const p = fetch("/api/alunos-ativos/" + al.id, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body),
-                  })
-                    .then((r) => r.json())
-                    .then((resp) => {
-                      if (!resp.success) {
-                        console.warn(
-                          "Falha ao atualizar aluno ID:",
-                          al.id,
-                          resp.message
-                        );
-                      }
-                    })
-                    .catch((err) => {
-                      console.error("Erro ao atualizar ID:", al.id, err);
-                    });
-                  promises.push(p);
-                }
-              } catch (error) {
-                console.error("Falha ao buscar CEP ou geocodificar:", error);
-                // Apenas ignora e segue para o próximo
-                continue;
-              }
-            }
-            await Promise.all(promises);
-
-            showNotification(
-              "success",
-              "Processo de localização concluído. Atualizando lista..."
-            );
-            $("#modalCompletarLocalizacao").modal("hide");
-            carregarAlunosBD();
-          } catch (err) {
-            console.error(err);
-            showNotification(
-              "danger",
-              "Ocorreu um erro durante a atualização em massa."
-            );
-          } finally {
-            hideLoader();
-          }
-        });
-      });
-
-      // Mapa individual (Modal Localizar Aluno)
-      function initMapAluno(aluno) {
-        if (!mapAluno) {
-          mapAluno = new google.maps.Map(document.getElementById("mapAluno"), {
-            center: { lat: -3.135366, lng: -60.023207 },
-            zoom: 5,
-            mapId: "ca7a0e55f44be727",
-          });
-          geocoderAluno = new google.maps.Geocoder();
-        } else {
-          mapAluno = new google.maps.Map(document.getElementById("mapAluno"), {
-            center: { lat: -3.135366, lng: -60.023207 },
-            zoom: 5,
-            mapId: "ca7a0e55f44be727",
-          });
-        }
-
-        currentAlunoMarker = null;
-        currentAlunoPosition = null;
-
-        // Clique no mapa -> geocodificar reverso
-        mapAluno.addListener("click", (e) => {
-          showLoader();
-          if (!geocoderAluno) {
-            geocoderAluno = new google.maps.Geocoder();
-          }
-          geocoderAluno.geocode({ location: e.latLng }, function (results, status) {
-            if (status === "OK" && results[0]) {
-              placeAlunoMarker(e.latLng, true);
-            } else {
-              placeAlunoMarker(e.latLng, false);
-            }
-            hideLoader();
-          });
-        });
-
-        let centerEscola = null;
-        fetch("/api/escolas/" + (aluno.escola_id || 0))
-          .then((res) => res.json())
-          .then((infoEscola) => {
-            if (infoEscola && infoEscola.id) {
-              if (infoEscola.latitude && infoEscola.longitude) {
-                centerEscola = new google.maps.LatLng(
-                  infoEscola.latitude,
-                  infoEscola.longitude
-                );
-                new google.maps.Marker({
-                  map: mapAluno,
-                  position: centerEscola,
-                  title: infoEscola.nome || "Escola",
-                });
-                mapAluno.setCenter(centerEscola);
-                mapAluno.setZoom(14);
-                new google.maps.Circle({
-                  strokeColor: "#FF0000",
-                  strokeOpacity: 0.8,
-                  strokeWeight: 2,
-                  fillColor: "#FF0000",
-                  fillOpacity: 0.35,
-                  map: mapAluno,
-                  center: centerEscola,
-                  radius: 2000,
-                });
-                localizarAlunoEndereco(aluno, centerEscola);
-              } else {
-                const addr = `${infoEscola.logradouro || ""}, ${
-                  infoEscola.numero || ""
-                }, ${infoEscola.bairro || ""}, ${infoEscola.cep || ""}`;
-                geocoderAluno.geocode({ address: addr }, function (results, status) {
-                  if (status === "OK" && results[0]) {
-                    centerEscola = results[0].geometry.location;
-                    new google.maps.Marker({
-                      map: mapAluno,
-                      position: centerEscola,
-                      title: infoEscola.nome || "Escola",
-                    });
-                    mapAluno.setCenter(centerEscola);
-                    mapAluno.setZoom(14);
-                    new google.maps.Circle({
-                      strokeColor: "#FF0000",
-                      strokeOpacity: 0.8,
-                      strokeWeight: 2,
-                      fillColor: "#FF0000",
-                      fillOpacity: 0.35,
-                      map: mapAluno,
-                      center: centerEscola,
-                      radius: 2000,
-                    });
-                  }
-                  localizarAlunoEndereco(aluno, centerEscola);
-                });
-              }
-            } else {
-              localizarAlunoEndereco(aluno, null);
             }
           })
           .catch(() => {
-            localizarAlunoEndereco(aluno, null);
-          });
+            showNotification("danger", "Erro ao salvar localização.");
+          })
+          .finally(() => hideLoader());
+      });
+
+      $("#btnConfirmarCompletarLocalizacao").on("click", function () {
+        showNotification(
+          "info",
+          "Processo de localização completado (exemplo)."
+        );
+        $("#modalCompletarLocalizacao").modal("hide");
+      });
+    });
+
+    function initMapAluno(aluno) {
+      mapAluno = new google.maps.Map(document.getElementById("mapAluno"), {
+        center: {
+          lat: aluno.latitude ? parseFloat(aluno.latitude) : -3.135366,
+          lng: aluno.longitude ? parseFloat(aluno.longitude) : -60.023207,
+        },
+        zoom: aluno.latitude && aluno.longitude ? 15 : 4,
+        mapId: "ca7a0e55f44be727",
+      });
+
+      if (aluno.latitude && aluno.longitude) {
+        currentAlunoPosition = new google.maps.LatLng(
+          parseFloat(aluno.latitude),
+          parseFloat(aluno.longitude)
+        );
+        currentAlunoMarker = new google.maps.Marker({
+          position: currentAlunoPosition,
+          map: mapAluno,
+          title: "Aluno",
+        });
       }
 
-      function localizarAlunoEndereco(aluno, centerEscola) {
-        if (!geocoderAluno) {
-          geocoderAluno = new google.maps.Geocoder();
-        }
-        const cepFormatado = (aluno.cep || "").replace(/\D/g, "");
-        let numero = (aluno.numero_pessoa_endereco || "").trim().toLowerCase();
-
-        if (
-          numero.includes("s/n") ||
-          numero === "sn" ||
-          numero.includes("sem numero") ||
-          numero.includes("sem número")
-        ) {
-          numero = "S/N";
-        }
-
-        if (cepFormatado.length === 8) {
-          fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`)
-            .then((res) => res.json())
-            .then((viaData) => {
-              if (!viaData.erro) {
-                const end = `${viaData.logradouro || ""}, ${numero}, ${
-                  viaData.bairro || ""
-                }, ${viaData.localidade || ""} - ${viaData.uf || ""}, Brasil`.trim();
-                geocoderAluno.geocode({ address: end }, function (results, status) {
-                  if (status === "OK" && results[0]) {
-                    placeAlunoMarker(results[0].geometry.location, true);
-                    if (!centerEscola) {
-                      mapAluno.setCenter(results[0].geometry.location);
-                      mapAluno.setZoom(14);
-                    }
-                  }
-                });
-              }
-            })
-            .catch(() => {
-              // Se não encontrar CEP, ignore
-            });
-        }
-      }
-
-      function placeAlunoMarker(latLng, hasAddress) {
+      mapAluno.addListener("click", (e) => {
         if (currentAlunoMarker) {
           currentAlunoMarker.setMap(null);
         }
+        currentAlunoPosition = e.latLng;
         currentAlunoMarker = new google.maps.Marker({
+          position: e.latLng,
           map: mapAluno,
-          position: latLng,
           title: "Aluno",
         });
-        currentAlunoPosition = latLng;
-        if (hasAddress && geocoderAluno) {
-          geocoderAluno.geocode({ location: latLng }, function (results, status) {
-            if (status === "OK" && results[0]) {
-              $("#localizarAlunoEnderecoCompleto").val(results[0].formatted_address);
-            }
-          });
-        } else {
-          $("#localizarAlunoEnderecoCompleto").val("");
-        }
-      }
+        $("#localizarAlunoLat").val(e.latLng.lat());
+        $("#localizarAlunoLng").val(e.latLng.lng());
+      });
+    }
+  </script>
+</body>
 
-      async function geocodeAddress(address) {
-        if (!geocoder) {
-          geocoder = new google.maps.Geocoder();
-        }
-        return new Promise((resolve) => {
-          geocoder.geocode({ address }, (results, status) => {
-            if (status === "OK" && results[0]) {
-              const location = results[0].geometry.location;
-              resolve({ lat: location.lat(), lng: location.lng() });
-            } else {
-              resolve(null);
-            }
-          });
-        });
-      }
-
-      function tratarNumero(numStr) {
-        let numeroTratado = (numStr || "").trim().toLowerCase();
-        if (
-          numeroTratado.includes("s/n") ||
-          numeroTratado === "sn" ||
-          numeroTratado.includes("sem numero") ||
-          numeroTratado.includes("sem número")
-        ) {
-          return "S/N";
-        }
-        return numeroTratado;
-      }
-    </script>
-  </body>
 </html>

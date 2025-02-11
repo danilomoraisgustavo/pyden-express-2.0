@@ -365,7 +365,9 @@ CREATE TABLE IF NOT EXISTS alunos_ativos (
   numero_telefone VARCHAR(50),
   filiacao_2 VARCHAR(255),
   responsavel VARCHAR(255),
-  deficiencia TEXT[]
+  deficiencia TEXT[],
+  longitude,
+  latitiude
 );
 
 
