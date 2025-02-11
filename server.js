@@ -5490,9 +5490,21 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
       filiacao_2,
       responsavel,
       deficiencia,
+      latitude,
+      longitude,
     } = req.body;
 
-    let defArray = null;
+    const check = await pool.query("SELECT * FROM alunos_ativos WHERE id = $1", [
+      id,
+    ]);
+    if (check.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno não encontrado." });
+    }
+
+    const oldData = check.rows[0];
+    let defArray = oldData.deficiencia || null;
     try {
       if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
         defArray = JSON.parse(deficiencia);
@@ -5500,59 +5512,79 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
         defArray = deficiencia;
       }
     } catch {
-      defArray = null;
+      // permanece como estava antes
     }
 
-    const check = await pool.query(
-      "SELECT id FROM alunos_ativos WHERE id = $1",
-      [id]
-    );
-    if (check.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Aluno não encontrado." });
-    }
+    const newIdMatricula = id_matricula !== undefined ? id_matricula : oldData.id_matricula;
+    const newEscolaId = escola_id !== undefined ? escola_id : oldData.escola_id;
+    const newAno = ano !== undefined ? ano : oldData.ano;
+    const newModalidade = modalidade !== undefined ? modalidade : oldData.modalidade;
+    const newFormatoLetivo = formato_letivo !== undefined ? formato_letivo : oldData.formato_letivo;
+    const newTurma = turma !== undefined ? turma : oldData.turma;
+    const newPessoaNome = pessoa_nome !== undefined ? pessoa_nome : oldData.pessoa_nome;
+    const newCpf = cpf !== undefined ? cpf : oldData.cpf;
+    const newTransp = transporte_escolar_poder_publico !== undefined
+      ? transporte_escolar_poder_publico
+      : oldData.transporte_escolar_poder_publico;
+    const newCep = cep !== undefined ? cep : oldData.cep;
+    const newBairro = bairro !== undefined ? bairro : oldData.bairro;
+    const newNumEndereco = numero_pessoa_endereco !== undefined
+      ? numero_pessoa_endereco
+      : oldData.numero_pessoa_endereco;
+    const newFiliacao1 = filiacao_1 !== undefined ? filiacao_1 : oldData.filiacao_1;
+    const newTelefone = numero_telefone !== undefined
+      ? numero_telefone
+      : oldData.numero_telefone;
+    const newFiliacao2 = filiacao_2 !== undefined ? filiacao_2 : oldData.filiacao_2;
+    const newResponsavel = responsavel !== undefined ? responsavel : oldData.responsavel;
+    const newDeficiencia = defArray !== null ? defArray : oldData.deficiencia;
+    const newLatitude = latitude !== undefined ? latitude : oldData.latitude;
+    const newLongitude = longitude !== undefined ? longitude : oldData.longitude;
 
     const query = `
-        UPDATE alunos_ativos
-        SET
-          id_matricula = $1,
-          escola_id = $2,
-          ano = $3,
-          modalidade = $4,
-          formato_letivo = $5,
-          turma = $6,
-          pessoa_nome = $7,
-          cpf = $8,
-          transporte_escolar_poder_publico = $9,
-          cep = $10,
-          bairro = $11,
-          numero_pessoa_endereco = $12,
-          filiacao_1 = $13,
-          numero_telefone = $14,
-          filiacao_2 = $15,
-          responsavel = $16,
-          deficiencia = $17
-        WHERE id = $18
-      `;
+      UPDATE alunos_ativos
+      SET
+        id_matricula = $1,
+        escola_id = $2,
+        ano = $3,
+        modalidade = $4,
+        formato_letivo = $5,
+        turma = $6,
+        pessoa_nome = $7,
+        cpf = $8,
+        transporte_escolar_poder_publico = $9,
+        cep = $10,
+        bairro = $11,
+        numero_pessoa_endereco = $12,
+        filiacao_1 = $13,
+        numero_telefone = $14,
+        filiacao_2 = $15,
+        responsavel = $16,
+        deficiencia = $17,
+        latitude = $18,
+        longitude = $19
+      WHERE id = $20
+    `;
     await pool.query(query, [
-      id_matricula || null,
-      escola_id || null,
-      ano || null,
-      modalidade || null,
-      formato_letivo || null,
-      turma || null,
-      pessoa_nome || null,
-      cpf || null,
-      transporte_escolar_poder_publico || null,
-      cep || null,
-      bairro || null,
-      numero_pessoa_endereco || null,
-      filiacao_1 || null,
-      numero_telefone || null,
-      filiacao_2 || null,
-      responsavel || null,
-      defArray,
+      newIdMatricula,
+      newEscolaId,
+      newAno,
+      newModalidade,
+      newFormatoLetivo,
+      newTurma,
+      newPessoaNome,
+      newCpf,
+      newTransp,
+      newCep,
+      newBairro,
+      newNumEndereco,
+      newFiliacao1,
+      newTelefone,
+      newFiliacao2,
+      newResponsavel,
+      newDeficiencia,
+      newLatitude,
+      newLongitude,
       id,
     ]);
 
