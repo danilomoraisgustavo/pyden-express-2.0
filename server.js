@@ -17,7 +17,6 @@ const { Parser } = require("xml2js");
 const JSZip = require("jszip");
 const { DOMParser } = require("@xmldom/xmldom");
 const tj = require("@mapbox/togeojson");
-const fetch = require("node-fetch"); // Se ainda não estiver importado
 
 const {
   Document,
@@ -5569,183 +5568,384 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
-/**
- * Endpoint para atribuir pontos de parada aos alunos, com base em:
- * - Endereço (CEP + número + bairro) do aluno
- * - Rota que contemple a escola do aluno (rotas_escolas + rotas_pontos)
- * - Selecionar o ponto de parada mais próximo, entre aqueles que servem à escola do aluno
- *
- * IMPORTANTE:
- * - Assume-se que na tabela 'alunos_ativos' exista (ou foi adicionada) uma coluna 'ponto_id' (INT).
- * - Utilize seu Google Maps API Key em process.env.GOOGLE_MAPS_API_KEY (ou onde achar conveniente).
- * - Para cada aluno, vamos obter lat/lng via Google Geocoding (caso não tenha lat/lng armazenado).
- * - Em seguida, pesquisamos todos os pontos que pertencem a rotas que atendam a escola do aluno.
- * - Calculamos a distância e atribuímos o ponto de menor distância.
- * - Atualizamos a coluna 'ponto_id' do aluno.
- * - Caso algum dado seja inconsistente ou não encontremos ponto, simplesmente não atualizamos aquele aluno.
- */
-
-// Função auxiliar de geocodificação no lado do servidor:
-async function obterCoordenadasGoogle(cep, numero, bairro) {
+// --------------------------------------------------------------------------------
+// ATRIBUIR PONTO DE PARADA AO ALUNO
+// --------------------------------------------------------------------------------
+app.post("/api/alunos-ativos/:id/atribuir-ponto", async (req, res) => {
   try {
-    // Montar o endereço textual para geocodificar
-    const addressParts = [];
-    if (numero && numero.trim()) addressParts.push(numero.trim());
-    if (bairro && bairro.trim()) addressParts.push(bairro.trim());
-    if (cep && cep.trim()) addressParts.push(cep.trim());
+    const { id } = req.params;
 
-    const addressString = encodeURIComponent(addressParts.join(", ") + ", Brasil");
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY || ""; // Substitua pela sua chave ou use variáveis de ambiente
-
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${addressString}&key=${apiKey}`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-
-    if (data.status === "OK" && data.results && data.results.length > 0) {
-      const location = data.results[0].geometry.location;
-      return {
-        lat: location.lat,
-        lng: location.lng,
-      };
-    } else {
-      return null;
+    // 1) Buscar aluno
+    const alunoRes = await pool.query(
+      "SELECT * FROM alunos_ativos WHERE id = $1 LIMIT 1",
+      [id]
+    );
+    if (alunoRes.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Aluno não encontrado.",
+      });
     }
-  } catch (error) {
-    console.error("Erro ao geocodificar endereço:", error);
-    return null;
-  }
-}
+    const aluno = alunoRes.rows[0];
 
-// Função auxiliar de cálculo de distância (Haversine):
-function calcularDistancia(lat1, lng1, lat2, lng2) {
-  const R = 6371e3; // Raio da Terra em metros
-  const rad = Math.PI / 180;
-  const dLat = (lat2 - lat1) * rad;
-  const dLng = (lng2 - lng1) * rad;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * rad) *
-      Math.cos(lat2 * rad) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distancia = R * c; // em metros
-  return distancia;
-}
-
-/**
- * POST /api/atribuir-pontos-alunos
- * Body esperado: { alunos: [{ id, cep, bairro, numero_pessoa_endereco, escola_id, ... }, ... ] }
- * Retorna: { success: boolean, message: string }
- */
-app.post("/api/atribuir-pontos-alunos", async (req, res) => {
-  try {
-    const { alunos } = req.body;
-    if (!alunos || !Array.isArray(alunos)) {
+    // 2) Verificar se transporte_escolar_poder_publico é Municipal ou Estadual
+    const transp = (aluno.transporte_escolar_poder_publico || "").toLowerCase();
+    if (transp !== "municipal" && transp !== "estadual") {
       return res.status(400).json({
         success: false,
-        message: "Requisição inválida. Esperado { alunos: [] }.",
+        message:
+          "Aluno não utiliza transporte público municipal ou estadual. Nenhum ponto atribuído.",
       });
     }
 
-    // Percorrer cada aluno e tentar atribuir um ponto
-    let atribuicoesOk = 0;
-    let atribuicoesErro = 0;
+    // 3) Buscar a escola do aluno
+    if (!aluno.escola_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Aluno não possui escola associada.",
+      });
+    }
+    const escolaRes = await pool.query(
+      "SELECT * FROM escolas WHERE id = $1 LIMIT 1",
+      [aluno.escola_id]
+    );
+    if (escolaRes.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "A escola associada ao aluno não existe.",
+      });
+    }
 
-    for (const aluno of alunos) {
-      const alunoId = aluno.id;
-      const escolaId = aluno.escola_id;
-      const cep = aluno.cep || "";
-      const bairro = aluno.bairro || "";
-      const numeroEnd = aluno.numero_pessoa_endereco || "";
+    // 4) Montar endereço do aluno a partir de CEP + número + bairro
+    const cepLimpo = (aluno.cep || "").replace(/\D/g, "");
+    let numero = (aluno.numero_pessoa_endereco || "").toLowerCase().trim();
+    if (
+      numero.includes("s/n") ||
+      numero === "sn" ||
+      numero.includes("sem numero") ||
+      numero.includes("sem número")
+    ) {
+      numero = "S/N";
+    }
+    if (cepLimpo.length !== 8) {
+      return res.status(400).json({
+        success: false,
+        message: "CEP inválido ou inexistente para este aluno.",
+      });
+    }
 
-      if (!escolaId) {
-        atribuicoesErro++;
-        continue;
+    // 5) Obter logradouro via ViaCEP
+    const viaCepResp = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+    const viaCepJson = await viaCepResp.json();
+    if (viaCepJson.erro) {
+      return res.status(400).json({
+        success: false,
+        message: "Não foi possível obter endereço pelo CEP (viaCep).",
+      });
+    }
+    const enderecoCompleto = `${viaCepJson.logradouro || ""}, ${numero}, ${
+      viaCepJson.bairro || ""
+    }, ${viaCepJson.localidade || ""} - ${viaCepJson.uf || ""}, Brasil`;
+
+    // 6) Geocodificar endereço usando Google Maps ou qualquer geocoder
+    //    (exemplo simples usando fetch e a API do Google Maps)
+    //    Necessário ter a chave de API (aqui usamos process.env.GOOGLE_API_KEY)
+    //    ou então use outro serviço de geocodificação que desejar.
+    const googleKey = process.env.GOOGLE_API_KEY; // Defina no .env
+    if (!googleKey) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Chave de API do Google não configurada no servidor (GOOGLE_API_KEY).",
+      });
+    }
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+      enderecoCompleto
+    )}&key=${googleKey}`;
+    const geoResp = await fetch(geocodeUrl);
+    const geoData = await geoResp.json();
+    if (!geoData.results || geoData.results.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Não foi possível obter latitude e longitude do endereço.",
+      });
+    }
+    const alunoLat = geoData.results[0].geometry.location.lat;
+    const alunoLng = geoData.results[0].geometry.location.lng;
+
+    // 7) Obter lista de rotas que atendem a escola do aluno (rotas_escolas)
+    const rotasEscolaRes = await pool.query(
+      "SELECT rota_id FROM rotas_escolas WHERE escola_id = $1",
+      [aluno.escola_id]
+    );
+    if (rotasEscolaRes.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Nenhuma rota atende a escola do aluno. Não é possível atribuir um ponto.",
+      });
+    }
+    const rotaIds = rotasEscolaRes.rows.map((r) => r.rota_id);
+
+    // 8) Obter todos os pontos ligados às rotas encontradas (rotas_pontos)
+    const rotasPontosRes = await pool.query(
+      `SELECT rota_id, ponto_id 
+         FROM rotas_pontos
+         WHERE rota_id = ANY($1::int[])`,
+      [rotaIds]
+    );
+    if (rotasPontosRes.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Nenhum ponto de parada cadastrado nas rotas que atendem a escola do aluno.",
+      });
+    }
+    const pontoIds = rotasPontosRes.rows.map((rp) => rp.ponto_id);
+
+    // 9) Obter detalhes dos pontos (pontos)
+    const pontosRes = await pool.query(
+      `SELECT id, latitude, longitude
+         FROM pontos
+         WHERE id = ANY($1::int[])`,
+      [pontoIds]
+    );
+    if (pontosRes.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Pontos não encontrados ou inexistentes.",
+      });
+    }
+    const pontos = pontosRes.rows;
+
+    // 10) Função de cálculo de distância
+    function getDistanceApprox(lat1, lng1, lat2, lng2) {
+      const R = 6371; // Raio da Terra em km
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c * 1000; // distancia em metros
+    }
+
+    // 11) Encontrar o ponto mais próximo
+    let menorDistancia = Number.MAX_VALUE;
+    let pontoMaisProximo = null;
+    for (const p of pontos) {
+      if (p.latitude == null || p.longitude == null) continue;
+      const dist = getDistanceApprox(
+        alunoLat,
+        alunoLng,
+        parseFloat(p.latitude),
+        parseFloat(p.longitude)
+      );
+      if (dist < menorDistancia) {
+        menorDistancia = dist;
+        pontoMaisProximo = p;
       }
+    }
+    if (!pontoMaisProximo) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Não foi encontrado um ponto de parada com coordenadas válidas para essas rotas.",
+      });
+    }
 
-      // 1) Obter rotas que servem a escola do aluno
-      const rotasQuery = `
-        SELECT rota_id FROM rotas_escolas WHERE escola_id = $1
-      `;
-      const rotasRes = await pool.query(rotasQuery, [escolaId]);
-      if (rotasRes.rows.length === 0) {
-        // Não há rota associada a essa escola
-        atribuicoesErro++;
-        continue;
-      }
-      const rotaIds = rotasRes.rows.map((r) => r.rota_id);
+    // 12) Atualizar o aluno com o ID do ponto (precisa de coluna 'ponto_parada' na tabela alunos_ativos)
+    //     Se essa coluna não existe, crie: ALTER TABLE alunos_ativos ADD COLUMN ponto_parada INT;
+    const updateQuery = `
+      UPDATE alunos_ativos
+      SET ponto_parada = $1
+      WHERE id = $2
+    `;
+    await pool.query(updateQuery, [pontoMaisProximo.id, id]);
 
-      // 2) Obter todos os pontos destas rotas
-      //    (Se houver várias rotas para a mesma escola, unimos todos os pontos)
-      const pontosQuery = `
-        SELECT DISTINCT p.id, p.latitude, p.longitude
-        FROM rotas_pontos rp
-        JOIN pontos p ON p.id = rp.ponto_id
-        WHERE rp.rota_id = ANY($1::int[])
-      `;
-      const pontosRes = await pool.query(pontosQuery, [rotaIds]);
-      if (pontosRes.rows.length === 0) {
-        atribuicoesErro++;
-        continue;
-      }
+    // 13) Retornar sucesso
+    return res.json({
+      success: true,
+      message: `Ponto #${pontoMaisProximo.id} atribuído ao aluno com sucesso.`,
+    });
+  } catch (error) {
+    console.error("Erro ao atribuir ponto ao aluno:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor ao atribuir ponto.",
+    });
+  }
+});
 
-      // 3) Obter lat/lng do aluno via Google Geocoding (ou ignorar se já tivermos)
-      let alunoLatLng = null;
-      // Aqui podemos ter o caso de o aluno já ter lat/lng no DB. Ajuste se desejar.
-      // Por simplicidade, geocodificamos toda vez.
-      alunoLatLng = await obterCoordenadasGoogle(cep, numeroEnd, bairro);
+// --------------------------------------------------------------------------------
+// ATRIBUIR PONTO DE PARADA PARA TODOS
+// --------------------------------------------------------------------------------
+app.post("/api/alunos-ativos/atribuir-ponto-todos", async (req, res) => {
+  try {
+    // 1) Selecionar todos os alunos (ou apenas Municipais/Estaduais)
+    const alunosRes = await pool.query(`
+      SELECT *
+      FROM alunos_ativos
+      WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
+        AND cep IS NOT NULL
+        AND cep <> ''
+    `);
+    if (alunosRes.rows.length === 0) {
+      return res.json({
+        success: false,
+        message: "Não há alunos municipais ou estaduais com CEP válido.",
+      });
+    }
+    const alunos = alunosRes.rows;
 
-      if (!alunoLatLng) {
-        // Não foi possível geocodificar
-        atribuicoesErro++;
-        continue;
-      }
+    // 2) Para cada aluno, repetir lógica de atribuição
+    const googleKey = process.env.GOOGLE_API_KEY;
+    if (!googleKey) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Chave de API do Google não configurada no servidor (GOOGLE_API_KEY).",
+      });
+    }
+    let atribuicoesFeitas = 0;
+    let atribuicoesFalhas = 0;
 
-      // 4) Calcular distâncias e achar ponto de parada mais próximo
-      let menorDistancia = Infinity;
-      let pontoMaisProx = null;
+    // 3) Função de distância
+    function getDistanceApprox(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLng = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c * 1000;
+    }
 
-      for (const ponto of pontosRes.rows) {
-        if (ponto.latitude == null || ponto.longitude == null) continue;
-        const dist = calcularDistancia(
-          alunoLatLng.lat,
-          alunoLatLng.lng,
-          parseFloat(ponto.latitude),
-          parseFloat(ponto.longitude)
-        );
-        if (dist < menorDistancia) {
-          menorDistancia = dist;
-          pontoMaisProx = ponto.id;
-        }
-      }
-      if (!pontoMaisProx) {
-        atribuicoesErro++;
-        continue;
-      }
-
-      // 5) Atualizar a tabela 'alunos_ativos' com esse ponto_id (assumindo que existe a coluna 'ponto_id')
+    // 4) Processar cada aluno
+    for (const al of alunos) {
       try {
-        await pool.query(
-          `UPDATE alunos_ativos SET ponto_id = $1 WHERE id = $2`,
-          [pontoMaisProx, alunoId]
+        // Buscar rotas que atendem a escola
+        if (!al.escola_id) {
+          atribuicoesFalhas++;
+          continue;
+        }
+        const rotasEsc = await pool.query(
+          "SELECT rota_id FROM rotas_escolas WHERE escola_id = $1",
+          [al.escola_id]
         );
-        atribuicoesOk++;
-      } catch (e) {
-        console.error("Erro ao atualizar aluno com ponto_id:", e);
-        atribuicoesErro++;
+        if (rotasEsc.rows.length === 0) {
+          atribuicoesFalhas++;
+          continue;
+        }
+        const rotaIds = rotasEsc.rows.map((r) => r.rota_id);
+
+        const rotasPontos = await pool.query(
+          "SELECT ponto_id FROM rotas_pontos WHERE rota_id = ANY($1::int[])",
+          [rotaIds]
+        );
+        if (rotasPontos.rows.length === 0) {
+          atribuicoesFalhas++;
+          continue;
+        }
+        const pontoIds = rotasPontos.rows.map((rp) => rp.ponto_id);
+
+        // Montar endereço
+        const cepLimpo = (al.cep || "").replace(/\D/g, "");
+        let numero = (al.numero_pessoa_endereco || "").toLowerCase().trim();
+        if (
+          numero.includes("s/n") ||
+          numero === "sn" ||
+          numero.includes("sem numero") ||
+          numero.includes("sem número")
+        ) {
+          numero = "S/N";
+        }
+        // viaCep
+        const viaResp = await fetch(
+          `https://viacep.com.br/ws/${cepLimpo}/json/`
+        );
+        const viaJson = await viaResp.json();
+        if (viaJson.erro) {
+          atribuicoesFalhas++;
+          continue;
+        }
+        const fullAddr = `${viaJson.logradouro || ""}, ${numero}, ${
+          viaJson.bairro || ""
+        }, ${viaJson.localidade || ""} - ${viaJson.uf || ""}, Brasil`;
+
+        // Geocode google
+        const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+          fullAddr
+        )}&key=${googleKey}`;
+        const geoResp = await fetch(geocodeUrl);
+        const geoJson = await geoResp.json();
+        if (!geoJson.results || geoJson.results.length === 0) {
+          atribuicoesFalhas++;
+          continue;
+        }
+        const alunoLat = geoJson.results[0].geometry.location.lat;
+        const alunoLng = geoJson.results[0].geometry.location.lng;
+
+        // Buscar pontos
+        const pontosInfo = await pool.query(
+          "SELECT id, latitude, longitude FROM pontos WHERE id = ANY($1::int[])",
+          [pontoIds]
+        );
+        if (pontosInfo.rows.length === 0) {
+          atribuicoesFalhas++;
+          continue;
+        }
+
+        // Achar mais próximo
+        let menorDistancia = Number.MAX_VALUE;
+        let pontoEscolhido = null;
+        for (const p of pontosInfo.rows) {
+          if (p.latitude == null || p.longitude == null) continue;
+          const dist = getDistanceApprox(
+            alunoLat,
+            alunoLng,
+            parseFloat(p.latitude),
+            parseFloat(p.longitude)
+          );
+          if (dist < menorDistancia) {
+            menorDistancia = dist;
+            pontoEscolhido = p;
+          }
+        }
+        if (!pontoEscolhido) {
+          atribuicoesFalhas++;
+          continue;
+        }
+
+        // Atualizar aluno
+        await pool.query(
+          "UPDATE alunos_ativos SET ponto_parada = $1 WHERE id = $2",
+          [pontoEscolhido.id, al.id]
+        );
+        atribuicoesFeitas++;
+      } catch {
+        atribuicoesFalhas++;
       }
     }
 
     return res.json({
       success: true,
-      message: `Atribuições concluídas. Sucesso: ${atribuicoesOk}, Erros: ${atribuicoesErro}`,
+      message: "Atribuição em massa concluída.",
+      atribuicoesFeitas,
+      atribuicoesFalhas,
     });
   } catch (error) {
-    console.error("Erro no /api/atribuir-pontos-alunos:", error);
+    console.error("Erro ao atribuir ponto a todos:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro interno ao atribuir pontos aos alunos.",
+      message: "Erro interno ao atribuir pontos em massa.",
     });
   }
 });

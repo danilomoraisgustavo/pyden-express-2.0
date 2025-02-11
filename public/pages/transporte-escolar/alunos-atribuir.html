@@ -4,7 +4,7 @@
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>
-        Atribuir Ponto de Parada - pydenadmin Bootstrap 5 Admin Dashboard
+        Atribuir Pontos de Parada - pydenadmin Bootstrap 5 Admin Dashboard
     </title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
     <link rel="icon" href="public/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
@@ -40,14 +40,9 @@
             max-width: 90% !important;
         }
 
-        #map {
-            width: 100%;
-            height: 500px;
-        }
-
         #mapAluno {
             width: 100%;
-            height: 500px;
+            height: 450px;
         }
 
         .spinner-container {
@@ -142,7 +137,18 @@
                                     </li>
                                     <li>
                                         <a href="../../pages/transporte-escolar/alunos-listar.html">
-                                            <span class="sub-item">Listar ALunos</span>
+                                            <span class="sub-item">Listar Alunos</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="../../pages/transporte-escolar/alunos-importar.html">
+                                            <span class="sub-item">Importar Alunos</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="../../pages/transporte-escolar/alunos-atribuir-parada.html"
+                                            class="active">
+                                            <span class="sub-item">Atribuir Pontos de Parada</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -661,7 +667,7 @@
                                         <div class="quick-actions-items">
                                             <div class="row m-0">
                                                 <a class="col-6 col-md-4 p-0"
-                                                    href="/pages/transporte-escolar/escolas-cadastrar.html">
+                                                    href="../../pages/transporte-escolar/escolas-cadastrar.html">
                                                     <div class="quick-actions-item">
                                                         <div class="avatar-item bg-primary rounded-circle">
                                                             <i class="fas fa-school"></i>
@@ -670,7 +676,7 @@
                                                     </div>
                                                 </a>
                                                 <a class="col-6 col-md-4 p-0"
-                                                    href="/pages/transporte-escolar/monitores-cadastrar.html">
+                                                    href="../../pages/transporte-escolar/monitores-cadastrar.html">
                                                     <div class="quick-actions-item">
                                                         <div class="avatar-item bg-success rounded-circle">
                                                             <i class="fas fa-user-check"></i>
@@ -679,7 +685,7 @@
                                                     </div>
                                                 </a>
                                                 <a class="col-6 col-md-4 p-0"
-                                                    href="/pages/transporte-escolar/rotas-listar.html">
+                                                    href="../../pages/transporte-escolar/rotas-listar.html">
                                                     <div class="quick-actions-item">
                                                         <div class="avatar-item bg-warning rounded-circle">
                                                             <i class="fas fa-route"></i>
@@ -688,7 +694,7 @@
                                                     </div>
                                                 </a>
                                                 <a class="col-6 col-md-4 p-0"
-                                                    href="/pages/transporte-administrativo/frota-listar.html">
+                                                    href="../../pages/transporte-administrativo/frota-listar.html">
                                                     <div class="quick-actions-item">
                                                         <div class="avatar-item bg-info rounded-circle">
                                                             <i class="fas fa-warehouse"></i>
@@ -727,20 +733,20 @@
                                                     <p class="text-muted" id="dropdownUserEmail">
                                                         email@exemplo.com
                                                     </p>
-                                                    <a href="/pages/usuarios/meu-perfil.html"
+                                                    <a href="../../pages/usuarios/meu-perfil.html"
                                                         class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
                                                 </div>
                                             </div>
                                         </li>
                                         <li>
                                             <div class="dropdown-divider"></div>
-                                            <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu
+                                            <a class="dropdown-item" href="../../pages/usuarios/meu-perfil.html">Meu
                                                 Perfil</a>
-                                            <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de
-                                                Entrada</a>
+                                            <a class="dropdown-item"
+                                                href="../../pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item"
-                                                href="/pages/usuarios/configuracoes.html">Configurações</a>
+                                                href="../../pages/usuarios/configuracoes.html">Configurações</a>
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
                                         </li>
@@ -754,9 +760,7 @@
             <div class="container">
                 <div class="page-inner">
                     <div class="page-header">
-                        <h3 class="fw-bold mb-3">
-                            Atribuir Ponto de Parada aos Alunos
-                        </h3>
+                        <h3 class="fw-bold mb-3">Atribuir Pontos de Parada</h3>
                         <ul class="breadcrumbs mb-3">
                             <li class="nav-home">
                                 <a href="../../">
@@ -769,183 +773,71 @@
                             <li class="nav-item"><a href="#">Atribuir Pontos</a></li>
                         </ul>
                     </div>
-                    <div class="mb-3">
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
-                            Importar Alunos
-                        </button>
-                        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalMapear">
-                            Mapear Alunos
-                        </button>
-                        <button class="btn btn-success" id="btnAtribuirPontos"
-                            title="Atribuir Ponto de Parada aos Alunos">
-                            Atribuir Ponto de Parada
-                        </button>
-                    </div>
-                    <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel"
-                        aria-hidden="true">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="modalImportarLabel">
-                                        Importar Arquivo XLSX
-                                    </h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>
-                                        1. Selecione a escola referente a todos os alunos que
-                                        serão importados.
-                                    </p>
-                                    <div class="mb-3">
-                                        <label for="escolaSelect" class="form-label required-label">Escola</label>
-                                        <select class="form-select" id="escolaSelect">
-                                            <option value="">Selecione a Escola</option>
-                                        </select>
-                                    </div>
-                                    <p>
-                                        2. Selecione o arquivo XLSX conforme o formato
-                                        especificado.
-                                    </p>
-                                    <input type="file" id="fileInput" accept=".xlsx, .xls" class="form-control mb-3" />
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                        Fechar
-                                    </button>
-                                    <button id="importarBtn" type="button" class="btn btn-primary">
-                                        Importar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal fade" id="modalMapear" tabindex="-1" aria-labelledby="modalMapearLabel"
-                        aria-hidden="true">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="modalMapearLabel">
-                                        Mapa de Alunos
-                                    </h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <label for="selectEscolaMap" class="form-label">Filtrar por Escola</label>
-                                            <select class="form-select" id="selectEscolaMap">
-                                                <option value="">Todas as Escolas</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="buscarAlunoInput" class="form-label">Buscar por ID, Nome ou
-                                                CPF</label>
-                                            <input type="text" class="form-control" id="buscarAlunoInput"
-                                                placeholder="Ex: 12345 ou João ou 000.000.000-00" />
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <button id="btnFiltrarMapa" class="btn btn-primary">
-                                            Buscar/Filtrar
-                                        </button>
-                                    </div>
-                                    <div id="map"></div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                        Fechar
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="card mb-4">
                         <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label for="filtroEscola" class="form-label">Filtrar por Escola</label>
-                                    <select id="filtroEscola" class="form-select">
-                                        <option value="">Todas</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="filtroBairro" class="form-label">Filtrar por Bairro</label>
-                                    <select id="filtroBairro" class="form-select">
-                                        <option value="">Todos</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="filtroCep" class="form-label">Filtrar por CEP</label>
-                                    <select id="filtroCep" class="form-select">
-                                        <option value="">Todos</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="searchInput" class="form-label">Pesquisa Geral</label>
-                                    <input type="text" id="searchInput" class="form-control"
-                                        placeholder="Digite para pesquisar..." />
-                                </div>
+                            <div class="mb-3">
+                                <button class="btn btn-primary" id="btnAtribuirTodos">
+                                    Atribuir Pontos a Todos
+                                </button>
+                                <button class="btn btn-info" id="btnRecarregar">
+                                    Recarregar Lista
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table id="alunosTable" class="display table table-striped table-hover"
+                                    style="width: 100%">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Matrícula</th>
+                                            <th>Nome</th>
+                                            <th>Escola</th>
+                                            <th>Transp. Escolar</th>
+                                            <th>CEP</th>
+                                            <th>Bairro</th>
+                                            <th>Número End.</th>
+                                            <th>Ponto Atribuído</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Matrícula</th>
+                                            <th>Nome</th>
+                                            <th>Escola</th>
+                                            <th>Transp. Escolar</th>
+                                            <th>CEP</th>
+                                            <th>Bairro</th>
+                                            <th>Número End.</th>
+                                            <th>Ponto Atribuído</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
                             </div>
                         </div>
                     </div>
-                    <div class="row mt-4">
-                        <div class="col-md-12">
-                            <div class="card">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <h4 class="card-title">Alunos Cadastrados</h4>
+
+                    <div class="modal fade" id="modalVisualizarAluno" tabindex="-1"
+                        aria-labelledby="modalVisualizarAlunoLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalVisualizarAlunoLabel">
+                                        Visualizar Local do Aluno
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
                                 </div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table id="alunos-table" class="display table table-striped table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th>ID Matrícula</th>
-                                                    <th>Escola (Nome)</th>
-                                                    <th>Ano</th>
-                                                    <th>Modalidade</th>
-                                                    <th>Form. Letivo</th>
-                                                    <th>Turma</th>
-                                                    <th>Nome Aluno</th>
-                                                    <th>CPF</th>
-                                                    <th>Transp. Escolar</th>
-                                                    <th>CEP</th>
-                                                    <th>Bairro</th>
-                                                    <th>Número Endereço</th>
-                                                    <th>Filiação 1</th>
-                                                    <th>Telefone</th>
-                                                    <th>Filiação 2</th>
-                                                    <th>Responsável</th>
-                                                    <th>Deficiência</th>
-                                                    <th>Ações</th>
-                                                </tr>
-                                            </thead>
-                                            <tfoot>
-                                                <tr>
-                                                    <th>ID Matrícula</th>
-                                                    <th>Escola (Nome)</th>
-                                                    <th>Ano</th>
-                                                    <th>Modalidade</th>
-                                                    <th>Form. Letivo</th>
-                                                    <th>Turma</th>
-                                                    <th>Nome Aluno</th>
-                                                    <th>CPF</th>
-                                                    <th>Transp. Escolar</th>
-                                                    <th>CEP</th>
-                                                    <th>Bairro</th>
-                                                    <th>Número Endereço</th>
-                                                    <th>Filiação 1</th>
-                                                    <th>Telefone</th>
-                                                    <th>Filiação 2</th>
-                                                    <th>Responsável</th>
-                                                    <th>Deficiência</th>
-                                                    <th>Ações</th>
-                                                </tr>
-                                            </tfoot>
-                                            <tbody></tbody>
-                                        </table>
-                                    </div>
+                                <div class="modal-body">
+                                    <div id="mapAluno"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        Fechar
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -984,146 +876,25 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalEditarAluno" tabindex="-1" aria-labelledby="modalEditarAlunoLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalEditarAlunoLabel">Editar Aluno</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="formEditarAluno">
-                        <input type="hidden" id="editarAlunoId" />
-                        <div class="mb-3">
-                            <label for="editarIdMatricula" class="form-label">ID Matrícula</label>
-                            <input type="text" class="form-control" id="editarIdMatricula" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarEscolaId" class="form-label">Escola (ID)</label>
-                            <input type="text" class="form-control" id="editarEscolaId" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarAno" class="form-label">Ano</label>
-                            <input type="text" class="form-control" id="editarAno" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarModalidade" class="form-label">Modalidade</label>
-                            <input type="text" class="form-control" id="editarModalidade" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarFormatoLetivo" class="form-label">Formato Letivo</label>
-                            <input type="text" class="form-control" id="editarFormatoLetivo" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarTurma" class="form-label">Turma</label>
-                            <input type="text" class="form-control" id="editarTurma" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarNomeAluno" class="form-label">Nome Aluno</label>
-                            <input type="text" class="form-control" id="editarNomeAluno" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarCpf" class="form-label">CPF</label>
-                            <input type="text" class="form-control" id="editarCpf" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarTransporte" class="form-label">Transp. Escolar</label>
-                            <input type="text" class="form-control" id="editarTransporte" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarCep" class="form-label">CEP</label>
-                            <input type="text" class="form-control" id="editarCep" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarBairro" class="form-label">Bairro</label>
-                            <input type="text" class="form-control" id="editarBairro" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarNumeroEndereco" class="form-label">Número Endereço</label>
-                            <input type="text" class="form-control" id="editarNumeroEndereco" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarFiliacao1" class="form-label">Filiação 1</label>
-                            <input type="text" class="form-control" id="editarFiliacao1" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarTelefone" class="form-label">Telefone</label>
-                            <input type="text" class="form-control" id="editarTelefone" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarFiliacao2" class="form-label">Filiação 2</label>
-                            <input type="text" class="form-control" id="editarFiliacao2" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarResponsavel" class="form-label">Responsável</label>
-                            <input type="text" class="form-control" id="editarResponsavel" />
-                        </div>
-                        <div class="mb-3">
-                            <label for="editarDeficiencia" class="form-label">Deficiência (JSON)</label>
-                            <input type="text" class="form-control" id="editarDeficiencia" />
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Fechar
-                    </button>
-                    <button type="button" class="btn btn-primary" id="btnSalvarEdicao">
-                        Salvar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalLocalizarAluno" tabindex="-1" aria-labelledby="modalLocalizarAlunoLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalLocalizarAlunoLabel">
-                        Localizar Aluno
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="mapAluno"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Fechar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SCRIPTS -->
     <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="../../assets/js/core/popper.min.js"></script>
     <script src="../../assets/js/core/bootstrap.min.js"></script>
-    <script src="../../assets/js/usuario.js"></script>
     <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
     <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
     <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+    <script src="../../assets/js/usuario.js"></script>
     <script src="../../assets/js/pydenadmin.min.js"></script>
     <script src="../../assets/js/setting-demo2.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&v=beta&libraries=marker"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&v=beta"></script>
     <script>
-        let dadosXLSX = [];
-        let escolasLista = [];
         let dataTable = null;
-        let alunosData = [];
-        let map = null;
-        let geocoder = null;
-        let escolaLocalizacao = null;
+        let listaAlunos = [];
+        let listaRotasEscolas = [];
+        let listaRotasPontos = [];
+        let listaPontos = [];
+        let listaEscolas = [];
         let mapAluno = null;
         let geocoderAluno = null;
-        let alunoAtual = null;
-        let escolaLocAluno = null;
 
         function showLoader() {
             document.getElementById("globalLoader").style.display = "flex";
@@ -1159,121 +930,102 @@
             );
         }
 
-        function carregarEscolas() {
+        function carregarAlunos() {
             showLoader();
+            fetch("/api/alunos-ativos?transporte=Municipal,Estadual")
+                .then((res) => res.json())
+                .then((data) => {
+                    listaAlunos = data;
+                    popularTabelaAlunos(listaAlunos);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    showNotification("danger", "Erro ao carregar alunos.");
+                })
+                .finally(() => {
+                    hideLoader();
+                });
+        }
+
+        function carregarRotasEscolas() {
+            fetch("/api/rotas_escolas")
+                .then((res) => res.json())
+                .then((data) => {
+                    listaRotasEscolas = data;
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+        }
+
+        function carregarRotasPontos() {
+            fetch("/api/rotas_pontos")
+                .then((res) => res.json())
+                .then((data) => {
+                    listaRotasPontos = data;
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+        }
+
+        function carregarPontos() {
+            fetch("/api/pontos")
+                .then((res) => res.json())
+                .then((data) => {
+                    listaPontos = data;
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+        }
+
+        function carregarEscolas() {
             fetch("/api/escolas")
                 .then((res) => res.json())
                 .then((data) => {
-                    escolasLista = data;
-                    popularSelectEscolas();
-                    popularSelectEscolasMap();
+                    listaEscolas = data;
                 })
                 .catch((err) => {
                     console.error(err);
-                    showNotification("danger", "Erro ao carregar lista de escolas.");
-                })
-                .finally(() => {
-                    hideLoader();
                 });
         }
 
-        function popularSelectEscolas() {
-            const select = document.getElementById("escolaSelect");
-            select.innerHTML = '<option value="">Selecione a Escola</option>';
-            escolasLista.forEach((escola) => {
-                const option = document.createElement("option");
-                option.value = escola.id;
-                option.textContent = `${escola.nome} (ID: ${escola.id})`;
-                select.appendChild(option);
-            });
-        }
-
-        function popularSelectEscolasMap() {
-            const selectMap = document.getElementById("selectEscolaMap");
-            selectMap.innerHTML = '<option value="">Todas as Escolas</option>';
-            escolasLista.forEach((escola) => {
-                const option = document.createElement("option");
-                option.value = escola.id;
-                option.textContent = `${escola.nome} (ID: ${escola.id})`;
-                selectMap.appendChild(option);
-            });
-        }
-
-        function carregarAlunosBD() {
-            showLoader();
-            fetch("/api/alunos-ativos")
-                .then((res) => res.json())
-                .then((data) => {
-                    alunosData = data;
-                    popularTabela(alunosData);
-                })
-                .catch((err) => {
-                    console.error(err);
-                    showNotification("danger", "Erro ao carregar dados do banco.");
-                })
-                .finally(() => {
-                    hideLoader();
-                });
-        }
-
-        function popularTabela(alunos) {
-            const tbody = $("#alunos-table tbody");
+        function popularTabelaAlunos(data) {
+            const tbody = $("#alunosTable tbody");
             tbody.empty();
-
-            const distinctEscolas = new Set();
-            const distinctBairros = new Set();
-            const distinctCeps = new Set();
-
-            alunos.forEach((item) => {
-                const defString =
-                    item.deficiencia && Array.isArray(item.deficiencia)
-                        ? JSON.stringify(item.deficiencia)
-                        : item.deficiencia || "";
-
+            data.forEach((aluno) => {
+                const pontoMostrado = aluno.ponto_parada
+                    ? `Ponto #${aluno.ponto_parada}`
+                    : "";
                 const row = `
-            <tr data-id="${item.id}" data-obj='${JSON.stringify(item)}'>
-              <td>${item.id_matricula || ""}</td>
-              <td>${item.escola_nome || ""}</td>
-              <td>${item.ano || ""}</td>
-              <td>${item.modalidade || ""}</td>
-              <td>${item.formato_letivo || ""}</td>
-              <td>${item.turma || ""}</td>
-              <td>${item.pessoa_nome || ""}</td>
-              <td>${item.cpf || ""}</td>
-              <td>${item.transporte_escolar_poder_publico || ""}</td>
-              <td>${item.cep || ""}</td>
-              <td>${item.bairro || ""}</td>
-              <td>${item.numero_pessoa_endereco || ""}</td>
-              <td>${item.filiacao_1 || ""}</td>
-              <td>${item.numero_telefone || ""}</td>
-              <td>${item.filiacao_2 || ""}</td>
-              <td>${item.responsavel || ""}</td>
-              <td>${defString}</td>
+            <tr data-id="${aluno.id}">
+              <td>${aluno.id}</td>
+              <td>${aluno.id_matricula || ""}</td>
+              <td>${aluno.pessoa_nome || ""}</td>
+              <td>${aluno.escola_nome || ""}</td>
+              <td>${aluno.transporte_escolar_poder_publico || ""}</td>
+              <td>${aluno.cep || ""}</td>
+              <td>${aluno.bairro || ""}</td>
+              <td>${aluno.numero_pessoa_endereco || ""}</td>
+              <td>${pontoMostrado}</td>
               <td>
-                <button class="btn btn-sm btn-warning btn-editar" title="Editar">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-info btn-localizar" title="Localizar">
+                <button class="btn btn-sm btn-primary btn-atribuir" title="Atribuir">
                   <i class="fa fa-map-marker-alt"></i>
                 </button>
-                <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
-                  <i class="fa fa-trash"></i>
+                <button class="btn btn-sm btn-info btn-localizar" title="Visualizar">
+                  <i class="fa fa-eye"></i>
                 </button>
               </td>
             </tr>
           `;
                 tbody.append(row);
-
-                if (item.escola_nome) distinctEscolas.add(item.escola_nome);
-                if (item.bairro) distinctBairros.add(item.bairro);
-                if (item.cep) distinctCeps.add(item.cep);
             });
 
             if (dataTable) {
                 dataTable.clear().destroy();
             }
-
-            dataTable = $("#alunos-table").DataTable({
+            dataTable = $("#alunosTable").DataTable({
                 pageLength: 10,
                 language: {
                     decimal: ",",
@@ -1295,567 +1047,29 @@
                     emptyTable: "Nenhum dado disponível na tabela",
                 },
             });
-
-            const filtroEscola = document.getElementById("filtroEscola");
-            const filtroBairro = document.getElementById("filtroBairro");
-            const filtroCep = document.getElementById("filtroCep");
-
-            filtroEscola.innerHTML = '<option value="">Todas</option>';
-            filtroBairro.innerHTML = '<option value="">Todos</option>';
-            filtroCep.innerHTML = '<option value="">Todos</option>';
-
-            distinctEscolas.forEach((e) => {
-                const opt = document.createElement("option");
-                opt.value = e;
-                opt.textContent = e;
-                filtroEscola.appendChild(opt);
-            });
-
-            distinctBairros.forEach((b) => {
-                const opt = document.createElement("option");
-                opt.value = b;
-                opt.textContent = b;
-                filtroBairro.appendChild(opt);
-            });
-
-            distinctCeps.forEach((c) => {
-                const opt = document.createElement("option");
-                opt.value = c;
-                opt.textContent = c;
-                filtroCep.appendChild(opt);
-            });
         }
 
-        $(document).on("change", "#filtroEscola", function () {
-            const val = this.value;
-            dataTable.column(1).search(val).draw();
-        });
-
-        $(document).on("change", "#filtroBairro", function () {
-            const val = this.value;
-            dataTable.column(10).search(val).draw();
-        });
-
-        $(document).on("change", "#filtroCep", function () {
-            const val = this.value;
-            dataTable.column(9).search(val).draw();
-        });
-
-        $(document).on("keyup", "#searchInput", function () {
-            dataTable.search(this.value).draw();
-        });
-
-        function handleFileImport(evt) {
-            const file = evt.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const data = e.target.result;
-                const workbook = XLSX.read(data, { type: "binary" });
-                const firstSheet = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheet];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                dadosXLSX = jsonData;
-            };
-            reader.readAsBinaryString(file);
-        }
-
-        function enviarImportacao() {
-            const escolaIdSelecionada =
-                document.getElementById("escolaSelect").value;
-            if (!escolaIdSelecionada) {
-                showNotification("danger", "Selecione uma escola antes de importar.");
+        function atribuirPontoAluno(alunoId) {
+            const aluno = listaAlunos.find((a) => a.id == alunoId);
+            if (!aluno) return;
+            if (!aluno.escola_id) {
+                showNotification("warning", "Aluno sem escola vinculada.");
                 return;
             }
-            if (!dadosXLSX.length) {
-                showNotification("danger", "Nenhum arquivo importado ainda.");
-                return;
-            }
-            showLoader();
-            const body = {
-                escolaId: escolaIdSelecionada,
-                alunos: dadosXLSX,
-            };
-            fetch("/api/import-alunos-ativos", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
-            })
-                .then((res) => res.json())
-                .then((resp) => {
-                    if (resp.success) {
-                        showNotification(
-                            "success",
-                            resp.message || "Importação realizada com sucesso!"
-                        );
-                        $("#modalImportar").modal("hide");
-                        carregarAlunosBD();
-                    } else {
-                        showNotification(
-                            "danger",
-                            resp.message || "Ocorreu um erro na importação."
-                        );
-                    }
-                })
-                .catch((err) => {
-                    console.error(err);
-                    showNotification("danger", "Erro ao enviar os dados ao servidor.");
-                })
-                .finally(() => {
-                    hideLoader();
-                });
-        }
+            const rotaIdsPossiveis = listaRotasEscolas
+                .filter((re) => re.escola_id == aluno.escola_id)
+                .map((re) => re.rota_id);
 
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: -3.135366, lng: -60.023207 },
-                zoom: 5,
-                mapId: "ca7a0e55f44be727",
-            });
-            geocoder = new google.maps.Geocoder();
-        }
-
-        $("#modalMapear").on("shown.bs.modal", function () {
-            if (!map) {
-                initMap();
-            }
-        });
-
-        $(document).on("click", "#btnFiltrarMapa", function () {
-            const escolaSelecionada = $("#selectEscolaMap").val();
-            const busca = $("#buscarAlunoInput").val().trim();
-            const queryParams = new URLSearchParams();
-            if (escolaSelecionada)
-                queryParams.append("escola_id", escolaSelecionada);
-            if (busca) queryParams.append("busca", busca);
-
-            showLoader();
-            fetch("/api/alunos-mapa?" + queryParams.toString())
-                .then((res) => res.json())
-                .then((resp) => {
-                    if (resp.success && Array.isArray(resp.data)) {
-                        plotarEscola(resp.escola || null);
-                        plotarAlunosMapa(resp.data);
-                    } else {
-                        showNotification(
-                            "info",
-                            "Nenhum aluno encontrado com esses filtros."
-                        );
-                    }
-                })
-                .catch((err) => {
-                    console.error(err);
-                    showNotification("danger", "Erro ao filtrar alunos no mapa.");
-                })
-                .finally(() => {
-                    hideLoader();
-                });
-        });
-
-        function plotarEscola(e) {
-            if (!map || !geocoder) return;
-            if (!e) return;
-            escolaLocalizacao = null;
-
-            if (e.latitude && e.longitude) {
-                escolaLocalizacao = new google.maps.LatLng(e.latitude, e.longitude);
-                new google.maps.Marker({
-                    map,
-                    position: escolaLocalizacao,
-                    title: e.nome,
-                });
-                map.setCenter(escolaLocalizacao);
-                map.setZoom(14);
-                new google.maps.Circle({
-                    strokeColor: "#FF0000",
-                    strokeOpacity: 0.8,
-                    strokeWeight: 2,
-                    fillColor: "#FF0000",
-                    fillOpacity: 0.35,
-                    map,
-                    center: escolaLocalizacao,
-                    radius: 2000,
-                });
-            } else {
-                let addr = "";
-                if (e.logradouro) addr += e.logradouro;
-                if (e.numero) addr += ", " + e.numero;
-                if (e.bairro) addr += ", " + e.bairro;
-                if (e.cep) addr += ", " + e.cep;
-                geocoder.geocode({ address: addr }, function (results, status) {
-                    if (status === "OK" && results[0]) {
-                        escolaLocalizacao = results[0].geometry.location;
-                        new google.maps.Marker({
-                            map,
-                            position: escolaLocalizacao,
-                            title: e.nome,
-                        });
-                        map.setCenter(escolaLocalizacao);
-                        map.setZoom(14);
-                        new google.maps.Circle({
-                            strokeColor: "#FF0000",
-                            strokeOpacity: 0.8,
-                            strokeWeight: 2,
-                            fillColor: "#FF0000",
-                            fillOpacity: 0.35,
-                            map,
-                            center: escolaLocalizacao,
-                            radius: 2000,
-                        });
-                    }
-                });
-            }
-        }
-
-        function plotarAlunosMapa(alunos) {
-            if (!map || !geocoder) return;
-            const bounds = new google.maps.LatLngBounds();
-            let contagem = 0;
-
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: { lat: -3.135366, lng: -60.023207 },
-                zoom: 5,
-                mapId: "ca7a0e55f44be727",
-            });
-
-            if (escolaLocalizacao) {
-                map.setCenter(escolaLocalizacao);
-                map.setZoom(14);
-                new google.maps.Circle({
-                    strokeColor: "#FF0000",
-                    strokeOpacity: 0.8,
-                    strokeWeight: 2,
-                    fillColor: "#FF0000",
-                    fillOpacity: 0.35,
-                    map,
-                    center: escolaLocalizacao,
-                    radius: 2000,
-                });
-                new google.maps.Marker({
-                    map,
-                    position: escolaLocalizacao,
-                    title: "Escola",
-                });
-                bounds.extend(escolaLocalizacao);
-            }
-
-            alunos.forEach((al) => {
-                const cepLimpo = (al.cep || "").replace(/\D/g, "");
-                let numeroEnd = (al.numero_pessoa_endereco || "").trim();
-                let numeroTratado = numeroEnd.toLowerCase();
-                if (
-                    numeroTratado.includes("s/n") ||
-                    numeroTratado === "sn" ||
-                    numeroTratado.includes("sem numero") ||
-                    numeroTratado.includes("sem número")
-                ) {
-                    numeroEnd = "S/N";
-                }
-
-                if (cepLimpo.length !== 8) {
-                    contagem++;
-                    if (contagem === alunos.length) map.fitBounds(bounds);
-                    return;
-                }
-                fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
-                    .then((res) => res.json())
-                    .then((dataViaCep) => {
-                        if (dataViaCep.erro) {
-                            contagem++;
-                            if (contagem === alunos.length) map.fitBounds(bounds);
-                            return;
-                        }
-                        const logradouro = dataViaCep.logradouro || "";
-                        const bairro = dataViaCep.bairro || "";
-                        const localidade = dataViaCep.localidade || "";
-                        const uf = dataViaCep.uf || "";
-
-                        const endCompleto =
-                            `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-                        geocoder.geocode(
-                            { address: endCompleto },
-                            function (results, status) {
-                                if (status === "OK" && results[0]) {
-                                    const loc = results[0].geometry.location;
-                                    const marker = new google.maps.Marker({
-                                        map,
-                                        position: loc,
-                                        title: al.pessoa_nome || "Aluno",
-                                    });
-                                    const infowindow = new google.maps.InfoWindow({
-                                        content: `<strong>${al.pessoa_nome || ""
-                                            }</strong><br>CPF: ${al.cpf || ""}<br>Matrícula: ${al.id_matricula || ""
-                                            }`,
-                                    });
-                                    marker.addListener("click", () => {
-                                        infowindow.open(map, marker);
-                                    });
-                                    bounds.extend(loc);
-                                }
-                                contagem++;
-                                if (contagem === alunos.length) {
-                                    map.fitBounds(bounds);
-                                }
-                            }
-                        );
-                    })
-                    .catch(() => {
-                        contagem++;
-                        if (contagem === alunos.length) map.fitBounds(bounds);
-                    });
-            });
-        }
-
-        $(document).ready(function () {
-            carregarEscolas();
-            carregarAlunosBD();
-            $("#fileInput").on("change", handleFileImport);
-            $("#importarBtn").on("click", enviarImportacao);
-
-            $(document).on("click", ".btn-editar", function () {
-                const tr = $(this).closest("tr");
-                const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
-                alunoAtual = dataObj.id;
-                $("#editarAlunoId").val(dataObj.id);
-                $("#editarIdMatricula").val(dataObj.id_matricula || "");
-                $("#editarEscolaId").val(dataObj.escola_id || "");
-                $("#editarAno").val(dataObj.ano || "");
-                $("#editarModalidade").val(dataObj.modalidade || "");
-                $("#editarFormatoLetivo").val(dataObj.formato_letivo || "");
-                $("#editarTurma").val(dataObj.turma || "");
-                $("#editarNomeAluno").val(dataObj.pessoa_nome || "");
-                $("#editarCpf").val(dataObj.cpf || "");
-                $("#editarTransporte").val(
-                    dataObj.transporte_escolar_poder_publico || ""
+            if (!rotaIdsPossiveis.length) {
+                showNotification(
+                    "warning",
+                    "Nenhuma rota encontrada para a escola do aluno."
                 );
-                $("#editarCep").val(dataObj.cep || "");
-                $("#editarBairro").val(dataObj.bairro || "");
-                $("#editarNumeroEndereco").val(dataObj.numero_pessoa_endereco || "");
-                $("#editarFiliacao1").val(dataObj.filiacao_1 || "");
-                $("#editarTelefone").val(dataObj.numero_telefone || "");
-                $("#editarFiliacao2").val(dataObj.filiacao_2 || "");
-                $("#editarResponsavel").val(dataObj.responsavel || "");
-                if (dataObj.deficiencia && Array.isArray(dataObj.deficiencia)) {
-                    $("#editarDeficiencia").val(JSON.stringify(dataObj.deficiencia));
-                } else {
-                    $("#editarDeficiencia").val(dataObj.deficiencia || "");
-                }
-                $("#modalEditarAluno").modal("show");
-            });
-
-            $("#btnSalvarEdicao").on("click", function () {
-                const body = {
-                    id: $("#editarAlunoId").val(),
-                    id_matricula: $("#editarIdMatricula").val(),
-                    escola_id: $("#editarEscolaId").val(),
-                    ano: $("#editarAno").val(),
-                    modalidade: $("#editarModalidade").val(),
-                    formato_letivo: $("#editarFormatoLetivo").val(),
-                    turma: $("#editarTurma").val(),
-                    pessoa_nome: $("#editarNomeAluno").val(),
-                    cpf: $("#editarCpf").val(),
-                    transporte_escolar_poder_publico: $("#editarTransporte").val(),
-                    cep: $("#editarCep").val(),
-                    bairro: $("#editarBairro").val(),
-                    numero_pessoa_endereco: $("#editarNumeroEndereco").val(),
-                    filiacao_1: $("#editarFiliacao1").val(),
-                    numero_telefone: $("#editarTelefone").val(),
-                    filiacao_2: $("#editarFiliacao2").val(),
-                    responsavel: $("#editarResponsavel").val(),
-                    deficiencia: $("#editarDeficiencia").val(),
-                };
-                showLoader();
-                fetch("/api/alunos-ativos/" + body.id, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body),
-                })
-                    .then((res) => res.json())
-                    .then((resp) => {
-                        if (resp.success) {
-                            showNotification("success", "Aluno atualizado com sucesso!");
-                            $("#modalEditarAluno").modal("hide");
-                            carregarAlunosBD();
-                        } else {
-                            showNotification(
-                                "danger",
-                                resp.message || "Erro ao atualizar."
-                            );
-                        }
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                        showNotification("danger", "Erro ao atualizar aluno.");
-                    })
-                    .finally(() => {
-                        hideLoader();
-                    });
-            });
-
-            $(document).on("click", ".btn-localizar", function () {
-                const tr = $(this).closest("tr");
-                const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
-                alunoAtual = dataObj.id;
-                escolaLocAluno = dataObj.escola_id || null;
-                $("#modalLocalizarAluno").modal("show");
-                setTimeout(() => {
-                    initMapAluno(dataObj);
-                }, 500);
-            });
-
-            $(document).on("click", ".btn-excluir", function () {
-                if (!confirm("Deseja realmente excluir este aluno?")) return;
-                const tr = $(this).closest("tr");
-                const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
-                const alunoId = dataObj.id;
-                showLoader();
-                fetch("/api/alunos-ativos/" + alunoId, {
-                    method: "DELETE",
-                })
-                    .then((res) => res.json())
-                    .then((resp) => {
-                        if (resp.success) {
-                            showNotification("success", "Aluno excluído com sucesso!");
-                            carregarAlunosBD();
-                        } else {
-                            showNotification("danger", resp.message || "Erro ao excluir.");
-                        }
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                        showNotification("danger", "Erro ao excluir aluno.");
-                    })
-                    .finally(() => {
-                        hideLoader();
-                    });
-            });
-
-            $("#btnAtribuirPontos").on("click", function () {
-                if (!alunosData.length) {
-                    showNotification("info", "Não há alunos para atribuir pontos.");
-                    return;
-                }
-                showLoader();
-                fetch("/api/atribuir-pontos-alunos", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ alunos: alunosData }),
-                })
-                    .then((res) => res.json())
-                    .then((resp) => {
-                        if (resp.success) {
-                            showNotification(
-                                "success",
-                                "Pontos de parada atribuídos com sucesso!"
-                            );
-                            carregarAlunosBD();
-                        } else {
-                            showNotification(
-                                "danger",
-                                resp.message || "Erro ao atribuir pontos de parada."
-                            );
-                        }
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                        showNotification(
-                            "danger",
-                            "Erro durante atribuição de pontos de parada."
-                        );
-                    })
-                    .finally(() => {
-                        hideLoader();
-                    });
-            });
-        });
-
-        function initMapAluno(aluno) {
-            if (!mapAluno) {
-                mapAluno = new google.maps.Map(document.getElementById("mapAluno"), {
-                    center: { lat: -3.135366, lng: -60.023207 },
-                    zoom: 5,
-                    mapId: "ca7a0e55f44be727",
-                });
-                geocoderAluno = new google.maps.Geocoder();
-            } else {
-                mapAluno = new google.maps.Map(document.getElementById("mapAluno"), {
-                    center: { lat: -3.135366, lng: -60.023207 },
-                    zoom: 5,
-                    mapId: "ca7a0e55f44be727",
-                });
+                return;
             }
 
-            let centerEscola = null;
-            fetch("/api/escolas/" + (aluno.escola_id || 0))
-                .then((res) => res.json())
-                .then((infoEscola) => {
-                    if (infoEscola && infoEscola.id) {
-                        if (infoEscola.latitude && infoEscola.longitude) {
-                            centerEscola = new google.maps.LatLng(
-                                infoEscola.latitude,
-                                infoEscola.longitude
-                            );
-                            new google.maps.Marker({
-                                map: mapAluno,
-                                position: centerEscola,
-                                title: infoEscola.nome || "Escola",
-                            });
-                            mapAluno.setCenter(centerEscola);
-                            mapAluno.setZoom(14);
-                            new google.maps.Circle({
-                                strokeColor: "#FF0000",
-                                strokeOpacity: 0.8,
-                                strokeWeight: 2,
-                                fillColor: "#FF0000",
-                                fillOpacity: 0.35,
-                                map: mapAluno,
-                                center: centerEscola,
-                                radius: 2000,
-                            });
-                            localizarAlunoEndereco(aluno, centerEscola);
-                        } else {
-                            const addr = `${infoEscola.logradouro || ""}, ${infoEscola.numero || ""
-                                }, ${infoEscola.bairro || ""}, ${infoEscola.cep || ""}`;
-                            geocoderAluno.geocode(
-                                { address: addr },
-                                function (results, status) {
-                                    if (status === "OK" && results[0]) {
-                                        centerEscola = results[0].geometry.location;
-                                        new google.maps.Marker({
-                                            map: mapAluno,
-                                            position: centerEscola,
-                                            title: infoEscola.nome || "Escola",
-                                        });
-                                        mapAluno.setCenter(centerEscola);
-                                        mapAluno.setZoom(14);
-                                        new google.maps.Circle({
-                                            strokeColor: "#FF0000",
-                                            strokeOpacity: 0.8,
-                                            strokeWeight: 2,
-                                            fillColor: "#FF0000",
-                                            fillOpacity: 0.35,
-                                            map: mapAluno,
-                                            center: centerEscola,
-                                            radius: 2000,
-                                        });
-                                    }
-                                    localizarAlunoEndereco(aluno, centerEscola);
-                                }
-                            );
-                        }
-                    } else {
-                        localizarAlunoEndereco(aluno, null);
-                    }
-                })
-                .catch(() => {
-                    localizarAlunoEndereco(aluno, null);
-                });
-        }
-
-        function localizarAlunoEndereco(aluno, centerEscola) {
             const cepFormatado = (aluno.cep || "").replace(/\D/g, "");
-            let numero = (aluno.numero_pessoa_endereco || "").trim().toLowerCase();
-
+            let numero = (aluno.numero_pessoa_endereco || "").toLowerCase().trim();
             if (
                 numero.includes("s/n") ||
                 numero === "sn" ||
@@ -1865,37 +1079,208 @@
                 numero = "S/N";
             }
 
-            if (cepFormatado.length === 8) {
-                geocoderAluno = geocoderAluno || new google.maps.Geocoder();
-                fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`)
-                    .then((res) => res.json())
-                    .then((viaData) => {
-                        if (!viaData.erro) {
-                            const end = `${viaData.logradouro || ""}, ${numero}, ${viaData.bairro || ""
-                                }, ${viaData.localidade || ""} - ${viaData.uf || ""
-                                }, Brasil`.trim();
-                            geocoderAluno.geocode(
-                                { address: end },
-                                function (results, status) {
-                                    if (status === "OK" && results[0]) {
-                                        const posAluno = results[0].geometry.location;
-                                        new google.maps.Marker({
-                                            map: mapAluno,
-                                            position: posAluno,
-                                            title: aluno.pessoa_nome || "Aluno",
-                                        });
-                                        if (!centerEscola) {
-                                            mapAluno.setCenter(posAluno);
-                                            mapAluno.setZoom(14);
-                                        }
+            if (cepFormatado.length !== 8) {
+                showNotification(
+                    "danger",
+                    "Endereço inválido (CEP). Não foi possível atribuir."
+                );
+                return;
+            }
+
+            showLoader();
+            fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`)
+                .then((res) => res.json())
+                .then((dataCep) => {
+                    if (dataCep.erro) {
+                        showNotification("danger", "Endereço não encontrado via CEP.");
+                        return;
+                    }
+                    const enderecoCompleto = `${dataCep.logradouro || ""}, ${numero}, ${dataCep.bairro || ""
+                        }, ${dataCep.localidade || ""} - ${dataCep.uf || ""}, Brasil`;
+                    const gCoder = new google.maps.Geocoder();
+                    gCoder.geocode({ address: enderecoCompleto }, function (results, status) {
+                        if (status === "OK" && results[0]) {
+                            const alunoLocation = results[0].geometry.location;
+                            const pontosDessaRota = listaRotasPontos.filter((rp) =>
+                                rotaIdsPossiveis.includes(rp.rota_id)
+                            );
+                            const pontoIds = pontosDessaRota.map((p) => p.ponto_id);
+                            const pontosValidos = listaPontos.filter((pt) =>
+                                pontoIds.includes(pt.id)
+                            );
+                            if (!pontosValidos.length) {
+                                showNotification("warning", "Nenhum ponto de parada compatível.");
+                                return;
+                            }
+                            let menorDistancia = Number.MAX_VALUE;
+                            let pontoEscolhido = null;
+                            pontosValidos.forEach((p) => {
+                                if (p.latitude && p.longitude) {
+                                    const pLatLng = new google.maps.LatLng(p.latitude, p.longitude);
+                                    const distancia = google.maps.geometry
+                                        ? google.maps.geometry.spherical.computeDistanceBetween(
+                                            alunoLocation,
+                                            pLatLng
+                                        )
+                                        : getDistanceApprox(alunoLocation.lat(), alunoLocation.lng(), p.latitude, p.longitude);
+                                    if (distancia < menorDistancia) {
+                                        menorDistancia = distancia;
+                                        pontoEscolhido = p;
                                     }
                                 }
-                            );
+                            });
+                            if (!pontoEscolhido) {
+                                showNotification(
+                                    "warning",
+                                    "Nenhum ponto de parada pôde ser determinado."
+                                );
+                                return;
+                            }
+                            atualizarAlunoComPonto(aluno.id, pontoEscolhido.id);
+                        } else {
+                            showNotification("danger", "Endereço não encontrado no Google.");
                         }
-                    })
-                    .catch(() => { });
-            }
+                    });
+                })
+                .catch((err) => {
+                    console.error(err);
+                    showNotification("danger", "Erro na busca de endereço.");
+                })
+                .finally(() => {
+                    hideLoader();
+                });
         }
+
+        function atualizarAlunoComPonto(alunoId, pontoId) {
+            showLoader();
+            fetch(`/api/alunos-ativos/${alunoId}/atribuir-ponto`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ponto_id: pontoId }),
+            })
+                .then((res) => res.json())
+                .then((resp) => {
+                    if (resp.success) {
+                        showNotification("success", "Ponto atribuído com sucesso!");
+                        carregarAlunos();
+                    } else {
+                        showNotification(
+                            "danger",
+                            resp.message || "Erro ao atribuir ponto."
+                        );
+                    }
+                })
+                .catch((err) => {
+                    console.error(err);
+                    showNotification("danger", "Erro ao atribuir ponto.");
+                })
+                .finally(() => {
+                    hideLoader();
+                });
+        }
+
+        function atribuirPontoTodos() {
+            if (!confirm("Deseja atribuir pontos de parada para todos os alunos listados?")) {
+                return;
+            }
+            listaAlunos.forEach((aluno) => {
+                atribuirPontoAluno(aluno.id);
+            });
+        }
+
+        function visualizarAlunoLocal(alunoId) {
+            const aluno = listaAlunos.find((a) => a.id == alunoId);
+            if (!aluno) return;
+            $("#modalVisualizarAluno").modal("show");
+            setTimeout(() => {
+                if (!mapAluno) {
+                    mapAluno = new google.maps.Map(document.getElementById("mapAluno"), {
+                        center: { lat: -3.135366, lng: -60.023207 },
+                        zoom: 4,
+                        mapId: "ca7a0e55f44be727",
+                    });
+                    geocoderAluno = new google.maps.Geocoder();
+                } else {
+                    mapAluno.setCenter({ lat: -3.135366, lng: -60.023207 });
+                    mapAluno.setZoom(4);
+                }
+                const cepFormatado = (aluno.cep || "").replace(/\D/g, "");
+                let numero = (aluno.numero_pessoa_endereco || "").toLowerCase().trim();
+                if (
+                    numero.includes("s/n") ||
+                    numero === "sn" ||
+                    numero.includes("sem numero") ||
+                    numero.includes("sem número")
+                ) {
+                    numero = "S/N";
+                }
+                if (cepFormatado.length === 8) {
+                    fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`)
+                        .then((res) => res.json())
+                        .then((viaData) => {
+                            if (!viaData.erro) {
+                                const endereco = `${viaData.logradouro || ""}, ${numero}, ${viaData.bairro || ""
+                                    }, ${viaData.localidade || ""} - ${viaData.uf || ""}, Brasil`.trim();
+                                geocoderAluno.geocode({ address: endereco }, function (results, status) {
+                                    if (status === "OK" && results[0]) {
+                                        const locationAluno = results[0].geometry.location;
+                                        mapAluno.setCenter(locationAluno);
+                                        mapAluno.setZoom(15);
+                                        new google.maps.Marker({
+                                            map: mapAluno,
+                                            position: locationAluno,
+                                            title: aluno.pessoa_nome || "Aluno",
+                                        });
+                                    }
+                                });
+                            }
+                        })
+                        .catch(() => { });
+                }
+            }, 500);
+        }
+
+        function getDistanceApprox(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const dLat = ((lat2 - lat1) * Math.PI) / 180;
+            const dLng = ((lng2 - lng1) * Math.PI) / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos((lat1 * Math.PI) / 180) *
+                Math.cos((lat2 * Math.PI) / 180) *
+                Math.sin(dLng / 2) *
+                Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c * 1000;
+        }
+
+        $(document).ready(function () {
+            carregarAlunos();
+            carregarRotasEscolas();
+            carregarRotasPontos();
+            carregarPontos();
+            carregarEscolas();
+
+            $(document).on("click", "#btnRecarregar", function () {
+                carregarAlunos();
+            });
+
+            $(document).on("click", ".btn-atribuir", function () {
+                const tr = $(this).closest("tr");
+                const alunoId = tr.attr("data-id");
+                atribuirPontoAluno(alunoId);
+            });
+
+            $(document).on("click", ".btn-localizar", function () {
+                const tr = $(this).closest("tr");
+                const alunoId = tr.attr("data-id");
+                visualizarAlunoLocal(alunoId);
+            });
+
+            $("#btnAtribuirTodos").on("click", function () {
+                atribuirPontoTodos();
+            });
+        });
     </script>
 </body>
 
