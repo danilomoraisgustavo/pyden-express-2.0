@@ -64,7 +64,8 @@
     }
 
     .spinner {
-      background-image: linear-gradient(rgb(186, 66, 255) 35%, rgb(0, 225, 255));
+      background-image: linear-gradient(rgb(186, 66, 255) 35%,
+          rgb(0, 225, 255));
       width: 100px;
       height: 100px;
       animation: spinning82341 1.7s linear infinite;
@@ -894,7 +895,6 @@
                           <th>Filiação 2</th>
                           <th>Responsável</th>
                           <th>Deficiência</th>
-                          <th>Coordenadas</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -917,7 +917,6 @@
                           <th>Filiação 2</th>
                           <th>Responsável</th>
                           <th>Deficiência</th>
-                          <th>Coordenadas</th>
                           <th>Ações</th>
                         </tr>
                       </tfoot>
@@ -1194,11 +1193,6 @@
             ? JSON.stringify(item.deficiencia)
             : item.deficiencia || "";
 
-        const coordsString =
-          item.latitude && item.longitude
-            ? `${item.latitude}, ${item.longitude}`
-            : "";
-
         const row = `
             <tr data-id="${item.id}" data-obj='${JSON.stringify(item)}'>
               <td>${item.id_matricula || ""}</td>
@@ -1218,7 +1212,6 @@
               <td>${item.filiacao_2 || ""}</td>
               <td>${item.responsavel || ""}</td>
               <td>${defString}</td>
-              <td>${coordsString}</td>
               <td>
                 <button class="btn btn-sm btn-warning btn-editar" title="Editar">
                   <i class="fa fa-edit"></i>
@@ -1331,7 +1324,8 @@
     }
 
     function enviarImportacao() {
-      const escolaIdSelecionada = document.getElementById("escolaSelect").value;
+      const escolaIdSelecionada =
+        document.getElementById("escolaSelect").value;
       if (!escolaIdSelecionada) {
         showNotification("danger", "Selecione uma escola antes de importar.");
         return;
@@ -1394,7 +1388,8 @@
       const escolaSelecionada = $("#selectEscolaMap").val();
       const busca = $("#buscarAlunoInput").val().trim();
       const queryParams = new URLSearchParams();
-      if (escolaSelecionada) queryParams.append("escola_id", escolaSelecionada);
+      if (escolaSelecionada)
+        queryParams.append("escola_id", escolaSelecionada);
       if (busca) queryParams.append("busca", busca);
 
       showLoader();
@@ -1405,7 +1400,10 @@
             plotarEscola(resp.escola || null);
             plotarAlunosMapa(resp.data);
           } else {
-            showNotification("info", "Nenhum aluno encontrado com esses filtros.");
+            showNotification(
+              "info",
+              "Nenhum aluno encontrado com esses filtros."
+            );
           }
         })
         .catch((err) => {
@@ -1535,29 +1533,34 @@
             const localidade = dataViaCep.localidade || "";
             const uf = dataViaCep.uf || "";
 
-            const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-            geocoder.geocode({ address: endCompleto }, function (results, status) {
-              if (status === "OK" && results[0]) {
-                const loc = results[0].geometry.location;
-                const marker = new google.maps.Marker({
-                  map,
-                  position: loc,
-                  title: al.pessoa_nome || "Aluno",
-                });
-                const infowindow = new google.maps.InfoWindow({
-                  content: `<strong>${al.pessoa_nome || ""}</strong><br>CPF: ${al.cpf || ""
-                    }<br>Matrícula: ${al.id_matricula || ""}`,
-                });
-                marker.addListener("click", () => {
-                  infowindow.open(map, marker);
-                });
-                bounds.extend(loc);
+            const endCompleto =
+              `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
+            geocoder.geocode(
+              { address: endCompleto },
+              function (results, status) {
+                if (status === "OK" && results[0]) {
+                  const loc = results[0].geometry.location;
+                  const marker = new google.maps.Marker({
+                    map,
+                    position: loc,
+                    title: al.pessoa_nome || "Aluno",
+                  });
+                  const infowindow = new google.maps.InfoWindow({
+                    content: `<strong>${al.pessoa_nome || ""
+                      }</strong><br>CPF: ${al.cpf || ""}<br>Matrícula: ${al.id_matricula || ""
+                      }`,
+                  });
+                  marker.addListener("click", () => {
+                    infowindow.open(map, marker);
+                  });
+                  bounds.extend(loc);
+                }
+                contagem++;
+                if (contagem === alunos.length) {
+                  map.fitBounds(bounds);
+                }
               }
-              contagem++;
-              if (contagem === alunos.length) {
-                map.fitBounds(bounds);
-              }
-            });
+            );
           })
           .catch(() => {
             contagem++;
@@ -1664,7 +1667,10 @@
               $("#modalEditarAluno").modal("hide");
               carregarAlunosBD();
             } else {
-              showNotification("danger", resp.message || "Erro ao atualizar.");
+              showNotification(
+                "danger",
+                resp.message || "Erro ao atualizar."
+              );
             }
           })
           .catch((err) => {
@@ -1751,8 +1757,6 @@
           .then((resp) => {
             if (resp.success) {
               showNotification("success", "Localização salva com sucesso!");
-              $("#modalLocalizarAluno").modal("hide");
-              carregarAlunosBD();
             } else {
               showNotification(
                 "danger",
@@ -1791,7 +1795,10 @@
 
       mapAluno.addListener("click", (e) => {
         showLoader();
-        geocoderAluno.geocode({ location: e.latLng }, function (results, status) {
+        geocoderAluno.geocode({ location: e.latLng }, function (
+          results,
+          status
+        ) {
           if (status === "OK" && results[0]) {
             placeAlunoMarker(e.latLng, true);
           } else {
@@ -1832,29 +1839,32 @@
             } else {
               const addr = `${infoEscola.logradouro || ""}, ${infoEscola.numero || ""
                 }, ${infoEscola.bairro || ""}, ${infoEscola.cep || ""}`;
-              geocoderAluno.geocode({ address: addr }, function (results, status) {
-                if (status === "OK" && results[0]) {
-                  centerEscola = results[0].geometry.location;
-                  new google.maps.Marker({
-                    map: mapAluno,
-                    position: centerEscola,
-                    title: infoEscola.nome || "Escola",
-                  });
-                  mapAluno.setCenter(centerEscola);
-                  mapAluno.setZoom(14);
-                  new google.maps.Circle({
-                    strokeColor: "#FF0000",
-                    strokeOpacity: 0.8,
-                    strokeWeight: 2,
-                    fillColor: "#FF0000",
-                    fillOpacity: 0.35,
-                    map: mapAluno,
-                    center: centerEscola,
-                    radius: 2000,
-                  });
+              geocoderAluno.geocode(
+                { address: addr },
+                function (results, status) {
+                  if (status === "OK" && results[0]) {
+                    centerEscola = results[0].geometry.location;
+                    new google.maps.Marker({
+                      map: mapAluno,
+                      position: centerEscola,
+                      title: infoEscola.nome || "Escola",
+                    });
+                    mapAluno.setCenter(centerEscola);
+                    mapAluno.setZoom(14);
+                    new google.maps.Circle({
+                      strokeColor: "#FF0000",
+                      strokeOpacity: 0.8,
+                      strokeWeight: 2,
+                      fillColor: "#FF0000",
+                      fillOpacity: 0.35,
+                      map: mapAluno,
+                      center: centerEscola,
+                      radius: 2000,
+                    });
+                  }
+                  localizarAlunoEndereco(aluno, centerEscola);
                 }
-                localizarAlunoEndereco(aluno, centerEscola);
-              });
+              );
             }
           } else {
             localizarAlunoEndereco(aluno, null);
@@ -1885,16 +1895,20 @@
           .then((viaData) => {
             if (!viaData.erro) {
               const end = `${viaData.logradouro || ""}, ${numero}, ${viaData.bairro || ""
-                }, ${viaData.localidade || ""} - ${viaData.uf || ""}, Brasil`.trim();
-              geocoderAluno.geocode({ address: end }, function (results, status) {
-                if (status === "OK" && results[0]) {
-                  placeAlunoMarker(results[0].geometry.location, true);
-                  if (!centerEscola) {
-                    mapAluno.setCenter(results[0].geometry.location);
-                    mapAluno.setZoom(14);
+                }, ${viaData.localidade || ""} - ${viaData.uf || ""
+                }, Brasil`.trim();
+              geocoderAluno.geocode(
+                { address: end },
+                function (results, status) {
+                  if (status === "OK" && results[0]) {
+                    placeAlunoMarker(results[0].geometry.location, true);
+                    if (!centerEscola) {
+                      mapAluno.setCenter(results[0].geometry.location);
+                      mapAluno.setZoom(14);
+                    }
                   }
                 }
-              });
+              );
             }
           })
           .catch(() => { });
@@ -1914,7 +1928,9 @@
       if (hasAddress && geocoderAluno) {
         geocoderAluno.geocode({ location: latLng }, function (results, status) {
           if (status === "OK" && results[0]) {
-            $("#localizarAlunoEnderecoCompleto").val(results[0].formatted_address);
+            $("#localizarAlunoEnderecoCompleto").val(
+              results[0].formatted_address
+            );
           }
         });
       } else {
