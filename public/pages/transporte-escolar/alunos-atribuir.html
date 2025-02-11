@@ -2,107 +2,109 @@
 <html>
 
 <head>
-    <meta charset="UTF-8" />
-    <title>Cadastro de Aluno</title>
+    <meta charset="utf-8" />
+    <title>Atribuição de Alunos a Rotas</title>
 </head>
 
 <body>
-    <h1>Cadastro de Aluno</h1>
-    <form id="formAluno">
-        <label for="nome">Nome:</label>
-        <input type="text" id="nome" name="nome" required />
+    <h1>Atribuição de Alunos a Rotas</h1>
 
-        <label for="cpf">CPF:</label>
-        <input type="text" id="cpf" name="cpf" />
+    <label for="escolaSelect">Selecione a Escola:</label>
+    <select id="escolaSelect"></select>
+    <button id="buscaAlunosBtn">Buscar Alunos</button>
 
-        <label for="escola_id">Escola (ID):</label>
-        <input type="number" id="escola_id" name="escola_id" required />
-
-        <label for="cep">CEP:</label>
-        <input type="text" id="cep" name="cep" required />
-
-        <label for="numero">Número da residência:</label>
-        <input type="text" id="numero" name="numero" required />
-
-        <label for="cidade">Cidade:</label>
-        <input type="text" id="cidade" name="cidade" value="Canaã dos Carajás" required />
-
-        <label for="estado">Estado:</label>
-        <input type="text" id="estado" name="estado" value="Pará" required />
-
-        <label for="pais">País:</label>
-        <input type="text" id="pais" name="pais" value="Brasil" required />
-
-        <button type="button" onclick="handleSubmit()">Salvar</button>
-    </form>
+    <h2>Alunos</h2>
+    <div id="alunosContainer"></div>
 
     <script>
-        async function handleSubmit() {
-            const form = document.getElementById('formAluno');
+        // Carregar combo de Escolas
+        const escolaSelect = document.getElementById("escolaSelect");
+        const alunosContainer = document.getElementById("alunosContainer");
+        const buscaAlunosBtn = document.getElementById("buscaAlunosBtn");
 
-            // Coleta dados do formulário
-            const nome = form.nome.value;
-            const cpf = form.cpf.value;
-            const escola_id = form.escola_id.value;
-            const cep = form.cep.value;
-            const numero = form.numero.value;
-            const cidade = form.cidade.value;
-            const estado = form.estado.value;
-            const pais = form.pais.value;
-
-            // Monta o endereço completo
-            const enderecoCompleto = `${cep}, ${numero}, ${cidade}, ${estado}, ${pais}`;
-
-            try {
-                // 1) Obter latitude e longitude via Geocoding (Google Maps)
-                const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(enderecoCompleto)}&key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M`;
-
-                const response = await fetch(geocodeUrl);
-                const data = await response.json();
-
-                if (data.status !== 'OK') {
-                    alert('Erro ao obter coordenadas. Verifique o endereço ou a chave da API.');
-                    return;
-                }
-
-                // Pega o primeiro resultado
-                const result = data.results[0];
-                const { lat, lng } = result.geometry.location;
-
-                // 2) Enviar dados para o servidor (Node.js) via fetch POST
-                const payload = {
-                    nome,
-                    cpf,
-                    escola_id,
-                    cep,
-                    numero,
-                    cidade,
-                    estado,
-                    pais,
-                    latitude: lat,
-                    longitude: lng
-                };
-
-                const backendResponse = await fetch('/alunos', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
+        // Assim que a página carrega, buscar as escolas
+        window.addEventListener("load", () => {
+            fetch("/api/escolas")
+                .then((res) => res.json())
+                .then((escolas) => {
+                    escolas.forEach((escola) => {
+                        const option = document.createElement("option");
+                        option.value = escola.id;
+                        option.textContent = escola.nome;
+                        escolaSelect.appendChild(option);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Erro ao carregar escolas:", error);
                 });
+        });
 
-                const resultServer = await backendResponse.json();
-                if (backendResponse.ok) {
-                    alert(`Aluno salvo com sucesso! ID do aluno: ${resultServer.alunoId}`);
-                } else {
-                    alert(`Erro ao salvar aluno: ${resultServer.message}`);
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Ocorreu um erro ao processar o cadastro.');
+        // Buscar alunos da escola selecionada
+        buscaAlunosBtn.addEventListener("click", () => {
+            const escolaId = escolaSelect.value;
+            if (!escolaId) {
+                alert("Selecione uma escola!");
+                return;
             }
-        }
 
+            fetch(`/api/alunos?escolaId=${escolaId}`)
+                .then((res) => res.json())
+                .then((alunos) => {
+                    // Limpa container
+                    alunosContainer.innerHTML = "";
+
+                    if (alunos.length === 0) {
+                        alunosContainer.innerHTML = "<p>Nenhum aluno encontrado.</p>";
+                        return;
+                    }
+
+                    alunos.forEach((aluno) => {
+                        const divAluno = document.createElement("div");
+                        divAluno.style.border = "1px solid #ccc";
+                        divAluno.style.margin = "5px";
+                        divAluno.style.padding = "5px";
+
+                        divAluno.innerHTML = `
+                <p><strong>Nome:</strong> ${aluno.pessoa_nome}</p>
+                <p><strong>CPF:</strong> ${aluno.cpf}</p>
+                <p><strong>CEP:</strong> ${aluno.cep}</p>
+                <p><strong>Endereço (número):</strong> ${aluno.numero_pessoa_endereco}</p>
+              `;
+
+                        const btnAtribuir = document.createElement("button");
+                        btnAtribuir.textContent = "Atribuir Rota";
+                        btnAtribuir.addEventListener("click", () => {
+                            atribuirRotaParaAluno(aluno.id);
+                        });
+
+                        divAluno.appendChild(btnAtribuir);
+                        alunosContainer.appendChild(divAluno);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Erro ao buscar alunos:", error);
+                });
+        });
+
+        // Chama o endpoint para atribuir rota ao aluno
+        function atribuirRotaParaAluno(alunoId) {
+            fetch("/api/atribuir", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ alunoId }),
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.success) {
+                        alert("Rota atribuída com sucesso! Distância aproximada: " + data.data.distanciaKm + " km");
+                    } else {
+                        alert("Erro ao atribuir rota: " + (data.message || ""));
+                    }
+                })
+                .catch((error) => {
+                    console.error("Erro ao atribuir rota:", error);
+                });
+        }
     </script>
 </body>
 
