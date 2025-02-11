@@ -19,6 +19,11 @@ const { DOMParser } = require("@xmldom/xmldom");
 const tj = require("@mapbox/togeojson");
 const axios = require("axios");
 
+// ------------------------------------------------------------
+// IMPORTAÇÃO DO CEP-PROMISE (NOVO)
+const cep = require("cep-promise");
+
+// ------------------------------------------------------------
 const {
   Document,
   Packer,
@@ -405,10 +410,6 @@ app.put(
           "uploads/usuarios/" + req.files["docContrato"][0].filename;
       }
 
-      // Se desejar, pesquise os valores antigos do usuário
-      // para excluir arquivos anteriores, se isso fizer sentido.
-
-      // Montar o fragmento de UPDATE só para os campos enviados:
       const fieldsToSet = [];
       const values = [];
       let idx = 1;
@@ -462,7 +463,6 @@ app.put(
   }
 );
 
-// Exemplo de rota para atualização de segurança do usuário com bcrypt:
 app.put("/api/usuarios/seguranca", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -472,7 +472,6 @@ app.put("/api/usuarios/seguranca", isAuthenticated, async (req, res) => {
     const values = [];
     let index = 1;
 
-    // Se o usuário forneceu nova senha, vamos criptografá-la com bcrypt
     if (nova_senha) {
       const bcrypt = require("bcrypt");
       const saltRounds = 10;
@@ -499,10 +498,8 @@ app.put("/api/usuarios/seguranca", isAuthenticated, async (req, res) => {
       });
     }
 
-    // Remove a última vírgula
     updateFields = updateFields.slice(0, -1);
 
-    // Monta a query dinâmica
     const query = `
         UPDATE usuarios
         SET ${updateFields}
@@ -537,7 +534,6 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
   try {
     const { nome_completo, cpf_cnpj, telefone, email, senha } = req.body;
 
-    // 1) Verificar se e-mail já existe
     const checkEmail = await pool.query(
       "SELECT id FROM usuarios WHERE email = $1 LIMIT 1",
       [email]
@@ -549,12 +545,10 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
       });
     }
 
-    // 2) Limpa pontuação do CPF/CNPJ
     const docNumeros = (cpf_cnpj || "").replace(/\D/g, "");
     let cpfValue = null;
     let cnpjValue = null;
 
-    // 3) Decide se é CPF (11 dígitos) ou CNPJ (14 dígitos)
     if (docNumeros.length === 11) {
       cpfValue = docNumeros;
     } else if (docNumeros.length === 14) {
@@ -566,7 +560,6 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
       });
     }
 
-    // 4) Verifica se já existe o mesmo CPF ou CNPJ
     if (cpfValue) {
       const checkCPF = await pool.query(
         "SELECT id FROM usuarios WHERE cpf = $1 LIMIT 1",
@@ -591,11 +584,9 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
       }
     }
 
-    // 5) Criptografa a senha
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(senha, saltRounds);
 
-    // 6) Insere no banco (init = FALSE por padrão)
     const insertQuery = `
             INSERT INTO usuarios (
                 nome_completo, cpf, cnpj, telefone, email, senha, init
@@ -706,7 +697,6 @@ app.get("/api/usuario-logado", async (req, res) => {
       });
     }
 
-    // Traga todos os campos que você quer (SEM a senha).
     const userQuery = `
         SELECT
           id,
@@ -739,14 +729,11 @@ app.get("/api/usuario-logado", async (req, res) => {
     }
 
     const usuario = result.rows[0];
-
-    // Retornando campos soltos, como antes (nome_completo, email etc.),
-    // mas agora também incluindo outros. Ajuste conforme necessidade:
     return res.json({
       success: true,
       id: usuario.id,
-      nome_completo: usuario.nome_completo, // mesmo nome de antes
-      email: usuario.email, // mesmo nome de antes
+      nome_completo: usuario.nome_completo,
+      email: usuario.email,
       cpf: usuario.cpf,
       cnpj: usuario.cnpj,
       telefone: usuario.telefone,
@@ -802,7 +789,6 @@ app.post("/api/zoneamento/cadastrar", async (req, res) => {
       });
     }
 
-    // Permitir Polygon ou LineString
     const validTypes = ["Polygon", "LineString"];
     if (!validTypes.includes(parsed.geometry.type)) {
       return res.status(400).json({
@@ -813,7 +799,6 @@ app.post("/api/zoneamento/cadastrar", async (req, res) => {
 
     const userId = req.session?.userId || null;
 
-    // Insere
     const insertQuery = `
         INSERT INTO zoneamentos (nome, geom)
         VALUES ($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
@@ -824,7 +809,6 @@ app.post("/api/zoneamento/cadastrar", async (req, res) => {
 
     if (result.rows.length > 0) {
       const newId = result.rows[0].id;
-      // Notificação
       const mensagem = `Zoneamento criado: ${nome_zoneamento}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -878,15 +862,11 @@ app.get("/api/zoneamentos", async (req, res) => {
 app.delete("/api/zoneamento/:id", async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
-    // Buscar o nome do zoneamento antes de deletar (para log)
-    const busca = await pool.query(
-      "SELECT nome FROM zoneamentos WHERE id = $1",
-      [id]
-    );
+    const busca = await pool.query("SELECT nome FROM zoneamentos WHERE id = $1", [
+      id,
+    ]);
     if (busca.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -899,7 +879,6 @@ app.delete("/api/zoneamento/:id", async (req, res) => {
     const result = await pool.query(deleteQuery, [id]);
 
     if (result.rowCount > 0) {
-      // REGISTRA NOTIFICAÇÃO
       const mensagem = `Zoneamento excluído: ${nomeZoneamento}`;
       const acao = "DELETE";
       const tabela = "zoneamentos";
@@ -937,8 +916,6 @@ app.post(
       const geojson = await convertToGeoJSON(filePath, originalName);
       const features = geojson.features || [];
 
-      // (Opcional: pode registrar apenas 1 notificação "Importação de zoneamentos" em vez de uma por feature)
-      // Quem está fazendo a ação?
       const userId = req.session?.userId || null;
 
       for (const feature of features) {
@@ -958,7 +935,6 @@ app.post(
 
         if (result.rows.length > 0) {
           const newId = result.rows[0].id;
-          // Notificação por cada polígono criado:
           const mensagem = `Zoneamento importado/criado: ${nome}`;
           const acao = "CREATE";
           const tabela = "zoneamentos";
@@ -1009,7 +985,6 @@ app.post("/api/escolas/cadastrar", async (req, res) => {
       req.body.zoneamentosSelecionados || "[]"
     );
 
-    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
     const insertEscolaQuery = `
@@ -1056,7 +1031,6 @@ app.post("/api/escolas/cadastrar", async (req, res) => {
       }
     }
 
-    // NOTIFICAÇÃO
     const mensagem = `Escola criada: ${nomeEscola}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1161,10 +1135,8 @@ app.put("/api/escolas/:id", async (req, res) => {
       req.body.zoneamentosSelecionadosEditar || "[]"
     );
 
-    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
-    // Atualiza campos na tabela escolas
     const updateEscolaQuery = `
         UPDATE escolas
         SET 
@@ -1211,12 +1183,10 @@ app.put("/api/escolas/:id", async (req, res) => {
       });
     }
 
-    // Zera os relacionamentos de zoneamentos
     await pool.query(`DELETE FROM escolas_zoneamentos WHERE escola_id = $1`, [
       escolaId,
     ]);
 
-    // Se existirem zoneamentos selecionados, insere novamente
     if (zoneamentosSelecionadosEditar.length > 0) {
       const insertZonaEscolaQuery = `
           INSERT INTO escolas_zoneamentos (escola_id, zoneamento_id)
@@ -1227,7 +1197,6 @@ app.put("/api/escolas/:id", async (req, res) => {
       }
     }
 
-    // Notificação
     const mensagem = `Escola atualizada: ${editarNomeEscola}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1252,10 +1221,8 @@ app.put("/api/escolas/:id", async (req, res) => {
 app.delete("/api/escolas/:id", async (req, res) => {
   try {
     const escolaId = req.params.id;
-    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
-    // Verifica se a escola existe
     const checkQuery = `SELECT * FROM escolas WHERE id = $1`;
     const checkResult = await pool.query(checkQuery, [escolaId]);
     if (checkResult.rows.length === 0) {
@@ -1265,16 +1232,13 @@ app.delete("/api/escolas/:id", async (req, res) => {
       });
     }
 
-    // Exclui relacionamentos
     await pool.query(`DELETE FROM escolas_zoneamentos WHERE escola_id = $1`, [
       escolaId,
     ]);
 
-    // Exclui a escola
     const deleteEscolaQuery = `DELETE FROM escolas WHERE id = $1`;
     await pool.query(deleteEscolaQuery, [escolaId]);
 
-    // Notificação
     const mensagem = `Escola excluída: ${checkResult.rows[0].nome}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1294,6 +1258,7 @@ app.delete("/api/escolas/:id", async (req, res) => {
     });
   }
 });
+
 
 // ====================================================================================
 // FORNECEDORES
@@ -3378,9 +3343,8 @@ function geojsonToGpx(geojson) {
     <gpx version="1.1" creator="MyServer">
   `;
   geojson.features.forEach((f, idx) => {
-    gpx += `<trk><name>Rota ${
-      f.properties.identificador || idx
-    }</name><trkseg>`;
+    gpx += `<trk><name>Rota ${f.properties.identificador || idx
+      }</name><trkseg>`;
     f.geometry.coordinates.forEach((c) => {
       gpx += `<trkpt lat="${c[1]}" lon="${c[0]}"></trkpt>`;
     });
@@ -3484,7 +3448,7 @@ app.get("/api/download-rotas-todas", async (req, res) => {
       archive.on("error", (err) => {
         throw err;
       });
-      res.on("close", () => {});
+      res.on("close", () => { });
       archive.pipe(res);
       archive.append(kmlStr, { name: "doc.kml" });
       archive.finalize();
@@ -3600,7 +3564,7 @@ app.get("/api/download-rota/:id", async (req, res) => {
       archive.on("error", (err) => {
         throw err;
       });
-      res.on("close", () => {});
+      res.on("close", () => { });
       archive.pipe(res);
       archive.append(kmlStr, { name: "doc.kml" });
       archive.finalize();
@@ -5141,8 +5105,8 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       .font("Helvetica-Bold")
       .text(
         "ESTADO DO PARÁ\n" +
-          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
         250,
         20,
         { width: 300, align: "right" }
