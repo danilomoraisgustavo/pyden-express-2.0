@@ -484,7 +484,12 @@
                 </button>
               </div>
               <div>
-                <button class="btn btn-success" id="btnCompletarMunicipalEstadual">
+                <!-- Agora este botão apenas abre o modal para escolher a escola -->
+                <button
+                  class="btn btn-success"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalCompletarLocalizacao"
+                >
                   Completar Localização Municipal/Estadual
                 </button>
               </div>
@@ -614,6 +619,62 @@
                       data-bs-dismiss="modal"
                     >
                       Fechar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MODAL COMPLETAR LOCALIZAÇÃO (NOVO) -->
+            <div
+              class="modal fade"
+              id="modalCompletarLocalizacao"
+              tabindex="-1"
+              aria-labelledby="modalCompletarLocalizacaoLabel"
+              aria-hidden="true"
+            >
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="modalCompletarLocalizacaoLabel">
+                      Completar Localização Municipal/Estadual
+                    </h5>
+                    <button
+                      type="button"
+                      class="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"
+                    ></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="mb-3">
+                      <label
+                        for="selectEscolaCompletarLocalizacao"
+                        class="form-label"
+                        >Selecione a Escola</label
+                      >
+                      <select
+                        class="form-select"
+                        id="selectEscolaCompletarLocalizacao"
+                      >
+                        <option value="">Todas as Escolas</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      data-bs-dismiss="modal"
+                    >
+                      Fechar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-success"
+                      id="btnConfirmarCompletarLocalizacao"
+                    >
+                      Completar Localização
                     </button>
                   </div>
                 </div>
@@ -997,15 +1058,15 @@
       let escolaLocAluno = null;
       let currentAlunoMarker = null;
       let currentAlunoPosition = null;
-    
+
       function showLoader() {
         document.getElementById("globalLoader").style.display = "flex";
       }
-    
+
       function hideLoader() {
         document.getElementById("globalLoader").style.display = "none";
       }
-    
+
       function carregarEscolas() {
         showLoader();
         fetch("/api/escolas")
@@ -1014,6 +1075,7 @@
             escolasLista = data;
             popularSelectEscolas();
             popularSelectEscolasMap();
+            popularSelectEscolasCompletarLocalizacao();
           })
           .catch((err) => {
             console.error(err);
@@ -1023,7 +1085,7 @@
             hideLoader();
           });
       }
-    
+
       function popularSelectEscolas() {
         const select = document.getElementById("escolaSelect");
         select.innerHTML = '<option value="">Selecione a Escola</option>';
@@ -1034,7 +1096,7 @@
           select.appendChild(option);
         });
       }
-    
+
       function popularSelectEscolasMap() {
         const selectMap = document.getElementById("selectEscolaMap");
         selectMap.innerHTML = '<option value="">Todas as Escolas</option>';
@@ -1045,7 +1107,21 @@
           selectMap.appendChild(option);
         });
       }
-    
+
+      // Popular o SELECT do modalCompletarLocalizacao
+      function popularSelectEscolasCompletarLocalizacao() {
+        const selectCompletar = document.getElementById(
+          "selectEscolaCompletarLocalizacao"
+        );
+        selectCompletar.innerHTML = '<option value="">Todas as Escolas</option>';
+        escolasLista.forEach((escola) => {
+          const option = document.createElement("option");
+          option.value = escola.id;
+          option.textContent = `${escola.nome} (ID: ${escola.id})`;
+          selectCompletar.appendChild(option);
+        });
+      }
+
       function carregarAlunosBD() {
         showLoader();
         fetch("/api/alunos-ativos")
@@ -1062,21 +1138,21 @@
             hideLoader();
           });
       }
-    
+
       function popularTabela(alunos) {
         const tbody = $("#alunos-table tbody");
         tbody.empty();
-    
+
         const distinctEscolas = new Set();
         const distinctBairros = new Set();
         const distinctCeps = new Set();
-    
+
         alunos.forEach((item) => {
           const defString =
             item.deficiencia && Array.isArray(item.deficiencia)
               ? JSON.stringify(item.deficiencia)
               : item.deficiencia || "";
-    
+
           const row = `
             <tr data-id="${item.id}" data-obj='${JSON.stringify(item)}'>
               <td>${item.id_matricula || ""}</td>
@@ -1112,16 +1188,16 @@
             </tr>
           `;
           tbody.append(row);
-    
+
           if (item.escola_nome) distinctEscolas.add(item.escola_nome);
           if (item.bairro) distinctBairros.add(item.bairro);
           if (item.cep) distinctCeps.add(item.cep);
         });
-    
+
         if (dataTable) {
           dataTable.clear().destroy();
         }
-    
+
         dataTable = $("#alunos-table").DataTable({
           pageLength: 10,
           language: {
@@ -1144,29 +1220,29 @@
             emptyTable: "Nenhum dado disponível na tabela",
           },
         });
-    
+
         const filtroEscola = document.getElementById("filtroEscola");
         const filtroBairro = document.getElementById("filtroBairro");
         const filtroCep = document.getElementById("filtroCep");
-    
+
         filtroEscola.innerHTML = '<option value="">Todas</option>';
         filtroBairro.innerHTML = '<option value="">Todos</option>';
         filtroCep.innerHTML = '<option value="">Todos</option>';
-    
+
         distinctEscolas.forEach((e) => {
           const opt = document.createElement("option");
           opt.value = e;
           opt.textContent = e;
           filtroEscola.appendChild(opt);
         });
-    
+
         distinctBairros.forEach((b) => {
           const opt = document.createElement("option");
           opt.value = b;
           opt.textContent = b;
           filtroBairro.appendChild(opt);
         });
-    
+
         distinctCeps.forEach((c) => {
           const opt = document.createElement("option");
           opt.value = c;
@@ -1174,27 +1250,27 @@
           filtroCep.appendChild(opt);
         });
       }
-    
+
       // Filtros Tabela
       $(document).on("change", "#filtroEscola", function () {
         const val = this.value;
         dataTable.column(1).search(val).draw();
       });
-    
+
       $(document).on("change", "#filtroBairro", function () {
         const val = this.value;
         dataTable.column(10).search(val).draw();
       });
-    
+
       $(document).on("change", "#filtroCep", function () {
         const val = this.value;
         dataTable.column(9).search(val).draw();
       });
-    
+
       $(document).on("keyup", "#searchInput", function () {
         dataTable.search(this.value).draw();
       });
-    
+
       // Importar XLSX
       function handleFileImport(evt) {
         const file = evt.target.files[0];
@@ -1210,7 +1286,7 @@
         };
         reader.readAsBinaryString(file);
       }
-    
+
       function enviarImportacao() {
         const escolaIdSelecionada = document.getElementById("escolaSelect").value;
         if (!escolaIdSelecionada) {
@@ -1255,7 +1331,7 @@
             hideLoader();
           });
       }
-    
+
       // Mapa principal (Modal Mapa)
       function initMap() {
         map = new google.maps.Map(document.getElementById("map"), {
@@ -1265,13 +1341,13 @@
         });
         geocoder = new google.maps.Geocoder();
       }
-    
+
       $("#modalMapear").on("shown.bs.modal", function () {
         if (!map) {
           initMap();
         }
       });
-    
+
       $(document).on("click", "#btnFiltrarMapa", function () {
         const escolaSelecionada = $("#selectEscolaMap").val();
         const busca = $("#buscarAlunoInput").val().trim();
@@ -1282,7 +1358,7 @@
         if (busca) {
           queryParams.append("busca", busca);
         }
-    
+
         showLoader();
         fetch("/api/alunos-mapa?" + queryParams.toString())
           .then((res) => res.json())
@@ -1302,13 +1378,13 @@
             hideLoader();
           });
       });
-    
+
       function plotarEscola(e) {
         if (!map) initMap();
         if (!geocoder) geocoder = new google.maps.Geocoder();
         if (!e) return;
         escolaLocalizacao = null;
-    
+
         // Se a escola já tiver lat/long definidos
         if (e.latitude && e.longitude) {
           escolaLocalizacao = new google.maps.LatLng(e.latitude, e.longitude);
@@ -1336,7 +1412,7 @@
           if (e.numero) addr += ", " + e.numero;
           if (e.bairro) addr += ", " + e.bairro;
           if (e.cep) addr += ", " + e.cep;
-    
+
           geocoder.geocode({ address: addr }, function (results, status) {
             if (status === "OK" && results[0]) {
               escolaLocalizacao = results[0].geometry.location;
@@ -1361,23 +1437,23 @@
           });
         }
       }
-    
+
       // Plotar alunos no mapa, ignorando CEPs inválidos ou não encontrados
       function plotarAlunosMapa(alunos) {
         if (!map) initMap();
         if (!geocoder) geocoder = new google.maps.Geocoder();
-    
+
         // Para ajustar o zoom de acordo com todos os pontos
         const bounds = new google.maps.LatLngBounds();
         let contagem = 0;
-    
+
         // Redefine o mapa para iniciar 'do zero'
         map = new google.maps.Map(document.getElementById("map"), {
           center: { lat: -3.135366, lng: -60.023207 },
           zoom: 5,
           mapId: "ca7a0e55f44be727",
         });
-    
+
         // Recoloca a escola, se houver
         if (escolaLocalizacao) {
           map.setCenter(escolaLocalizacao);
@@ -1399,12 +1475,12 @@
           });
           bounds.extend(escolaLocalizacao);
         }
-    
+
         // Para cada aluno
         alunos.forEach((al) => {
           const cepLimpo = (al.cep || "").replace(/\D/g, "");
           let numeroEnd = (al.numero_pessoa_endereco || "").trim();
-    
+
           // Trata "S/N", "sem número", etc.
           const numeroTratado = numeroEnd.toLowerCase();
           if (
@@ -1415,18 +1491,17 @@
           ) {
             numeroEnd = "S/N";
           }
-    
+
           // Se CEP não tiver 8 dígitos, ignora e passa ao próximo
           if (cepLimpo.length !== 8) {
             contagem++;
             if (contagem === alunos.length) map.fitBounds(bounds);
             return;
           }
-    
+
           // Consulta viaCEP
           fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`, { method: "GET" })
             .then((res) => {
-              // Se a requisição não retornar status 200, gera erro
               if (!res.ok) {
                 throw new Error("Falha na requisição ViaCEP");
               }
@@ -1437,29 +1512,28 @@
               if (!dataViaCep || dataViaCep.erro) {
                 contagem++;
                 if (contagem === alunos.length) map.fitBounds(bounds);
-                return null; // Sai logo daqui
+                return null;
               }
-    
+
               // Monta endereço para geocodificar
               const logradouro = dataViaCep.logradouro || "";
               const bairro = dataViaCep.bairro || "";
               const localidade = dataViaCep.localidade || "";
               const uf = dataViaCep.uf || "";
               const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-    
+
               // Retorna promessa da geocodificação
               return new Promise((resolve) => {
                 geocoder.geocode({ address: endCompleto }, (results, status) => {
                   if (status === "OK" && results[0]) {
                     resolve(results[0].geometry.location);
                   } else {
-                    resolve(null); // se não geocodificar, ignora
+                    resolve(null);
                   }
                 });
               });
             })
             .then((localizacao) => {
-              // Se não tem localizacao, pula
               if (!localizacao) {
                 contagem++;
                 if (contagem === alunos.length) {
@@ -1467,36 +1541,34 @@
                 }
                 return;
               }
-    
+
               // Cria marcador do aluno
               const marker = new google.maps.Marker({
                 map,
                 position: localizacao,
                 title: al.pessoa_nome || "Aluno",
               });
-    
+
               // InfoWindow
               const infowindow = new google.maps.InfoWindow({
                 content: `<strong>${al.pessoa_nome || ""}</strong><br>
                           CPF: ${al.cpf || ""}<br>
                           Matrícula: ${al.id_matricula || ""}`,
               });
-    
+
               marker.addListener("click", () => {
                 infowindow.open(map, marker);
               });
-    
+
               // Ajusta bounds
               bounds.extend(localizacao);
-    
-              // Se foi o último, centraliza
+
               contagem++;
               if (contagem === alunos.length) {
                 map.fitBounds(bounds);
               }
             })
             .catch((error) => {
-              // Se der qualquer erro (timeout, falha fetch, etc), ignora este aluno
               console.warn("Falha ao consultar ViaCEP (aluno ignorado):", error);
               contagem++;
               if (contagem === alunos.length) {
@@ -1505,7 +1577,7 @@
             });
         });
       }
-    
+
       function showNotification(type, message) {
         $.notify(
           {
@@ -1532,14 +1604,14 @@
           }
         );
       }
-    
+
       // Document Ready
       $(document).ready(function () {
         carregarEscolas();
         carregarAlunosBD();
         $("#fileInput").on("change", handleFileImport);
         $("#importarBtn").on("click", enviarImportacao);
-    
+
         // Editar Aluno
         $(document).on("click", ".btn-editar", function () {
           const tr = $(this).closest("tr");
@@ -1571,7 +1643,7 @@
           }
           $("#modalEditarAluno").modal("show");
         });
-    
+
         // Salvar Edição
         $("#btnSalvarEdicao").on("click", function () {
           const body = {
@@ -1618,7 +1690,7 @@
               hideLoader();
             });
         });
-    
+
         // Localizar Aluno
         $(document).on("click", ".btn-localizar", function () {
           const tr = $(this).closest("tr");
@@ -1630,7 +1702,7 @@
             initMapAluno(dataObj);
           }, 500);
         });
-    
+
         // Excluir Aluno
         $(document).on("click", ".btn-excluir", function () {
           if (!confirm("Deseja realmente excluir este aluno?")) return;
@@ -1658,7 +1730,7 @@
               hideLoader();
             });
         });
-    
+
         // Refinar pesquisa - Modal "Localizar Aluno"
         $("#btnRefinarPesquisa").on("click", function () {
           const address = $("#localizarAlunoEnderecoCompleto").val().trim();
@@ -1676,7 +1748,7 @@
             hideLoader();
           });
         });
-    
+
         // Salvar localização do aluno
         $("#btnSalvarLocalizacao").on("click", function () {
           if (!alunoAtual || !currentAlunoPosition) {
@@ -1715,35 +1787,51 @@
               hideLoader();
             });
         });
-    
-        // Botão de completar localização em massa (Municipal/Estadual)
-        $("#btnCompletarMunicipalEstadual").on("click", async function () {
+
+        // Botão de confirmar localização em massa (Municipal/Estadual) APÓS ESCOLHA DA ESCOLA
+        $("#btnConfirmarCompletarLocalizacao").on("click", async function () {
+          const escolaEscolhida = $(
+            "#selectEscolaCompletarLocalizacao"
+          ).val(); // Se estiver vazio, é "todas as escolas"
+
           showLoader();
           let promises = [];
-    
+
           // Filtra somente alunos com transporte municipal/estadual e sem lat/long
-          const alunosFiltrados = alunosData.filter(
-            (aluno) =>
+          // E, caso a pessoa tenha selecionado uma escola específica, filtrar por ela
+          const alunosFiltrados = alunosData.filter((aluno) => {
+            const hasTranspMunEst =
               aluno.transporte_escolar_poder_publico &&
               (aluno.transporte_escolar_poder_publico
                 .toLowerCase()
                 .includes("municipal") ||
                 aluno.transporte_escolar_poder_publico
                   .toLowerCase()
-                  .includes("estadual")) &&
-              !aluno.latitude &&
-              !aluno.longitude
-          );
-    
+                  .includes("estadual"));
+
+            const semLatLong = !aluno.latitude && !aluno.longitude;
+
+            // Se escolaEscolhida for vazia, consideramos "todas as escolas"
+            if (!escolaEscolhida) {
+              return hasTranspMunEst && semLatLong;
+            } else {
+              return (
+                hasTranspMunEst &&
+                semLatLong &&
+                Number(aluno.escola_id) === Number(escolaEscolhida)
+              );
+            }
+          });
+
           if (!alunosFiltrados.length) {
             showNotification(
               "info",
-              "Nenhum aluno com transporte 'Municipal' ou 'Estadual' sem lat/long."
+              "Nenhum aluno encontrado (filtros: transporte municipal/estadual, sem lat/long)."
             );
             hideLoader();
             return;
           }
-    
+
           try {
             for (const al of alunosFiltrados) {
               const cepLimpo = (al.cep || "").replace(/\D/g, "");
@@ -1757,19 +1845,19 @@
                 const viaData = await fetch(
                   `https://viacep.com.br/ws/${cepLimpo}/json/`
                 ).then((res) => res.json());
-    
+
                 // Se CEP é inválido (erro), ignore
                 if (viaData.erro) {
                   continue;
                 }
-    
+
                 // Endereço completo
                 const logradouro = viaData.logradouro || "";
                 const bairro = viaData.bairro || "";
                 const localidade = viaData.localidade || "";
                 const uf = viaData.uf || "";
                 const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-    
+
                 // Faz geocodificação
                 const geoResult = await geocodeAddress(endCompleto);
                 if (geoResult) {
@@ -1807,10 +1895,12 @@
               }
             }
             await Promise.all(promises);
+
             showNotification(
               "success",
               "Processo de localização concluído. Atualizando lista..."
             );
+            $("#modalCompletarLocalizacao").modal("hide");
             carregarAlunosBD();
           } catch (err) {
             console.error(err);
@@ -1823,7 +1913,7 @@
           }
         });
       });
-    
+
       // Mapa individual (Modal Localizar Aluno)
       function initMapAluno(aluno) {
         if (!mapAluno) {
@@ -1840,10 +1930,10 @@
             mapId: "ca7a0e55f44be727",
           });
         }
-    
+
         currentAlunoMarker = null;
         currentAlunoPosition = null;
-    
+
         // Clique no mapa -> geocodificar reverso
         mapAluno.addListener("click", (e) => {
           showLoader();
@@ -1859,7 +1949,7 @@
             hideLoader();
           });
         });
-    
+
         let centerEscola = null;
         fetch("/api/escolas/" + (aluno.escola_id || 0))
           .then((res) => res.json())
@@ -1924,14 +2014,14 @@
             localizarAlunoEndereco(aluno, null);
           });
       }
-    
+
       function localizarAlunoEndereco(aluno, centerEscola) {
         if (!geocoderAluno) {
           geocoderAluno = new google.maps.Geocoder();
         }
         const cepFormatado = (aluno.cep || "").replace(/\D/g, "");
         let numero = (aluno.numero_pessoa_endereco || "").trim().toLowerCase();
-    
+
         if (
           numero.includes("s/n") ||
           numero === "sn" ||
@@ -1940,7 +2030,7 @@
         ) {
           numero = "S/N";
         }
-    
+
         if (cepFormatado.length === 8) {
           fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`)
             .then((res) => res.json())
@@ -1965,7 +2055,7 @@
             });
         }
       }
-    
+
       function placeAlunoMarker(latLng, hasAddress) {
         if (currentAlunoMarker) {
           currentAlunoMarker.setMap(null);
@@ -1986,7 +2076,7 @@
           $("#localizarAlunoEnderecoCompleto").val("");
         }
       }
-    
+
       async function geocodeAddress(address) {
         if (!geocoder) {
           geocoder = new google.maps.Geocoder();
@@ -1997,13 +2087,12 @@
               const location = results[0].geometry.location;
               resolve({ lat: location.lat(), lng: location.lng() });
             } else {
-              // Caso não encontre
               resolve(null);
             }
           });
         });
       }
-    
+
       function tratarNumero(numStr) {
         let numeroTratado = (numStr || "").trim().toLowerCase();
         if (
@@ -2017,6 +2106,5 @@
         return numeroTratado;
       }
     </script>
-    
   </body>
 </html>
