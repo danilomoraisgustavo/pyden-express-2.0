@@ -895,6 +895,8 @@
                           <th>Filiação 2</th>
                           <th>Responsável</th>
                           <th>Deficiência</th>
+                          <th>Latitude</th>
+                          <th>Longitude</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -917,6 +919,8 @@
                           <th>Filiação 2</th>
                           <th>Responsável</th>
                           <th>Deficiência</th>
+                          <th>Latitude</th>
+                          <th>Longitude</th>
                           <th>Ações</th>
                         </tr>
                       </tfoot>
@@ -1212,6 +1216,8 @@
               <td>${item.filiacao_2 || ""}</td>
               <td>${item.responsavel || ""}</td>
               <td>${defString}</td>
+              <td>${item.latitude || ""}</td>
+              <td>${item.longitude || ""}</td>
               <td>
                 <button class="btn btn-sm btn-warning btn-editar" title="Editar">
                   <i class="fa fa-edit"></i>
@@ -1620,7 +1626,9 @@
         );
         $("#editarCep").val(dataObj.cep || "");
         $("#editarBairro").val(dataObj.bairro || "");
-        $("#editarNumeroEndereco").val(dataObj.numero_pessoa_endereco || "");
+        $("#editarNumeroEndereco").val(
+          dataObj.numero_pessoa_endereco || ""
+        );
         $("#editarFiliacao1").val(dataObj.filiacao_1 || "");
         $("#editarTelefone").val(dataObj.numero_telefone || "");
         $("#editarFiliacao2").val(dataObj.filiacao_2 || "");
@@ -1757,6 +1765,7 @@
           .then((resp) => {
             if (resp.success) {
               showNotification("success", "Localização salva com sucesso!");
+              $("#modalLocalizarAluno").modal("hide");
             } else {
               showNotification(
                 "danger",
