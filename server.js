@@ -5569,8 +5569,7 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
 });
 
 // =============================================
-// ENDPOINT: SOLICITAR CONCESSÃO DE ROTA
-// (Inserir dados do formulário do modal)
+// ENDPOINT: SOLICITAR CONCESSÃO DE ROTA (Exemplo)
 // =============================================
 app.post("/api/alunos/concessao-rota", async (req, res) => {
   try {
@@ -5590,12 +5589,8 @@ app.post("/api/alunos/concessao-rota", async (req, res) => {
       observacoes,
     } = req.body;
 
-    // Exemplo de upload de arquivo (laudo_deficiencia, comprovante_endereco) se desejar:
-    // No front-end, usar formData e multer aqui no back-end. Exemplo:
-    // app.post("/api/alunos/concessao-rota", upload.fields([...]), async (req, res) => { ... }
-    // e então acessar req.files["laudo_deficiencia"], etc.
-
-    // Simulação de inserir na tabela cocessao_rota ou similar:
+    // Exemplo de inserir em alguma tabela de solicitações:
+    // (Ajuste nomes e campos conforme sua base real)
     const insertQuery = `
       INSERT INTO cocessao_rota (
         nome_responsavel,
@@ -5624,13 +5619,12 @@ app.post("/api/alunos/concessao-rota", async (req, res) => {
       cep || null,
       numero || null,
       endereco || null,
-      zoneamento === "sim", // boolean
-      deficiencia === "sim", // boolean
+      zoneamento === "sim",
+      deficiencia === "sim",
       longitude ? parseFloat(longitude) : null,
       latitude ? parseFloat(latitude) : null,
       observacoes || null,
     ];
-
     const result = await pool.query(insertQuery, values);
 
     return res.json({
@@ -5654,7 +5648,6 @@ app.get("/api/alunos-transporte", async (req, res) => {
   try {
     const { escola_id, busca } = req.query;
 
-    // Vamos filtrar apenas alunos que têm transporte_escolar_poder_publico = 'Municipal' ou 'Estadual'
     let whereClauses = [
       "LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')",
     ];
@@ -5691,7 +5684,6 @@ app.get("/api/alunos-transporte", async (req, res) => {
         a.pessoa_nome,
         a.cpf,
         a.cep,
-        a.bairro,
         a.numero_pessoa_endereco,
         a.transporte_escolar_poder_publico,
         COALESCE(a.ponto_atribuido, '') AS ponto_atribuido
@@ -5725,7 +5717,7 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       });
     }
 
-    // Verificar se a escola existe
+    // Verifica se a escola existe
     const checkEscola = await pool.query(
       "SELECT id FROM escolas WHERE id = $1 LIMIT 1",
       [escola_id]
@@ -5737,7 +5729,7 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       });
     }
 
-    // 1) Buscar rotas que atendam essa escola (tabela rotas_escolas)
+    // 1) Rotas para a escola
     const rotasQuery = `
       SELECT rota_id
       FROM rotas_escolas
@@ -5752,7 +5744,7 @@ app.post("/api/atribuir-pontos", async (req, res) => {
     }
     const rotaIds = rotasResult.rows.map((r) => r.rota_id);
 
-    // 2) Buscar todos os pontos associados a essas rotas (tabela rotas_pontos)
+    // 2) Pontos associados a essas rotas
     const pontosQuery = `
       SELECT p.id, p.nome_ponto, p.latitude, p.longitude, rp.rota_id
       FROM rotas_pontos rp
@@ -5765,11 +5757,11 @@ app.post("/api/atribuir-pontos", async (req, res) => {
     if (listaPontos.length === 0) {
       return res.json({
         success: true,
-        message: "Nenhum ponto de parada associado às rotas desta escola. Alunos não serão atribuídos.",
+        message: "Nenhum ponto associado às rotas desta escola. Alunos não serão atribuídos.",
       });
     }
 
-    // 3) Buscar alunos que usam transporte, para a escola_id
+    // 3) Alunos que usam transporte nessa escola
     const alunosQuery = `
       SELECT
         id,
@@ -5778,7 +5770,6 @@ app.post("/api/atribuir-pontos", async (req, res) => {
         cpf,
         cep,
         numero_pessoa_endereco,
-        bairro,
         transporte_escolar_poder_publico
       FROM alunos_ativos
       WHERE escola_id = $1
@@ -5793,8 +5784,7 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       });
     }
 
-    // 4) Precisamos de colunas lat_aluno, lng_aluno (ou geocodificar).
-    //    Exemplo de função Haversine:
+    // 4) Distância (via lat_aluno, lng_aluno) - se existirem
     function haversineDist(lat1, lon1, lat2, lon2) {
       const R = 6371; // raio da Terra em km
       const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -5806,27 +5796,27 @@ app.post("/api/atribuir-pontos", async (req, res) => {
           Math.sin(dLon / 2) *
           Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const d = R * c;
-      return d; // retorna em km
+      return R * c; // KM
     }
 
     let qtdAtribuidos = 0;
     for (const aluno of alunos) {
-      const buscaCoords = await pool.query(
-        `SELECT lat_aluno, lng_aluno FROM alunos_ativos WHERE id = $1`,
+      // Busca coords do aluno
+      const coordsRes = await pool.query(
+        "SELECT lat_aluno, lng_aluno FROM alunos_ativos WHERE id = $1",
         [aluno.id]
       );
-      if (buscaCoords.rows.length === 0) {
+      if (coordsRes.rows.length === 0) {
         continue;
       }
-      const { lat_aluno, lng_aluno } = buscaCoords.rows[0];
+      const { lat_aluno, lng_aluno } = coordsRes.rows[0];
       if (lat_aluno == null || lng_aluno == null) {
-        // Sem coordenadas => não atribui
         continue;
       }
 
       let menorDist = Infinity;
       let pontoEscolhido = null;
+
       for (const p of listaPontos) {
         const dist = haversineDist(
           parseFloat(lat_aluno),
@@ -5841,6 +5831,7 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       }
 
       if (pontoEscolhido) {
+        // Atualiza
         await pool.query(
           "UPDATE alunos_ativos SET ponto_atribuido = $1 WHERE id = $2",
           [pontoEscolhido.nome_ponto, aluno.id]
@@ -5857,7 +5848,7 @@ app.post("/api/atribuir-pontos", async (req, res) => {
     console.error("Erro ao atribuir pontos:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro interno do servidor ao atribuir pontos.",
+      message: "Erro interno ao atribuir pontos.",
     });
   }
 });
