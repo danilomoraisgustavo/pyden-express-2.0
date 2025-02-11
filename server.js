@@ -4490,7 +4490,7 @@ app.get("/api/alunos-mapa", async (req, res) => {
       message: "Erro ao buscar alunos no mapa.",
     });
   }
-});F
+});
 
 // Excluir rota
 app.delete("/api/rotas-simples/:id", async (req, res) => {
