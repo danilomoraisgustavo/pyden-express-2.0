@@ -5568,282 +5568,125 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
-// =============================================
-// ENDPOINT: SOLICITAR CONCESSÃO DE ROTA
-// =============================================
-app.post("/api/alunos/concessao-rota", async (req, res) => {
-  try {
-    const {
-      nome_responsavel,
-      cpf_responsavel,
-      celular_responsavel,
-      id_matricula_aluno,
-      escola_id,
-      cep,
-      numero,
-      endereco,
-      zoneamento,
-      deficiencia,
-      longitude,
-      latitude,
-      observacoes,
-    } = req.body;
+app.post('/alunos', async (req, res) => {
+  const {
+    nome,
+    cpf,
+    escola_id,
+    cep,
+    numero,
+    cidade,
+    estado,
+    pais,
+    latitude,
+    longitude
+  } = req.body;
 
-    const insertQuery = `
-      INSERT INTO cocessao_rota (
-        nome_responsavel,
-        cpf_responsavel,
-        celular_responsavel,
-        id_matricula_aluno,
-        escola_id,
-        cep,
-        numero,
-        endereco,
-        zoneamento,
-        deficiencia,
-        longitude,
-        latitude,
-        observacoes
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1) Insere (ou atualiza) o aluno em alunos_ativos
+    const insertAlunoQuery = `
+      INSERT INTO alunos_ativos (
+        pessoa_nome, cpf, escola_id, cep, numero_pessoa_endereco, bairro
+        -- inclua mais colunas se necessário
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
     `;
-    const values = [
-      nome_responsavel || null,
-      cpf_responsavel || null,
-      celular_responsavel || null,
-      id_matricula_aluno || null,
-      escola_id ? parseInt(escola_id, 10) : null,
-      cep || null,
-      numero || null,
-      endereco || null,
-      zoneamento === "sim",
-      deficiencia === "sim",
-      longitude ? parseFloat(longitude) : null,
-      latitude ? parseFloat(latitude) : null,
-      observacoes || null,
-    ];
+    
+    // Vamos supor que o bairro ainda não é calculado, coloque como NULL ou vazio:
+    const insertAlunoValues = [nome, cpf, escola_id, cep, numero, ''];
+    const alunoResult = await client.query(insertAlunoQuery, insertAlunoValues);
+    const alunoId = alunoResult.rows[0].id;
 
-    const result = await pool.query(insertQuery, values);
+    // 2) Descobrir o ponto de parada mais próximo (que pertença a uma rota que vá para a escola informada)
+    //    Precisamos de:
+    //    - `pontos` (coordenadas lat, lng)
+    //    - associação `rotas_pontos` (para descobrir rota)
+    //    - associação `rotas_escolas` (para confirmar se rota atende a escola)
 
-    return res.json({
-      success: true,
-      message: "Solicitação de concessão de rota registrada com sucesso!",
-      novoId: result.rows[0].id,
-    });
-  } catch (error) {
-    console.error("Erro ao inserir solicitação de rota:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno ao inserir solicitação de rota.",
-    });
-  }
-});
-
-// =============================================
-// ENDPOINT: LISTAR ALUNOS QUE USAM TRANSPORTE
-// =============================================
-app.get("/api/alunos-transporte", async (req, res) => {
-  try {
-    const { escola_id, busca } = req.query;
-    let whereClauses = [
-      "LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')",
-    ];
-    let values = [];
-    let index = 1;
-
-    if (escola_id) {
-      whereClauses.push(`escola_id = $${index}`);
-      values.push(escola_id);
-      index++;
-    }
-    if (busca) {
-      whereClauses.push(`
-        (
-          CAST(id_matricula AS TEXT) ILIKE $${index}
-          OR pessoa_nome ILIKE $${index}
-          OR cpf ILIKE $${index}
-        )
-      `);
-      values.push(`%${busca}%`);
-      index++;
-    }
-
-    const whereString = whereClauses.length
-      ? "WHERE " + whereClauses.join(" AND ")
-      : "";
-
-    const query = `
-      SELECT
-        a.id,
-        a.id_matricula,
-        a.escola_id,
-        e.nome AS escola_nome,
-        a.pessoa_nome,
-        a.cpf,
-        a.cep,
-        a.bairro,
-        a.numero_pessoa_endereco,
-        a.transporte_escolar_poder_publico,
-        COALESCE(a.ponto_atribuido, '') AS ponto_atribuido
-      FROM alunos_ativos a
-      LEFT JOIN escolas e ON e.id = a.escola_id
-      ${whereString}
-      ORDER BY a.id DESC
-    `;
-    const result = await pool.query(query, values);
-
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Erro ao listar alunos que usam transporte:", err);
-    res.status(500).json({
-      success: false,
-      message: "Erro interno ao listar alunos que usam transporte.",
-    });
-  }
-});
-
-// =============================================
-// ENDPOINT: ATRIBUIR PONTOS DE PARADA
-// =============================================
-app.post("/api/atribuir-pontos", async (req, res) => {
-  try {
-    const { escola_id } = req.body;
-    if (!escola_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Parâmetro escola_id é obrigatório.",
-      });
-    }
-
-    const checkEscola = await pool.query(
-      "SELECT id FROM escolas WHERE id = $1 LIMIT 1",
-      [escola_id]
-    );
-    if (checkEscola.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Escola não encontrada.",
-      });
-    }
-
-    const rotasQuery = `
-      SELECT rota_id
-      FROM rotas_escolas
-      WHERE escola_id = $1
-    `;
-    const rotasResult = await pool.query(rotasQuery, [escola_id]);
-    if (rotasResult.rows.length === 0) {
-      return res.json({
-        success: true,
-        message: "Nenhuma rota associada a esta escola. Alunos não serão atribuídos.",
-      });
-    }
-    const rotaIds = rotasResult.rows.map((r) => r.rota_id);
+    // Exemplo simples de query pegando todos os pontos associados a rotas que atendem a escola e calculando distância.
+    // *Sem PostGIS*, para pouca escala, podemos fazer algo aproximado (Haversine ou "euclidiana" simplificada).
+    // Se tiver PostGIS, use ST_Distance() e geometrias.
 
     const pontosQuery = `
-      SELECT p.id, p.nome_ponto, p.latitude, p.longitude, rp.rota_id
-      FROM rotas_pontos rp
-      JOIN pontos p ON p.id = rp.ponto_id
-      WHERE rp.rota_id = ANY($1)
+      SELECT p.id AS ponto_id,
+             p.latitude,
+             p.longitude,
+             rp.rota_id
+      FROM pontos p
+      JOIN rotas_pontos rp ON p.id = rp.ponto_id
+      JOIN rotas_escolas re ON re.rota_id = rp.rota_id
+      WHERE re.escola_id = $1
     `;
-    const pontosResult = await pool.query(pontosQuery, [rotaIds]);
-    const listaPontos = pontosResult.rows;
+    const pontosValues = [escola_id];
 
-    if (listaPontos.length === 0) {
-      return res.json({
-        success: true,
-        message: "Nenhum ponto de parada associado às rotas desta escola. Alunos não serão atribuídos.",
-      });
+    const { rows: pontosEncontrados } = await client.query(pontosQuery, pontosValues);
+
+    if (pontosEncontrados.length === 0) {
+      // Não existe nenhum ponto/rota cadastrado para essa escola
+      // Decide se você quer dar erro ou apenas inserir o aluno sem rota
+      throw new Error('Nenhum ponto/rota encontrado para essa escola.');
     }
 
-    const alunosQuery = `
-      SELECT
-        id,
-        id_matricula,
-        pessoa_nome,
-        cpf,
-        cep,
-        numero_pessoa_endereco,
-        bairro,
-        transporte_escolar_poder_publico
-      FROM alunos_ativos
-      WHERE escola_id = $1
-        AND LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
-    `;
-    const alunosResult = await pool.query(alunosQuery, [escola_id]);
-    const alunos = alunosResult.rows;
-    if (alunos.length === 0) {
-      return res.json({
-        success: true,
-        message: "Nenhum aluno usando transporte encontrado para esta escola.",
-      });
-    }
+    // 3) Calcular a distância do aluno para cada ponto e encontrar o mais próximo
+    let pontoMaisProximo = null;
+    let menorDistancia = Infinity;
 
-    function haversineDist(lat1, lon1, lat2, lon2) {
-      const R = 6371;
-      const dLat = ((lat2 - lat1) * Math.PI) / 180;
-      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    // Função auxiliar (distância euclidiana simplificada - não compensa as distorções de lat/long)
+    function calcDistancia(lat1, lng1, lat2, lng2) {
+      const rad = Math.PI / 180;
+      const dLat = (lat2 - lat1) * rad;
+      const dLng = (lng2 - lng1) * rad;
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((lat1 * Math.PI) / 180) *
-          Math.cos((lat2 * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
+        Math.cos(lat1 * rad) *
+          Math.cos(lat2 * rad) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const d = R * c;
-      return d;
+      const R = 6371; // Raio da Terra em km
+      return R * c;
     }
 
-    let qtdAtribuidos = 0;
-    for (const aluno of alunos) {
-      const buscaCoords = await pool.query(
-        "SELECT lat_aluno, lng_aluno FROM alunos_ativos WHERE id = $1",
-        [aluno.id]
-      );
-      if (buscaCoords.rows.length === 0) continue;
-      const { lat_aluno, lng_aluno } = buscaCoords.rows[0];
-      if (lat_aluno == null || lng_aluno == null) {
-        continue;
+    pontosEncontrados.forEach((p) => {
+      const dist = calcDistancia(latitude, longitude, p.latitude, p.longitude);
+      if (dist < menorDistancia) {
+        menorDistancia = dist;
+        pontoMaisProximo = p;
       }
-
-      let menorDist = Infinity;
-      let pontoEscolhido = null;
-      for (const p of listaPontos) {
-        const dist = haversineDist(
-          parseFloat(lat_aluno),
-          parseFloat(lng_aluno),
-          parseFloat(p.latitude),
-          parseFloat(p.longitude)
-        );
-        if (dist < menorDist) {
-          menorDist = dist;
-          pontoEscolhido = p;
-        }
-      }
-
-      if (pontoEscolhido) {
-        await pool.query(
-          "UPDATE alunos_ativos SET ponto_atribuido = $1 WHERE id = $2",
-          [pontoEscolhido.nome_ponto, aluno.id]
-        );
-        qtdAtribuidos++;
-      }
-    }
-
-    return res.json({
-      success: true,
-      message: `Pontos atribuídos com sucesso para ${qtdAtribuidos} aluno(s).`,
     });
-  } catch (error) {
-    console.error("Erro ao atribuir pontos:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor ao atribuir pontos.",
+
+    // Agora temos o ponto mais próximo e sua rota
+    const pontoId = pontoMaisProximo.ponto_id;
+    const rotaId = pontoMaisProximo.rota_id;
+
+    // 4) Inserir na tabela de associação (alunos_pontos_rotas)
+    const insertAlunoPontoRotaQuery = `
+      INSERT INTO alunos_pontos_rotas (aluno_id, ponto_id, rota_id)
+      VALUES ($1, $2, $3)
+    `;
+    await client.query(insertAlunoPontoRotaQuery, [alunoId, pontoId, rotaId]);
+
+    await client.query('COMMIT');
+
+    // Retornar algo para o front-end
+    res.status(200).json({
+      message: 'Aluno cadastrado e associado ao ponto/rota com sucesso.',
+      alunoId: alunoId,
+      pontoId: pontoId,
+      rotaId: rotaId
     });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(400).json({ message: err.message });
+  } finally {
+    client.release();
   }
 });
-
 
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
