@@ -755,13 +755,22 @@
               <li class="nav-item"><a href="#">Importar Alunos</a></li>
             </ul>
           </div>
-          <div class="mb-3">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
-              Importar Alunos
-            </button>
-            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalMapear">
-              Mapear Alunos
-            </button>
+          <div class="mb-3 d-flex gap-2 flex-wrap">
+            <div>
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
+                Importar Alunos
+              </button>
+            </div>
+            <div>
+              <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalMapear">
+                Mapear Alunos
+              </button>
+            </div>
+            <div>
+              <button class="btn btn-success" id="btnCompletarMunicipalEstadual">
+                Completar Localização Municipal/Estadual
+              </button>
+            </div>
           </div>
           <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel"
             aria-hidden="true">
@@ -1782,6 +1791,100 @@
             hideLoader();
           });
       });
+
+      // BOTÃO PARA COMPLETAR LOCALIZAÇÃO DE ALUNOS COM TRANSPORTE 'MUNICIPAL' OU 'ESTADUAL'
+      $("#btnCompletarMunicipalEstadual").on("click", async function () {
+        showLoader();
+        let promises = [];
+        const alunosFiltrados = alunosData.filter(
+          (aluno) =>
+            aluno.transporte_escolar_poder_publico &&
+            (aluno.transporte_escolar_poder_publico
+              .toLowerCase()
+              .includes("municipal") ||
+              aluno.transporte_escolar_poder_publico
+                .toLowerCase()
+                .includes("estadual")) &&
+            !aluno.latitude &&
+            !aluno.longitude
+        );
+
+        if (!alunosFiltrados.length) {
+          showNotification(
+            "info",
+            "Nenhum aluno com transporte 'Municipal' ou 'Estadual' sem lat/long."
+          );
+          hideLoader();
+          return;
+        }
+
+        try {
+          for (const al of alunosFiltrados) {
+            const cepLimpo = (al.cep || "").replace(/\D/g, "");
+            if (cepLimpo.length !== 8) {
+              continue;
+            }
+            const numeroEnd = tratarNumero(al.numero_pessoa_endereco || "");
+            const viaData = await fetch(
+              `https://viacep.com.br/ws/${cepLimpo}/json/`
+            ).then((res) => res.json());
+
+            if (viaData.erro) {
+              continue;
+            }
+
+            const logradouro = viaData.logradouro || "";
+            const bairro = viaData.bairro || "";
+            const localidade = viaData.localidade || "";
+            const uf = viaData.uf || "";
+            const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
+
+            const geoResult = await geocodeAddress(endCompleto);
+            if (geoResult) {
+              const { lat, lng } = geoResult;
+              const body = {
+                id: al.id,
+                latitude: lat,
+                longitude: lng,
+              };
+              // PUT em cada um
+              const p = fetch("/api/alunos-ativos/" + al.id, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              })
+                .then((r) => r.json())
+                .then((resp) => {
+                  if (!resp.success) {
+                    console.warn(
+                      "Falha ao atualizar aluno ID:",
+                      al.id,
+                      resp.message
+                    );
+                  }
+                })
+                .catch((err) => {
+                  console.error("Erro ao atualizar ID:", al.id, err);
+                });
+              promises.push(p);
+            }
+          }
+          await Promise.all(promises);
+          showNotification(
+            "success",
+            "Processo de localização concluído. Atualizando lista..."
+          );
+          carregarAlunosBD();
+        } catch (err) {
+          console.error(err);
+          showNotification(
+            "danger",
+            "Ocorreu um erro durante a atualização em massa."
+          );
+        } finally {
+          hideLoader();
+        }
+      });
     });
 
     function initMapAluno(aluno) {
@@ -1946,6 +2049,32 @@
       } else {
         $("#localizarAlunoEnderecoCompleto").val("");
       }
+    }
+
+    async function geocodeAddress(address) {
+      return new Promise((resolve) => {
+        geocoder.geocode({ address }, (results, status) => {
+          if (status === "OK" && results[0]) {
+            const location = results[0].geometry.location;
+            resolve({ lat: location.lat(), lng: location.lng() });
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    function tratarNumero(numStr) {
+      let numeroTratado = (numStr || "").trim().toLowerCase();
+      if (
+        numeroTratado.includes("s/n") ||
+        numeroTratado === "sn" ||
+        numeroTratado.includes("sem numero") ||
+        numeroTratado.includes("sem número")
+      ) {
+        return "S/N";
+      }
+      return numeroTratado;
     }
   </script>
 </body>
