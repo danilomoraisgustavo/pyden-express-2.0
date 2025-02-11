@@ -5,15 +5,8 @@
     <title>
       Importar Alunos Ativos - pydenadmin Bootstrap 5 Admin Dashboard
     </title>
-    <meta
-      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-      name="viewport"
-    />
-    <link
-      rel="icon"
-      href="public/assets/img/pydenadmin/favicon.png"
-      type="image/x-icon"
-    />
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    <link rel="icon" href="public/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
     <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
     <script>
       WebFont.load({
@@ -41,17 +34,21 @@
         content: " *";
         color: red;
       }
+
       .modal-lg {
         max-width: 90% !important;
       }
+
       #map {
         width: 100%;
         height: 500px;
       }
+
       #mapAluno {
         width: 100%;
         height: 500px;
       }
+
       .spinner-container {
         position: fixed;
         top: 0;
@@ -64,11 +61,9 @@
         background-color: rgba(0, 0, 0, 0.4);
         z-index: 9999;
       }
+
       .spinner {
-        background-image: linear-gradient(
-          rgb(186, 66, 255) 35%,
-          rgb(0, 225, 255)
-        );
+        background-image: linear-gradient(rgb(186, 66, 255) 35%, rgb(0, 225, 255));
         width: 100px;
         height: 100px;
         animation: spinning82341 1.7s linear infinite;
@@ -78,6 +73,7 @@
         box-shadow: 0px -5px 20px 0px rgb(186, 66, 255),
           0px 5px 20px 0px rgb(0, 225, 255);
       }
+
       .spinner1 {
         background-color: rgb(36, 36, 36);
         width: 100px;
@@ -85,6 +81,7 @@
         border-radius: 50px;
         filter: blur(10px);
       }
+
       @keyframes spinning82341 {
         to {
           transform: rotate(360deg);
@@ -127,9 +124,7 @@
           <div class="sidebar-content">
             <ul class="nav nav-secondary">
               <li class="nav-section">
-                <span class="sidebar-mini-icon"
-                  ><i class="fa fa-ellipsis-h"></i
-                ></span>
+                <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
                 <h4 class="text-section">Transporte Escolar</h4>
               </li>
               <li class="nav-item">
@@ -139,11 +134,7 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teAlunos"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
                   <i class="fas fa-user-graduate"></i>
                   <p>Alunos</p>
                   <span class="caret"></span>
@@ -151,18 +142,12 @@
                 <div class="collapse" id="teAlunos">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html"
-                      >
-                        <span class="sub-item"
-                          >Listar Solicitações de Transporte</span
-                        >
+                      <a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html">
+                        <span class="sub-item">Listar Solicitações de Transporte</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/alunos-listar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/alunos-listar.html">
                         <span class="sub-item">Listar ALunos</span>
                       </a>
                     </li>
@@ -170,11 +155,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teMotoristas"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
                   <i class="fas fa-id-card"></i>
                   <p>Motoristas</p>
                   <span class="caret"></span>
@@ -182,16 +163,12 @@
                 <div class="collapse" id="teMotoristas">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/motoristas-listar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/motoristas-listar.html">
                         <span class="sub-item">Listar Motoristas</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/motoristas-licencas.html"
-                      >
+                      <a href="../../pages/transporte-escolar/motoristas-licencas.html">
                         <span class="sub-item">Licenças e Certificações</span>
                       </a>
                     </li>
@@ -199,11 +176,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teMonitores"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="false">
                   <i class="fas fa-user-check"></i>
                   <p>Monitores</p>
                   <span class="caret"></span>
@@ -211,9 +184,7 @@
                 <div class="collapse" id="teMonitores">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/monitores-listar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/monitores-listar.html">
                         <span class="sub-item">Listar Monitores</span>
                       </a>
                     </li>
@@ -221,11 +192,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teVeiculos"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
                   <i class="fas fa-bus"></i>
                   <p>Veículos</p>
                   <span class="caret"></span>
@@ -233,23 +200,17 @@
                 <div class="collapse" id="teVeiculos">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/veiculos-listar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/veiculos-listar.html">
                         <span class="sub-item">Listar Veículos</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/veiculos-manutencao.html"
-                      >
+                      <a href="../../pages/transporte-escolar/veiculos-manutencao.html">
                         <span class="sub-item">Manutenção</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/veiculos-documentacao.html"
-                      >
+                      <a href="../../pages/transporte-escolar/veiculos-documentacao.html">
                         <span class="sub-item">Documentação e Seguros</span>
                       </a>
                     </li>
@@ -257,11 +218,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teRotas"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teRotas" aria-expanded="false">
                   <i class="fas fa-route"></i>
                   <p>Rotas</p>
                   <span class="caret"></span>
@@ -269,16 +226,12 @@
                 <div class="collapse" id="teRotas">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/rotas-listar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/rotas-listar.html">
                         <span class="sub-item">Listar Rotas</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/pontos-cadastrar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/pontos-cadastrar.html">
                         <span class="sub-item">Pontos de Parada</span>
                       </a>
                     </li>
@@ -286,11 +239,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teRelatorios"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teRelatorios" aria-expanded="false">
                   <i class="fas fa-chart-line"></i>
                   <p>Relatórios</p>
                   <span class="caret"></span>
@@ -298,23 +247,17 @@
                 <div class="collapse" id="teRelatorios">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/relatorios-mensais.html"
-                      >
+                      <a href="../../pages/transporte-escolar/relatorios-mensais.html">
                         <span class="sub-item">Mensais</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/relatorios-rotas.html"
-                      >
+                      <a href="../../pages/transporte-escolar/relatorios-rotas.html">
                         <span class="sub-item">Por Rota</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/relatorios-comparativos.html"
-                      >
+                      <a href="../../pages/transporte-escolar/relatorios-comparativos.html">
                         <span class="sub-item">Comparativos</span>
                       </a>
                     </li>
@@ -322,11 +265,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teZoneamento"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
                   <i class="fas fa-school"></i>
                   <p>Zoneamento</p>
                   <span class="caret"></span>
@@ -334,16 +273,12 @@
                 <div class="collapse" id="teZoneamento">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/zoneamento-listar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/zoneamento-listar.html">
                         <span class="sub-item">Listar Zoneamento</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/zoneamento-cadastrar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/zoneamento-cadastrar.html">
                         <span class="sub-item">Cadastrar Zoneamento</span>
                       </a>
                     </li>
@@ -351,11 +286,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teEscolas"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teEscolas" aria-expanded="false">
                   <i class="fas fa-school"></i>
                   <p>Escolas</p>
                   <span class="caret"></span>
@@ -363,9 +294,7 @@
                 <div class="collapse" id="teEscolas">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/escolas-listar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/escolas-listar.html">
                         <span class="sub-item">Listar Escolas</span>
                       </a>
                     </li>
@@ -373,11 +302,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teFornecedores"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#teFornecedores" aria-expanded="false">
                   <i class="fas fa-truck-loading"></i>
                   <p>Fornecedores</p>
                   <span class="caret"></span>
@@ -385,16 +310,12 @@
                 <div class="collapse" id="teFornecedores">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/fornecedores-listar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/fornecedores-listar.html">
                         <span class="sub-item">Listar Fornecedores</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-escolar/fornecedores-cadastrar.html"
-                      >
+                      <a href="../../pages/transporte-escolar/fornecedores-cadastrar.html">
                         <span class="sub-item">Cadastrar Fornecedor</span>
                       </a>
                     </li>
@@ -402,25 +323,17 @@
                 </div>
               </li>
               <li class="nav-section">
-                <span class="sidebar-mini-icon"
-                  ><i class="fa fa-ellipsis-h"></i
-                ></span>
+                <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
                 <h4 class="text-section">Transporte Administrativo</h4>
               </li>
               <li class="nav-item">
-                <a
-                  href="../../pages/transporte-administrativo/dashboard-administrativo.html"
-                >
+                <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
                   <i class="fas fa-tachometer-alt"></i>
                   <p>Dashboard Administrativo</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taFuncionarios"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#taFuncionarios" aria-expanded="false">
                   <i class="fas fa-users-cog"></i>
                   <p>Funcionários</p>
                   <span class="caret"></span>
@@ -428,30 +341,22 @@
                 <div class="collapse" id="taFuncionarios">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/funcionarios-listar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/funcionarios-listar.html">
                         <span class="sub-item">Listar Funcionários</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/funcionarios-cadastrar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/funcionarios-cadastrar.html">
                         <span class="sub-item">Cadastrar Funcionário</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/funcionarios-cargos.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/funcionarios-cargos.html">
                         <span class="sub-item">Funções e Cargos</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/funcionarios-visualizar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/funcionarios-visualizar.html">
                         <span class="sub-item">Visualizar Funcionário</span>
                       </a>
                     </li>
@@ -459,11 +364,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taMotoristas"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
                   <i class="fas fa-id-card"></i>
                   <p>Motoristas</p>
                   <span class="caret"></span>
@@ -471,23 +372,17 @@
                 <div class="collapse" id="taMotoristas">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/motoristas-listar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/motoristas-listar.html">
                         <span class="sub-item">Listar Motoristas</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/motoristas-cadastrar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/motoristas-cadastrar.html">
                         <span class="sub-item">Cadastrar Motorista</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/motoristas-licencas.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/motoristas-licencas.html">
                         <span class="sub-item">Licenças e Certificações</span>
                       </a>
                     </li>
@@ -495,11 +390,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taMonitores"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#taMonitores" aria-expanded="false">
                   <i class="fas fa-user-check"></i>
                   <p>Monitores</p>
                   <span class="caret"></span>
@@ -507,16 +398,12 @@
                 <div class="collapse" id="taMonitores">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/monitores-listar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/monitores-listar.html">
                         <span class="sub-item">Listar Monitores</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/monitores-cadastrar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/monitores-cadastrar.html">
                         <span class="sub-item">Cadastrar Monitor</span>
                       </a>
                     </li>
@@ -524,11 +411,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taFrota"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
                   <i class="fas fa-warehouse"></i>
                   <p>Frota Administrativa</p>
                   <span class="caret"></span>
@@ -536,23 +419,17 @@
                 <div class="collapse" id="taFrota">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/frota-listar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/frota-listar.html">
                         <span class="sub-item">Listar Frota</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/frota-manutencao.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/frota-manutencao.html">
                         <span class="sub-item">Manutenção</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/frota-rotas.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/frota-rotas.html">
                         <span class="sub-item">Rotas Internas</span>
                       </a>
                     </li>
@@ -560,11 +437,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taAgenda"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
                   <i class="far fa-calendar-alt"></i>
                   <p>Agenda de Viagens</p>
                   <span class="caret"></span>
@@ -572,23 +445,17 @@
                 <div class="collapse" id="taAgenda">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/agenda-viagens-listar.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/agenda-viagens-listar.html">
                         <span class="sub-item">Listar Viagens</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/agenda-viagens-nova.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/agenda-viagens-nova.html">
                         <span class="sub-item">Agendar Nova Viagem</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/agenda-viagens-historico.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/agenda-viagens-historico.html">
                         <span class="sub-item">Histórico de Viagens</span>
                       </a>
                     </li>
@@ -596,11 +463,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taLogistica"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#taLogistica" aria-expanded="false">
                   <i class="fas fa-truck-loading"></i>
                   <p>Logística Interna</p>
                   <span class="caret"></span>
@@ -608,23 +471,17 @@
                 <div class="collapse" id="taLogistica">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/logistica-materiais.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/logistica-materiais.html">
                         <span class="sub-item">Transporte de Materiais</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/logistica-manutencoes.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/logistica-manutencoes.html">
                         <span class="sub-item">Agendamento Manutenção</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/logistica-suprimentos.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/logistica-suprimentos.html">
                         <span class="sub-item">Controle de Suprimentos</span>
                       </a>
                     </li>
@@ -632,11 +489,7 @@
                 </div>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taRelatorios"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#taRelatorios" aria-expanded="false">
                   <i class="fas fa-chart-pie"></i>
                   <p>Relatórios</p>
                   <span class="caret"></span>
@@ -644,44 +497,32 @@
                 <div class="collapse" id="taRelatorios">
                   <ul class="nav nav-collapse">
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/gerar-memorando.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/gerar-memorando.html">
                         <span class="sub-item">Gerar Memorando</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-eficiencia.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/relatorios-eficiencia.html">
                         <span class="sub-item">Eficiência</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-custos.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/relatorios-custos.html">
                         <span class="sub-item">Custos Operacionais</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-comparativos.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/relatorios-comparativos.html">
                         <span class="sub-item">Comparativos</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-mensais.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/relatorios-mensais.html">
                         <span class="sub-item">Mensais</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-rotas.html"
-                      >
+                      <a href="../../pages/transporte-administrativo/relatorios-rotas.html">
                         <span class="sub-item">Por Rota</span>
                       </a>
                     </li>
@@ -689,17 +530,11 @@
                 </div>
               </li>
               <li class="nav-section">
-                <span class="sidebar-mini-icon"
-                  ><i class="fa fa-ellipsis-h"></i
-                ></span>
+                <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
                 <h4 class="text-section">Financeiro</h4>
               </li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#finRelatorios"
-                  aria-expanded="false"
-                >
+                <a data-bs-toggle="collapse" href="#finRelatorios" aria-expanded="false">
                   <i class="far fa-chart-bar"></i>
                   <p>Relatórios Financeiros</p>
                   <span class="caret"></span>
@@ -712,16 +547,12 @@
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/financeiro/relatorios-custos-setor.html"
-                      >
+                      <a href="../../pages/financeiro/relatorios-custos-setor.html">
                         <span class="sub-item">Custos por Setor</span>
                       </a>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/financeiro/relatorios-comparativos.html"
-                      >
+                      <a href="../../pages/financeiro/relatorios-comparativos.html">
                         <span class="sub-item">Comparativos</span>
                       </a>
                     </li>
@@ -737,10 +568,7 @@
         <div class="main-header" style="top: 0">
           <div class="main-header-logo">
             <div class="logo-header" data-background-color="dark">
-              <a
-                href="../../pages/transporte-escolar/dashboard-escolar.html"
-                class="logo"
-              >
+              <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
                 <img
                   src="../../assets/img/pydenadmin/logo_light.png"
                   alt="navbar brand"
@@ -762,9 +590,7 @@
             </div>
           </div>
 
-          <nav
-            class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
-          >
+          <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
             <div class="container-fluid">
               <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
                 <li class="nav-item topbar-icon dropdown hidden-caret">
@@ -779,14 +605,9 @@
                   >
                     <i class="fa fa-envelope"></i>
                   </a>
-                  <ul
-                    class="dropdown-menu messages-notif-box animated fadeIn"
-                    aria-labelledby="messageDropdown"
-                  >
+                  <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
                     <li>
-                      <div
-                        class="dropdown-title d-flex justify-content-between align-items-center"
-                      >
+                      <div class="dropdown-title d-flex justify-content-between align-items-center">
                         Mensagens
                         <a href="#" class="small">Marcar todas como lidas</a>
                       </div>
@@ -796,10 +617,7 @@
                         <div class="notif-center">
                           <a href="#">
                             <div class="notif-img">
-                              <img
-                                src="../../assets/img/jm_denis.jpg"
-                                alt="Img Profile"
-                              />
+                              <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
                             </div>
                             <div class="notif-content">
                               <span class="subject">Jimmy Denis</span>
@@ -832,10 +650,7 @@
                     <i class="fa fa-bell"></i>
                     <span class="notification" id="notifCount">0</span>
                   </a>
-                  <ul
-                    class="dropdown-menu notif-box animated fadeIn"
-                    aria-labelledby="notifDropdown"
-                  >
+                  <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
                     <li>
                       <div class="dropdown-title" id="notifTitle">
                         Você não tem novas notificações
@@ -847,11 +662,7 @@
                       </div>
                     </li>
                     <li>
-                      <a
-                        class="see-all"
-                        href="javascript:void(0);"
-                        id="notifSeeAll"
-                      >
+                      <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
                         Ver todas as notificações
                         <i class="fa fa-angle-right"></i>
                       </a>
@@ -884,9 +695,7 @@
                             href="/pages/transporte-escolar/escolas-cadastrar.html"
                           >
                             <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-primary rounded-circle"
-                              >
+                              <div class="avatar-item bg-primary rounded-circle">
                                 <i class="fas fa-school"></i>
                               </div>
                               <span class="text">Cad. Escola</span>
@@ -897,9 +706,7 @@
                             href="/pages/transporte-escolar/monitores-cadastrar.html"
                           >
                             <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-success rounded-circle"
-                              >
+                              <div class="avatar-item bg-success rounded-circle">
                                 <i class="fas fa-user-check"></i>
                               </div>
                               <span class="text">Cad. Monitor</span>
@@ -910,9 +717,7 @@
                             href="/pages/transporte-escolar/rotas-listar.html"
                           >
                             <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-warning rounded-circle"
-                              >
+                              <div class="avatar-item bg-warning rounded-circle">
                                 <i class="fas fa-route"></i>
                               </div>
                               <span class="text">Listar Rotas</span>
@@ -936,12 +741,7 @@
                 </li>
 
                 <li class="nav-item topbar-user dropdown hidden-caret">
-                  <a
-                    class="dropdown-toggle profile-pic"
-                    data-bs-toggle="dropdown"
-                    href="#"
-                    aria-expanded="false"
-                  >
+                  <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                     <div class="avatar-sm">
                       <img
                         src="../../assets/img/profile.jpg"
@@ -951,9 +751,7 @@
                     </div>
                     <span class="profile-username">
                       <span class="op-7">Olá,</span>
-                      <span class="fw-bold" id="dropdownUserName"
-                        >Carregando...</span
-                      >
+                      <span class="fw-bold" id="dropdownUserName">Carregando...</span>
                     </span>
                   </a>
                   <ul class="dropdown-menu dropdown-user animated fadeIn">
@@ -972,9 +770,7 @@
                             <p class="text-muted" id="dropdownUserEmail">
                               email@exemplo.com
                             </p>
-                            <a
-                              href="/pages/usuarios/meu-perfil.html"
-                              class="btn btn-xs btn-secondary btn-sm"
+                            <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm"
                               >Ver Perfil</a
                             >
                           </div>
@@ -982,26 +778,12 @@
                       </li>
                       <li>
                         <div class="dropdown-divider"></div>
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/meu-perfil.html"
-                          >Meu Perfil</a
-                        >
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/caixa-entrada.html"
-                          >Caixa de Entrada</a
-                        >
+                        <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
                         <div class="dropdown-divider"></div>
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/configuracoes.html"
-                          >Configurações</a
-                        >
+                        <a class="dropdown-item" href="/pages/usuarios/configuracoes.html">Configurações</a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#" id="logoutLink"
-                          >Sair</a
-                        >
+                        <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
                       </li>
                     </div>
                   </ul>
@@ -1080,11 +862,7 @@
                       serão importados.
                     </p>
                     <div class="mb-3">
-                      <label
-                        for="escolaSelect"
-                        class="form-label required-label"
-                        >Escola</label
-                      >
+                      <label for="escolaSelect" class="form-label required-label">Escola</label>
                       <select class="form-select" id="escolaSelect">
                         <option value="">Selecione a Escola</option>
                       </select>
@@ -1093,26 +871,13 @@
                       2. Selecione o arquivo XLSX conforme o formato
                       especificado.
                     </p>
-                    <input
-                      type="file"
-                      id="fileInput"
-                      accept=".xlsx, .xls"
-                      class="form-control mb-3"
-                    />
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" class="form-control mb-3" />
                   </div>
                   <div class="modal-footer">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      data-bs-dismiss="modal"
-                    >
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                       Fechar
                     </button>
-                    <button
-                      id="importarBtn"
-                      type="button"
-                      class="btn btn-primary"
-                    >
+                    <button id="importarBtn" type="button" class="btn btn-primary">
                       Importar
                     </button>
                   </div>
@@ -1144,17 +909,13 @@
                   <div class="modal-body">
                     <div class="row mb-3">
                       <div class="col-md-6">
-                        <label for="selectEscolaMap" class="form-label"
-                          >Filtrar por Escola</label
-                        >
+                        <label for="selectEscolaMap" class="form-label">Filtrar por Escola</label>
                         <select class="form-select" id="selectEscolaMap">
                           <option value="">Todas as Escolas</option>
                         </select>
                       </div>
                       <div class="col-md-6">
-                        <label for="buscarAlunoInput" class="form-label"
-                          >Buscar por ID, Nome ou CPF</label
-                        >
+                        <label for="buscarAlunoInput" class="form-label">Buscar por ID, Nome ou CPF</label>
                         <input
                           type="text"
                           class="form-control"
@@ -1171,11 +932,7 @@
                     <div id="map"></div>
                   </div>
                   <div class="modal-footer">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      data-bs-dismiss="modal"
-                    >
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                       Fechar
                     </button>
                   </div>
@@ -1188,33 +945,25 @@
               <div class="card-body">
                 <div class="row g-3">
                   <div class="col-md-3">
-                    <label for="filtroEscola" class="form-label"
-                      >Filtrar por Escola</label
-                    >
+                    <label for="filtroEscola" class="form-label">Filtrar por Escola</label>
                     <select id="filtroEscola" class="form-select">
                       <option value="">Todas</option>
                     </select>
                   </div>
                   <div class="col-md-3">
-                    <label for="filtroBairro" class="form-label"
-                      >Filtrar por Bairro</label
-                    >
+                    <label for="filtroBairro" class="form-label">Filtrar por Bairro</label>
                     <select id="filtroBairro" class="form-select">
                       <option value="">Todos</option>
                     </select>
                   </div>
                   <div class="col-md-3">
-                    <label for="filtroCep" class="form-label"
-                      >Filtrar por CEP</label
-                    >
+                    <label for="filtroCep" class="form-label">Filtrar por CEP</label>
                     <select id="filtroCep" class="form-select">
                       <option value="">Todos</option>
                     </select>
                   </div>
                   <div class="col-md-3">
-                    <label for="searchInput" class="form-label"
-                      >Pesquisa Geral</label
-                    >
+                    <label for="searchInput" class="form-label">Pesquisa Geral</label>
                     <input
                       type="text"
                       id="searchInput"
@@ -1230,17 +979,12 @@
             <div class="row mt-4">
               <div class="col-md-12">
                 <div class="card">
-                  <div
-                    class="card-header d-flex justify-content-between align-items-center"
-                  >
+                  <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title">Alunos Cadastrados</h4>
                   </div>
                   <div class="card-body">
                     <div class="table-responsive">
-                      <table
-                        id="alunos-table"
-                        class="display table table-striped table-hover"
-                      >
+                      <table id="alunos-table" class="display table table-striped table-hover">
                         <thead>
                           <tr>
                             <th>ID Matrícula</th>
@@ -1298,6 +1042,7 @@
             </div>
           </div>
         </div>
+
         <footer class="footer">
           <div class="container-fluid d-flex justify-content-between">
             <nav class="pull-left">
@@ -1317,9 +1062,7 @@
             </div>
             <div>
               Distributed by
-              <a target="_blank" href="https://themewagon.com/"
-                >ThemeWagon</a
-              >.
+              <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
             </div>
           </div>
         </footer>
@@ -1355,19 +1098,11 @@
             <form id="formEditarAluno">
               <input type="hidden" id="editarAlunoId" />
               <div class="mb-3">
-                <label for="editarIdMatricula" class="form-label"
-                  >ID Matrícula</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editarIdMatricula"
-                />
+                <label for="editarIdMatricula" class="form-label">ID Matrícula</label>
+                <input type="text" class="form-control" id="editarIdMatricula" />
               </div>
               <div class="mb-3">
-                <label for="editarEscolaId" class="form-label"
-                  >Escola (ID)</label
-                >
+                <label for="editarEscolaId" class="form-label">Escola (ID)</label>
                 <input type="text" class="form-control" id="editarEscolaId" />
               </div>
               <div class="mb-3">
@@ -1375,29 +1110,19 @@
                 <input type="text" class="form-control" id="editarAno" />
               </div>
               <div class="mb-3">
-                <label for="editarModalidade" class="form-label"
-                  >Modalidade</label
-                >
+                <label for="editarModalidade" class="form-label">Modalidade</label>
                 <input type="text" class="form-control" id="editarModalidade" />
               </div>
               <div class="mb-3">
-                <label for="editarFormatoLetivo" class="form-label"
-                  >Formato Letivo</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editarFormatoLetivo"
-                />
+                <label for="editarFormatoLetivo" class="form-label">Formato Letivo</label>
+                <input type="text" class="form-control" id="editarFormatoLetivo" />
               </div>
               <div class="mb-3">
                 <label for="editarTurma" class="form-label">Turma</label>
                 <input type="text" class="form-control" id="editarTurma" />
               </div>
               <div class="mb-3">
-                <label for="editarNomeAluno" class="form-label"
-                  >Nome Aluno</label
-                >
+                <label for="editarNomeAluno" class="form-label">Nome Aluno</label>
                 <input type="text" class="form-control" id="editarNomeAluno" />
               </div>
               <div class="mb-3">
@@ -1405,9 +1130,7 @@
                 <input type="text" class="form-control" id="editarCpf" />
               </div>
               <div class="mb-3">
-                <label for="editarTransporte" class="form-label"
-                  >Transp. Escolar</label
-                >
+                <label for="editarTransporte" class="form-label">Transp. Escolar</label>
                 <input type="text" class="form-control" id="editarTransporte" />
               </div>
               <div class="mb-3">
@@ -1419,19 +1142,11 @@
                 <input type="text" class="form-control" id="editarBairro" />
               </div>
               <div class="mb-3">
-                <label for="editarNumeroEndereco" class="form-label"
-                  >Número Endereço</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editarNumeroEndereco"
-                />
+                <label for="editarNumeroEndereco" class="form-label">Número Endereço</label>
+                <input type="text" class="form-control" id="editarNumeroEndereco" />
               </div>
               <div class="mb-3">
-                <label for="editarFiliacao1" class="form-label"
-                  >Filiação 1</label
-                >
+                <label for="editarFiliacao1" class="form-label">Filiação 1</label>
                 <input type="text" class="form-control" id="editarFiliacao1" />
               </div>
               <div class="mb-3">
@@ -1439,25 +1154,15 @@
                 <input type="text" class="form-control" id="editarTelefone" />
               </div>
               <div class="mb-3">
-                <label for="editarFiliacao2" class="form-label"
-                  >Filiação 2</label
-                >
+                <label for="editarFiliacao2" class="form-label">Filiação 2</label>
                 <input type="text" class="form-control" id="editarFiliacao2" />
               </div>
               <div class="mb-3">
-                <label for="editarResponsavel" class="form-label"
-                  >Responsável</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editarResponsavel"
-                />
+                <label for="editarResponsavel" class="form-label">Responsável</label>
+                <input type="text" class="form-control" id="editarResponsavel" />
               </div>
               <div class="mb-3">
-                <label for="editarDeficiencia" class="form-label"
-                  >Deficiência (JSON)</label
-                >
+                <label for="editarDeficiencia" class="form-label">Deficiência (JSON)</label>
                 <input type="text" class="form-control" id="editarDeficiencia" />
               </div>
             </form>
@@ -1501,14 +1206,8 @@
           </div>
           <div class="modal-body">
             <div class="mb-3">
-              <label for="localizarAlunoEnderecoCompleto" class="form-label"
-                >Endereço Completo</label
-              >
-              <input
-                type="text"
-                id="localizarAlunoEnderecoCompleto"
-                class="form-control"
-              />
+              <label for="localizarAlunoEnderecoCompleto" class="form-label">Endereço Completo</label>
+              <input type="text" id="localizarAlunoEnderecoCompleto" class="form-control" />
             </div>
             <div class="d-flex gap-2 mb-3">
               <button type="button" class="btn btn-info" id="btnRefinarPesquisa">
@@ -1772,8 +1471,7 @@
       }
 
       function enviarImportacao() {
-        const escolaIdSelecionada =
-          document.getElementById("escolaSelect").value;
+        const escolaIdSelecionada = document.getElementById("escolaSelect").value;
         if (!escolaIdSelecionada) {
           showNotification("danger", "Selecione uma escola antes de importar.");
           return;
@@ -1836,9 +1534,12 @@
         const escolaSelecionada = $("#selectEscolaMap").val();
         const busca = $("#buscarAlunoInput").val().trim();
         const queryParams = new URLSearchParams();
-        if (escolaSelecionada)
+        if (escolaSelecionada) {
           queryParams.append("escola_id", escolaSelecionada);
-        if (busca) queryParams.append("busca", busca);
+        }
+        if (busca) {
+          queryParams.append("busca", busca);
+        }
 
         showLoader();
         fetch("/api/alunos-mapa?" + queryParams.toString())
@@ -1970,7 +1671,8 @@
             if (contagem === alunos.length) map.fitBounds(bounds);
             return;
           }
-          // Tenta buscar via CEP
+
+          // Chamada viaCEP
           fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`, { method: "GET" })
             .then((res) => res.json())
             .then((dataViaCep) => {
@@ -1984,8 +1686,7 @@
               const localidade = dataViaCep.localidade || "";
               const uf = dataViaCep.uf || "";
 
-              const endCompleto =
-                `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
+              const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
               geocoder.geocode({ address: endCompleto }, (results, status) => {
                 if (status === "OK" && results[0]) {
                   const loc = results[0].geometry.location;
@@ -2053,6 +1754,7 @@
         $("#fileInput").on("change", handleFileImport);
         $("#importarBtn").on("click", enviarImportacao);
 
+        // Editar Aluno
         $(document).on("click", ".btn-editar", function () {
           const tr = $(this).closest("tr");
           const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
@@ -2084,6 +1786,7 @@
           $("#modalEditarAluno").modal("show");
         });
 
+        // Salvar Edição
         $("#btnSalvarEdicao").on("click", function () {
           const body = {
             id: $("#editarAlunoId").val(),
@@ -2133,6 +1836,7 @@
             });
         });
 
+        // Localizar Aluno
         $(document).on("click", ".btn-localizar", function () {
           const tr = $(this).closest("tr");
           const dataObj = JSON.parse(tr.attr("data-obj") || "{}");
@@ -2144,6 +1848,7 @@
           }, 500);
         });
 
+        // Excluir Aluno
         $(document).on("click", ".btn-excluir", function () {
           if (!confirm("Deseja realmente excluir este aluno?")) return;
           const tr = $(this).closest("tr");
@@ -2268,6 +1973,7 @@
                   `https://viacep.com.br/ws/${cepLimpo}/json/`
                 ).then((res) => res.json());
 
+                // Se o CEP retornou erro, pula
                 if (viaData.erro) {
                   continue;
                 }
@@ -2278,6 +1984,7 @@
                 const uf = viaData.uf || "";
                 const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
 
+                // Faz geocodificação
                 const geoResult = await geocodeAddress(endCompleto);
                 if (geoResult) {
                   const { lat, lng } = geoResult;
@@ -2309,6 +2016,7 @@
                 }
               } catch (error) {
                 console.error("Falha ao buscar CEP ou geocodificar:", error);
+                // Apenas continua para o próximo, ignorando este erro
                 continue;
               }
             }
@@ -2397,32 +2105,29 @@
                 const addr = `${infoEscola.logradouro || ""}, ${
                   infoEscola.numero || ""
                 }, ${infoEscola.bairro || ""}, ${infoEscola.cep || ""}`;
-                geocoderAluno.geocode(
-                  { address: addr },
-                  function (results, status) {
-                    if (status === "OK" && results[0]) {
-                      centerEscola = results[0].geometry.location;
-                      new google.maps.Marker({
-                        map: mapAluno,
-                        position: centerEscola,
-                        title: infoEscola.nome || "Escola",
-                      });
-                      mapAluno.setCenter(centerEscola);
-                      mapAluno.setZoom(14);
-                      new google.maps.Circle({
-                        strokeColor: "#FF0000",
-                        strokeOpacity: 0.8,
-                        strokeWeight: 2,
-                        fillColor: "#FF0000",
-                        fillOpacity: 0.35,
-                        map: mapAluno,
-                        center: centerEscola,
-                        radius: 2000,
-                      });
-                    }
-                    localizarAlunoEndereco(aluno, centerEscola);
+                geocoderAluno.geocode({ address: addr }, function (results, status) {
+                  if (status === "OK" && results[0]) {
+                    centerEscola = results[0].geometry.location;
+                    new google.maps.Marker({
+                      map: mapAluno,
+                      position: centerEscola,
+                      title: infoEscola.nome || "Escola",
+                    });
+                    mapAluno.setCenter(centerEscola);
+                    mapAluno.setZoom(14);
+                    new google.maps.Circle({
+                      strokeColor: "#FF0000",
+                      strokeOpacity: 0.8,
+                      strokeWeight: 2,
+                      fillColor: "#FF0000",
+                      fillOpacity: 0.35,
+                      map: mapAluno,
+                      center: centerEscola,
+                      radius: 2000,
+                    });
                   }
-                );
+                  localizarAlunoEndereco(aluno, centerEscola);
+                });
               }
             } else {
               localizarAlunoEndereco(aluno, null);
@@ -2459,18 +2164,15 @@
                 }, ${viaData.localidade || ""} - ${
                   viaData.uf || ""
                 }, Brasil`.trim();
-                geocoderAluno.geocode(
-                  { address: end },
-                  function (results, status) {
-                    if (status === "OK" && results[0]) {
-                      placeAlunoMarker(results[0].geometry.location, true);
-                      if (!centerEscola) {
-                        mapAluno.setCenter(results[0].geometry.location);
-                        mapAluno.setZoom(14);
-                      }
+                geocoderAluno.geocode({ address: end }, function (results, status) {
+                  if (status === "OK" && results[0]) {
+                    placeAlunoMarker(results[0].geometry.location, true);
+                    if (!centerEscola) {
+                      mapAluno.setCenter(results[0].geometry.location);
+                      mapAluno.setZoom(14);
                     }
                   }
-                );
+                });
               }
             })
             .catch(() => {});
