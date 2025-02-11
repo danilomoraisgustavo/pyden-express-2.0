@@ -1955,7 +1955,7 @@
         alunos.forEach((al) => {
           const cepLimpo = (al.cep || "").replace(/\D/g, "");
           let numeroEnd = (al.numero_pessoa_endereco || "").trim();
-          let numeroTratado = numeroEnd.toLowerCase();
+          const numeroTratado = numeroEnd.toLowerCase();
           if (
             numeroTratado.includes("s/n") ||
             numeroTratado === "sn" ||
@@ -1970,7 +1970,8 @@
             if (contagem === alunos.length) map.fitBounds(bounds);
             return;
           }
-          fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+          // Tenta buscar via CEP
+          fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`, { method: "GET" })
             .then((res) => res.json())
             .then((dataViaCep) => {
               if (dataViaCep.erro) {
@@ -1985,36 +1986,34 @@
 
               const endCompleto =
                 `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
-              geocoder.geocode(
-                { address: endCompleto },
-                function (results, status) {
-                  if (status === "OK" && results[0]) {
-                    const loc = results[0].geometry.location;
-                    const marker = new google.maps.Marker({
-                      map,
-                      position: loc,
-                      title: al.pessoa_nome || "Aluno",
-                    });
-                    const infowindow = new google.maps.InfoWindow({
-                      content: `<strong>${
-                        al.pessoa_nome || ""
-                      }</strong><br>CPF: ${al.cpf || ""}<br>Matrícula: ${
-                        al.id_matricula || ""
-                      }`,
-                    });
-                    marker.addListener("click", () => {
-                      infowindow.open(map, marker);
-                    });
-                    bounds.extend(loc);
-                  }
-                  contagem++;
-                  if (contagem === alunos.length) {
-                    map.fitBounds(bounds);
-                  }
+              geocoder.geocode({ address: endCompleto }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                  const loc = results[0].geometry.location;
+                  const marker = new google.maps.Marker({
+                    map,
+                    position: loc,
+                    title: al.pessoa_nome || "Aluno",
+                  });
+                  const infowindow = new google.maps.InfoWindow({
+                    content: `<strong>${
+                      al.pessoa_nome || ""
+                    }</strong><br>CPF: ${al.cpf || ""}<br>Matrícula: ${
+                      al.id_matricula || ""
+                    }`,
+                  });
+                  marker.addListener("click", () => {
+                    infowindow.open(map, marker);
+                  });
+                  bounds.extend(loc);
                 }
-              );
+                contagem++;
+                if (contagem === alunos.length) {
+                  map.fitBounds(bounds);
+                }
+              });
             })
-            .catch(() => {
+            .catch((error) => {
+              console.error("Falha ao consultar viaCEP:", error);
               contagem++;
               if (contagem === alunos.length) map.fitBounds(bounds);
             });
@@ -2072,9 +2071,7 @@
           );
           $("#editarCep").val(dataObj.cep || "");
           $("#editarBairro").val(dataObj.bairro || "");
-          $("#editarNumeroEndereco").val(
-            dataObj.numero_pessoa_endereco || ""
-          );
+          $("#editarNumeroEndereco").val(dataObj.numero_pessoa_endereco || "");
           $("#editarFiliacao1").val(dataObj.filiacao_1 || "");
           $("#editarTelefone").val(dataObj.numero_telefone || "");
           $("#editarFiliacao2").val(dataObj.filiacao_2 || "");
@@ -2266,48 +2263,53 @@
                 continue;
               }
               const numeroEnd = tratarNumero(al.numero_pessoa_endereco || "");
-              const viaData = await fetch(
-                `https://viacep.com.br/ws/${cepLimpo}/json/`
-              ).then((res) => res.json());
+              try {
+                const viaData = await fetch(
+                  `https://viacep.com.br/ws/${cepLimpo}/json/`
+                ).then((res) => res.json());
 
-              if (viaData.erro) {
-                continue;
-              }
+                if (viaData.erro) {
+                  continue;
+                }
 
-              const logradouro = viaData.logradouro || "";
-              const bairro = viaData.bairro || "";
-              const localidade = viaData.localidade || "";
-              const uf = viaData.uf || "";
-              const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
+                const logradouro = viaData.logradouro || "";
+                const bairro = viaData.bairro || "";
+                const localidade = viaData.localidade || "";
+                const uf = viaData.uf || "";
+                const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
 
-              const geoResult = await geocodeAddress(endCompleto);
-              if (geoResult) {
-                const { lat, lng } = geoResult;
-                const body = {
-                  id: al.id,
-                  latitude: lat,
-                  longitude: lng,
-                };
-                // PUT em cada um
-                const p = fetch("/api/alunos-ativos/" + al.id, {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(body),
-                })
-                  .then((r) => r.json())
-                  .then((resp) => {
-                    if (!resp.success) {
-                      console.warn(
-                        "Falha ao atualizar aluno ID:",
-                        al.id,
-                        resp.message
-                      );
-                    }
+                const geoResult = await geocodeAddress(endCompleto);
+                if (geoResult) {
+                  const { lat, lng } = geoResult;
+                  const body = {
+                    id: al.id,
+                    latitude: lat,
+                    longitude: lng,
+                  };
+                  // PUT em cada um
+                  const p = fetch("/api/alunos-ativos/" + al.id, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
                   })
-                  .catch((err) => {
-                    console.error("Erro ao atualizar ID:", al.id, err);
-                  });
-                promises.push(p);
+                    .then((r) => r.json())
+                    .then((resp) => {
+                      if (!resp.success) {
+                        console.warn(
+                          "Falha ao atualizar aluno ID:",
+                          al.id,
+                          resp.message
+                        );
+                      }
+                    })
+                    .catch((err) => {
+                      console.error("Erro ao atualizar ID:", al.id, err);
+                    });
+                  promises.push(p);
+                }
+              } catch (error) {
+                console.error("Falha ao buscar CEP ou geocodificar:", error);
+                continue;
               }
             }
             await Promise.all(promises);
