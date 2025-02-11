@@ -1030,6 +1030,9 @@
       </div>
     </div>
 
+    <!-- CEP-PROMISE (para substituir ViaCEP em caso de indisponibilidade) -->
+    <script src="https://cdn.jsdelivr.net/npm/cep-promise/dist/cep-promise-browser.min.js"></script>
+
     <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="../../assets/js/core/popper.min.js"></script>
     <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -1438,23 +1441,22 @@
         }
       }
 
-      // Plotar alunos no mapa, ignorando CEPs inválidos ou não encontrados
+      // Substituição do fetch ViaCEP por cep-promise
       function plotarAlunosMapa(alunos) {
         if (!map) initMap();
         if (!geocoder) geocoder = new google.maps.Geocoder();
 
-        // Para ajustar o zoom de acordo com todos os pontos
         const bounds = new google.maps.LatLngBounds();
         let contagem = 0;
 
-        // Redefine o mapa para iniciar 'do zero'
+        // Reiniciar o mapa
         map = new google.maps.Map(document.getElementById("map"), {
           center: { lat: -3.135366, lng: -60.023207 },
           zoom: 5,
           mapId: "ca7a0e55f44be727",
         });
 
-        // Recoloca a escola, se houver
+        // Se existe escolaLocalizacao, plota de novo
         if (escolaLocalizacao) {
           map.setCenter(escolaLocalizacao);
           map.setZoom(14);
@@ -1479,50 +1481,42 @@
         // Para cada aluno
         alunos.forEach((al) => {
           const cepLimpo = (al.cep || "").replace(/\D/g, "");
-          let numeroEnd = (al.numero_pessoa_endereco || "").trim();
+          let numeroEnd = (al.numero_pessoa_endereco || "").trim().toLowerCase();
 
-          // Trata "S/N", "sem número", etc.
-          const numeroTratado = numeroEnd.toLowerCase();
+          // Trata "s/n", etc.
           if (
-            numeroTratado.includes("s/n") ||
-            numeroTratado === "sn" ||
-            numeroTratado.includes("sem numero") ||
-            numeroTratado.includes("sem número")
+            numeroEnd.includes("s/n") ||
+            numeroEnd === "sn" ||
+            numeroEnd.includes("sem numero") ||
+            numeroEnd.includes("sem número")
           ) {
             numeroEnd = "S/N";
           }
 
-          // Se CEP não tiver 8 dígitos, ignora e passa ao próximo
           if (cepLimpo.length !== 8) {
             contagem++;
             if (contagem === alunos.length) map.fitBounds(bounds);
             return;
           }
 
-          // Consulta viaCEP
-          fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`, { method: "GET" })
-            .then((res) => {
-              if (!res.ok) {
-                throw new Error("Falha na requisição ViaCEP");
-              }
-              return res.json();
-            })
-            .then((dataViaCep) => {
-              // Se CEP não encontrado (dataViaCep.erro), ignore
-              if (!dataViaCep || dataViaCep.erro) {
+          // Usando cep-promise
+          cep(cepLimpo)
+            .then((cepData) => {
+              // cepData => { cep, state, city, neighborhood, street, service }
+              if (!cepData || !cepData.street) {
+                // Se não tiver street, pode ser que não achou
                 contagem++;
                 if (contagem === alunos.length) map.fitBounds(bounds);
                 return null;
               }
 
-              // Monta endereço para geocodificar
-              const logradouro = dataViaCep.logradouro || "";
-              const bairro = dataViaCep.bairro || "";
-              const localidade = dataViaCep.localidade || "";
-              const uf = dataViaCep.uf || "";
+              const logradouro = cepData.street || "";
+              const bairro = cepData.neighborhood || "";
+              const localidade = cepData.city || "";
+              const uf = cepData.state || "";
+
               const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
 
-              // Retorna promessa da geocodificação
               return new Promise((resolve) => {
                 geocoder.geocode({ address: endCompleto }, (results, status) => {
                   if (status === "OK" && results[0]) {
@@ -1536,9 +1530,7 @@
             .then((localizacao) => {
               if (!localizacao) {
                 contagem++;
-                if (contagem === alunos.length) {
-                  map.fitBounds(bounds);
-                }
+                if (contagem === alunos.length) map.fitBounds(bounds);
                 return;
               }
 
@@ -1555,21 +1547,18 @@
                           CPF: ${al.cpf || ""}<br>
                           Matrícula: ${al.id_matricula || ""}`,
               });
-
               marker.addListener("click", () => {
                 infowindow.open(map, marker);
               });
 
-              // Ajusta bounds
               bounds.extend(localizacao);
-
               contagem++;
               if (contagem === alunos.length) {
                 map.fitBounds(bounds);
               }
             })
             .catch((error) => {
-              console.warn("Falha ao consultar ViaCEP (aluno ignorado):", error);
+              console.warn("Erro ao usar cep-promise:", error);
               contagem++;
               if (contagem === alunos.length) {
                 map.fitBounds(bounds);
@@ -1788,17 +1777,16 @@
             });
         });
 
-        // Botão de confirmar localização em massa (Municipal/Estadual) APÓS ESCOLHA DA ESCOLA
+        // Botão de confirmar localização em massa (Municipal/Estadual)
         $("#btnConfirmarCompletarLocalizacao").on("click", async function () {
           const escolaEscolhida = $(
             "#selectEscolaCompletarLocalizacao"
-          ).val(); // Se estiver vazio, é "todas as escolas"
+          ).val();
 
           showLoader();
           let promises = [];
 
-          // Filtra somente alunos com transporte municipal/estadual e sem lat/long
-          // E, caso a pessoa tenha selecionado uma escola específica, filtrar por ela
+          // Filtra apenas alunos com transp. Municipal/Estadual, sem lat/long
           const alunosFiltrados = alunosData.filter((aluno) => {
             const hasTranspMunEst =
               aluno.transporte_escolar_poder_publico &&
@@ -1811,7 +1799,6 @@
 
             const semLatLong = !aluno.latitude && !aluno.longitude;
 
-            // Se escolaEscolhida for vazia, consideramos "todas as escolas"
             if (!escolaEscolhida) {
               return hasTranspMunEst && semLatLong;
             } else {
@@ -1836,29 +1823,23 @@
             for (const al of alunosFiltrados) {
               const cepLimpo = (al.cep || "").replace(/\D/g, "");
               if (cepLimpo.length !== 8) {
-                // Se não tiver 8 dígitos, ignora esse aluno
                 continue;
               }
               const numeroEnd = tratarNumero(al.numero_pessoa_endereco || "");
               try {
-                // Consulta ViaCEP
-                const viaData = await fetch(
-                  `https://viacep.com.br/ws/${cepLimpo}/json/`
-                ).then((res) => res.json());
+                // Usando cep-promise em vez de fetch para o CEP
+                const cepData = await cep(cepLimpo);
 
-                // Se CEP é inválido (erro), ignore
-                if (viaData.erro) {
+                if (!cepData || cepData.error) {
                   continue;
                 }
 
-                // Endereço completo
-                const logradouro = viaData.logradouro || "";
-                const bairro = viaData.bairro || "";
-                const localidade = viaData.localidade || "";
-                const uf = viaData.uf || "";
+                const logradouro = cepData.street || "";
+                const bairro = cepData.neighborhood || "";
+                const localidade = cepData.city || "";
+                const uf = cepData.state || "";
                 const endCompleto = `${logradouro}, ${numeroEnd}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
 
-                // Faz geocodificação
                 const geoResult = await geocodeAddress(endCompleto);
                 if (geoResult) {
                   const { lat, lng } = geoResult;
@@ -1867,7 +1848,6 @@
                     latitude: lat,
                     longitude: lng,
                   };
-                  // PUT em cada aluno
                   const p = fetch("/api/alunos-ativos/" + al.id, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -1889,13 +1869,12 @@
                   promises.push(p);
                 }
               } catch (error) {
-                console.error("Falha ao buscar CEP ou geocodificar:", error);
-                // Apenas ignora e segue para o próximo
+                console.error("Falha ao consultar CEP ou geocodificar:", error);
                 continue;
               }
             }
-            await Promise.all(promises);
 
+            await Promise.all(promises);
             showNotification(
               "success",
               "Processo de localização concluído. Atualizando lista..."
@@ -1934,7 +1913,6 @@
         currentAlunoMarker = null;
         currentAlunoPosition = null;
 
-        // Clique no mapa -> geocodificar reverso
         mapAluno.addListener("click", (e) => {
           showLoader();
           if (!geocoderAluno) {
@@ -2032,26 +2010,27 @@
         }
 
         if (cepFormatado.length === 8) {
-          fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`)
-            .then((res) => res.json())
-            .then((viaData) => {
-              if (!viaData.erro) {
-                const end = `${viaData.logradouro || ""}, ${numero}, ${
-                  viaData.bairro || ""
-                }, ${viaData.localidade || ""} - ${viaData.uf || ""}, Brasil`.trim();
-                geocoderAluno.geocode({ address: end }, function (results, status) {
-                  if (status === "OK" && results[0]) {
-                    placeAlunoMarker(results[0].geometry.location, true);
-                    if (!centerEscola) {
-                      mapAluno.setCenter(results[0].geometry.location);
-                      mapAluno.setZoom(14);
-                    }
+          // Usar cep-promise para refinar
+          cep(cepFormatado)
+            .then((cepData) => {
+              if (!cepData || !cepData.street) return;
+              const logradouro = cepData.street || "";
+              const bairro = cepData.neighborhood || "";
+              const localidade = cepData.city || "";
+              const uf = cepData.state || "";
+              const endCompleto = `${logradouro}, ${numero}, ${bairro}, ${localidade} - ${uf}, Brasil`.trim();
+              geocoderAluno.geocode({ address: endCompleto }, function (results, status) {
+                if (status === "OK" && results[0]) {
+                  placeAlunoMarker(results[0].geometry.location, true);
+                  if (!centerEscola) {
+                    mapAluno.setCenter(results[0].geometry.location);
+                    mapAluno.setZoom(14);
                   }
-                });
-              }
+                }
+              });
             })
             .catch(() => {
-              // Se não encontrar CEP, ignore
+              // Se falhar ou não encontrar CEP
             });
         }
       }
