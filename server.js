@@ -5570,7 +5570,6 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
 
 // =============================================
 // ENDPOINT: SOLICITAR CONCESSÃO DE ROTA
-// (Inserir dados do formulário do modal)
 // =============================================
 app.post("/api/alunos/concessao-rota", async (req, res) => {
   try {
@@ -5590,12 +5589,6 @@ app.post("/api/alunos/concessao-rota", async (req, res) => {
       observacoes,
     } = req.body;
 
-    // Exemplo de upload de arquivo (laudo_deficiencia, comprovante_endereco) se desejar:
-    // No front-end, usar formData e multer aqui no back-end. Exemplo:
-    // app.post("/api/alunos/concessao-rota", upload.fields([...]), async (req, res) => { ... }
-    // e então acessar req.files["laudo_deficiencia"], etc.
-
-    // Simulação de inserir na tabela cocessao_rota ou similar:
     const insertQuery = `
       INSERT INTO cocessao_rota (
         nome_responsavel,
@@ -5624,8 +5617,8 @@ app.post("/api/alunos/concessao-rota", async (req, res) => {
       cep || null,
       numero || null,
       endereco || null,
-      zoneamento === "sim", // boolean
-      deficiencia === "sim", // boolean
+      zoneamento === "sim",
+      deficiencia === "sim",
       longitude ? parseFloat(longitude) : null,
       latitude ? parseFloat(latitude) : null,
       observacoes || null,
@@ -5653,8 +5646,6 @@ app.post("/api/alunos/concessao-rota", async (req, res) => {
 app.get("/api/alunos-transporte", async (req, res) => {
   try {
     const { escola_id, busca } = req.query;
-
-    // Vamos filtrar apenas alunos que têm transporte_escolar_poder_publico = 'Municipal' ou 'Estadual'
     let whereClauses = [
       "LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')",
     ];
@@ -5725,7 +5716,6 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       });
     }
 
-    // Verificar se a escola existe
     const checkEscola = await pool.query(
       "SELECT id FROM escolas WHERE id = $1 LIMIT 1",
       [escola_id]
@@ -5737,7 +5727,6 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       });
     }
 
-    // 1) Buscar rotas que atendam essa escola (tabela rotas_escolas)
     const rotasQuery = `
       SELECT rota_id
       FROM rotas_escolas
@@ -5752,7 +5741,6 @@ app.post("/api/atribuir-pontos", async (req, res) => {
     }
     const rotaIds = rotasResult.rows.map((r) => r.rota_id);
 
-    // 2) Buscar todos os pontos associados a essas rotas (tabela rotas_pontos)
     const pontosQuery = `
       SELECT p.id, p.nome_ponto, p.latitude, p.longitude, rp.rota_id
       FROM rotas_pontos rp
@@ -5769,7 +5757,6 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       });
     }
 
-    // 3) Buscar alunos que usam transporte, para a escola_id
     const alunosQuery = `
       SELECT
         id,
@@ -5793,10 +5780,8 @@ app.post("/api/atribuir-pontos", async (req, res) => {
       });
     }
 
-    // 4) Precisamos de colunas lat_aluno, lng_aluno (ou geocodificar).
-    //    Exemplo de função Haversine:
     function haversineDist(lat1, lon1, lat2, lon2) {
-      const R = 6371; // raio da Terra em km
+      const R = 6371;
       const dLat = ((lat2 - lat1) * Math.PI) / 180;
       const dLon = ((lon2 - lon1) * Math.PI) / 180;
       const a =
@@ -5807,21 +5792,18 @@ app.post("/api/atribuir-pontos", async (req, res) => {
           Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const d = R * c;
-      return d; // retorna em km
+      return d;
     }
 
     let qtdAtribuidos = 0;
     for (const aluno of alunos) {
       const buscaCoords = await pool.query(
-        `SELECT lat_aluno, lng_aluno FROM alunos_ativos WHERE id = $1`,
+        "SELECT lat_aluno, lng_aluno FROM alunos_ativos WHERE id = $1",
         [aluno.id]
       );
-      if (buscaCoords.rows.length === 0) {
-        continue;
-      }
+      if (buscaCoords.rows.length === 0) continue;
       const { lat_aluno, lng_aluno } = buscaCoords.rows[0];
       if (lat_aluno == null || lng_aluno == null) {
-        // Sem coordenadas => não atribui
         continue;
       }
 
