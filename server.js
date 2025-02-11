@@ -5586,6 +5586,165 @@ function toRad(value) {
 }
 
 /* ==============================
+   ENDPOINT: Atribui rota a TODOS os alunos de uma escola
+   ============================== */
+   app.post("/api/atribuirTodos", async (req, res) => {
+    try {
+      const { escolaId } = req.body;
+      if (!escolaId) {
+        return res
+          .status(400)
+          .json({ success: false, message: "escolaId é obrigatório." });
+      }
+  
+      // 1) Obter todos os alunos da escola (que usem transporte municipal ou estadual)
+      const alunosRes = await pool.query(
+        `SELECT *
+         FROM alunos_ativos
+         WHERE escola_id = $1
+           AND transporte_escolar_poder_publico IN ('Municipal', 'Estadual')`,
+        [escolaId]
+      );
+  
+      const alunos = alunosRes.rows;
+      if (alunos.length === 0) {
+        return res.json({
+          success: true,
+          totalAlunos: 0,
+          atribuicoes: [],
+          message: "Nenhum aluno encontrado para esta escola.",
+        });
+      }
+  
+      // 2) Descobrir todas as rotas que atendem a essa escola
+      const rotasRes = await pool.query(
+        `
+        SELECT rs.id AS rota_id
+        FROM rotas_simples rs
+        INNER JOIN rotas_escolas re ON re.rota_id = rs.id
+        WHERE re.escola_id = $1
+      `,
+        [escolaId]
+      );
+      const rotaIds = rotasRes.rows.map((r) => r.rota_id);
+  
+      // Se nenhuma rota atende essa escola, não há o que fazer
+      if (rotaIds.length === 0) {
+        return res.json({
+          success: true,
+          totalAlunos: alunos.length,
+          atribuicoes: [],
+          message: "Nenhuma rota atende esta escola.",
+        });
+      }
+  
+      // 3) Carregar todos os pontos dessas rotas (pode ser reutilizado para cada aluno)
+      const pontosRes = await pool.query(
+        `
+        SELECT p.id AS ponto_id, p.latitude, p.longitude, rp.rota_id
+        FROM pontos p
+        INNER JOIN rotas_pontos rp ON rp.ponto_id = p.id
+        WHERE rp.rota_id = ANY($1)
+      `,
+        [rotaIds]
+      );
+      const pontos = pontosRes.rows;
+      if (pontos.length === 0) {
+        return res.json({
+          success: true,
+          totalAlunos: alunos.length,
+          atribuicoes: [],
+          message: "Nenhum ponto cadastrado para as rotas desta escola.",
+        });
+      }
+  
+      // Guardaremos aqui os registros de atribuição feitos com sucesso
+      const atribuicoesSucesso = [];
+  
+      // 4) Para cada aluno, geocodificar endereço e achar o ponto mais próximo
+      for (let aluno of alunos) {
+        try {
+          // Montar o endereço
+          const address = `${aluno.cep}, ${aluno.numero_pessoa_endereco}, Canaã dos Carajás, Pará, Brasil`;
+  
+          // Chamar Google Geocoding
+          const googleApiKey = "SUA_CHAVE_GOOGLE";
+          const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+            address
+          )}&key=${googleApiKey}`;
+  
+          const geocodeResp = await axios.get(geocodeUrl);
+          const geocodeData = geocodeResp.data;
+  
+          // Se não conseguiu coordenadas, ignora e continua
+          if (geocodeData.status !== "OK") {
+            continue;
+          }
+  
+          const { lat, lng } = geocodeData.results[0].geometry.location;
+  
+          // Calcular o ponto mais próximo
+          let nearestPointId = null;
+          let nearestRotaId = null;
+          let minDistance = Infinity;
+  
+          for (const row of pontos) {
+            const distance = getDistanceFromLatLngInKm(
+              lat,
+              lng,
+              row.latitude,
+              row.longitude
+            );
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestPointId = row.ponto_id;
+              nearestRotaId = row.rota_id;
+            }
+          }
+  
+          // Se a menor distância for maior que 2km, ignora
+          if (minDistance > 2) {
+            continue;
+          }
+  
+          // Inserir na tabela alunos_pontos_rotas
+          await pool.query(
+            `
+            INSERT INTO alunos_pontos_rotas (aluno_id, ponto_id, rota_id)
+            VALUES ($1, $2, $3)
+            ON CONFLICT DO NOTHING
+          `,
+            [aluno.id, nearestPointId, nearestRotaId]
+          );
+  
+          // Registrar sucesso
+          atribuicoesSucesso.push({
+            alunoId: aluno.id,
+            pontoId: nearestPointId,
+            rotaId: nearestRotaId,
+            distanciaKm: minDistance.toFixed(2),
+          });
+        } catch (err) {
+          // Se acontecer algum erro para determinado aluno, simplesmente continua
+          console.error("Erro ao atribuir aluno id=", aluno.id, err.message);
+        }
+      }
+  
+      // 5) Retornar resultado final
+      return res.json({
+        success: true,
+        totalAlunos: alunos.length,
+        atribuicoes: atribuicoesSucesso,
+        message: "Processamento concluído.",
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, message: "Erro interno do servidor." });
+    }
+  });
+  
+
+/* ==============================
    ENDPOINT: Lista Escolas
    ============================== */
 app.get("/api/escolas", async (req, res) => {
