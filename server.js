@@ -2400,34 +2400,8 @@ app.post("/api/motoristas/check-cpf", async (req, res) => {
 // PONTOS DE PARADA (ROTAS)
 // ====================================================================================
 
-const buscarZoneamentosAuto = async (client, lat, lng) => {
-  const pointGeom = `ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)`;
-  const queryPoligono = `
-    SELECT id
-    FROM zoneamentos
-    WHERE ST_Contains(geom, ${pointGeom})
-  `;
-  const poligonos = await client.query(queryPoligono);
-  if (poligonos.rows.length > 0) {
-    return poligonos.rows.map(r => r.id);
-  }
-  const dist = 0.001;
-  const queryLinhas = `
-    SELECT id
-    FROM zoneamentos
-    WHERE ST_DWithin(geom, ${pointGeom}, ${dist})
-    ORDER BY ST_Distance(geom, ${pointGeom})
-    LIMIT 1
-  `;
-  const linhas = await client.query(queryLinhas);
-  if (linhas.rows.length > 0) {
-    return linhas.rows.map(r => r.id);
-  }
-  return [];
-};
-
+// Rota para cadastrar UM único ponto
 app.post("/api/pontos/cadastrar", async (req, res) => {
-  const client = await pool.connect();
   try {
     const {
       latitudePonto,
@@ -2440,22 +2414,24 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
       bairroPonto,
       cepPonto,
     } = req.body;
+
+    const zoneamentosPonto = JSON.parse(req.body.zoneamentosPonto || "[]");
     const userId = req.session?.userId || null;
-    await client.query("BEGIN");
-    const insert = `
+
+    const insertPontoQuery = `
       INSERT INTO pontos (
-        nome_ponto, latitude, longitude, area,
-        logradouro, numero, complemento, ponto_referencia,
-        bairro, cep
+          nome_ponto, latitude, longitude, area,
+          logradouro, numero, complemento, ponto_referencia,
+          bairro, cep
       )
       VALUES (
-        'TEMP', $1, $2, $3,
-        $4, $5, $6, $7,
-        $8, $9
+          'TEMP', $1, $2, $3,
+          $4, $5, $6, $7,
+          $8, $9
       )
       RETURNING id
     `;
-    const vals = [
+    const values = [
       latitudePonto ? parseFloat(latitudePonto) : null,
       longitudePonto ? parseFloat(longitudePonto) : null,
       area,
@@ -2466,99 +2442,66 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
       bairroPonto || null,
       cepPonto || null,
     ];
-    const r = await client.query(insert, vals);
-    if (r.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(500).json({ success: false, message: "Erro ao cadastrar ponto." });
+    const result = await pool.query(insertPontoQuery, values);
+    if (result.rows.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao cadastrar ponto.",
+      });
     }
-    const pid = r.rows[0].id;
-    await client.query("UPDATE pontos SET nome_ponto = $1 WHERE id = $2", [pid.toString(), pid]);
-    let zAuto = [];
-    if (latitudePonto && longitudePonto) {
-      zAuto = await buscarZoneamentosAuto(client, parseFloat(latitudePonto), parseFloat(longitudePonto));
+    const pontoId = result.rows[0].id;
+
+    await pool.query("UPDATE pontos SET nome_ponto = $1 WHERE id = $2", [
+      pontoId.toString(),
+      pontoId,
+    ]);
+
+    if (zoneamentosPonto.length > 0) {
+      const insertZonaPontoQuery = `
+        INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+        VALUES ($1, $2)
+      `;
+      for (const zid of zoneamentosPonto) {
+        await pool.query(insertZonaPontoQuery, [pontoId, zid]);
+      }
     }
-    for (const zid of zAuto) {
-      await client.query("INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id) VALUES ($1, $2)", [pid, zid]);
-    }
-    await client.query(
-      "INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem) VALUES ($1, 'CREATE', 'pontos', $2, $3)",
-      [userId, pid, `Ponto criado. ID = ${pid}`]
+
+    const mensagem = `Ponto de parada criado. ID = ${pontoId}`;
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+       VALUES ($1, 'CREATE', 'pontos', $2, $3)`,
+      [userId, pontoId, mensagem]
     );
-    await client.query("COMMIT");
-    return res.json({ success: true, message: "Ponto cadastrado com sucesso!" });
-  } catch (err) {
-    await client.query("ROLLBACK");
-    return res.status(500).json({ success: false, message: "Erro interno." });
-  } finally {
-    client.release();
+
+    return res.json({
+      success: true,
+      message: "Ponto de parada cadastrado com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro interno ao cadastrar ponto:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor.",
+    });
   }
 });
 
-app.get("/api/zoneamentos/detect", async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { lat, lng } = req.query;
-    if (!lat || !lng) {
-      return res.json({ zona: null });
-    }
-
-    // Transformar em float
-    const latNum = parseFloat(lat);
-    const lngNum = parseFloat(lng);
-
-    // Cria geometria do ponto
-    const pointGeom = `ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)`;
-
-    await client.query("BEGIN");
-
-    // Tenta encontrar polígono que contenha o ponto
-    const queryPoligono = `
-      SELECT id, nome
-      FROM zoneamentos
-      WHERE ST_Contains(geom, ${pointGeom})
-      LIMIT 1
-    `;
-    const poligono = await client.query(queryPoligono);
-    if (poligono.rows.length > 0) {
-      await client.query("COMMIT");
-      return res.json({ zona: poligono.rows[0].nome });
-    }
-
-    // Se não encontrou polígono, procura linha próxima
-    const dist = 0.001; // 100m aprox.
-    const queryLinhas = `
-      SELECT id, nome
-      FROM zoneamentos
-      WHERE ST_DWithin(geom, ${pointGeom}, ${dist})
-      ORDER BY ST_Distance(geom, ${pointGeom})
-      LIMIT 1
-    `;
-    const linha = await client.query(queryLinhas);
-    if (linha.rows.length > 0) {
-      await client.query("COMMIT");
-      return res.json({ zona: linha.rows[0].nome });
-    }
-
-    await client.query("COMMIT");
-    return res.json({ zona: null });
-  } catch (err) {
-    await client.query("ROLLBACK");
-    return res.json({ zona: null });
-  } finally {
-    client.release();
-  }
-});
-
-
+// Rota para cadastrar MÚLTIPLOS pontos
 app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
   const client = await pool.connect();
   try {
-    const { pontos } = req.body;
+    const { pontos, zoneamentos } = req.body;
     const userId = req.session?.userId || null;
+
     if (!pontos || !Array.isArray(pontos) || pontos.length === 0) {
-      return res.status(400).json({ success: false, message: "Nenhum ponto fornecido." });
+      return res.status(400).json({
+        success: false,
+        message: "Nenhum ponto fornecido.",
+      });
     }
+
     await client.query("BEGIN");
+
     for (const p of pontos) {
       const {
         latitude,
@@ -2571,7 +2514,8 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
         bairro,
         cep
       } = p;
-      const insert = `
+
+      const insertPontoQuery = `
         INSERT INTO pontos (
           nome_ponto, latitude, longitude, area,
           logradouro, numero, complemento, ponto_referencia,
@@ -2584,7 +2528,7 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
         )
         RETURNING id
       `;
-      const vals = [
+      const values = [
         latitude != null ? parseFloat(latitude) : null,
         longitude != null ? parseFloat(longitude) : null,
         area || null,
@@ -2595,30 +2539,46 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
         bairro || null,
         cep || null,
       ];
-      const r = await client.query(insert, vals);
-      if (r.rows.length === 0) {
-        await client.query("ROLLBACK");
-        return res.status(500).json({ success: false, message: "Falha ao inserir ponto." });
+
+      const result = await client.query(insertPontoQuery, values);
+      const pontoId = result.rows[0].id;
+
+      await client.query("UPDATE pontos SET nome_ponto = $1 WHERE id = $2", [
+        pontoId.toString(),
+        pontoId,
+      ]);
+
+      if (zoneamentos && zoneamentos.length > 0) {
+        const insertZonaPontoQuery = `
+          INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+          VALUES ($1, $2)
+        `;
+        for (const zid of zoneamentos) {
+          await client.query(insertZonaPontoQuery, [pontoId, zid]);
+        }
       }
-      const pid = r.rows[0].id;
-      await client.query("UPDATE pontos SET nome_ponto = $1 WHERE id = $2", [pid.toString(), pid]);
-      let zAuto = [];
-      if (latitude && longitude) {
-        zAuto = await buscarZoneamentosAuto(client, parseFloat(latitude), parseFloat(longitude));
-      }
-      for (const zid of zAuto) {
-        await client.query("INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id) VALUES ($1, $2)", [pid, zid]);
-      }
+
+      const mensagem = `Ponto de parada criado (Múltiplo). ID = ${pontoId}`;
       await client.query(
-        "INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem) VALUES ($1, 'CREATE', 'pontos', $2, $3)",
-        [userId, pid, `Ponto criado (Múltiplo). ID = ${pid}`]
+        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+         VALUES ($1, 'CREATE', 'pontos', $2, $3)`,
+        [userId, pontoId, mensagem]
       );
     }
+
     await client.query("COMMIT");
-    return res.json({ success: true, message: "Pontos cadastrados com sucesso!" });
-  } catch (err) {
+
+    return res.json({
+      success: true,
+      message: "Pontos de parada cadastrados com sucesso!",
+    });
+  } catch (error) {
     await client.query("ROLLBACK");
-    return res.status(500).json({ success: false, message: "Erro interno." });
+    console.error("Erro ao cadastrar múltiplos pontos:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor ao cadastrar múltiplos pontos.",
+    });
   } finally {
     client.release();
   }
@@ -2626,7 +2586,7 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
 
 app.get("/api/pontos", async (req, res) => {
   try {
-    const q = `
+    const query = `
       SELECT p.id,
              p.nome_ponto,
              p.latitude,
@@ -2648,10 +2608,10 @@ app.get("/api/pontos", async (req, res) => {
       LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
       LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
       GROUP BY p.id
-      ORDER BY p.id
+      ORDER BY p.id;
     `;
-    const r = await pool.query(q);
-    const pts = r.rows.map(row => ({
+    const result = await pool.query(query);
+    const pontos = result.rows.map((row) => ({
       id: row.id,
       nome_ponto: row.nome_ponto,
       latitude: row.latitude,
@@ -2665,9 +2625,12 @@ app.get("/api/pontos", async (req, res) => {
       cep: row.cep,
       zoneamentos: row.zoneamentos,
     }));
-    return res.json(pts);
-  } catch (err) {
-    return res.status(500).json({ success: false, message: "Erro interno." });
+    res.json(pontos);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor.",
+    });
   }
 });
 
@@ -2675,27 +2638,47 @@ app.delete("/api/pontos/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.session?.userId || null;
-    const busca = await pool.query("SELECT nome_ponto FROM pontos WHERE id = $1", [id]);
+
+    const busca = await pool.query(
+      "SELECT nome_ponto FROM pontos WHERE id = $1",
+      [id]
+    );
     if (busca.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Ponto não encontrado." });
+      return res.status(404).json({
+        success: false,
+        message: "Ponto não encontrado.",
+      });
     }
     const nomePonto = busca.rows[0].nome_ponto;
-    const del = await pool.query("DELETE FROM pontos WHERE id = $1", [id]);
-    if (del.rowCount > 0) {
+
+    const deleteQuery = "DELETE FROM pontos WHERE id = $1";
+    const result = await pool.query(deleteQuery, [id]);
+    if (result.rowCount > 0) {
+      const mensagem = `Ponto de parada excluído: ${nomePonto}`;
       await pool.query(
-        "INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem) VALUES ($1, 'DELETE', 'pontos', $2, $3)",
-        [userId, id, `Ponto excluído: ${nomePonto}`]
+        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+         VALUES ($1, 'DELETE', 'pontos', $2, $3)`,
+        [userId, id, mensagem]
       );
-      return res.json({ success: true, message: "Ponto excluído com sucesso!" });
+      res.json({
+        success: true,
+        message: "Ponto excluído com sucesso!",
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: "Ponto não encontrado.",
+      });
     }
-    return res.status(404).json({ success: false, message: "Ponto não encontrado." });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: "Erro interno." });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor.",
+    });
   }
 });
 
 app.put("/api/pontos/atualizar/:id", async (req, res) => {
-  const client = await pool.connect();
   try {
     const { id } = req.params;
     const {
@@ -2707,31 +2690,36 @@ app.put("/api/pontos/atualizar/:id", async (req, res) => {
       complementoPontoEdit,
       pontoReferenciaPontoEdit,
       bairroPontoEdit,
-      cepPontoEdit
+      cepPontoEdit,
     } = req.body;
+
+    const zoneamentosPontoEdit = JSON.parse(req.body.zoneamentosPontoEdit || "[]");
     const userId = req.session?.userId || null;
-    await client.query("BEGIN");
-    const busca = await client.query("SELECT id, nome_ponto FROM pontos WHERE id = $1", [id]);
-    if (busca.rows.length === 0) {
-      await client.query("ROLLBACK");
+
+    const buscaPonto = await pool.query(
+      "SELECT id, nome_ponto FROM pontos WHERE id = $1",
+      [id]
+    );
+    if (buscaPonto.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Ponto não encontrado." });
     }
-    const upd = `
+
+    const updatePontoQuery = `
       UPDATE pontos
       SET
-        latitude = $1,
-        longitude = $2,
-        area = $3,
-        logradouro = $4,
-        numero = $5,
-        complemento = $6,
-        ponto_referencia = $7,
-        bairro = $8,
-        cep = $9
+          latitude = $1,
+          longitude = $2,
+          area = $3,
+          logradouro = $4,
+          numero = $5,
+          complemento = $6,
+          ponto_referencia = $7,
+          bairro = $8,
+          cep = $9
       WHERE id = $10
       RETURNING id, nome_ponto
     `;
-    const vals = [
+    const updateValues = [
       latitudePontoEdit ? parseFloat(latitudePontoEdit) : null,
       longitudePontoEdit ? parseFloat(longitudePontoEdit) : null,
       areaEdit || null,
@@ -2741,32 +2729,47 @@ app.put("/api/pontos/atualizar/:id", async (req, res) => {
       pontoReferenciaPontoEdit || null,
       bairroPontoEdit || null,
       cepPontoEdit || null,
-      id
+      id,
     ];
-    const r = await client.query(upd, vals);
-    if (r.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ success: false, message: "Falha ao atualizar." });
+    const updateResult = await pool.query(updatePontoQuery, updateValues);
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Falha ao atualizar (ponto inexistente).",
+      });
     }
-    await client.query("DELETE FROM pontos_zoneamentos WHERE ponto_id = $1", [id]);
-    let zAuto = [];
-    if (latitudePontoEdit && longitudePontoEdit) {
-      zAuto = await buscarZoneamentosAuto(client, parseFloat(latitudePontoEdit), parseFloat(longitudePontoEdit));
+
+    await pool.query("DELETE FROM pontos_zoneamentos WHERE ponto_id = $1", [id]);
+
+    if (zoneamentosPontoEdit.length > 0) {
+      const insertZonaPontoQuery = `
+        INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+        VALUES ($1, $2)
+      `;
+      for (const zid of zoneamentosPontoEdit) {
+        await pool.query(insertZonaPontoQuery, [id, zid]);
+      }
     }
-    for (const zid of zAuto) {
-      await client.query("INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id) VALUES ($1, $2)", [id, zid]);
-    }
-    await client.query(
-      "INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem) VALUES ($1, 'UPDATE', 'pontos', $2, $3)",
-      [userId, id, `Ponto ID ${id} atualizado.`]
+
+    const nomePonto = updateResult.rows[0].nome_ponto;
+    const mensagem = `Ponto de parada ID ${id} (nome_ponto: ${nomePonto}) foi atualizado.`;
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+       VALUES ($1, 'UPDATE', 'pontos', $2, $3)`,
+      [userId, id, mensagem]
     );
-    await client.query("COMMIT");
-    return res.json({ success: true, message: "Ponto atualizado com sucesso!" });
-  } catch (err) {
-    await client.query("ROLLBACK");
-    return res.status(500).json({ success: false, message: "Erro interno." });
-  } finally {
-    client.release();
+
+    return res.json({
+      success: true,
+      message: "Ponto atualizado com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar ponto:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor ao atualizar ponto.",
+    });
   }
 });
 
@@ -3350,38 +3353,27 @@ app.get("/api/motoristas/rota", async (req, res) => {
 app.get("/api/dashboard", async (req, res) => {
   try {
     const alunosAtivos = await pool.query(`
-      SELECT COUNT(*)::int AS count
-      FROM alunos_ativos
-      WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
-    `);
-
+            SELECT COUNT(*)::int AS count
+            FROM alunos_ativos
+            WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
+        `);
     const rotasAtivas = await pool.query(
       `SELECT COUNT(*)::int AS count FROM rotas_simples`
     );
-
     const zoneamentosCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM zoneamentos`
     );
-
     const motoristasCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM motoristas`
     );
-
     const monitoresCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM monitores`
     );
-
     const fornecedoresCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM fornecedores`
     );
-
     const pontosCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM pontos`
-    );
-
-    // Novo count para escolas
-    const escolasCount = await pool.query(
-      `SELECT COUNT(*)::int AS count FROM escolas`
     );
 
     res.json({
@@ -3392,7 +3384,6 @@ app.get("/api/dashboard", async (req, res) => {
       monitores_total: monitoresCount.rows[0]?.count || 0,
       fornecedores_total: fornecedoresCount.rows[0]?.count || 0,
       pontos_total: pontosCount.rows[0]?.count || 0,
-      escolas_total: escolasCount.rows[0]?.count || 0
     });
   } catch (error) {
     console.error(error);
@@ -3401,6 +3392,7 @@ app.get("/api/dashboard", async (req, res) => {
       .json({ success: false, message: "Erro interno do servidor." });
   }
 });
+
 app.get("/api/escola-coordenadas", async (req, res) => {
   const escolaId = req.query.escola_id;
   if (!escolaId) {
@@ -3428,7 +3420,6 @@ app.get("/api/escola-coordenadas", async (req, res) => {
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
-
 
 // ====================================================================================
 // DOWNLOAD DE ROTAS (KML, KMZ, GPX)
