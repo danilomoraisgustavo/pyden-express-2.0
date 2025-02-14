@@ -2397,15 +2397,16 @@ app.post("/api/motoristas/check-cpf", async (req, res) => {
 });
 
 // ====================================================================================
-// PONTOS DE PARADA
+// PONTOS DE PARADA (ROTAS)
 // ====================================================================================
+
+// Rota para cadastrar UM único ponto
 app.post("/api/pontos/cadastrar", async (req, res) => {
   try {
     const {
       latitudePonto,
       longitudePonto,
       area,
-      // nomePonto,  // <- Removemos ou ignoramos do form
       logradouroPonto,
       numeroPonto,
       complementoPonto,
@@ -2417,21 +2418,19 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
     const zoneamentosPonto = JSON.parse(req.body.zoneamentosPonto || "[]");
     const userId = req.session?.userId || null;
 
-    // 1) INSERIR o ponto, definindo nome_ponto como 'TEMP' (em vez de NULL),
-    //    para não violar a constraint NOT NULL.
     const insertPontoQuery = `
-            INSERT INTO pontos (
-                nome_ponto, latitude, longitude, area,
-                logradouro, numero, complemento, ponto_referencia,
-                bairro, cep
-            )
-            VALUES (
-                'TEMP', $1, $2, $3,
-                $4, $5, $6, $7,
-                $8, $9
-            )
-            RETURNING id
-        `;
+      INSERT INTO pontos (
+          nome_ponto, latitude, longitude, area,
+          logradouro, numero, complemento, ponto_referencia,
+          bairro, cep
+      )
+      VALUES (
+          'TEMP', $1, $2, $3,
+          $4, $5, $6, $7,
+          $8, $9
+      )
+      RETURNING id
+    `;
     const values = [
       latitudePonto ? parseFloat(latitudePonto) : null,
       longitudePonto ? parseFloat(longitudePonto) : null,
@@ -2452,28 +2451,25 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
     }
     const pontoId = result.rows[0].id;
 
-    // 2) ATUALIZAR o nome_ponto para ser igual ao ID (string).
     await pool.query("UPDATE pontos SET nome_ponto = $1 WHERE id = $2", [
       pontoId.toString(),
       pontoId,
     ]);
 
-    // 3) Se tiver zoneamentos selecionados, inserir na tabela intermediária
     if (zoneamentosPonto.length > 0) {
       const insertZonaPontoQuery = `
-                INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
-                VALUES ($1, $2)
-            `;
+        INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+        VALUES ($1, $2)
+      `;
       for (const zid of zoneamentosPonto) {
         await pool.query(insertZonaPontoQuery, [pontoId, zid]);
       }
     }
 
-    // 4) Registrar notificação (opcional).
-    const mensagem = `Ponto de parada criado. ID = ${pontoId} (nome_ponto igual ao ID)`;
+    const mensagem = `Ponto de parada criado. ID = ${pontoId}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-             VALUES ($1, 'CREATE', 'pontos', $2, $3)`,
+       VALUES ($1, 'CREATE', 'pontos', $2, $3)`,
       [userId, pontoId, mensagem]
     );
 
@@ -2490,32 +2486,130 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
   }
 });
 
+// Rota para cadastrar MÚLTIPLOS pontos
+app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { pontos, zoneamentos } = req.body;
+    const userId = req.session?.userId || null;
+
+    if (!pontos || !Array.isArray(pontos) || pontos.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Nenhum ponto fornecido.",
+      });
+    }
+
+    await client.query("BEGIN");
+
+    for (const p of pontos) {
+      const {
+        latitude,
+        longitude,
+        area,
+        logradouro,
+        numero,
+        complemento,
+        referencia,
+        bairro,
+        cep
+      } = p;
+
+      const insertPontoQuery = `
+        INSERT INTO pontos (
+          nome_ponto, latitude, longitude, area,
+          logradouro, numero, complemento, ponto_referencia,
+          bairro, cep
+        )
+        VALUES (
+          'TEMP', $1, $2, $3,
+          $4, $5, $6, $7,
+          $8, $9
+        )
+        RETURNING id
+      `;
+      const values = [
+        latitude != null ? parseFloat(latitude) : null,
+        longitude != null ? parseFloat(longitude) : null,
+        area || null,
+        logradouro || null,
+        numero || null,
+        complemento || null,
+        referencia || null,
+        bairro || null,
+        cep || null,
+      ];
+
+      const result = await client.query(insertPontoQuery, values);
+      const pontoId = result.rows[0].id;
+
+      await client.query("UPDATE pontos SET nome_ponto = $1 WHERE id = $2", [
+        pontoId.toString(),
+        pontoId,
+      ]);
+
+      if (zoneamentos && zoneamentos.length > 0) {
+        const insertZonaPontoQuery = `
+          INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+          VALUES ($1, $2)
+        `;
+        for (const zid of zoneamentos) {
+          await client.query(insertZonaPontoQuery, [pontoId, zid]);
+        }
+      }
+
+      const mensagem = `Ponto de parada criado (Múltiplo). ID = ${pontoId}`;
+      await client.query(
+        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+         VALUES ($1, 'CREATE', 'pontos', $2, $3)`,
+        [userId, pontoId, mensagem]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    return res.json({
+      success: true,
+      message: "Pontos de parada cadastrados com sucesso!",
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Erro ao cadastrar múltiplos pontos:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor ao cadastrar múltiplos pontos.",
+    });
+  } finally {
+    client.release();
+  }
+});
+
 app.get("/api/pontos", async (req, res) => {
   try {
     const query = `
-            SELECT p.id,
-                   p.nome_ponto,
-                   p.latitude,
-                   p.longitude,
-                   p.area,
-                   p.logradouro,
-                   p.numero,
-                   p.complemento,
-                   p.ponto_referencia,
-                   p.bairro,
-                   p.cep,
-                   COALESCE(
-                     json_agg(
-                       json_build_object('id', z.id, 'nome', z.nome)
-                     ) FILTER (WHERE z.id IS NOT NULL),
-                     '[]'
-                   ) AS zoneamentos
-            FROM pontos p
-            LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-            LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
-            GROUP BY p.id
-            ORDER BY p.id;
-        `;
+      SELECT p.id,
+             p.nome_ponto,
+             p.latitude,
+             p.longitude,
+             p.area,
+             p.logradouro,
+             p.numero,
+             p.complemento,
+             p.ponto_referencia,
+             p.bairro,
+             p.cep,
+             COALESCE(
+               json_agg(
+                 json_build_object('id', z.id, 'nome', z.nome)
+               ) FILTER (WHERE z.id IS NOT NULL),
+               '[]'
+             ) AS zoneamentos
+      FROM pontos p
+      LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+      LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
+      GROUP BY p.id
+      ORDER BY p.id;
+    `;
     const result = await pool.query(query);
     const pontos = result.rows.map((row) => ({
       id: row.id,
@@ -2543,11 +2637,8 @@ app.get("/api/pontos", async (req, res) => {
 app.delete("/api/pontos/:id", async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
-    // Buscar nome do ponto antes de excluir
     const busca = await pool.query(
       "SELECT nome_ponto FROM pontos WHERE id = $1",
       [id]
@@ -2563,14 +2654,12 @@ app.delete("/api/pontos/:id", async (req, res) => {
     const deleteQuery = "DELETE FROM pontos WHERE id = $1";
     const result = await pool.query(deleteQuery, [id]);
     if (result.rowCount > 0) {
-      // NOTIFICAÇÃO
       const mensagem = `Ponto de parada excluído: ${nomePonto}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-                 VALUES ($1, 'DELETE', 'pontos', $2, $3)`,
+         VALUES ($1, 'DELETE', 'pontos', $2, $3)`,
         [userId, id, mensagem]
       );
-
       res.json({
         success: true,
         message: "Ponto excluído com sucesso!",
@@ -2588,9 +2677,7 @@ app.delete("/api/pontos/:id", async (req, res) => {
     });
   }
 });
-// =============================================
-// EDITAR PONTO DE PARADA
-// =============================================
+
 app.put("/api/pontos/atualizar/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -2606,41 +2693,32 @@ app.put("/api/pontos/atualizar/:id", async (req, res) => {
       cepPontoEdit,
     } = req.body;
 
-    // Recebe o array de zoneamentos (JSON) enviado pelo front
-    const zoneamentosPontoEdit = JSON.parse(
-      req.body.zoneamentosPontoEdit || "[]"
-    );
-
-    // Usuário que está editando (para salvar notificação, se desejar)
+    const zoneamentosPontoEdit = JSON.parse(req.body.zoneamentosPontoEdit || "[]");
     const userId = req.session?.userId || null;
 
-    // 1) Verifica se o ponto existe
     const buscaPonto = await pool.query(
       "SELECT id, nome_ponto FROM pontos WHERE id = $1",
       [id]
     );
     if (buscaPonto.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Ponto não encontrado." });
+      return res.status(404).json({ success: false, message: "Ponto não encontrado." });
     }
 
-    // 2) Atualiza campos na tabela 'pontos'
     const updatePontoQuery = `
-            UPDATE pontos
-            SET
-                latitude = $1,
-                longitude = $2,
-                area = $3,
-                logradouro = $4,
-                numero = $5,
-                complemento = $6,
-                ponto_referencia = $7,
-                bairro = $8,
-                cep = $9
-            WHERE id = $10
-            RETURNING id, nome_ponto
-        `;
+      UPDATE pontos
+      SET
+          latitude = $1,
+          longitude = $2,
+          area = $3,
+          logradouro = $4,
+          numero = $5,
+          complemento = $6,
+          ponto_referencia = $7,
+          bairro = $8,
+          cep = $9
+      WHERE id = $10
+      RETURNING id, nome_ponto
+    `;
     const updateValues = [
       latitudePontoEdit ? parseFloat(latitudePontoEdit) : null,
       longitudePontoEdit ? parseFloat(longitudePontoEdit) : null,
@@ -2662,28 +2740,23 @@ app.put("/api/pontos/atualizar/:id", async (req, res) => {
       });
     }
 
-    // 3) Remove antigos relacionamentos de zoneamentos
-    await pool.query("DELETE FROM pontos_zoneamentos WHERE ponto_id = $1", [
-      id,
-    ]);
+    await pool.query("DELETE FROM pontos_zoneamentos WHERE ponto_id = $1", [id]);
 
-    // 4) Se existirem zoneamentos selecionados, insere novamente
     if (zoneamentosPontoEdit.length > 0) {
       const insertZonaPontoQuery = `
-                INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
-                VALUES ($1, $2)
-            `;
+        INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+        VALUES ($1, $2)
+      `;
       for (const zid of zoneamentosPontoEdit) {
         await pool.query(insertZonaPontoQuery, [id, zid]);
       }
     }
 
-    // 5) Registro de notificação (opcional)
     const nomePonto = updateResult.rows[0].nome_ponto;
     const mensagem = `Ponto de parada ID ${id} (nome_ponto: ${nomePonto}) foi atualizado.`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-             VALUES ($1, 'UPDATE', 'pontos', $2, $3)`,
+       VALUES ($1, 'UPDATE', 'pontos', $2, $3)`,
       [userId, id, mensagem]
     );
 

@@ -49,7 +49,8 @@
     }
 
     #mapCadastrarPonto,
-    #mapEditarPonto {
+    #mapEditarPonto,
+    #mapCadastrarVariosPontos {
       height: 400px;
       width: 100%;
       margin-bottom: 20px;
@@ -85,12 +86,21 @@
       align-items: center;
       justify-content: center;
     }
+
+    /* Para a lista de múltiplos pontos */
+    .table-multiplos-pontos td,
+    .table-multiplos-pontos th {
+      vertical-align: middle;
+    }
+
+    .small-input {
+      width: 80px;
+    }
   </style>
 </head>
 
 <body>
   <div class="wrapper">
-    <!-- SIDEBAR -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
@@ -555,15 +565,13 @@
         </div>
       </div>
     </div>
-    <!-- END SIDEBAR -->
 
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
             <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
-              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
-                height="20" />
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
             </a>
             <div class="nav-toggle">
               <button class="btn btn-toggle toggle-sidebar">
@@ -760,8 +768,7 @@
                 <div class="card-body">
                   <div class="mb-3">
                     <label for="pontoSearch" class="form-label">Buscar Ponto</label>
-                    <input type="text" id="pontoSearch" class="form-control"
-                      placeholder="Digite para pesquisar um ponto">
+                    <input type="text" id="pontoSearch" class="form-control" placeholder="Digite para pesquisar um ponto">
                     <select id="pontoSelect" class="form-control mt-2">
                       <option value="">Selecione um ponto</option>
                     </select>
@@ -783,6 +790,10 @@
                   <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                     data-bs-target="#modalCadastrarPonto">
                     Cadastrar Ponto
+                  </button>
+                  <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                    data-bs-target="#modalCadastrarVariosPontos">
+                    Cadastrar Múltiplos Pontos
                   </button>
                 </div>
                 <div class="card-body">
@@ -1009,6 +1020,63 @@
         </div>
       </div><!-- /modalEditarPonto -->
 
+      <!-- MODAL: CADASTRAR MÚLTIPLOS PONTOS -->
+      <div class="modal fade" id="modalCadastrarVariosPontos" tabindex="-1" aria-labelledby="modalCadastrarVariosPontosLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title fw-bold" id="modalCadastrarVariosPontosLabel">Cadastrar Múltiplos Pontos</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+              <div id="mapCadastrarVariosPontos"></div>
+              <table class="table table-striped table-multiplos-pontos">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Área</th>
+                    <th>Logradouro</th>
+                    <th>Número</th>
+                    <th>Complemento</th>
+                    <th>Ref.</th>
+                    <th>Bairro</th>
+                    <th>CEP</th>
+                    <th>Remover</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyMultiplosPontos"></tbody>
+              </table>
+
+              <h5>Associar Zoneamentos (aplicados a todos)</h5>
+              <div class="dual-list-container">
+                <div class="dual-list-box">
+                  <input type="text" id="filtroEsqPontoMulti" class="form-control" placeholder="Filtro">
+                  <select id="listaEsqPontoMulti" multiple class="form-control"></select>
+                </div>
+                <div class="dual-list-buttons">
+                  <button type="button" class="btn btn-primary" id="addBtnPontoMulti">Adicionar →</button>
+                  <button type="button" class="btn btn-danger" id="removeBtnPontoMulti">← Remover</button>
+                </div>
+                <div class="dual-list-box">
+                  <input type="text" id="filtroDirPontoMulti" class="form-control" placeholder="Filtro">
+                  <select id="listaDirPontoMulti" multiple class="form-control"></select>
+                </div>
+              </div>
+
+              <input type="hidden" id="zoneamentosPontoMulti" name="zoneamentosPontoMulti">
+
+              <div class="mt-4">
+                <button type="button" id="btnSalvarMultiplosPontos" class="btn btn-success">Cadastrar Todos</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /modalCadastrarVariosPontos -->
+
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
           <nav class="pull-left">
@@ -1045,7 +1113,6 @@
     let pontos = [];
     let markersPontos = [];
 
-    // ================= MAPA PRINCIPAL (LISTA DE PONTOS) =================
     function initMapPontos() {
       mapPontos = new google.maps.Map(document.getElementById('map'), {
         center: { lat: -6.530066, lng: -49.851630 },
@@ -1064,7 +1131,6 @@
         case 'info': icon = 'fa fa-info-circle'; break;
         default: icon = 'fa fa-bell';
       }
-
       $.notify({
         icon: icon,
         message: message
@@ -1129,13 +1195,13 @@
           marker.addListener('click', () => {
             const zs = p.zoneamentos ? p.zoneamentos.map(z => z.nome).join(', ') : 'Nenhum';
             const contentString = `
-            <div>
-              <h5>${p.nome_ponto}</h5>
-              <p><strong>Bairro:</strong> ${p.bairro || 'Não informado'}</p>
-              <p><strong>Referência:</strong> ${p.ponto_referencia || 'Não informado'}</p>
-              <p><strong>Zoneamentos:</strong> ${zs}</p>
-            </div>
-          `;
+              <div>
+                <h5>${p.nome_ponto}</h5>
+                <p><strong>Bairro:</strong> ${p.bairro || 'Não informado'}</p>
+                <p><strong>Referência:</strong> ${p.ponto_referencia || 'Não informado'}</p>
+                <p><strong>Zoneamentos:</strong> ${zs}</p>
+              </div>
+            `;
             infoWindowPontos.setContent(contentString);
             infoWindowPontos.open(mapPontos, marker);
           });
@@ -1162,21 +1228,21 @@
 
       pontos.forEach(p => {
         const row = `
-        <tr>
-          <td>${p.id}</td>
-          <td>${p.nome_ponto}</td>
-          <td>${p.bairro || ''}</td>
-          <td>${p.ponto_referencia || ''}</td>
-          <td>
-            <button type="button" class="btn btn-link btn-primary btn-lg" onclick="focusPonto(${p.id})">
-              <i class="fa fa-map-marker-alt"></i>
-            </button>
-            <button type="button" class="btn btn-link btn-warning btn-lg" onclick="editPonto(${p.id})">
-              <i class="fa fa-edit"></i>
-            </button>
-          </td>
-        </tr>
-      `;
+          <tr>
+            <td>${p.id}</td>
+            <td>${p.nome_ponto}</td>
+            <td>${p.bairro || ''}</td>
+            <td>${p.ponto_referencia || ''}</td>
+            <td>
+              <button type="button" class="btn btn-link btn-primary btn-lg" onclick="focusPonto(${p.id})">
+                <i class="fa fa-map-marker-alt"></i>
+              </button>
+              <button type="button" class="btn btn-link btn-warning btn-lg" onclick="editPonto(${p.id})">
+                <i class="fa fa-edit"></i>
+              </button>
+            </td>
+          </tr>
+        `;
         tableBody.append(row);
       });
 
@@ -1330,7 +1396,6 @@
 
     $('#modalEditarPonto')
       .on('shown.bs.modal', function () {
-        // Inicializa o mapa ao abrir o modal
         initMapEditarPonto();
       })
       .on('hidden.bs.modal', function () {
@@ -1411,7 +1476,7 @@
         }
       });
 
-      // Carrega zoneamentos para o cadastro
+      // Carrega zoneamentos para o cadastro normal
       fetch('/api/zoneamentos')
         .then(res => res.json())
         .then(data => {
@@ -1518,24 +1583,19 @@
       });
     });
 
-    // Função para abrir modal de edição de um ponto específico
     function editPonto(id) {
       const ponto = pontos.find(pt => pt.id == id);
       if (!ponto) return;
 
-      // Limpa e prepara listas de zoneamento
       const listaEsq = document.getElementById('listaEsqPontoEdit');
       const listaDir = document.getElementById('listaDirPontoEdit');
       listaEsq.innerHTML = '';
       listaDir.innerHTML = '';
 
-      // Carrega todos os zoneamentos
       fetch('/api/zoneamentos')
         .then(res => res.json())
         .then(data => {
-          // Supondo que 'ponto.zoneamentos' tenha os zoneamentos relacionados
           const assignedZoneamentos = ponto.zoneamentos || [];
-
           data.forEach(z => {
             const inAssigned = assignedZoneamentos.some(az => az.id === z.id);
             const option = document.createElement('option');
@@ -1550,7 +1610,6 @@
         })
         .catch(err => console.error(err));
 
-      // Preenche dados no formulário
       $('#idPontoEdit').val(ponto.id);
       $('#latitudePontoEdit').val(ponto.latitude || '');
       $('#longitudePontoEdit').val(ponto.longitude || '');
@@ -1566,16 +1625,12 @@
         $('#areaRuralEdit').prop('checked', true);
       }
 
-      // Mostrar modal
       $('#modalEditarPonto').modal('show');
-
-      // Assim que modal for aberto, definimos o marker no mapa
       setTimeout(() => {
         if (ponto.latitude && ponto.longitude) {
           const position = new google.maps.LatLng(parseFloat(ponto.latitude), parseFloat(ponto.longitude));
           mapEditarPonto.setCenter(position);
           mapEditarPonto.setZoom(17);
-
           if (markerEditarPonto) {
             markerEditarPonto.setPosition(position);
           } else {
@@ -1587,6 +1642,197 @@
         }
       }, 500);
     }
+
+    // ==================== MÚLTIPLOS PONTOS ====================
+    let mapCadastrarVariosPontos, geocoderCadastrarVariosPontos;
+    let markersMultiplos = [];
+    let dadosMultiplos = [];
+    let zoneamentosPontoDataMulti = [];
+
+    function initMapCadastrarVariosPontos() {
+      geocoderCadastrarVariosPontos = new google.maps.Geocoder();
+      mapCadastrarVariosPontos = new google.maps.Map(document.getElementById('mapCadastrarVariosPontos'), {
+        center: { lat: -6.530066, lng: -49.851630 },
+        zoom: 13,
+        mapTypeId: 'satellite'
+      });
+      mapCadastrarVariosPontos.addListener('click', function (event) {
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
+
+        const marker = new google.maps.Marker({
+          position: event.latLng,
+          map: mapCadastrarVariosPontos
+        });
+        markersMultiplos.push(marker);
+
+        const novoRegistro = {
+          latitude: lat,
+          longitude: lng,
+          area: 'urbana',
+          logradouro: '',
+          numero: '',
+          complemento: '',
+          referencia: '',
+          bairro: '',
+          cep: ''
+        };
+
+        geocoderCadastrarVariosPontos.geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+          if (status === 'OK' && results[0]) {
+            let addressComponents = results[0].address_components;
+            addressComponents.forEach(comp => {
+              if (comp.types.includes('route')) novoRegistro.logradouro = comp.long_name;
+              if (comp.types.includes('street_number')) novoRegistro.numero = comp.long_name;
+              if (comp.types.includes('sublocality') || comp.types.includes('administrative_area_level_2')) {
+                novoRegistro.bairro = comp.long_name;
+              }
+            });
+          }
+          dadosMultiplos.push(novoRegistro);
+          atualizaTabelaMultiplos();
+        });
+      });
+    }
+
+    function atualizaTabelaMultiplos() {
+      const tbody = document.getElementById('tbodyMultiplosPontos');
+      tbody.innerHTML = '';
+      dadosMultiplos.forEach((p, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td><input type="text" class="form-control small-input" data-idx="${index}" data-field="latitude" value="${p.latitude.toFixed(6)}" readonly></td>
+          <td><input type="text" class="form-control small-input" data-idx="${index}" data-field="longitude" value="${p.longitude.toFixed(6)}" readonly></td>
+          <td>
+            <select class="form-select" data-idx="${index}" data-field="area">
+              <option value="urbana" ${p.area === 'urbana' ? 'selected' : ''}>Urbana</option>
+              <option value="rural" ${p.area === 'rural' ? 'selected' : ''}>Rural</option>
+            </select>
+          </td>
+          <td><input type="text" class="form-control" data-idx="${index}" data-field="logradouro" value="${p.logradouro}"></td>
+          <td><input type="text" class="form-control small-input" data-idx="${index}" data-field="numero" value="${p.numero}"></td>
+          <td><input type="text" class="form-control" data-idx="${index}" data-field="complemento" value="${p.complemento}"></td>
+          <td><input type="text" class="form-control" data-idx="${index}" data-field="referencia" value="${p.referencia}"></td>
+          <td><input type="text" class="form-control" data-idx="${index}" data-field="bairro" value="${p.bairro}"></td>
+          <td><input type="text" class="form-control small-input" data-idx="${index}" data-field="cep" value="${p.cep}"></td>
+          <td><button type="button" class="btn btn-danger btn-sm" onclick="removerPontoMultiplo(${index})">X</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      const inputs = tbody.querySelectorAll('input, select');
+      inputs.forEach(el => {
+        el.addEventListener('change', function () {
+          const idx = parseInt(this.getAttribute('data-idx'));
+          const field = this.getAttribute('data-field');
+          if (field && idx >= 0) {
+            dadosMultiplos[idx][field] = this.value;
+          }
+        });
+      });
+    }
+
+    function removerPontoMultiplo(index) {
+      dadosMultiplos.splice(index, 1);
+      const marker = markersMultiplos[index];
+      if (marker) {
+        marker.setMap(null);
+      }
+      markersMultiplos.splice(index, 1);
+      atualizaTabelaMultiplos();
+    }
+
+    $('#modalCadastrarVariosPontos')
+      .on('shown.bs.modal', function () {
+        if (!mapCadastrarVariosPontos) {
+          initMapCadastrarVariosPontos();
+        }
+      })
+      .on('hidden.bs.modal', function () {
+        dadosMultiplos = [];
+        markersMultiplos.forEach(m => m.setMap(null));
+        markersMultiplos = [];
+        atualizaTabelaMultiplos();
+      });
+
+    // Zoneamentos para múltiplos
+    $(document).ready(function () {
+      fetch('/api/zoneamentos')
+        .then(res => res.json())
+        .then(data => {
+          zoneamentosPontoDataMulti = data;
+          const listaEsq = document.getElementById('listaEsqPontoMulti');
+          listaEsq.innerHTML = '';
+          zoneamentosPontoDataMulti.forEach(z => {
+            const option = document.createElement('option');
+            option.value = z.id;
+            option.textContent = z.nome;
+            listaEsq.appendChild(option);
+          });
+        })
+        .catch(err => console.error(err));
+    });
+
+    $('#filtroEsqPontoMulti').on('input', function () {
+      filterOptionsPonto(this, document.getElementById('listaEsqPontoMulti'));
+    });
+    $('#filtroDirPontoMulti').on('input', function () {
+      filterOptionsPonto(this, document.getElementById('listaDirPontoMulti'));
+    });
+    $('#addBtnPontoMulti').click(function () {
+      const listaEsq = document.getElementById('listaEsqPontoMulti');
+      const listaDir = document.getElementById('listaDirPontoMulti');
+      for (let i = listaEsq.options.length - 1; i >= 0; i--) {
+        if (listaEsq.options[i].selected && listaEsq.options[i].style.display !== 'none') {
+          const option = listaEsq.options[i];
+          listaDir.appendChild(option);
+        }
+      }
+    });
+    $('#removeBtnPontoMulti').click(function () {
+      const listaEsq = document.getElementById('listaEsqPontoMulti');
+      const listaDir = document.getElementById('listaDirPontoMulti');
+      for (let i = listaDir.options.length - 1; i >= 0; i--) {
+        if (listaDir.options[i].selected && listaDir.options[i].style.display !== 'none') {
+          const option = listaDir.options[i];
+          listaEsq.appendChild(option);
+        }
+      }
+    });
+
+    $('#btnSalvarMultiplosPontos').click(function () {
+      const listaDir = document.getElementById('listaDirPontoMulti');
+      const selecionados = [];
+      for (let i = 0; i < listaDir.options.length; i++) {
+        selecionados.push(listaDir.options[i].value);
+      }
+
+      const payload = {
+        pontos: dadosMultiplos,
+        zoneamentos: selecionados
+      };
+
+      fetch('/api/pontos/cadastrar-multiplos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            $.notify({ message: 'Pontos de parada cadastrados com sucesso!' }, { type: 'success' });
+            $('#modalCadastrarVariosPontos').modal('hide');
+            loadPontos();
+          } else {
+            $.notify({ message: 'Erro ao cadastrar múltiplos pontos: ' + data.message }, { type: 'danger' });
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          $.notify({ message: 'Erro ao cadastrar múltiplos pontos. Tente novamente.' }, { type: 'danger' });
+        });
+    });
   </script>
 </body>
 
