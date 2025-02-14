@@ -726,7 +726,7 @@
                 <div class="card-header d-flex justify-content-between">
                   <h4 class="card-title">Lista de Memorandos</h4>
                   <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoMemorando">
-                    <i class="fa fa-plus"></i> Criar Novo Memorando
+                    <i class="fa fa-plus"></i> Criar Novo Documento
                   </button>
                 </div>
                 <div class="card-body">
@@ -735,6 +735,7 @@
                       <thead>
                         <tr>
                           <th>ID</th>
+                          <th>Documento</th>
                           <th>Tipo</th>
                           <th>Data</th>
                           <th>Destinatário</th>
@@ -744,6 +745,7 @@
                       <tfoot>
                         <tr>
                           <th>ID</th>
+                          <th>Documento</th>
                           <th>Tipo</th>
                           <th>Data</th>
                           <th>Destinatário</th>
@@ -765,14 +767,36 @@
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="modalNovoMemorandoLabel">Criar Novo Memorando</h5>
+                  <h5 class="modal-title" id="modalNovoMemorandoLabel">Criar Novo Documento</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
                   <form id="memorando-form">
                     <div class="row mb-3">
                       <div class="col-md-12">
-                        <label for="tipo_memorando" class="form-label fw-bold">Tipo de Memorando</label>
+                        <label for="tipo_documento" class="form-label fw-bold">Tipo de Documento</label>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="tipo_documento" id="docMemorando"
+                                value="MEMORANDO" checked>
+                              <label class="form-check-label" for="docMemorando">Memorando</label>
+                            </div>
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="tipo_documento" id="docOficio"
+                                value="OFICIO">
+                              <label class="form-check-label" for="docOficio">Ofício</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr/>
+
+                    <div class="row mb-3">
+                      <div class="col-md-12">
+                        <label for="tipo_memorando" class="form-label fw-bold">Tipo de Solicitação</label>
                         <div class="row">
                           <div class="col-md-4">
                             <div class="form-check">
@@ -844,7 +868,7 @@
                     </div>
 
                     <div class="mt-4">
-                      <button type="submit" class="btn btn-success">Gerar Memorando</button>
+                      <button type="submit" class="btn btn-success">Gerar Documento</button>
                     </div>
                   </form>
                 </div>
@@ -858,16 +882,38 @@
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="modalEditarMemorandoLabel">Editar Memorando</h5>
+                  <h5 class="modal-title" id="modalEditarMemorandoLabel">Editar Documento</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
                   <form id="editar-memorando-form">
                     <input type="hidden" id="editar_memorando_id" name="memorando_id" value="">
-                    
+
                     <div class="row mb-3">
                       <div class="col-md-12">
-                        <label class="form-label fw-bold">Tipo de Memorando</label>
+                        <label class="form-label fw-bold">Tipo de Documento</label>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_documento" id="edDocMemorando"
+                                value="MEMORANDO">
+                              <label class="form-check-label" for="edDocMemorando">Memorando</label>
+                            </div>
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_documento" id="edDocOficio"
+                                value="OFICIO">
+                              <label class="form-check-label" for="edDocOficio">Ofício</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr/>
+
+                    <div class="row mb-3">
+                      <div class="col-md-12">
+                        <label class="form-label fw-bold">Tipo de Solicitação</label>
                         <div class="row">
                           <div class="col-md-4">
                             <div class="form-check">
@@ -923,21 +969,21 @@
                         </div>
                       </div>
                     </div>
-                    
+
                     <div class="row mb-3">
                       <div class="col-md-6">
                         <label for="editar_destinatario" class="form-label required-label">Destinatário</label>
                         <input type="text" id="editar_destinatario" name="editar_destinatario" class="form-control" required />
                       </div>
                     </div>
-                    
+
                     <div class="row mb-3">
                       <div class="col-md-12">
                         <label for="editar_corpo" class="form-label required-label">Corpo da Solicitação</label>
                         <textarea id="editar_corpo" name="editar_corpo" class="form-control" rows="4" required></textarea>
                       </div>
                     </div>
-                    
+
                     <div class="mt-4">
                       <button type="submit" class="btn btn-success">Salvar Alterações</button>
                     </div>
@@ -1059,6 +1105,7 @@
         const row = `
           <tr>
             <td>${m.id}</td>
+            <td>${m.document_type === 'OFICIO' ? 'Ofício' : 'Memorando'}</td>
             <td>${m.tipo_memorando}</td>
             <td>${dataFormatada}</td>
             <td>${m.destinatario}</td>
@@ -1066,31 +1113,31 @@
               <div class="form-button-action">
                 <button type="button" class="btn btn-link btn-dark btn-lg"
                   onclick="visualizarMemorandoEmPdf('${m.id}')"
-                  data-bs-toggle="tooltip" title="Visualizar Memorando (PDF)">
+                  data-bs-toggle="tooltip" title="Visualizar PDF">
                   <i class="fa fa-eye"></i>
                 </button>
 
                 <button type="button" class="btn btn-link btn-secondary btn-lg"
                   onclick="gerarPdf('${m.id}')"
-                  data-bs-toggle="tooltip" title="Gerar PDF para Baixar">
+                  data-bs-toggle="tooltip" title="Baixar PDF">
                   <i class="fa fa-file-pdf"></i>
                 </button>
 
                 <button type="button" class="btn btn-link btn-info btn-lg"
                   onclick="gerarDocx('${m.id}')"
-                  data-bs-toggle="tooltip" title="Gerar .docx">
+                  data-bs-toggle="tooltip" title="Baixar .docx">
                   <i class="fa fa-file-word"></i>
                 </button>
 
                 <button type="button" class="btn btn-link btn-warning btn-lg"
                   onclick="abrirModalEditarMemorando('${m.id}')"
-                  data-bs-toggle="tooltip" title="Editar Memorando">
+                  data-bs-toggle="tooltip" title="Editar Documento">
                   <i class="fa fa-edit"></i>
                 </button>
 
                 <button type="button" class="btn btn-link btn-danger btn-lg"
                   onclick="excluirMemorando('${m.id}')"
-                  data-bs-toggle="tooltip" title="Excluir Memorando">
+                  data-bs-toggle="tooltip" title="Excluir">
                   <i class="fa fa-trash-alt"></i>
                 </button>
               </div>
@@ -1142,7 +1189,7 @@
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `memorando_${id}.pdf`;
+          link.download = `documento_${id}.pdf`;
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -1166,7 +1213,7 @@
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `memorando_${id}.docx`;
+          link.download = `documento_${id}.docx`;
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -1179,29 +1226,32 @@
     }
 
     function abrirModalEditarMemorando(id) {
-      // Localiza o memorando no array memorandos
       const memo = memorandos.find(item => item.id == id);
       if (!memo) {
-        showNotification('danger', 'Memorando não encontrado.');
+        showNotification('danger', 'Documento não encontrado.');
         return;
       }
 
-      // Preenche o formulário de edição
       document.getElementById('editar_memorando_id').value = memo.id;
       document.getElementById('editar_destinatario').value = memo.destinatario;
       document.getElementById('editar_corpo').value = memo.corpo;
 
-      // Ajusta o tipo de memorando
-      const radioFields = document.getElementsByName('editar_tipo_memorando');
-      for (let i = 0; i < radioFields.length; i++) {
-        if (radioFields[i].value === memo.tipo_memorando) {
-          radioFields[i].checked = true;
+      // Tipo de documento
+      const radioDocType = document.getElementsByName('editar_tipo_documento');
+      for (let i = 0; i < radioDocType.length; i++) {
+        radioDocType[i].checked = (radioDocType[i].value === memo.document_type);
+      }
+
+      // Tipo de memorando (solicitação)
+      const radioSolicitacao = document.getElementsByName('editar_tipo_memorando');
+      for (let i = 0; i < radioSolicitacao.length; i++) {
+        if (radioSolicitacao[i].value === memo.tipo_memorando) {
+          radioSolicitacao[i].checked = true;
         } else {
-          radioFields[i].checked = false;
+          radioSolicitacao[i].checked = false;
         }
       }
 
-      // Abre o modal
       $('#modalEditarMemorando').modal('show');
     }
 
@@ -1211,28 +1261,28 @@
       })
         .then(res => {
           if (!res.ok) {
-            throw new Error('Erro ao excluir memorando');
+            throw new Error('Erro ao excluir documento');
           }
           return res.json();
         })
         .then(data => {
           if (data.success) {
-            showNotification('success', 'Memorando excluído com sucesso!');
+            showNotification('success', 'Documento excluído com sucesso!');
             loadMemorandos();
           } else {
-            showNotification('danger', 'Erro ao excluir memorando: ' + data.message);
+            showNotification('danger', 'Erro ao excluir documento: ' + data.message);
           }
         })
         .catch(err => {
           console.error(err);
-          showNotification('danger', 'Erro ao excluir memorando. Tente novamente.');
+          showNotification('danger', 'Erro ao excluir documento. Tente novamente.');
         });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
       loadMemorandos();
 
-      // Cadastro de memorando
+      // Cadastro de documento
       document.getElementById('memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);
@@ -1243,36 +1293,38 @@
         })
           .then(res => {
             if (!res.ok) {
-              throw new Error('Erro ao cadastrar memorando');
+              throw new Error('Erro ao cadastrar documento');
             }
             return res.json();
           })
           .then(data => {
             if (data.success) {
-              showNotification('success', 'Memorando criado com sucesso!');
+              showNotification('success', 'Documento criado com sucesso!');
               document.getElementById('memorando-form').reset();
               $('#modalNovoMemorando').modal('hide');
               loadMemorandos();
             } else {
-              showNotification('danger', 'Erro ao criar memorando: ' + data.message);
+              showNotification('danger', 'Erro ao criar documento: ' + data.message);
             }
           })
           .catch(err => {
             console.error(err);
-            showNotification('danger', 'Erro ao criar memorando. Tente novamente.');
+            showNotification('danger', 'Erro ao criar documento. Tente novamente.');
           });
       });
 
-      // Edição de memorando
+      // Edição de documento
       document.getElementById('editar-memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
 
         const memorandoId = document.getElementById('editar_memorando_id').value;
+        const docTypeRadio = document.querySelector('input[name="editar_tipo_documento"]:checked');
         const tipoMemorando = document.querySelector('input[name="editar_tipo_memorando"]:checked');
         const destinatario = document.getElementById('editar_destinatario').value;
         const corpo = document.getElementById('editar_corpo').value;
 
         const payload = {
+          document_type: docTypeRadio ? docTypeRadio.value : 'MEMORANDO',
           tipo_memorando: tipoMemorando ? tipoMemorando.value : '',
           destinatario: destinatario,
           corpo: corpo
@@ -1287,22 +1339,22 @@
         })
           .then(res => {
             if (!res.ok) {
-              throw new Error('Erro ao editar memorando');
+              throw new Error('Erro ao editar documento');
             }
             return res.json();
           })
           .then(data => {
             if (data.success) {
-              showNotification('success', 'Memorando atualizado com sucesso!');
+              showNotification('success', 'Documento atualizado com sucesso!');
               $('#modalEditarMemorando').modal('hide');
               loadMemorandos();
             } else {
-              showNotification('danger', 'Erro ao atualizar memorando: ' + data.message);
+              showNotification('danger', 'Erro ao atualizar documento: ' + data.message);
             }
           })
           .catch(err => {
             console.error(err);
-            showNotification('danger', 'Erro ao atualizar memorando. Tente novamente.');
+            showNotification('danger', 'Erro ao atualizar documento. Tente novamente.');
           });
       });
     });

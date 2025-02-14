@@ -4697,6 +4697,8 @@ app.delete("/api/cocessao-rota/:id", async (req, res) => {
 // ====================================================================================
 // MEMORANDOS
 // ====================================================================================
+
+// app.get("/api/memorandos", ...) ...
 app.get("/api/memorandos", async (req, res) => {
   try {
     const result = await pool.query(
@@ -4712,42 +4714,40 @@ app.get("/api/memorandos", async (req, res) => {
   }
 });
 
-// Criar memorando
+// app.post("/api/memorandos/cadastrar", ...) ...
 app.post(
   "/api/memorandos/cadastrar",
   memorandoUpload.none(),
   async (req, res) => {
-    const { tipo_memorando, destinatario, corpo } = req.body;
+    const { document_type, tipo_memorando, destinatario, corpo } = req.body;
 
-    if (!tipo_memorando || !destinatario || !corpo) {
+    if (!document_type || !tipo_memorando || !destinatario || !corpo) {
       return res.status(400).json({
         success: false,
         message:
-          "Campos obrigatórios não fornecidos (tipo_memorando, destinatario, corpo).",
+          "Campos obrigatórios não fornecidos (document_type, tipo_memorando, destinatario, corpo).",
       });
     }
 
-    // userId para notificação
     const userId = req.session?.userId || null;
     const data_criacao = moment().format("YYYY-MM-DD");
 
     try {
       const insertQuery = `
-            INSERT INTO memorandos
-            (tipo_memorando, destinatario, corpo, data_criacao)
-            VALUES ($1, $2, $3, $4)
-            RETURNING id;
-        `;
-      const values = [tipo_memorando, destinatario, corpo, data_criacao];
+        INSERT INTO memorandos
+        (document_type, tipo_memorando, destinatario, corpo, data_criacao)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id;
+      `;
+      const values = [document_type, tipo_memorando, destinatario, corpo, data_criacao];
       const result = await pool.query(insertQuery, values);
 
       if (result.rows.length > 0) {
         const newId = result.rows[0].id;
-        // NOTIFICAÇÃO
-        const mensagem = `Memorando criado: Tipo ${tipo_memorando}, destinatário: ${destinatario}`;
+        const mensagem = `Documento criado: ${document_type} - ${tipo_memorando}, destinatário: ${destinatario}`;
         await pool.query(
           `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-                 VALUES ($1, 'CREATE', 'memorandos', $2, $3)`,
+           VALUES ($1, 'CREATE', 'memorandos', $2, $3)`,
           [userId, newId, mensagem]
         );
 
@@ -4755,6 +4755,7 @@ app.post(
           success: true,
           memorando: {
             id: newId,
+            document_type,
             tipo_memorando,
             destinatario,
             corpo,
@@ -4764,64 +4765,67 @@ app.post(
       } else {
         return res.status(500).json({
           success: false,
-          message: "Erro ao cadastrar memorando (retorno inesperado).",
+          message: "Erro ao cadastrar documento (retorno inesperado).",
         });
       }
     } catch (error) {
-      console.error("Erro ao cadastrar memorando:", error);
+      console.error("Erro ao cadastrar documento:", error);
       return res.status(500).json({
         success: false,
-        message: "Erro ao cadastrar memorando.",
+        message: "Erro ao cadastrar documento.",
       });
     }
   }
 );
 
+// app.put("/api/memorandos/:id", ...) ...
 app.put('/api/memorandos/:id', async (req, res) => {
   const { id } = req.params;
-  const { tipo_memorando, destinatario, corpo } = req.body;
+  const { document_type, tipo_memorando, destinatario, corpo } = req.body;
 
   try {
     const queryText = `
       UPDATE memorandos
-      SET tipo_memorando = $1, destinatario = $2, corpo = $3
-      WHERE id = $4
+      SET document_type = $1, tipo_memorando = $2, destinatario = $3, corpo = $4
+      WHERE id = $5
       RETURNING *;
     `;
 
-    const result = await pool.query(queryText, [tipo_memorando, destinatario, corpo, id]);
+    const result = await pool.query(queryText, [
+      document_type,
+      tipo_memorando,
+      destinatario,
+      corpo,
+      id
+    ]);
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: 'Memorando não encontrado.' });
+      return res.status(404).json({ success: false, message: 'Documento não encontrado.' });
     }
 
     return res.json({ success: true, memorando: result.rows[0] });
   } catch (error) {
-    console.error('Erro ao atualizar memorando:', error);
+    console.error('Erro ao atualizar documento:', error);
     return res.status(500).json({
       success: false,
-      message: 'Erro interno ao atualizar memorando.'
+      message: 'Erro interno ao atualizar documento.'
     });
   }
 });
 
-// Gerar DOCX memorando
+// app.get("/api/memorandos/:id/gerar-docx", ...) ...
 app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [
-      id,
-    ]);
+    const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [id]);
     if (result.rows.length === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "Memorando não encontrado." });
+        .json({ success: false, message: "Documento não encontrado." });
     }
     const memorando = result.rows[0];
 
     const fs = require("fs");
-
-    // Função auxiliar p/ base64
     function loadBase64(filePath) {
       if (!fs.existsSync(filePath)) return null;
       const file = fs.readFileSync(filePath);
@@ -4854,7 +4858,6 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
     const separadorBase64 = loadBase64(separadorPath);
     const logo2Base64 = loadBase64(logo2Path);
 
-    // Cabeçalhos e rodapé
     const headerChildren = [];
     if (logo1Base64) {
       headerChildren.push(
@@ -4933,15 +4936,18 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
       })
     );
 
-    // Corpo
+    const { Document, Packer, Paragraph, TextRun, Header, Footer, AlignmentType, HeadingLevel, ImageRun } = require("docx");
     const docBody = [];
+
+    const docTitle = memorando.document_type === "OFICIO" ? "OFÍCIO" : "MEMORANDO";
+
     docBody.push(
       new Paragraph({
         heading: HeadingLevel.HEADING_2,
         alignment: AlignmentType.JUSTIFIED,
         children: [
           new TextRun({
-            text: `MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
+            text: `${docTitle} N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
             bold: true,
             size: 24,
           }),
@@ -5025,12 +5031,11 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
       ],
     });
 
-    const { Packer } = require("docx");
     const buffer = await Packer.toBuffer(doc);
 
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=memorando_${id}.docx`
+      `attachment; filename=documento_${id}.docx`
     );
     res.setHeader(
       "Content-Type",
@@ -5041,12 +5046,12 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
     console.error("Erro ao gerar DOCX:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro ao gerar .docx do memorando.",
+      message: "Erro ao gerar .docx do documento.",
     });
   }
 });
 
-// Obter memorando (visualizar)
+// app.get("/api/memorandos/:id", ...) ...
 app.get("/api/memorandos/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -5057,7 +5062,7 @@ app.get("/api/memorandos/:id", async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Memorando não encontrado.",
+        message: "Documento não encontrado.",
       });
     }
     return res.json({
@@ -5065,7 +5070,7 @@ app.get("/api/memorandos/:id", async (req, res) => {
       memorando: result.rows[0],
     });
   } catch (error) {
-    console.error("Erro ao buscar memorando:", error);
+    console.error("Erro ao buscar documento:", error);
     return res.status(500).json({
       success: false,
       message: "Erro interno do servidor.",
@@ -5073,24 +5078,23 @@ app.get("/api/memorandos/:id", async (req, res) => {
   }
 });
 
+// app.delete("/api/memorandos/:id", ...) ...
 app.delete("/api/memorandos/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    // userId para notificação
     const userId = req.session?.userId || null;
-
-    // Buscar algo p/ mensagem
     const buscaMem = await pool.query(
-      "SELECT tipo_memorando FROM memorandos WHERE id = $1",
+      "SELECT tipo_memorando, document_type FROM memorandos WHERE id = $1",
       [id]
     );
     if (buscaMem.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Memorando não encontrado.",
+        message: "Documento não encontrado.",
       });
     }
     const tipo = buscaMem.rows[0].tipo_memorando;
+    const docType = buscaMem.rows[0].document_type;
 
     const result = await pool.query(
       "DELETE FROM memorandos WHERE id = $1 RETURNING *",
@@ -5099,31 +5103,31 @@ app.delete("/api/memorandos/:id", async (req, res) => {
     if (result.rowCount === 0) {
       return res.status(404).json({
         success: false,
-        message: "Memorando não encontrado.",
+        message: "Documento não encontrado.",
       });
     }
 
-    // Notificação
-    const mensagem = `Memorando excluído: Tipo ${tipo}`;
+    const mensagem = `Documento excluído: ${docType} - ${tipo}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-             VALUES ($1, 'DELETE', 'memorandos', $2, $3)`,
+       VALUES ($1, 'DELETE', 'memorandos', $2, $3)`,
       [userId, id, mensagem]
     );
 
     return res.json({
       success: true,
-      message: "Memorando excluído com sucesso.",
+      message: "Documento excluído com sucesso.",
     });
   } catch (error) {
-    console.error("Erro ao excluir memorando:", error);
+    console.error("Erro ao excluir documento:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro ao excluir memorando.",
+      message: "Erro ao excluir documento.",
     });
   }
 });
 
+// app.get("/api/memorandos/:id/gerar-pdf", ...) ...
 app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
@@ -5133,19 +5137,19 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
     if (result.rows.length === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "Memorando não encontrado." });
+        .json({ success: false, message: "Documento não encontrado." });
     }
     const memorando = result.rows[0];
 
+    const docTitle = memorando.document_type === "OFICIO" ? "OFÍCIO" : "MEMORANDO";
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader(
       "Content-Disposition",
-      `inline; filename=memorando_${id}.pdf`
+      `inline; filename=documento_${id}.pdf`
     );
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
-    // LOGO ESQUERDA
     const logoPath = path.join(
       __dirname,
       "public",
@@ -5157,7 +5161,6 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
 
-    // TEXTO DIREITA
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
@@ -5170,7 +5173,6 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
         { width: 300, align: "right" }
       );
 
-    // SEPARADOR
     const separadorPath = path.join(
       __dirname,
       "public",
@@ -5187,20 +5189,17 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
     doc.y = 130;
     doc.x = 50;
 
-    // TÍTULO
     doc
       .fontSize(12)
       .font("Helvetica-Bold")
       .text(
-        `MEMORANDO N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
+        `${docTitle} N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
         {
           align: "justify",
         }
       )
       .moveDown();
 
-    // CORPO
-    // Remove possíveis caracteres \r para evitar símbolos estranhos
     const corpoAjustado = memorando.corpo
       .replace(/\r\n/g, "\n")
       .replace(/\r/g, "");
@@ -5215,7 +5214,6 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       .text(corpoAjustado, { align: "justify" })
       .moveDown();
 
-    // ESPAÇO E ASSINATURA
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -5233,13 +5231,11 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
 
-    // RODAPÉ
-    const footerSepX = (doc.page.width - 510) / 2;
-    const footerSepY = doc.page.height - 160;
     if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
       doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
     }
-
     const logo2Path = path.join(
       __dirname,
       "public",
@@ -5282,6 +5278,7 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
+
 
 // Import alunos ativos
 app.post("/api/import-alunos-ativos", async (req, res) => {
