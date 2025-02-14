@@ -571,7 +571,8 @@
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
             <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
-              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                height="20" />
             </a>
             <div class="nav-toggle">
               <button class="btn btn-toggle toggle-sidebar">
@@ -768,7 +769,8 @@
                 <div class="card-body">
                   <div class="mb-3">
                     <label for="pontoSearch" class="form-label">Buscar Ponto</label>
-                    <input type="text" id="pontoSearch" class="form-control" placeholder="Digite para pesquisar um ponto">
+                    <input type="text" id="pontoSearch" class="form-control"
+                      placeholder="Digite para pesquisar um ponto">
                     <select id="pontoSelect" class="form-control mt-2">
                       <option value="">Selecione um ponto</option>
                     </select>
@@ -895,7 +897,8 @@
                   </div>
                 </div>
 
-                <h5>Associar Zoneamentos</h5>
+                <!-- Manteremos a parte de "Associar Zoneamentos" no front, mas agora a atribuição será feita automaticamente no servidor. -->
+                <h5>Associar Zoneamentos (opcional)</h5>
                 <div class="dual-list-container">
                   <div class="dual-list-box">
                     <input type="text" id="filtroEsqPonto" class="form-control" placeholder="Filtro">
@@ -994,7 +997,7 @@
                   </div>
                 </div>
 
-                <h5>Associar Zoneamentos</h5>
+                <h5>Associar Zoneamentos (opcional)</h5>
                 <div class="dual-list-container">
                   <div class="dual-list-box">
                     <input type="text" id="filtroEsqPontoEdit" class="form-control" placeholder="Filtro">
@@ -1021,8 +1024,8 @@
       </div><!-- /modalEditarPonto -->
 
       <!-- MODAL: CADASTRAR MÚLTIPLOS PONTOS -->
-      <div class="modal fade" id="modalCadastrarVariosPontos" tabindex="-1" aria-labelledby="modalCadastrarVariosPontosLabel"
-        aria-hidden="true">
+      <div class="modal fade" id="modalCadastrarVariosPontos" tabindex="-1"
+        aria-labelledby="modalCadastrarVariosPontosLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
           <div class="modal-content">
             <div class="modal-header">
@@ -1050,7 +1053,7 @@
                 <tbody id="tbodyMultiplosPontos"></tbody>
               </table>
 
-              <h5>Associar Zoneamentos (aplicados a todos)</h5>
+              <h5>Associar Zoneamentos (aplicados a todos) (opcional)</h5>
               <div class="dual-list-container">
                 <div class="dual-list-box">
                   <input type="text" id="filtroEsqPontoMulti" class="form-control" placeholder="Filtro">
@@ -1476,7 +1479,7 @@
         }
       });
 
-      // Carrega zoneamentos para o cadastro normal
+      // Carrega zoneamentos para exibição nas listas (opcional)
       fetch('/api/zoneamentos')
         .then(res => res.json())
         .then(data => {
@@ -1756,7 +1759,7 @@
         atualizaTabelaMultiplos();
       });
 
-    // Zoneamentos para múltiplos
+    // Zoneamentos para múltiplos (opcional)
     $(document).ready(function () {
       fetch('/api/zoneamentos')
         .then(res => res.json())
