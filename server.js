@@ -3350,27 +3350,38 @@ app.get("/api/motoristas/rota", async (req, res) => {
 app.get("/api/dashboard", async (req, res) => {
   try {
     const alunosAtivos = await pool.query(`
-            SELECT COUNT(*)::int AS count
-            FROM alunos_ativos
-            WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
-        `);
+      SELECT COUNT(*)::int AS count
+      FROM alunos_ativos
+      WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
+    `);
+
     const rotasAtivas = await pool.query(
       `SELECT COUNT(*)::int AS count FROM rotas_simples`
     );
+
     const zoneamentosCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM zoneamentos`
     );
+
     const motoristasCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM motoristas`
     );
+
     const monitoresCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM monitores`
     );
+
     const fornecedoresCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM fornecedores`
     );
+
     const pontosCount = await pool.query(
       `SELECT COUNT(*)::int AS count FROM pontos`
+    );
+
+    // Novo count para escolas
+    const escolasCount = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM escolas`
     );
 
     res.json({
@@ -3381,6 +3392,7 @@ app.get("/api/dashboard", async (req, res) => {
       monitores_total: monitoresCount.rows[0]?.count || 0,
       fornecedores_total: fornecedoresCount.rows[0]?.count || 0,
       pontos_total: pontosCount.rows[0]?.count || 0,
+      escolas_total: escolasCount.rows[0]?.count || 0
     });
   } catch (error) {
     console.error(error);
@@ -3389,7 +3401,6 @@ app.get("/api/dashboard", async (req, res) => {
       .json({ success: false, message: "Erro interno do servidor." });
   }
 });
-
 app.get("/api/escola-coordenadas", async (req, res) => {
   const escolaId = req.query.escola_id;
   if (!escolaId) {
@@ -3417,6 +3428,7 @@ app.get("/api/escola-coordenadas", async (req, res) => {
     res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
+
 
 // ====================================================================================
 // DOWNLOAD DE ROTAS (KML, KMZ, GPX)
