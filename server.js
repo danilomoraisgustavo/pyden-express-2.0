@@ -5514,13 +5514,45 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
   }
 });
 
+// Rotas (exemplo) - Ajustando para permitir filtros na query
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
+    let { escola, bairro, cep, search } = req.query;
+    escola = escola || "";
+    bairro = bairro || "";
+    cep = cep || "";
+    search = search || "";
+
+    // Ajuste ou substitua conforme sua lógica de WHERE
+    // Exemplo simples:
+    let whereClauses = [];
+    if (escola) {
+      whereClauses.push(`e.nome ILIKE '%${escola}%'`);
+    }
+    if (bairro) {
+      whereClauses.push(`a.bairro ILIKE '%${bairro}%'`);
+    }
+    if (cep) {
+      whereClauses.push(`a.cep ILIKE '%${cep}%'`);
+    }
+    if (search) {
+      whereClauses.push(`
+        (a.pessoa_nome ILIKE '%${search}%'
+         OR a.id_matricula ILIKE '%${search}%'
+         OR a.cpf ILIKE '%${search}%')
+      `);
+    }
+    let whereStr = "";
+    if (whereClauses.length) {
+      whereStr = "WHERE " + whereClauses.join(" AND ");
+    }
+
     const query = `
       SELECT a.*,
              e.nome AS escola_nome
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
+      ${whereStr}
       ORDER BY a.id DESC
     `;
     const result = await pool.query(query);
@@ -5533,6 +5565,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
     });
   }
 });
+
 
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
   try {
