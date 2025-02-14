@@ -2494,6 +2494,62 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
   }
 });
 
+app.get("/api/zoneamentos/detect", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { lat, lng } = req.query;
+    if (!lat || !lng) {
+      return res.json({ zona: null });
+    }
+
+    // Transformar em float
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+
+    // Cria geometria do ponto
+    const pointGeom = `ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)`;
+
+    await client.query("BEGIN");
+
+    // Tenta encontrar polígono que contenha o ponto
+    const queryPoligono = `
+      SELECT id, nome
+      FROM zoneamentos
+      WHERE ST_Contains(geom, ${pointGeom})
+      LIMIT 1
+    `;
+    const poligono = await client.query(queryPoligono);
+    if (poligono.rows.length > 0) {
+      await client.query("COMMIT");
+      return res.json({ zona: poligono.rows[0].nome });
+    }
+
+    // Se não encontrou polígono, procura linha próxima
+    const dist = 0.001; // 100m aprox.
+    const queryLinhas = `
+      SELECT id, nome
+      FROM zoneamentos
+      WHERE ST_DWithin(geom, ${pointGeom}, ${dist})
+      ORDER BY ST_Distance(geom, ${pointGeom})
+      LIMIT 1
+    `;
+    const linha = await client.query(queryLinhas);
+    if (linha.rows.length > 0) {
+      await client.query("COMMIT");
+      return res.json({ zona: linha.rows[0].nome });
+    }
+
+    await client.query("COMMIT");
+    return res.json({ zona: null });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    return res.json({ zona: null });
+  } finally {
+    client.release();
+  }
+});
+
+
 app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
   const client = await pool.connect();
   try {
