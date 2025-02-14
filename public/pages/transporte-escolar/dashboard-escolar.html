@@ -553,7 +553,6 @@
                   <li>
                     <div class="message-notif-scroll scrollbar-outer">
                       <div class="notif-center">
-                        <!-- Exemplos de mensagens fixas ou carregadas via JS -->
                         <a href="#">
                           <div class="notif-img">
                             <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
@@ -564,7 +563,6 @@
                             <span class="time">Há 5 minutos</span>
                           </div>
                         </a>
-                        <!-- ... -->
                       </div>
                     </div>
                   </li>
@@ -624,7 +622,6 @@
                   <div class="quick-actions-scroll scrollbar-outer">
                     <div class="quick-actions-items">
                       <div class="row m-0">
-                        <!-- Exemplo de cards para algumas páginas existentes -->
                         <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
                           <div class="quick-actions-item">
                             <div class="avatar-item bg-primary rounded-circle">
@@ -725,9 +722,9 @@
             </div>
           </div>
 
-          <!-- Cards de Estatísticas -->
+          <!-- Cards de Estatísticas (Linha de cima - agora com 4 colunas) -->
           <div class="row">
-            <div class="col-sm-4 col-md-4">
+            <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -747,7 +744,7 @@
               </div>
             </div>
 
-            <div class="col-sm-4 col-md-4">
+            <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -766,7 +763,8 @@
                 </div>
               </div>
             </div>
-            <div class="col-sm-4 col-md-4">
+
+            <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
                   <div class="row align-items-center">
@@ -785,11 +783,32 @@
                 </div>
               </div>
             </div>
-          </div>
-          <!-- NOVA LINHA DE CARDS -->
-          <!-- NOVA LINHA DE CARDS (agora com 4 colunas) -->
-          <div class="row mt-3">
 
+            <!-- NOVO CARD DE ESCOLAS -->
+            <div class="col-sm-3 col-md-3">
+              <div class="card card-stats card-round">
+                <div class="card-body">
+                  <div class="row align-items-center">
+                    <div class="col-icon">
+                      <div class="icon-big text-center icon-success bubble-shadow-small">
+                        <i class="fas fa-school"></i>
+                      </div>
+                    </div>
+                    <div class="col col-stats ms-3 ms-sm-0">
+                      <div class="numbers">
+                        <p class="card-category">Escolas</p>
+                        <h4 class="card-title" id="escolas-total">0</h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- FIM DA LINHA DE CIMA -->
+
+          <!-- NOVA LINHA DE CARDS (4 colunas) -->
+          <div class="row mt-3">
             <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
@@ -850,7 +869,6 @@
               </div>
             </div>
 
-            <!-- NOVO CARD DE PONTOS -->
             <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
@@ -871,7 +889,6 @@
               </div>
             </div>
           </div>
-
           <!-- FIM DA NOVA LINHA DE CARDS -->
 
           <!-- Estatísticas de Transporte -->
@@ -1378,8 +1395,9 @@
       document.getElementById('fornecedores-total').textContent = data.fornecedores_total || 0;
       document.getElementById('pontos-total').textContent = data.pontos_total || 0;
 
+      // Novo campo de escolas
+      document.getElementById('escolas-total').textContent = data.escolas_total || 0;
     };
-
 
     document.addEventListener('DOMContentLoaded', carregarDadosDashboard);
 
