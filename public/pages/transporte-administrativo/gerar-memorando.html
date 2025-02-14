@@ -853,6 +853,101 @@
           </div>
           <!-- Fim Modal -->
 
+          <!-- Modal Editar Memorando -->
+          <div class="modal fade" id="modalEditarMemorando" tabindex="-1" aria-labelledby="modalEditarMemorandoLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalEditarMemorandoLabel">Editar Memorando</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="editar-memorando-form">
+                    <input type="hidden" id="editar_memorando_id" name="memorando_id" value="">
+                    
+                    <div class="row mb-3">
+                      <div class="col-md-12">
+                        <label class="form-label fw-bold">Tipo de Memorando</label>
+                        <div class="row">
+                          <div class="col-md-4">
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm1"
+                                value="Solicitação de Transporte">
+                              <label class="form-check-label" for="etm1">Solicitação de Transporte</label>
+                            </div>
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm2"
+                                value="Solicitação de Diária para Viagem">
+                              <label class="form-check-label" for="etm2">Solicitação de Diária para Viagem</label>
+                            </div>
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm3"
+                                value="Solicitação de Manutenção de Veículo">
+                              <label class="form-check-label" for="etm3">Solicitação de Manutenção de Veículo</label>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm4"
+                                value="Solicitação de Materiais">
+                              <label class="form-check-label" for="etm4">Solicitação de Materiais</label>
+                            </div>
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm5"
+                                value="Solicitação de Combustível">
+                              <label class="form-check-label" for="etm5">Solicitação de Combustível</label>
+                            </div>
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm6"
+                                value="Remanejamento de Frota">
+                              <label class="form-check-label" for="etm6">Remanejamento de Frota</label>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm7"
+                                value="Solicitação de Motorista">
+                              <label class="form-check-label" for="etm7">Solicitação de Motorista</label>
+                            </div>
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm8"
+                                value="Relatório de Viagem">
+                              <label class="form-check-label" for="etm8">Relatório de Viagem</label>
+                            </div>
+                            <div class="form-check">
+                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm9"
+                                value="Outros">
+                              <label class="form-check-label" for="etm9">Outros</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label for="editar_destinatario" class="form-label required-label">Destinatário</label>
+                        <input type="text" id="editar_destinatario" name="editar_destinatario" class="form-control" required />
+                      </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                      <div class="col-md-12">
+                        <label for="editar_corpo" class="form-label required-label">Corpo da Solicitação</label>
+                        <textarea id="editar_corpo" name="editar_corpo" class="form-control" rows="4" required></textarea>
+                      </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                      <button type="submit" class="btn btn-success">Salvar Alterações</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Fim Modal Editar -->
+
         </div>
       </div>
 
@@ -898,7 +993,6 @@
 
   <script>
     let memorandos = [];
-    let memorandoAtivo = null;
 
     function showNotification(type, message, title = "") {
       $.notify({
@@ -906,9 +1000,9 @@
         message: message,
         icon:
           type === 'success' ? 'fa fa-check-circle' :
-            type === 'danger' ? 'fa fa-exclamation-circle' :
-              type === 'warning' ? 'fa fa-exclamation-triangle' :
-                type === 'info' ? 'fa fa-info-circle' : ''
+          type === 'danger' ? 'fa fa-exclamation-circle' :
+          type === 'warning' ? 'fa fa-exclamation-triangle' :
+          type === 'info' ? 'fa fa-info-circle' : ''
       }, {
         type: type,
         placement: {
@@ -986,6 +1080,12 @@
                   onclick="gerarDocx('${m.id}')"
                   data-bs-toggle="tooltip" title="Gerar .docx">
                   <i class="fa fa-file-word"></i>
+                </button>
+
+                <button type="button" class="btn btn-link btn-warning btn-lg"
+                  onclick="abrirModalEditarMemorando('${m.id}')"
+                  data-bs-toggle="tooltip" title="Editar Memorando">
+                  <i class="fa fa-edit"></i>
                 </button>
 
                 <button type="button" class="btn btn-link btn-danger btn-lg"
@@ -1078,6 +1178,33 @@
         });
     }
 
+    function abrirModalEditarMemorando(id) {
+      // Localiza o memorando no array memorandos
+      const memo = memorandos.find(item => item.id == id);
+      if (!memo) {
+        showNotification('danger', 'Memorando não encontrado.');
+        return;
+      }
+
+      // Preenche o formulário de edição
+      document.getElementById('editar_memorando_id').value = memo.id;
+      document.getElementById('editar_destinatario').value = memo.destinatario;
+      document.getElementById('editar_corpo').value = memo.corpo;
+
+      // Ajusta o tipo de memorando
+      const radioFields = document.getElementsByName('editar_tipo_memorando');
+      for (let i = 0; i < radioFields.length; i++) {
+        if (radioFields[i].value === memo.tipo_memorando) {
+          radioFields[i].checked = true;
+        } else {
+          radioFields[i].checked = false;
+        }
+      }
+
+      // Abre o modal
+      $('#modalEditarMemorando').modal('show');
+    }
+
     function excluirMemorando(id) {
       fetch(`/api/memorandos/${id}`, {
         method: 'DELETE'
@@ -1105,6 +1232,7 @@
     document.addEventListener('DOMContentLoaded', function () {
       loadMemorandos();
 
+      // Cadastro de memorando
       document.getElementById('memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);
@@ -1132,6 +1260,49 @@
           .catch(err => {
             console.error(err);
             showNotification('danger', 'Erro ao criar memorando. Tente novamente.');
+          });
+      });
+
+      // Edição de memorando
+      document.getElementById('editar-memorando-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const memorandoId = document.getElementById('editar_memorando_id').value;
+        const tipoMemorando = document.querySelector('input[name="editar_tipo_memorando"]:checked');
+        const destinatario = document.getElementById('editar_destinatario').value;
+        const corpo = document.getElementById('editar_corpo').value;
+
+        const payload = {
+          tipo_memorando: tipoMemorando ? tipoMemorando.value : '',
+          destinatario: destinatario,
+          corpo: corpo
+        };
+
+        fetch(`/api/memorandos/${memorandoId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Erro ao editar memorando');
+            }
+            return res.json();
+          })
+          .then(data => {
+            if (data.success) {
+              showNotification('success', 'Memorando atualizado com sucesso!');
+              $('#modalEditarMemorando').modal('hide');
+              loadMemorandos();
+            } else {
+              showNotification('danger', 'Erro ao atualizar memorando: ' + data.message);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            showNotification('danger', 'Erro ao atualizar memorando. Tente novamente.');
           });
       });
     });

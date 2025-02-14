@@ -4777,6 +4777,34 @@ app.post(
   }
 );
 
+app.put('/api/memorandos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { tipo_memorando, destinatario, corpo } = req.body;
+
+  try {
+    const queryText = `
+      UPDATE memorandos
+      SET tipo_memorando = $1, destinatario = $2, corpo = $3
+      WHERE id = $4
+      RETURNING *;
+    `;
+
+    const result = await pool.query(queryText, [tipo_memorando, destinatario, corpo, id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Memorando não encontrado.' });
+    }
+
+    return res.json({ success: true, memorando: result.rows[0] });
+  } catch (error) {
+    console.error('Erro ao atualizar memorando:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno ao atualizar memorando.'
+    });
+  }
+});
+
 // Gerar DOCX memorando
 app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
   const { id } = req.params;
