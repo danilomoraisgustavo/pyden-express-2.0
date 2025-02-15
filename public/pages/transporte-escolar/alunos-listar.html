@@ -574,7 +574,8 @@
             </div>
           </div>
         </div>
-      </div>
+      </div><!-- FIM container / page-inner -->
+
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
           <nav class="pull-left">
@@ -598,8 +599,8 @@
           </div>
         </div>
       </footer>
-    </div>
-  </div>
+    </div><!-- FIM main-panel -->
+  </div><!-- FIM wrapper -->
 
   <div id="globalLoader" class="spinner-container">
     <div class="spinner">
@@ -1016,6 +1017,7 @@
         .then((data) => {
           alunosData = data;
           popularTabela(alunosData);
+          popularFiltros(alunosData);
         })
         .catch(() => {
           showNotification("danger", "Erro ao carregar dados do banco.");
@@ -1098,8 +1100,53 @@
       });
     }
 
+    function popularFiltros(alunos) {
+      const filtroEscola = $("#filtroEscola");
+      const filtroBairro = $("#filtroBairro");
+      const filtroCep = $("#filtroCep");
+
+      const distinctEscolas = new Set();
+      const distinctBairros = new Set();
+      const distinctCeps = new Set();
+
+      alunos.forEach((al) => {
+        if (al.escola_nome) {
+          distinctEscolas.add(al.escola_nome);
+        }
+        if (al.bairro) {
+          distinctBairros.add(al.bairro);
+        }
+        if (al.cep) {
+          distinctCeps.add(al.cep);
+        }
+      });
+
+      const currentSelectedEscola = filtroEscola.val();
+      const currentSelectedBairro = filtroBairro.val();
+      const currentSelectedCep = filtroCep.val();
+
+      filtroEscola.empty().append('<option value="">Todas</option>');
+      distinctEscolas.forEach((esc) => {
+        filtroEscola.append(`<option value="${esc}">${esc}</option>`);
+      });
+      filtroEscola.val(currentSelectedEscola);
+
+      filtroBairro.empty().append('<option value="">Todos</option>');
+      distinctBairros.forEach((b) => {
+        filtroBairro.append(`<option value="${b}">${b}</option>`);
+      });
+      filtroBairro.val(currentSelectedBairro);
+
+      filtroCep.empty().append('<option value="">Todos</option>');
+      distinctCeps.forEach((c) => {
+        filtroCep.append(`<option value="${c}">${c}</option>`);
+      });
+      filtroCep.val(currentSelectedCep);
+    }
+
     $(document).ready(function () {
       carregarEscolas();
+      buscarAlunosComFiltros(); // Carregar inicialmente e popular filtros
 
       $("#fileInput").on("change", handleFileImport);
       $("#importarBtn").on("click", enviarImportacao);
