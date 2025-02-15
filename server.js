@@ -5577,10 +5577,14 @@ app.get("/api/alunos-ativos", async (req, res) => {
     cep = cep || "";
     search = search || "";
 
-    // Ajuste ou substitua conforme sua lógica de WHERE
-    // Exemplo simples:
+    // Se todos filtros vazios => retornar array vazio
+    if (!escola && !bairro && !cep && !search) {
+      return res.json([]);
+    }
+
     let whereClauses = [];
     if (escola) {
+      // Filtrar por "escola_nome" (JOIN com tabela escolas)
       whereClauses.push(`e.nome ILIKE '%${escola}%'`);
     }
     if (bairro) {
@@ -5619,8 +5623,6 @@ app.get("/api/alunos-ativos", async (req, res) => {
     });
   }
 });
-
-
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
   try {
     const { id } = req.params;
