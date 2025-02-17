@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Listar Memorandos - pydenadmin Bootstrap 5 Admin Dashboard</title>
@@ -36,13 +35,11 @@
       content: " *";
       color: red;
     }
-
     .modal-lg {
       max-width: 90% !important;
     }
   </style>
 </head>
-
 <body>
   <div class="wrapper">
     <!-- SIDEBAR -->
@@ -511,8 +508,7 @@
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
             <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
-              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
-                height="20" />
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
             </a>
             <div class="nav-toggle">
               <button class="btn btn-toggle toggle-sidebar">
@@ -774,17 +770,28 @@
                   <form id="memorando-form">
                     <div class="row mb-3">
                       <div class="col-md-12">
-                        <label for="tipo_documento" class="form-label fw-bold">Tipo de Documento</label>
+                        <label for="document_type" class="form-label fw-bold">Tipo de Documento</label>
                         <div class="row">
                           <div class="col-md-6">
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_documento" id="docMemorando"
-                                value="MEMORANDO" checked>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="document_type"
+                                id="docMemorando"
+                                value="MEMORANDO"
+                                checked
+                              />
                               <label class="form-check-label" for="docMemorando">Memorando</label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_documento" id="docOficio"
-                                value="OFICIO">
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="document_type"
+                                id="docOficio"
+                                value="OFICIO"
+                              />
                               <label class="form-check-label" for="docOficio">Ofício</label>
                             </div>
                           </div>
@@ -800,53 +807,117 @@
                         <div class="row">
                           <div class="col-md-4">
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm1"
-                                value="Solicitação de Transporte" checked>
-                              <label class="form-check-label" for="tm1">Solicitação de Transporte</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm1"
+                                value="Solicitação de Transporte"
+                                checked
+                              />
+                              <label class="form-check-label" for="tm1">
+                                Solicitação de Transporte
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm2"
-                                value="Solicitação de Diária para Viagem">
-                              <label class="form-check-label" for="tm2">Solicitação de Diária para Viagem</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm2"
+                                value="Solicitação de Diária para Viagem"
+                              />
+                              <label class="form-check-label" for="tm2">
+                                Solicitação de Diária para Viagem
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm3"
-                                value="Solicitação de Manutenção de Veículo">
-                              <label class="form-check-label" for="tm3">Solicitação de Manutenção de Veículo</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm3"
+                                value="Solicitação de Manutenção de Veículo"
+                              />
+                              <label class="form-check-label" for="tm3">
+                                Solicitação de Manutenção de Veículo
+                              </label>
                             </div>
                           </div>
                           <div class="col-md-4">
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm4"
-                                value="Solicitação de Materiais">
-                              <label class="form-check-label" for="tm4">Solicitação de Materiais</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm4"
+                                value="Solicitação de Materiais"
+                              />
+                              <label class="form-check-label" for="tm4">
+                                Solicitação de Materiais
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm5"
-                                value="Solicitação de Combustível">
-                              <label class="form-check-label" for="tm5">Solicitação de Combustível</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm5"
+                                value="Solicitação de Combustível"
+                              />
+                              <label class="form-check-label" for="tm5">
+                                Solicitação de Combustível
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm6"
-                                value="Remanejamento de Frota">
-                              <label class="form-check-label" for="tm6">Remanejamento de Frota</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm6"
+                                value="Remanejamento de Frota"
+                              />
+                              <label class="form-check-label" for="tm6">
+                                Remanejamento de Frota
+                              </label>
                             </div>
                           </div>
                           <div class="col-md-4">
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm7"
-                                value="Solicitação de Motorista">
-                              <label class="form-check-label" for="tm7">Solicitação de Motorista</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm7"
+                                value="Solicitação de Motorista"
+                              />
+                              <label class="form-check-label" for="tm7">
+                                Solicitação de Motorista
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm8"
-                                value="Relatório de Viagem">
-                              <label class="form-check-label" for="tm8">Relatório de Viagem</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm8"
+                                value="Relatório de Viagem"
+                              />
+                              <label class="form-check-label" for="tm8">
+                                Relatório de Viagem
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="tipo_memorando" id="tm9"
-                                value="Outros">
-                              <label class="form-check-label" for="tm9">Outros</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="tipo_memorando"
+                                id="tm9"
+                                value="Outros"
+                              />
+                              <label class="form-check-label" for="tm9">
+                                Outros
+                              </label>
                             </div>
                           </div>
                         </div>
@@ -856,14 +927,26 @@
                     <div class="row mb-3">
                       <div class="col-md-6">
                         <label for="destinatario" class="form-label required-label">Destinatário</label>
-                        <input type="text" id="destinatario" name="destinatario" class="form-control" required />
+                        <input
+                          type="text"
+                          id="destinatario"
+                          name="destinatario"
+                          class="form-control"
+                          required
+                        />
                       </div>
                     </div>
 
                     <div class="row mb-3">
                       <div class="col-md-12">
                         <label for="corpo" class="form-label required-label">Corpo da Solicitação</label>
-                        <textarea id="corpo" name="corpo" class="form-control" rows="4" required></textarea>
+                        <textarea
+                          id="corpo"
+                          name="corpo"
+                          class="form-control"
+                          rows="4"
+                          required
+                        ></textarea>
                       </div>
                     </div>
 
@@ -895,14 +978,28 @@
                         <div class="row">
                           <div class="col-md-6">
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_documento" id="edDocMemorando"
-                                value="MEMORANDO">
-                              <label class="form-check-label" for="edDocMemorando">Memorando</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_documento"
+                                id="edDocMemorando"
+                                value="MEMORANDO"
+                              />
+                              <label class="form-check-label" for="edDocMemorando">
+                                Memorando
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_documento" id="edDocOficio"
-                                value="OFICIO">
-                              <label class="form-check-label" for="edDocOficio">Ofício</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_documento"
+                                id="edDocOficio"
+                                value="OFICIO"
+                              />
+                              <label class="form-check-label" for="edDocOficio">
+                                Ofício
+                              </label>
                             </div>
                           </div>
                         </div>
@@ -917,53 +1014,116 @@
                         <div class="row">
                           <div class="col-md-4">
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm1"
-                                value="Solicitação de Transporte">
-                              <label class="form-check-label" for="etm1">Solicitação de Transporte</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm1"
+                                value="Solicitação de Transporte"
+                              />
+                              <label class="form-check-label" for="etm1">
+                                Solicitação de Transporte
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm2"
-                                value="Solicitação de Diária para Viagem">
-                              <label class="form-check-label" for="etm2">Solicitação de Diária para Viagem</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm2"
+                                value="Solicitação de Diária para Viagem"
+                              />
+                              <label class="form-check-label" for="etm2">
+                                Solicitação de Diária para Viagem
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm3"
-                                value="Solicitação de Manutenção de Veículo">
-                              <label class="form-check-label" for="etm3">Solicitação de Manutenção de Veículo</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm3"
+                                value="Solicitação de Manutenção de Veículo"
+                              />
+                              <label class="form-check-label" for="etm3">
+                                Solicitação de Manutenção de Veículo
+                              </label>
                             </div>
                           </div>
                           <div class="col-md-4">
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm4"
-                                value="Solicitação de Materiais">
-                              <label class="form-check-label" for="etm4">Solicitação de Materiais</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm4"
+                                value="Solicitação de Materiais"
+                              />
+                              <label class="form-check-label" for="etm4">
+                                Solicitação de Materiais
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm5"
-                                value="Solicitação de Combustível">
-                              <label class="form-check-label" for="etm5">Solicitação de Combustível</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm5"
+                                value="Solicitação de Combustível"
+                              />
+                              <label class="form-check-label" for="etm5">
+                                Solicitação de Combustível
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm6"
-                                value="Remanejamento de Frota">
-                              <label class="form-check-label" for="etm6">Remanejamento de Frota</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm6"
+                                value="Remanejamento de Frota"
+                              />
+                              <label class="form-check-label" for="etm6">
+                                Remanejamento de Frota
+                              </label>
                             </div>
                           </div>
                           <div class="col-md-4">
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm7"
-                                value="Solicitação de Motorista">
-                              <label class="form-check-label" for="etm7">Solicitação de Motorista</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm7"
+                                value="Solicitação de Motorista"
+                              />
+                              <label class="form-check-label" for="etm7">
+                                Solicitação de Motorista
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm8"
-                                value="Relatório de Viagem">
-                              <label class="form-check-label" for="etm8">Relatório de Viagem</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm8"
+                                value="Relatório de Viagem"
+                              />
+                              <label class="form-check-label" for="etm8">
+                                Relatório de Viagem
+                              </label>
                             </div>
                             <div class="form-check">
-                              <input class="form-check-input" type="radio" name="editar_tipo_memorando" id="etm9"
-                                value="Outros">
-                              <label class="form-check-label" for="etm9">Outros</label>
+                              <input
+                                class="form-check-input"
+                                type="radio"
+                                name="editar_tipo_memorando"
+                                id="etm9"
+                                value="Outros"
+                              />
+                              <label class="form-check-label" for="etm9">
+                                Outros
+                              </label>
                             </div>
                           </div>
                         </div>
@@ -973,14 +1133,26 @@
                     <div class="row mb-3">
                       <div class="col-md-6">
                         <label for="editar_destinatario" class="form-label required-label">Destinatário</label>
-                        <input type="text" id="editar_destinatario" name="editar_destinatario" class="form-control" required />
+                        <input
+                          type="text"
+                          id="editar_destinatario"
+                          name="editar_destinatario"
+                          class="form-control"
+                          required
+                        />
                       </div>
                     </div>
 
                     <div class="row mb-3">
                       <div class="col-md-12">
                         <label for="editar_corpo" class="form-label required-label">Corpo da Solicitação</label>
-                        <textarea id="editar_corpo" name="editar_corpo" class="form-control" rows="4" required></textarea>
+                        <textarea
+                          id="editar_corpo"
+                          name="editar_corpo"
+                          class="form-control"
+                          rows="4"
+                          required
+                        ></textarea>
                       </div>
                     </div>
 
@@ -993,7 +1165,6 @@
             </div>
           </div>
           <!-- Fim Modal Editar -->
-
         </div>
       </div>
 
@@ -1245,11 +1416,7 @@
       // Tipo de memorando (solicitação)
       const radioSolicitacao = document.getElementsByName('editar_tipo_memorando');
       for (let i = 0; i < radioSolicitacao.length; i++) {
-        if (radioSolicitacao[i].value === memo.tipo_memorando) {
-          radioSolicitacao[i].checked = true;
-        } else {
-          radioSolicitacao[i].checked = false;
-        }
+        radioSolicitacao[i].checked = (radioSolicitacao[i].value === memo.tipo_memorando);
       }
 
       $('#modalEditarMemorando').modal('show');
@@ -1359,7 +1526,5 @@
       });
     });
   </script>
-
 </body>
-
 </html>
