@@ -3432,35 +3432,6 @@ app.get("/api/dashboard", async (req, res) => {
   }
 });
 
-// ROTA /api/escola-coordenadas (sem alterações, incluída na íntegra)
-app.get("/api/escola-coordenadas", async (req, res) => {
-  const escolaId = req.query.escola_id;
-  if (!escolaId) {
-    return res.status(400).json({ error: "escola_id não fornecido" });
-  }
-  try {
-    const result = await pool.query(
-      "SELECT latitude, longitude FROM escolas WHERE id = $1",
-      [escolaId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Escola não encontrada" });
-    }
-    const { latitude, longitude } = result.rows[0];
-    if (latitude == null || longitude == null) {
-      return res
-        .status(404)
-        .json({ error: "Coordenadas não encontradas para esta escola" });
-    }
-    res.json({
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Erro interno do servidor" });
-  }
-});
-
 
 // ====================================================================================
 // DOWNLOAD DE ROTAS (KML, KMZ, GPX)
