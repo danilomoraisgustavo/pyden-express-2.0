@@ -1079,33 +1079,6 @@ app.post("/api/escolas/cadastrar", async (req, res) => {
   }
 });
 
-app.get('/api/escola-coordenadas', async (req, res) => {
-  const { nome_escola } = req.query;
-  if (!nome_escola) {
-    return res.status(400).json({ error: 'nome_escola é obrigatório' });
-  }
-
-  try {
-    const query = `
-      SELECT latitude, longitude
-      FROM escolas
-      WHERE nome ILIKE $1
-      LIMIT 1
-    `;
-    const values = [`%${nome_escola}%`];
-    const result = await db.query(query, values);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Escola não encontrada' });
-    }
-    return res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-
 app.get("/api/escolas", async (req, res) => {
   try {
     const query = `
@@ -5621,56 +5594,43 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 });
 
 // Rotas (exemplo) - Ajustando para permitir filtros na query
-app.get("/api/alunos-ativos", async (req, res) => {
+app.get('/api/alunos_ativos', async (req, res) => {
   try {
-    let { escola, bairro, cep, search } = req.query;
-    escola = escola || "";
-    bairro = bairro || "";
-    cep = cep || "";
-    search = search || "";
-
-    // Ajuste ou substitua conforme sua lógica de WHERE
-    // Exemplo simples:
-    let whereClauses = [];
-    if (escola) {
-      whereClauses.push(`e.nome ILIKE '%${escola}%'`);
-    }
-    if (bairro) {
-      whereClauses.push(`a.bairro ILIKE '%${bairro}%'`);
-    }
-    if (cep) {
-      whereClauses.push(`a.cep ILIKE '%${cep}%'`);
-    }
-    if (search) {
-      whereClauses.push(`
-        (a.pessoa_nome ILIKE '%${search}%'
-         OR a.id_matricula ILIKE '%${search}%'
-         OR a.cpf ILIKE '%${search}%')
-      `);
-    }
-    let whereStr = "";
-    if (whereClauses.length) {
-      whereStr = "WHERE " + whereClauses.join(" AND ");
-    }
-
-    const query = `
-      SELECT a.*,
-             e.nome AS escola_nome
-      FROM alunos_ativos a
-      LEFT JOIN escolas e ON e.id = a.escola_id
-      ${whereStr}
-      ORDER BY a.id DESC
-    `;
-    const result = await pool.query(query);
-    return res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao buscar alunos.",
-    });
+    const { search } = req.query
+    if (!search) return res.status(400).json({ error: 'Parametro search é obrigatório.' })
+    const sql = `
+      SELECT a.id_matricula,
+             p.nome AS pessoa_nome,
+             e.nome AS escola_nome,
+             a.turma,
+             p.cpf,
+             p.cep,
+             p.bairro,
+             p.numero AS numero_pessoa_endereco,
+             p.filiacao_1,
+             t.numero AS numero_telefone,
+             p.filiacao_2,
+             p.responsavel,
+             COALESCE(array_agg(d.descricao) FILTER (WHERE d.descricao IS NOT NULL), '{}') AS deficiencia
+        FROM alunos a
+        JOIN pessoa p ON a.pessoa_id = p.id
+        JOIN escolas e ON a.escola_id = e.id
+        LEFT JOIN telefone t ON t.pessoa_id = p.id
+        LEFT JOIN deficiencias d ON d.pessoa_id = p.id
+       WHERE p.cpf = $1
+          OR CAST(a.id_matricula AS TEXT) = $1
+       GROUP BY a.id_matricula, p.nome, e.nome, a.turma, p.cpf, p.cep, p.bairro, p.numero,
+                p.filiacao_1, p.filiacao_2, p.responsavel, t.numero
+       LIMIT 1
+    `
+    const { rows } = await pool.query(sql, [search])
+    if (!rows.length) return res.json({})
+    res.json(rows[0])
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar aluno.' })
   }
-});
+})
+
 
 
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
