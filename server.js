@@ -1079,6 +1079,24 @@ app.post("/api/escolas/cadastrar", async (req, res) => {
   }
 });
 
+app.get('/api/escola-coordenadas', async (req, res) => {
+  const { nome_escola } = req.query;
+  if (!nome_escola) {
+    return res.status(400).json({ error: 'nome_escola é obrigatório' });
+  }
+  try {
+    const query = 'SELECT latitude, longitude FROM escolas WHERE nome = $1 LIMIT 1';
+    const result = await db.query(query, [nome_escola]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Escola não encontrada' });
+    }
+    return res.json(result.rows[0]);
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+
 app.get("/api/escolas", async (req, res) => {
   try {
     const query = `
