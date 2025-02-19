@@ -1084,14 +1084,23 @@ app.get('/api/escola-coordenadas', async (req, res) => {
   if (!nome_escola) {
     return res.status(400).json({ error: 'nome_escola é obrigatório' });
   }
+
   try {
-    const query = 'SELECT latitude, longitude FROM escolas WHERE nome = $1 LIMIT 1';
-    const result = await db.query(query, [nome_escola]);
+    const query = `
+      SELECT latitude, longitude
+      FROM escolas
+      WHERE nome ILIKE $1
+      LIMIT 1
+    `;
+    const values = [`%${nome_escola}%`];
+    const result = await db.query(query, values);
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Escola não encontrada' });
     }
     return res.json(result.rows[0]);
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
