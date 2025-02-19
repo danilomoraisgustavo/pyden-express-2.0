@@ -51,9 +51,36 @@
   <div class="container my-4">
     <div class="page-inner">
       <div class="page-header">
-        <h3 class="fw-bold mb-12 center">Cadastro de Alunos</h3>
+        <h3 class="fw-bold mb-12 text-center">Cadastro de Alunos</h3>
       </div>
 
+      <!-- Início da nova Seção: Busca pelo CPF ou ID de Matrícula -->
+      <div class="row justify-content-center">
+        <div class="col-md-6 text-center mb-4">
+          <label for="buscarTermo" class="form-label">CPF ou ID de Matrícula</label>
+          <input type="text" id="buscarTermo" class="form-control text-center"
+            placeholder="Digite o CPF ou ID de Matrícula" />
+          <button type="button" id="btnBuscarAluno" class="btn btn-primary mt-3">Buscar</button>
+        </div>
+      </div>
+
+      <div class="row justify-content-center" id="aluno-info" style="display: none;">
+        <div class="col-md-8">
+          <div class="mb-3">
+            <label for="dadosAluno" class="form-label">Dados do Aluno</label>
+            <textarea id="dadosAluno" class="form-control" rows="8" readonly></textarea>
+          </div>
+          <div class="mb-3">
+            <button type="button" class="btn btn-secondary" id="btnVerificarCriterios">
+              Verificar Critérios
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Fim da nova Seção -->
+
+      <!-- Mantém a estrutura anterior, caso seja necessário aproveitar:
+           (Pode remover ou adaptar conforme a necessidade real do sistema.) -->
       <div class="row">
         <div class="col-md-12">
           <div class="card">
@@ -186,6 +213,7 @@
           </div>
         </div>
       </div>
+      <!-- Fim da estrutura anterior -->
     </div>
   </div>
 
@@ -224,7 +252,6 @@
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
-  <script src="../../assets/js/usuario.js"></script>
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
@@ -232,6 +259,7 @@
   <script>
     let map, marker, escolaMarker, directionsService, directionsRenderer;
 
+    // Inicia o mapa
     function initMap() {
       map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: -6.530066, lng: -49.85163 },
@@ -304,285 +332,7 @@
       );
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-      const buscarEnderecoBtn = document.getElementById("buscar-endereco");
-      if (buscarEnderecoBtn) {
-        buscarEnderecoBtn.addEventListener("click", async function () {
-          const cep = document.getElementById("cep").value.trim();
-          const numero = document.getElementById("numero").value.trim();
-
-          if (!cep || !numero) {
-            showNotification("danger", "Por favor, preencha o CEP e o Número.");
-            return;
-          }
-
-          const cepFormatado = cep.replace(/\D/g, "");
-          if (cepFormatado.length !== 8) {
-            showNotification(
-              "danger",
-              "CEP inválido. Por favor, insira um CEP válido."
-            );
-            return;
-          }
-
-          try {
-            const response = await fetch(
-              `https://viacep.com.br/ws/${cepFormatado}/json/`
-            );
-            const data = await response.json();
-
-            if (!data.erro) {
-              const enderecoCompleto = `${data.logradouro}, ${numero}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
-              document.getElementById("endereco").value = enderecoCompleto;
-              document.getElementById("buscar-coordenadas").disabled = false;
-              showNotification("success", "Endereço encontrado com sucesso!");
-            } else {
-              showNotification(
-                "danger",
-                "Endereço não encontrado para o CEP informado."
-              );
-              document.getElementById("buscar-coordenadas").disabled = true;
-            }
-          } catch (error) {
-            console.error("Erro ao buscar o endereço:", error);
-            showNotification(
-              "danger",
-              "Ocorreu um erro ao buscar o endereço. Tente novamente mais tarde."
-            );
-          }
-        });
-      }
-
-      const buscarCoordenadasBtn = document.getElementById("buscar-coordenadas");
-      if (buscarCoordenadasBtn) {
-        buscarCoordenadasBtn.addEventListener("click", function () {
-          const endereco = document.getElementById("endereco").value.trim();
-          if (!endereco) {
-            showNotification(
-              "danger",
-              "Endereço não disponível. Por favor, busque o endereço primeiro."
-            );
-            return;
-          }
-
-          const geocoder = new google.maps.Geocoder();
-          geocoder.geocode({ address: endereco }, function (results, status) {
-            if (status === "OK") {
-              const location = results[0].geometry.location;
-              map.setCenter(location);
-              map.setZoom(18);
-              placeMarker(location);
-              document.getElementById("latitude").value = location.lat();
-              document.getElementById("longitude").value = location.lng();
-              showNotification(
-                "success",
-                "Coordenadas geográficas obtidas com sucesso!"
-              );
-            } else {
-              showNotification("danger", "Geocode falhou devido a: " + status);
-            }
-          });
-        });
-      }
-
-      $(document).ready(function () {
-        $.getJSON("/api/escolas", function (data) {
-          var select = $("#escolaSelect");
-          $.each(data, function (key, entry) {
-            select.append(
-              $("<option></option>").attr("value", entry.id).text(entry.nome)
-            );
-          });
-        });
-      });
-
-      const verificarDireitoBtn = document.getElementById("verificar-direito");
-      if (verificarDireitoBtn) {
-        verificarDireitoBtn.addEventListener("click", async function () {
-          const latitude = document.getElementById("latitude").value;
-          const longitude = document.getElementById("longitude").value;
-          const escolaId = document.getElementById("escolaSelect")
-            ? document.getElementById("escolaSelect").value
-            : null;
-          const zoneamento = document.querySelector(
-            'input[name="zoneamento"]:checked'
-          );
-          const aee = document.querySelector('input[name="deficiencia"]:checked');
-
-          if (!zoneamento) {
-            showNotification(
-              "danger",
-              "Por favor, selecione se o aluno pertence ao zoneamento da escola."
-            );
-            return;
-          }
-
-          if (!aee) {
-            showNotification(
-              "danger",
-              "Por favor, selecione se o aluno é público do AEE."
-            );
-            return;
-          }
-
-          if (
-            aee.value === "sim" &&
-            document.getElementById("uploadLaudo").style.display !== "none" &&
-            !document.getElementById("laudoDeficiencia").files.length
-          ) {
-            showNotification(
-              "danger",
-              "Por favor, envie o laudo de deficiência antes de verificar os critérios."
-            );
-            return;
-          }
-
-          if (!latitude || !longitude || !escolaId) {
-            showNotification(
-              "danger",
-              "Por favor, preencha todas as informações necessárias."
-            );
-            return;
-          }
-
-          try {
-            const response = await fetch(
-              `/api/escola-coordenadas?escola_id=${escolaId}`
-            );
-            const data = await response.json();
-
-            if (data && data.latitude && data.longitude) {
-              const escolaLatLng = {
-                lat: parseFloat(data.latitude),
-                lng: parseFloat(data.longitude),
-              };
-
-              if (escolaMarker) {
-                escolaMarker.setPosition(escolaLatLng);
-              } else {
-                escolaMarker = new google.maps.Marker({
-                  position: escolaLatLng,
-                  map: map,
-                  icon: "../../assets/img/icones/escola-marcador.png",
-                });
-              }
-
-              calculateAndDisplayRoute(
-                latitude,
-                longitude,
-                escolaLatLng,
-                zoneamento.value,
-                aee.value
-              );
-            } else {
-              showNotification(
-                "danger",
-                "Não foi possível encontrar as coordenadas da escola."
-              );
-            }
-          } catch (error) {
-            console.error("Erro ao buscar coordenadas da escola:", error);
-            showNotification(
-              "danger",
-              "Erro ao buscar coordenadas da escola. Tente novamente mais tarde."
-            );
-          }
-        });
-      }
-
-      const confirmarSolicitacaoBtn = document.getElementById("confirmarSolicitacao");
-      if (confirmarSolicitacaoBtn) {
-        confirmarSolicitacaoBtn.addEventListener("click", async function () {
-          const form = document.getElementById("cadastro-aluno-form");
-          const formData = new FormData(form);
-
-          const obsModal = document.getElementById("observacoesModal").value.trim();
-          if (obsModal) {
-            formData.append("observacoes", obsModal);
-          }
-
-          const criterioDireito = document.getElementById("mensagemModal").textContent.trim();
-          if (criterioDireito) {
-            formData.append("criterio_direito", criterioDireito);
-          }
-
-          if (
-            !document.getElementById("comprovanteEndereco") ||
-            !document.getElementById("comprovanteEndereco").files.length
-          ) {
-            formData.delete("comprovante_endereco");
-          }
-
-          try {
-            const response = await fetch("/api/enviar-solicitacao", {
-              method: "POST",
-              body: formData,
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-              showNotification("success", "Solicitação enviada com sucesso!");
-              form.reset();
-
-              if (marker) {
-                marker.setMap(null);
-                marker = null;
-              }
-              if (escolaMarker) {
-                escolaMarker.setMap(null);
-                escolaMarker = null;
-              }
-              directionsRenderer.set("directions", null);
-              map.setCenter({ lat: -6.530066, lng: -49.85163 });
-              map.setZoom(15);
-
-              $("#modalDireito").modal("hide");
-            } else {
-              showNotification(
-                "danger",
-                `Erro ao enviar a solicitação: ${data.message}`
-              );
-            }
-          } catch (error) {
-            console.error("Erro ao enviar a solicitação:", error);
-            showNotification(
-              "danger",
-              "Erro ao enviar a solicitação. Tente novamente mais tarde."
-            );
-          }
-        });
-      }
-
-      const encerrarSolicitacaoBtn = document.getElementById("encerrarSolicitacao");
-      if (encerrarSolicitacaoBtn) {
-        encerrarSolicitacaoBtn.addEventListener("click", function () {
-          showNotification("info", "Solicitação encerrada.");
-          $("#modalDireito").modal("hide");
-        });
-      }
-
-      $("#cpfResponsavel").on("input", function () {
-        let cpf = $(this).val().replace(/\D/g, "");
-        if (cpf.length > 11) {
-          cpf = cpf.substring(0, 11);
-        }
-        cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
-        cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
-        cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-        $(this).val(cpf);
-      });
-
-      $("#celularResponsavel").on("input", function () {
-        let celular = $(this).val().replace(/\D/g, "");
-        if (celular.length > 11) {
-          celular = celular.substring(0, 11);
-        }
-        celular = celular.replace(/(\d{2})(\d)/, "($1) $2");
-        celular = celular.replace(/(\d{5})(\d{1,4})$/, "$1-$2");
-        $(this).val(celular);
-      });
-    });
-
+    // Mostra ou esconde o upload de laudo
     function mostrarUpload(mostrar) {
       const uploadDiv = document.getElementById("uploadLaudo");
       if (mostrar) {
@@ -596,6 +346,7 @@
       }
     }
 
+    // Calcula rota
     function calculateAndDisplayRoute(alunoLat, alunoLng, escolaLatLng, zoneamento, aee) {
       const alunoLatLng = new google.maps.LatLng(alunoLat, alunoLng);
       const request = {
@@ -644,7 +395,350 @@
       });
     }
 
-    initMap();
+    document.addEventListener("DOMContentLoaded", function () {
+      // Carrega mapa
+      initMap();
+
+      // Preenche select de escolas (exemplo)
+      $(document).ready(function () {
+        $.getJSON("/api/escolas", function (data) {
+          var select = $("#escolaSelect");
+          $.each(data, function (key, entry) {
+            select.append(
+              $("<option></option>").attr("value", entry.id).text(entry.nome)
+            );
+          });
+        });
+      });
+
+      // Buscar Endereço
+      $("#buscar-endereco").on("click", async function () {
+        const cep = $("#cep").val().trim();
+        const numero = $("#numero").val().trim();
+
+        if (!cep || !numero) {
+          showNotification("danger", "Por favor, preencha o CEP e o Número.");
+          return;
+        }
+
+        const cepFormatado = cep.replace(/\D/g, "");
+        if (cepFormatado.length !== 8) {
+          showNotification(
+            "danger",
+            "CEP inválido. Por favor, insira um CEP válido."
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch(`https://viacep.com.br/ws/${cepFormatado}/json/`);
+          const data = await response.json();
+
+          if (!data.erro) {
+            const enderecoCompleto = `${data.logradouro}, ${numero}, ${data.bairro}, ${data.localidade} - ${data.uf}`;
+            $("#endereco").val(enderecoCompleto);
+            $("#buscar-coordenadas").prop("disabled", false);
+            showNotification("success", "Endereço encontrado com sucesso!");
+          } else {
+            showNotification(
+              "danger",
+              "Endereço não encontrado para o CEP informado."
+            );
+            $("#buscar-coordenadas").prop("disabled", true);
+          }
+        } catch (error) {
+          console.error("Erro ao buscar o endereço:", error);
+          showNotification(
+            "danger",
+            "Ocorreu um erro ao buscar o endereço. Tente novamente mais tarde."
+          );
+        }
+      });
+
+      // Buscar Coordenadas
+      $("#buscar-coordenadas").on("click", function () {
+        const endereco = $("#endereco").val().trim();
+        if (!endereco) {
+          showNotification(
+            "danger",
+            "Endereço não disponível. Por favor, busque o endereço primeiro."
+          );
+          return;
+        }
+
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: endereco }, function (results, status) {
+          if (status === "OK") {
+            const location = results[0].geometry.location;
+            map.setCenter(location);
+            map.setZoom(18);
+            placeMarker(location);
+            $("#latitude").val(location.lat());
+            $("#longitude").val(location.lng());
+            showNotification(
+              "success",
+              "Coordenadas geográficas obtidas com sucesso!"
+            );
+          } else {
+            showNotification("danger", "Geocode falhou devido a: " + status);
+          }
+        });
+      });
+
+      // Verificar Critérios (rota)
+      $("#verificar-direito").on("click", async function () {
+        const latitude = $("#latitude").val();
+        const longitude = $("#longitude").val();
+        const escolaId = $("#escolaSelect").val();
+        const zoneamento = $('input[name="zoneamento"]:checked').val();
+        const aee = $('input[name="deficiencia"]:checked').val();
+
+        if (!zoneamento) {
+          showNotification(
+            "danger",
+            "Por favor, selecione se o aluno pertence ao zoneamento da escola."
+          );
+          return;
+        }
+
+        if (!aee) {
+          showNotification(
+            "danger",
+            "Por favor, selecione se o aluno é público do AEE."
+          );
+          return;
+        }
+
+        if (
+          aee === "sim" &&
+          $("#uploadLaudo").css("display") !== "none" &&
+          !$("#laudoDeficiencia")[0].files.length
+        ) {
+          showNotification(
+            "danger",
+            "Por favor, envie o laudo de deficiência antes de verificar os critérios."
+          );
+          return;
+        }
+
+        if (!latitude || !longitude || !escolaId) {
+          showNotification(
+            "danger",
+            "Por favor, preencha todas as informações necessárias."
+          );
+          return;
+        }
+
+        try {
+          // Busca coordenadas da escola (exemplo)
+          const response = await fetch(`/api/escola-coordenadas?escola_id=${escolaId}`);
+          const data = await response.json();
+
+          if (data && data.latitude && data.longitude) {
+            const escolaLatLng = {
+              lat: parseFloat(data.latitude),
+              lng: parseFloat(data.longitude),
+            };
+
+            if (escolaMarker) {
+              escolaMarker.setPosition(escolaLatLng);
+            } else {
+              escolaMarker = new google.maps.Marker({
+                position: escolaLatLng,
+                map: map,
+                icon: "../../assets/img/icones/escola-marcador.png",
+              });
+            }
+
+            calculateAndDisplayRoute(
+              latitude,
+              longitude,
+              escolaLatLng,
+              zoneamento,
+              aee
+            );
+          } else {
+            showNotification(
+              "danger",
+              "Não foi possível encontrar as coordenadas da escola."
+            );
+          }
+        } catch (error) {
+          console.error("Erro ao buscar coordenadas da escola:", error);
+          showNotification(
+            "danger",
+            "Erro ao buscar coordenadas da escola. Tente novamente mais tarde."
+          );
+        }
+      });
+
+      // Enviar Solicitação
+      $("#confirmarSolicitacao").on("click", async function () {
+        const form = document.getElementById("cadastro-aluno-form");
+        const formData = new FormData(form);
+
+        const obsModal = $("#observacoesModal").val().trim();
+        if (obsModal) {
+          formData.append("observacoes", obsModal);
+        }
+
+        const criterioDireito = $("#mensagemModal").text().trim();
+        if (criterioDireito) {
+          formData.append("criterio_direito", criterioDireito);
+        }
+
+        if (!$("#comprovanteEndereco")[0] || !$("#comprovanteEndereco")[0].files.length) {
+          formData.delete("comprovante_endereco");
+        }
+
+        try {
+          const response = await fetch("/api/enviar-solicitacao", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await response.json();
+
+          if (response.ok) {
+            showNotification("success", "Solicitação enviada com sucesso!");
+            form.reset();
+
+            if (marker) {
+              marker.setMap(null);
+              marker = null;
+            }
+            if (escolaMarker) {
+              escolaMarker.setMap(null);
+              escolaMarker = null;
+            }
+            directionsRenderer.set("directions", null);
+            map.setCenter({ lat: -6.530066, lng: -49.85163 });
+            map.setZoom(15);
+
+            $("#modalDireito").modal("hide");
+          } else {
+            showNotification(
+              "danger",
+              `Erro ao enviar a solicitação: ${data.message}`
+            );
+          }
+        } catch (error) {
+          console.error("Erro ao enviar a solicitação:", error);
+          showNotification(
+            "danger",
+            "Erro ao enviar a solicitação. Tente novamente mais tarde."
+          );
+        }
+      });
+
+      // Encerrar Solicitação
+      $("#encerrarSolicitacao").on("click", function () {
+        showNotification("info", "Solicitação encerrada.");
+        $("#modalDireito").modal("hide");
+      });
+
+      // Mascara CPF
+      $("#cpfResponsavel").on("input", function () {
+        let cpf = $(this).val().replace(/\D/g, "");
+        if (cpf.length > 11) {
+          cpf = cpf.substring(0, 11);
+        }
+        cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+        cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+        cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        $(this).val(cpf);
+      });
+
+      // Mascara Celular
+      $("#celularResponsavel").on("input", function () {
+        let celular = $(this).val().replace(/\D/g, "");
+        if (celular.length > 11) {
+          celular = celular.substring(0, 11);
+        }
+        celular = celular.replace(/(\d{2})(\d)/, "($1) $2");
+        celular = celular.replace(/(\d{5})(\d{1,4})$/, "$1-$2");
+        $(this).val(celular);
+      });
+
+      // Clique em "Buscar" para procurar aluno
+      $("#btnBuscarAluno").on("click", async function () {
+        const termo = $("#buscarTermo").val().trim();
+        if (!termo) {
+          showNotification("danger", "Por favor, informe o CPF ou ID de Matrícula.");
+          return;
+        }
+
+        // Exemplo de chamada a uma API que faz a busca no banco de dados
+        try {
+          // Ajuste a rota "/api/buscar-aluno" conforme a implementação do seu back-end
+          const response = await fetch(`/api/buscar-aluno?termo=${termo}`);
+          const data = await response.json();
+
+          if (response.ok && data) {
+            /*
+              Exemplo de retorno esperado de data:
+              {
+                id_matricula: 123,
+                pessoa_nome: "Fulano de Tal",
+                escola_nome: "Escola Exemplo",
+                turma: "3A",
+                cpf: "123.456.789-00",
+                cep: "68537-000",
+                bairro: "Centro",
+                numero_pessoa_endereco: "123",
+                filiacao_1: "Mãe Exemplo",
+                numero_telefone: "(94) 99999-9999",
+                filiacao_2: "Pai Exemplo",
+                responsavel: "Responsável Exemplo",
+                deficiencia: ["Deficiência Auditiva"]
+              }
+            */
+            const {
+              id_matricula,
+              pessoa_nome,
+              escola_nome,
+              turma,
+              cpf,
+              cep,
+              bairro,
+              numero_pessoa_endereco,
+              filiacao_1,
+              numero_telefone,
+              filiacao_2,
+              responsavel,
+              deficiencia,
+            } = data;
+
+            // Monta o texto a ser exibido
+            const textoAluno = `
+ID Matrícula: ${id_matricula}
+Nome: ${pessoa_nome}
+Escola: ${escola_nome}
+Turma: ${turma}
+CPF: ${cpf}
+CEP: ${cep}
+Bairro: ${bairro}
+Número Endereço: ${numero_pessoa_endereco}
+Filiação 1: ${filiacao_1}
+Telefone: ${numero_telefone}
+Filiação 2: ${filiacao_2}
+Responsável: ${responsavel}
+Deficiência(s): ${deficiencia && deficiencia.length > 0 ? deficiencia.join(", ") : "Nenhuma"}
+            `;
+
+            $("#dadosAluno").val(textoAluno.trim());
+            $("#aluno-info").show();
+            showNotification("success", "Aluno encontrado com sucesso!");
+          } else {
+            showNotification("danger", "Aluno não encontrado ou erro na busca.");
+            $("#aluno-info").hide();
+          }
+        } catch (error) {
+          console.error("Erro ao buscar aluno:", error);
+          showNotification("danger", "Ocorreu um erro ao buscar o aluno.");
+          $("#aluno-info").hide();
+        }
+      });
+    });
   </script>
 </body>
 
