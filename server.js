@@ -4536,6 +4536,94 @@ app.get("/api/alunos-transporte-publico", async (req, res) => {
   }
 });
 
+app.get("/api/alunos_ativos", async (req, res) => {
+  try {
+    const search = req.query.search ? req.query.search.trim() : "";
+    // Se não informar nada, retornamos null ou algo que indique "não encontrado"
+    if (!search) {
+      return res.json(null);
+    }
+
+    // Consulta: busca por CPF exato OU ID de Matrícula exato.
+    // Ajuste a query conforme necessário (pode usar UPPER ou LIKE se preferir).
+    const query = `
+      SELECT
+        a.id,
+        a.id_matricula,
+        a.pessoa_nome,
+        a.cpf,
+        a.cep,
+        a.bairro,
+        a.numero_pessoa_endereco,
+        a.filiacao_1,
+        a.numero_telefone,
+        a.filiacao_2,
+        a.responsavel,
+        a.deficiencia,
+        a.turma,
+        e.nome AS escola_nome
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.cpf = $1
+         OR CAST(a.id_matricula AS TEXT) = $1
+      LIMIT 1
+    `;
+    const result = await pool.query(query, [search]);
+
+    if (result.rows.length === 0) {
+      // Nenhum aluno encontrado
+      return res.json(null);
+    }
+    // Retorna o primeiro (e único) encontrado
+    return res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Erro ao buscar aluno por CPF/ID:", error);
+    return res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
+
+// 2) Rota para buscar as coordenadas de uma escola por NOME
+//    A página chama: fetch(`/api/escola-coordenadas?nome_escola=NOMEESCOLA`)
+app.get("/api/escola-coordenadas", async (req, res) => {
+  try {
+    const { nome_escola } = req.query;
+    if (!nome_escola) {
+      return res.status(400).json({ error: "Parâmetro nome_escola é obrigatório" });
+    }
+
+    // Ajuste a query conforme o nome real da coluna 'nome' na tabela 'escolas'
+    // Aqui usamos case-insensitive:
+    const query = `
+      SELECT latitude, longitude
+      FROM escolas
+      WHERE UPPER(nome) = UPPER($1)
+      LIMIT 1
+    `;
+    const result = await pool.query(query, [nome_escola]);
+
+    if (result.rows.length === 0) {
+      // Não achou escola
+      return res.status(404).json({ error: "Escola não encontrada pelo nome informado." });
+    }
+
+    const { latitude, longitude } = result.rows[0];
+    if (latitude == null || longitude == null) {
+      return res.status(404).json({
+        error: "Escola encontrada, mas não possui coordenadas (latitude/longitude)."
+      });
+    }
+
+    // Retorna exatamente { latitude, longitude } no corpo JSON
+    return res.json({
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude)
+    });
+  } catch (error) {
+    console.error("Erro ao buscar coordenadas da escola:", error);
+    return res.status(500).json({ error: "Erro interno do servidor." });
+  }
+});
+
 app.get("/api/alunos-mapa", async (req, res) => {
   try {
     const { escola_id, busca } = req.query;
@@ -5594,43 +5682,56 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 });
 
 // Rotas (exemplo) - Ajustando para permitir filtros na query
-app.get('/api/alunos_ativos', async (req, res) => {
+app.get("/api/alunos-ativos", async (req, res) => {
   try {
-    const { search } = req.query
-    if (!search) return res.status(400).json({ error: 'Parametro search é obrigatório.' })
-    const sql = `
-      SELECT a.id_matricula,
-             p.nome AS pessoa_nome,
-             e.nome AS escola_nome,
-             a.turma,
-             p.cpf,
-             p.cep,
-             p.bairro,
-             p.numero AS numero_pessoa_endereco,
-             p.filiacao_1,
-             t.numero AS numero_telefone,
-             p.filiacao_2,
-             p.responsavel,
-             COALESCE(array_agg(d.descricao) FILTER (WHERE d.descricao IS NOT NULL), '{}') AS deficiencia
-        FROM alunos a
-        JOIN pessoa p ON a.pessoa_id = p.id
-        JOIN escolas e ON a.escola_id = e.id
-        LEFT JOIN telefone t ON t.pessoa_id = p.id
-        LEFT JOIN deficiencias d ON d.pessoa_id = p.id
-       WHERE p.cpf = $1
-          OR CAST(a.id_matricula AS TEXT) = $1
-       GROUP BY a.id_matricula, p.nome, e.nome, a.turma, p.cpf, p.cep, p.bairro, p.numero,
-                p.filiacao_1, p.filiacao_2, p.responsavel, t.numero
-       LIMIT 1
-    `
-    const { rows } = await pool.query(sql, [search])
-    if (!rows.length) return res.json({})
-    res.json(rows[0])
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar aluno.' })
-  }
-})
+    let { escola, bairro, cep, search } = req.query;
+    escola = escola || "";
+    bairro = bairro || "";
+    cep = cep || "";
+    search = search || "";
 
+    // Ajuste ou substitua conforme sua lógica de WHERE
+    // Exemplo simples:
+    let whereClauses = [];
+    if (escola) {
+      whereClauses.push(`e.nome ILIKE '%${escola}%'`);
+    }
+    if (bairro) {
+      whereClauses.push(`a.bairro ILIKE '%${bairro}%'`);
+    }
+    if (cep) {
+      whereClauses.push(`a.cep ILIKE '%${cep}%'`);
+    }
+    if (search) {
+      whereClauses.push(`
+        (a.pessoa_nome ILIKE '%${search}%'
+         OR a.id_matricula ILIKE '%${search}%'
+         OR a.cpf ILIKE '%${search}%')
+      `);
+    }
+    let whereStr = "";
+    if (whereClauses.length) {
+      whereStr = "WHERE " + whereClauses.join(" AND ");
+    }
+
+    const query = `
+      SELECT a.*,
+             e.nome AS escola_nome
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      ${whereStr}
+      ORDER BY a.id DESC
+    `;
+    const result = await pool.query(query);
+    return res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao buscar alunos.",
+    });
+  }
+});
 
 
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
@@ -5653,36 +5754,6 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
       success: false,
       message: "Erro ao excluir o aluno.",
     });
-  }
-});
-
-app.get('/api/alunos_ativos', async (req, res) => {
-  const { search } = req.query;
-  try {
-    const isNumeric = /^\d+$/.test(search);
-    let query =
-      'SELECT a.id_matricula, a.pessoa_nome, e.nome AS escola_nome, a.turma, a.cpf, a.cep, a.bairro, a.numero_pessoa_endereco, a.filiacao_1, a.numero_telefone, a.filiacao_2, a.responsavel, a.deficiencia ' +
-      'FROM alunos_ativos a ' +
-      'JOIN escolas e ON a.escola_id = e.id ' +
-      'WHERE a.cpf = $1 LIMIT 1';
-
-    if (isNumeric) {
-      query =
-        'SELECT a.id_matricula, a.pessoa_nome, e.nome AS escola_nome, a.turma, a.cpf, a.cep, a.bairro, a.numero_pessoa_endereco, a.filiacao_1, a.numero_telefone, a.filiacao_2, a.responsavel, a.deficiencia ' +
-        'FROM alunos_ativos a ' +
-        'JOIN escolas e ON a.escola_id = e.id ' +
-        'WHERE a.id_matricula = $1 LIMIT 1';
-    }
-
-    const result = await pool.query(query, [search]);
-    if (result.rows.length > 0) {
-      return res.json(result.rows[0]);
-    } else {
-      return res.json({});
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
