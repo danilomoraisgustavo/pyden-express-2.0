@@ -2412,7 +2412,7 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
       complementoPonto,
       pontoReferenciaPonto,
       bairroPonto,
-      cepPonto,
+      cepPonto
     } = req.body;
 
     const zoneamentosPonto = JSON.parse(req.body.zoneamentosPonto || "[]");
@@ -2440,20 +2440,20 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
       complementoPonto || null,
       pontoReferenciaPonto || null,
       bairroPonto || null,
-      cepPonto || null,
+      cepPonto || null
     ];
     const result = await pool.query(insertPontoQuery, values);
     if (result.rows.length === 0) {
       return res.status(500).json({
         success: false,
-        message: "Erro ao cadastrar ponto.",
+        message: "Erro ao cadastrar ponto."
       });
     }
     const pontoId = result.rows[0].id;
 
     await pool.query("UPDATE pontos SET nome_ponto = $1 WHERE id = $2", [
       pontoId.toString(),
-      pontoId,
+      pontoId
     ]);
 
     if (zoneamentosPonto.length > 0) {
@@ -2475,13 +2475,13 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Ponto de parada cadastrado com sucesso!",
+      message: "Ponto de parada cadastrado com sucesso!"
     });
   } catch (error) {
     console.error("Erro interno ao cadastrar ponto:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro interno do servidor.",
+      message: "Erro interno do servidor."
     });
   }
 });
@@ -2496,7 +2496,7 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
     if (!pontos || !Array.isArray(pontos) || pontos.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Nenhum ponto fornecido.",
+        message: "Nenhum ponto fornecido."
       });
     }
 
@@ -2512,7 +2512,8 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
         complemento,
         referencia,
         bairro,
-        cep
+        cep,
+        zona
       } = p;
 
       const insertPontoQuery = `
@@ -2537,16 +2538,37 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
         complemento || null,
         referencia || null,
         bairro || null,
-        cep || null,
+        cep || null
       ];
-
       const result = await client.query(insertPontoQuery, values);
       const pontoId = result.rows[0].id;
 
       await client.query("UPDATE pontos SET nome_ponto = $1 WHERE id = $2", [
         pontoId.toString(),
-        pontoId,
+        pontoId
       ]);
+
+      if (zona && zona !== "N/A") {
+        const zonaResult = await client.query(
+          `SELECT id FROM zoneamentos WHERE nome = $1 LIMIT 1`,
+          [zona]
+        );
+        let zoneamentoId;
+        if (zonaResult.rowCount > 0) {
+          zoneamentoId = zonaResult.rows[0].id;
+        } else {
+          const insertZona = await client.query(
+            `INSERT INTO zoneamentos (nome) VALUES ($1) RETURNING id`,
+            [zona]
+          );
+          zoneamentoId = insertZona.rows[0].id;
+        }
+        await client.query(
+          `INSERT INTO pontos_zoneamentos (ponto_id, zoneamento_id)
+           VALUES ($1, $2)`,
+          [pontoId, zoneamentoId]
+        );
+      }
 
       if (zoneamentos && zoneamentos.length > 0) {
         const insertZonaPontoQuery = `
@@ -2570,19 +2592,20 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Pontos de parada cadastrados com sucesso!",
+      message: "Pontos de parada cadastrados com sucesso!"
     });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Erro ao cadastrar múltiplos pontos:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro interno do servidor ao cadastrar múltiplos pontos.",
+      message: "Erro interno do servidor ao cadastrar múltiplos pontos."
     });
   } finally {
     client.release();
   }
 });
+
 
 app.get("/api/pontos", async (req, res) => {
   try {
