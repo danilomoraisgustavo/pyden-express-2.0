@@ -16,13 +16,13 @@
           "Font Awesome 5 Solid",
           "Font Awesome 5 Regular",
           "Font Awesome 5 Brands",
-          "simple-line-icons",
+          "simple-line-icons"
         ],
-        urls: ["../../assets/css/fonts.min.css"],
+        urls: ["../../assets/css/fonts.min.css"]
       },
       active: function () {
         sessionStorage.fonts = true;
-      },
+      }
     });
   </script>
 
@@ -30,6 +30,8 @@
   <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
 </head>
 
 <body>
@@ -46,7 +48,6 @@
               <div class="card-title">Consulta de Aluno</div>
             </div>
             <div class="card-body">
-              <!-- Campo de busca (CPF ou ID de Matrícula) -->
               <div class="row justify-content-center">
                 <div class="col-md-6 text-center">
                   <label for="inputBusca" class="form-label">
@@ -58,7 +59,6 @@
                 </div>
               </div>
 
-              <!-- Exibição dos dados do aluno -->
               <div class="row justify-content-center mt-4">
                 <div class="col-md-8">
                   <div class="d-none" id="dadosAlunoContainer">
@@ -72,14 +72,34 @@
                   </div>
                 </div>
               </div>
-            </div> <!-- Fim card-body -->
-          </div> <!-- Fim card -->
+            </div>
+          </div>
+          <!-- Modal -->
+          <div class="modal fade" id="modalCriterios" tabindex="-1" aria-labelledby="modalCriteriosLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalCriteriosLabel">Mapa - Critérios</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3" id="map" style="height: 500px; width: 100%;"></div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Fim Modal -->
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Scripts -->
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -88,6 +108,11 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
 
   <script>
+    let alunoData = null;
+    let map;
+    let markerAluno;
+    let markerEscola;
+
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
     const dadosAlunoContainer = document.getElementById("dadosAlunoContainer");
@@ -113,6 +138,8 @@
           return;
         }
 
+        alunoData = data;
+
         let textoExibicao = "";
         textoExibicao += `ID Matrícula: ${data.id_matricula || ""}\n`;
         textoExibicao += `Nome do Aluno: ${data.pessoa_nome || ""}\n`;
@@ -127,8 +154,8 @@
         textoExibicao += `Filiação 2: ${data.filiacao_2 || ""}\n`;
         textoExibicao += `Responsável: ${data.responsavel || ""}\n`;
         textoExibicao += `Deficiência: ${data.deficiencia && data.deficiencia.length
-          ? data.deficiencia.join(", ")
-          : "Não informado"
+            ? data.deficiencia.join(", ")
+            : "Não informado"
           }\n`;
 
         dadosAluno.value = textoExibicao;
@@ -139,8 +166,67 @@
       }
     });
 
-    verificarCriterios.addEventListener("click", () => {
-      alert("Verificando critérios...");
+    verificarCriterios.addEventListener("click", async () => {
+      if (!alunoData || !alunoData.id_matricula) {
+        alert("Nenhum aluno selecionado.");
+        return;
+      }
+
+      try {
+        const escolaResponse = await fetch(`/api/escola_info?id=${alunoData.escola_id}`);
+        if (!escolaResponse.ok) {
+          throw new Error("Erro ao buscar dados da escola.");
+        }
+        const escolaData = await escolaResponse.json();
+
+        $("#modalCriterios").modal("show");
+
+        setTimeout(async () => {
+          if (!map) {
+            map = new google.maps.Map(document.getElementById("map"), {
+              center: { lat: -6.530066, lng: -49.85163 },
+              zoom: 14,
+              mapTypeId: "roadmap"
+            });
+          }
+
+          if (markerAluno) {
+            markerAluno.setMap(null);
+          }
+          if (markerEscola) {
+            markerEscola.setMap(null);
+          }
+
+          let alunoAddress = `${alunoData.cep || ""}, ${alunoData.numero_pessoa_endereco || ""}, Canaã dos Carajás, Pará, Brasil`;
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ address: alunoAddress }, (results, status) => {
+            if (status === "OK" && results[0]) {
+              const alunoLatLng = results[0].geometry.location;
+              markerAluno = new google.maps.Marker({
+                position: alunoLatLng,
+                map: map,
+                icon: "../../assets/img/icones/boneco.png"
+              });
+              map.setCenter(alunoLatLng);
+            }
+          });
+
+          if (escolaData && escolaData.latitude && escolaData.longitude) {
+            const escolaLatLng = {
+              lat: parseFloat(escolaData.latitude),
+              lng: parseFloat(escolaData.longitude)
+            };
+            markerEscola = new google.maps.Marker({
+              position: escolaLatLng,
+              map: map,
+              icon: "../../assets/img/icones/casinha.png"
+            });
+          }
+        }, 500);
+      } catch (error) {
+        console.error(error);
+        alert("Ocorreu um erro ao buscar dados para verificar os critérios.");
+      }
     });
   </script>
 </body>
