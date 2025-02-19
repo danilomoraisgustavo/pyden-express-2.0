@@ -117,6 +117,9 @@ app.use(
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/login-cadastro.html"));
 });
+app.get("/solicitar-rota.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/solicitar-rota.html"));
+});
 
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
@@ -2605,7 +2608,6 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
     client.release();
   }
 });
-
 
 app.get("/api/pontos", async (req, res) => {
   try {
