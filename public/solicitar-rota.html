@@ -83,7 +83,6 @@
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
-  <script src="../../assets/js/usuario.js"></script>
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
@@ -128,8 +127,8 @@
         textoExibicao += `Filiação 2: ${data.filiacao_2 || ""}\n`;
         textoExibicao += `Responsável: ${data.responsavel || ""}\n`;
         textoExibicao += `Deficiência: ${data.deficiencia && data.deficiencia.length
-            ? data.deficiencia.join(", ")
-            : "Não informado"
+          ? data.deficiencia.join(", ")
+          : "Não informado"
           }\n`;
 
         dadosAluno.value = textoExibicao;
