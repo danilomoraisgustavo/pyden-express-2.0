@@ -5669,6 +5669,37 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
+app.get('/api/alunos_ativos', async (req, res) => {
+  const { search } = req.query;
+  try {
+    const isNumeric = /^\d+$/.test(search);
+    let query =
+      'SELECT a.id_matricula, a.pessoa_nome, e.nome AS escola_nome, a.turma, a.cpf, a.cep, a.bairro, a.numero_pessoa_endereco, a.filiacao_1, a.numero_telefone, a.filiacao_2, a.responsavel, a.deficiencia ' +
+      'FROM alunos_ativos a ' +
+      'JOIN escolas e ON a.escola_id = e.id ' +
+      'WHERE a.cpf = $1 LIMIT 1';
+
+    if (isNumeric) {
+      query =
+        'SELECT a.id_matricula, a.pessoa_nome, e.nome AS escola_nome, a.turma, a.cpf, a.cep, a.bairro, a.numero_pessoa_endereco, a.filiacao_1, a.numero_telefone, a.filiacao_2, a.responsavel, a.deficiencia ' +
+        'FROM alunos_ativos a ' +
+        'JOIN escolas e ON a.escola_id = e.id ' +
+        'WHERE a.id_matricula = $1 LIMIT 1';
+    }
+
+    const result = await db.query(query, [search]);
+    if (result.rows.length > 0) {
+      return res.json(result.rows[0]);
+    } else {
+      return res.json({});
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+
 app.put("/api/alunos-ativos/:id", async (req, res) => {
   try {
     const { id } = req.params;
