@@ -30,8 +30,12 @@
   <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
-
-  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+  <style>
+    #mapCriterios {
+      width: 100%;
+      height: 400px;
+    }
+  </style>
 </head>
 
 <body>
@@ -58,7 +62,6 @@
                   <button id="btnBuscar" class="btn btn-primary mt-3">Buscar</button>
                 </div>
               </div>
-
               <div class="row justify-content-center mt-4">
                 <div class="col-md-8">
                   <div class="d-none" id="dadosAlunoContainer">
@@ -74,50 +77,52 @@
               </div>
             </div>
           </div>
-          <!-- Modal -->
-          <div class="modal fade" id="modalCriterios" tabindex="-1" aria-labelledby="modalCriteriosLabel"
+          <!-- Modal Mapa -->
+          <div class="modal fade" id="modalMapaCriterios" tabindex="-1" aria-labelledby="modalMapaCriteriosLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="modalCriteriosLabel">Mapa - Critérios</h5>
+                  <h5 class="modal-title" id="modalMapaCriteriosLabel">Mapa e Distância</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                  <div class="mb-3" id="map" style="height: 500px; width: 100%;"></div>
+                  <div id="mapCriterios"></div>
+                  <div class="mt-3">
+                    <strong>Distância:</strong> <span id="distanciaRota">--</span>
+                  </div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
                     Fechar
                   </button>
                 </div>
               </div>
             </div>
           </div>
-          <!-- Fim Modal -->
+          <!-- Fim Modal Mapa -->
         </div>
       </div>
     </div>
   </div>
 
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
-
   <script>
     let alunoData = null;
-    let map;
-    let markerAluno;
-    let markerEscola;
-
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
     const dadosAlunoContainer = document.getElementById("dadosAlunoContainer");
     const dadosAluno = document.getElementById("dadosAluno");
     const verificarCriterios = document.getElementById("verificarCriterios");
+    const modalMapaCriterios = new bootstrap.Modal(document.getElementById("modalMapaCriterios"));
+    const distanciaRota = document.getElementById("distanciaRota");
+    let map, directionsService, directionsRenderer;
 
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
@@ -125,21 +130,17 @@
         alert("Por favor, informe o CPF ou o ID de Matrícula.");
         return;
       }
-
       try {
         const response = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
         if (!response.ok) {
           throw new Error("Erro ao buscar dados do aluno.");
         }
         const data = await response.json();
-
         if (!data || !data.id_matricula) {
           alert("Nenhum aluno encontrado para o valor informado.");
           return;
         }
-
         alunoData = data;
-
         let textoExibicao = "";
         textoExibicao += `ID Matrícula: ${data.id_matricula || ""}\n`;
         textoExibicao += `Nome do Aluno: ${data.pessoa_nome || ""}\n`;
@@ -154,10 +155,9 @@
         textoExibicao += `Filiação 2: ${data.filiacao_2 || ""}\n`;
         textoExibicao += `Responsável: ${data.responsavel || ""}\n`;
         textoExibicao += `Deficiência: ${data.deficiencia && data.deficiencia.length
-            ? data.deficiencia.join(", ")
-            : "Não informado"
+          ? data.deficiencia.join(", ")
+          : "Não informado"
           }\n`;
-
         dadosAluno.value = textoExibicao;
         dadosAlunoContainer.classList.remove("d-none");
       } catch (error) {
@@ -167,67 +167,82 @@
     });
 
     verificarCriterios.addEventListener("click", async () => {
-      if (!alunoData || !alunoData.id_matricula) {
-        alert("Nenhum aluno selecionado.");
+      if (!alunoData) {
         return;
       }
-
-      try {
-        const escolaResponse = await fetch(`/api/escola_info?id=${alunoData.escola_id}`);
-        if (!escolaResponse.ok) {
-          throw new Error("Erro ao buscar dados da escola.");
-        }
-        const escolaData = await escolaResponse.json();
-
-        $("#modalCriterios").modal("show");
-
-        setTimeout(async () => {
-          if (!map) {
-            map = new google.maps.Map(document.getElementById("map"), {
-              center: { lat: -6.530066, lng: -49.85163 },
-              zoom: 14,
-              mapTypeId: "roadmap"
-            });
-          }
-
-          if (markerAluno) {
-            markerAluno.setMap(null);
-          }
-          if (markerEscola) {
-            markerEscola.setMap(null);
-          }
-
-          let alunoAddress = `${alunoData.cep || ""}, ${alunoData.numero_pessoa_endereco || ""}, Canaã dos Carajás, Pará, Brasil`;
-          const geocoder = new google.maps.Geocoder();
-          geocoder.geocode({ address: alunoAddress }, (results, status) => {
-            if (status === "OK" && results[0]) {
-              const alunoLatLng = results[0].geometry.location;
-              markerAluno = new google.maps.Marker({
-                position: alunoLatLng,
-                map: map,
-                icon: "../../assets/img/icones/boneco.png"
-              });
-              map.setCenter(alunoLatLng);
-            }
-          });
-
-          if (escolaData && escolaData.latitude && escolaData.longitude) {
-            const escolaLatLng = {
-              lat: parseFloat(escolaData.latitude),
-              lng: parseFloat(escolaData.longitude)
-            };
-            markerEscola = new google.maps.Marker({
-              position: escolaLatLng,
-              map: map,
-              icon: "../../assets/img/icones/casinha.png"
-            });
-          }
-        }, 500);
-      } catch (error) {
-        console.error(error);
-        alert("Ocorreu um erro ao buscar dados para verificar os critérios.");
-      }
+      modalMapaCriterios.show();
+      setTimeout(() => {
+        initMap(alunoData);
+      }, 500);
     });
+
+    async function initMap(data) {
+      if (!map) {
+        map = new google.maps.Map(document.getElementById("mapCriterios"), {
+          center: { lat: -6.530066, lng: -49.85163 },
+          zoom: 14,
+          mapTypeId: "roadmap",
+        });
+      }
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: "#0000FF",
+          strokeOpacity: 0.7,
+          strokeWeight: 5
+        }
+      });
+      distanciaRota.textContent = "--";
+      const escolaResponse = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(data.escola_nome)}`);
+      const escolaData = await escolaResponse.json();
+      if (!escolaData || !escolaData.longitude || !escolaData.latitude) {
+        alert("Não foi possível localizar a escola.");
+        return;
+      }
+      const escolaPos = new google.maps.LatLng(escolaData.latitude, escolaData.longitude);
+      const enderecoAluno = `${data.cep}, ${data.bairro}, ${data.numero_pessoa_endereco}, Canaã dos Carajás, Pará, Brasil`;
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: enderecoAluno }, (results, status) => {
+        if (status === "OK") {
+          const alunoPos = results[0].geometry.location;
+          const markerAluno = new google.maps.Marker({
+            position: alunoPos,
+            map: map,
+            icon: "https://maps.google.com/mapfiles/kml/shapes/man.png"
+          });
+          const markerEscola = new google.maps.Marker({
+            position: escolaPos,
+            map: map,
+            icon: "https://maps.google.com/mapfiles/kml/shapes/schools_maps.png"
+          });
+          map.setCenter(alunoPos);
+          calcularRota(alunoPos, escolaPos);
+        } else {
+          alert("Não foi possível localizar o endereço do aluno.");
+        }
+      });
+    }
+
+    function calcularRota(alunoPos, escolaPos) {
+      const request = {
+        origin: alunoPos,
+        destination: escolaPos,
+        travelMode: google.maps.TravelMode.WALKING
+      };
+      directionsService.route(request, (result, status) => {
+        if (status === "OK") {
+          directionsRenderer.setDirections(result);
+          const distanceMeters = result.routes[0].legs[0].distance.value;
+          const distanceKm = (distanceMeters / 1000).toFixed(2);
+          distanciaRota.textContent = distanceKm + " km";
+        } else {
+          distanciaRota.textContent = "--";
+          alert("Não foi possível calcular a rota.");
+        }
+      });
+    }
   </script>
 </body>
 
