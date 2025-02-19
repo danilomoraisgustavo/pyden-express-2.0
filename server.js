@@ -5687,7 +5687,7 @@ app.get('/api/alunos_ativos', async (req, res) => {
         'WHERE a.id_matricula = $1 LIMIT 1';
     }
 
-    const result = await db.query(query, [search]);
+    const result = await pool.query(query, [search]);
     if (result.rows.length > 0) {
       return res.json(result.rows[0]);
     } else {
@@ -5698,7 +5698,6 @@ app.get('/api/alunos_ativos', async (req, res) => {
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
-
 
 app.put("/api/alunos-ativos/:id", async (req, res) => {
   try {
