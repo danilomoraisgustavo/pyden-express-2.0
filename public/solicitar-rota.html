@@ -208,10 +208,12 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
 
   <script>
-    let alunoData = null;
     let map, directionsService, directionsRenderer;
-    let markerAluno, markerEscola;
-    let escolaPos, alunoPos;
+    let markerAluno = null, markerEscola = null;
+    let escolaPos = null, alunoPos = null;
+    let alunoId = null, alunoLatitude = null, alunoLongitude = null;
+
+    let originalData = null;  // Guardamos todos os dados retornados da API
     let measureActive = false;
     let measurePoints = [];
     let measurePolyline = null;
@@ -227,6 +229,7 @@
     const measureInfoDiv = document.getElementById("measureInfo");
     const measureDistanceSpan = document.getElementById("measureDistance");
     const btnMeasureReset = document.getElementById("btnMeasureReset");
+    const btnSalvarAluno = document.getElementById("btnSalvarAluno");
 
     const campoIdMatricula = document.getElementById("campoIdMatricula");
     const campoNomeAluno = document.getElementById("campoNomeAluno");
@@ -242,33 +245,23 @@
     const campoFiliacao2 = document.getElementById("campoFiliacao2");
     const campoResponsavel = document.getElementById("campoResponsavel");
     const campoDeficiencia = document.getElementById("campoDeficiencia");
-    const btnSalvarAluno = document.getElementById("btnSalvarAluno");
-
-    let alunoLatitude = null;
-    let alunoLongitude = null;
-    let alunoId = null;
-    let oldAno = null;
-    let oldModalidade = null;
-    let oldFormatoLetivo = null;
-    let oldTranspEscolar = null;
-    let oldEscolaId = null;
 
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
-        alert("Por favor, informe o CPF ou o ID de Matrícula.");
+        alert("Informe CPF ou ID de Matrícula.");
         return;
       }
       try {
         const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
-        if (!resp.ok) throw new Error("Erro ao buscar aluno");
+        if (!resp.ok) throw new Error("Erro ao buscar aluno.");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
-          alert("Nenhum aluno encontrado para o valor informado.");
+          alert("Nenhum aluno encontrado.");
           return;
         }
-        alunoData = data;
-        alunoId = data.id;
+        originalData = data;
+        alunoId = data.id || null;
 
         campoIdMatricula.value = data.id_matricula || "";
         campoNomeAluno.value = data.pessoa_nome || "";
@@ -276,35 +269,34 @@
         campoTurma.value = data.turma || "";
         campoCpf.value = data.cpf || "";
         campoCep.value = data.cep || "";
+        campoRua.value = data.rua || "";
         campoBairro.value = data.bairro || "";
         campoNumeroEndereco.value = data.numero_pessoa_endereco || "";
         campoFiliacao1.value = data.filiacao_1 || "";
         campoTelefone.value = data.numero_telefone || "";
         campoFiliacao2.value = data.filiacao_2 || "";
         campoResponsavel.value = data.responsavel || "";
-        campoDeficiencia.value = Array.isArray(data.deficiencia)
-          ? data.deficiencia.join(", ")
-          : data.deficiencia || "";
+
+        if (Array.isArray(data.deficiencia)) {
+          campoDeficiencia.value = data.deficiencia.join(", ");
+        } else if (typeof data.deficiencia === "string") {
+          campoDeficiencia.value = data.deficiencia;
+        } else {
+          campoDeficiencia.value = "";
+        }
 
         alunoLatitude = data.latitude || null;
         alunoLongitude = data.longitude || null;
-        campoRua.value = "";
-
-        oldAno = data.ano || null;
-        oldModalidade = data.modalidade || null;
-        oldFormatoLetivo = data.formato_letivo || null;
-        oldTranspEscolar = data.transporte_escolar_poder_publico || null;
-        oldEscolaId = data.escola_id || null;
 
         dadosAlunoContainer.classList.remove("d-none");
       } catch (err) {
         console.error(err);
-        alert("Ocorreu um erro ao buscar os dados do aluno.");
+        alert("Erro ao buscar aluno.");
       }
     });
 
     verificarCriterios.addEventListener("click", async () => {
-      if (!alunoData) return;
+      if (!originalData) return;
       if (campoCep.value.trim() && !campoRua.value.trim()) {
         try {
           const cepLimpo = campoCep.value.replace(/\D/g, "");
@@ -313,8 +305,8 @@
             if (r.ok) {
               const viacep = await r.json();
               if (!viacep.erro) {
-                campoRua.value = viacep.logradouro || "";
-                campoBairro.value = viacep.bairro || "";
+                campoRua.value = viacep.logradouro || campoRua.value;
+                campoBairro.value = viacep.bairro || campoBairro.value;
               }
             }
           }
@@ -346,28 +338,29 @@
       }
       distanciaRota.textContent = "--";
 
-      const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(campoEscola.value)}`);
+      let escolaNome = originalData.escola_nome || "";
+      const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
       const escolaJson = await escolaResp.json();
       if (!escolaJson || !escolaJson.longitude || !escolaJson.latitude) {
-        alert("Não foi possível localizar a escola.");
+        alert("Não foi possível localizar a escola pelo nome informado.");
         return;
       }
       escolaPos = new google.maps.LatLng(escolaJson.latitude, escolaJson.longitude);
 
-      let enderecoCompleto;
+      let endAluno = "";
       if (campoRua.value.trim()) {
-        enderecoCompleto = `${campoRua.value}, ${campoBairro.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
+        endAluno = `${campoRua.value}, ${campoBairro.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
       } else {
-        enderecoCompleto = `${campoCep.value}, ${campoBairro.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
+        endAluno = `${campoCep.value}, ${campoBairro.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
       }
-      infoEndereco.innerText = `Endereço do Aluno: ${enderecoCompleto}`;
+      infoEndereco.innerText = `Endereço do Aluno: ${endAluno}`;
 
       const geocoder = new google.maps.Geocoder();
       if (alunoLatitude && alunoLongitude) {
         alunoPos = new google.maps.LatLng(parseFloat(alunoLatitude), parseFloat(alunoLongitude));
         createOrMoveMarkers();
       } else {
-        geocoder.geocode({ address: enderecoCompleto }, (results, status) => {
+        geocoder.geocode({ address: endAluno }, (results, status) => {
           if (status === "OK") {
             alunoPos = results[0].geometry.location;
             createOrMoveMarkers();
@@ -398,6 +391,7 @@
       } else {
         markerAluno.setPosition(alunoPos);
       }
+
       if (!markerEscola) {
         markerEscola = new google.maps.Marker({
           position: escolaPos,
@@ -407,6 +401,7 @@
       } else {
         markerEscola.setPosition(escolaPos);
       }
+
       map.setCenter(alunoPos);
       calcularRota(alunoPos, escolaPos);
     }
@@ -487,7 +482,7 @@
 
     btnSalvarAluno.addEventListener("click", async () => {
       if (!alunoId) {
-        alert("Nenhum aluno carregado.");
+        alert("Nenhum aluno carregado para salvar.");
         return;
       }
       const defString = campoDeficiencia.value.trim();
@@ -495,33 +490,37 @@
       if (defString) {
         defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
       }
-      const body = {
-        id_matricula: campoIdMatricula.value.trim() || null,
-        escola_id: oldEscolaId || null,
-        ano: oldAno || null,
-        modalidade: oldModalidade || null,
-        formato_letivo: oldFormatoLetivo || null,
-        turma: campoTurma.value.trim() || null,
-        pessoa_nome: campoNomeAluno.value.trim() || null,
-        cpf: campoCpf.value.trim() || null,
-        transporte_escolar_poder_publico: oldTranspEscolar || null,
-        cep: campoCep.value.trim() || null,
-        bairro: campoBairro.value.trim() || null,
-        numero_pessoa_endereco: campoNumeroEndereco.value.trim() || null,
-        filiacao_1: campoFiliacao1.value.trim() || null,
-        numero_telefone: campoTelefone.value.trim() || null,
-        filiacao_2: campoFiliacao2.value.trim() || null,
-        responsavel: campoResponsavel.value.trim() || null,
-        deficiencia: defArray,
-        latitude: alunoLatitude || null,
-        longitude: alunoLongitude || null,
-        rua: campoRua.value.trim() || null
+
+      // Mantemos os dados que não estão na tela (ano, modalidade, etc.)
+      // e apenas substituímos o que realmente foi alterado ou exibido:
+      const mergeBody = {
+        id_matricula: (campoIdMatricula.value.trim() || originalData.id_matricula),
+        escola_id: (originalData.escola_id || null),
+        ano: (originalData.ano || null),
+        modalidade: (originalData.modalidade || null),
+        formato_letivo: (originalData.formato_letivo || null),
+        turma: (campoTurma.value.trim() || originalData.turma),
+        pessoa_nome: (campoNomeAluno.value.trim() || originalData.pessoa_nome),
+        cpf: (campoCpf.value.trim() || originalData.cpf),
+        transporte_escolar_poder_publico: (originalData.transporte_escolar_poder_publico || null),
+        cep: (campoCep.value.trim() || originalData.cep),
+        bairro: (campoBairro.value.trim() || originalData.bairro),
+        numero_pessoa_endereco: (campoNumeroEndereco.value.trim() || originalData.numero_pessoa_endereco),
+        filiacao_1: (campoFiliacao1.value.trim() || originalData.filiacao_1),
+        numero_telefone: (campoTelefone.value.trim() || originalData.numero_telefone),
+        filiacao_2: (campoFiliacao2.value.trim() || originalData.filiacao_2),
+        responsavel: (campoResponsavel.value.trim() || originalData.responsavel),
+        deficiencia: defArray.length ? defArray : (originalData.deficiencia || []),
+        latitude: (alunoLatitude !== null ? alunoLatitude : (originalData.latitude || null)),
+        longitude: (alunoLongitude !== null ? alunoLongitude : (originalData.longitude || null)),
+        rua: (campoRua.value.trim() || (originalData.rua || "")),
       };
+
       try {
         const resp = await fetch(`/api/alunos-ativos/${alunoId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
+          body: JSON.stringify(mergeBody)
         });
         const result = await resp.json();
         if (!resp.ok) {
