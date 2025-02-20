@@ -7,7 +7,6 @@
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
-  <!-- Carregando fontes -->
   <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
   <script>
     WebFont.load({
@@ -22,7 +21,6 @@
     });
   </script>
 
-  <!-- CSS principais -->
   <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
@@ -40,189 +38,194 @@
       font-size: 0.9rem;
       color: #444;
     }
+
+    .wizard-step {
+      display: none;
+    }
+
+    .wizard-step.active {
+      display: block;
+    }
   </style>
 </head>
 
 <body>
   <div class="container my-4">
     <div class="page-inner">
-
-      <!-- Título principal -->
       <div class="page-header">
         <h3 class="fw-bold mb-12 text-center">Cadastro de Alunos - Wizard</h3>
       </div>
 
-      <!-- Card da Etapa 1 -->
-      <div class="row">
-        <div class="col-md-12">
-          <div class="card" id="cardEtapa1">
-            <div class="card-header">
-              <div class="card-title">Etapa 1: Dados do Aluno</div>
+      <!-- ABA 1 -->
+      <div class="card wizard-step active" id="etapa1">
+        <div class="card-header">
+          <div class="card-title">Etapa 1: Dados do Aluno</div>
+        </div>
+        <div class="card-body">
+          <div class="row justify-content-center">
+            <div class="col-md-6 text-center">
+              <label for="inputBusca" class="form-label">CPF ou ID de Matrícula</label>
+              <input type="text" class="form-control mx-auto" style="max-width: 300px;" id="inputBusca"
+                placeholder="Digite aqui..." />
+              <button id="btnBuscar" class="btn btn-primary mt-3">Buscar</button>
             </div>
-            <div class="card-body">
+          </div>
 
-              <!-- Campo de busca -->
-              <div class="row justify-content-center">
-                <div class="col-md-6 text-center">
-                  <label for="inputBusca" class="form-label">
-                    CPF ou ID de Matrícula
-                  </label>
-                  <input type="text" class="form-control mx-auto" style="max-width: 300px;" id="inputBusca"
-                    placeholder="Digite aqui..." />
-                  <button id="btnBuscar" class="btn btn-primary mt-3">Buscar</button>
-                </div>
-              </div>
-
-              <!-- Formulário (exibido somente após a busca) -->
-              <div class="row justify-content-center mt-4">
-                <div class="col-md-10">
-                  <div class="d-none" id="dadosAlunoContainer">
-                    <!-- Dados do aluno e responsável -->
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">ID Matrícula</label>
-                        <input type="text" class="form-control" id="campoIdMatricula" readonly />
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Nome do Aluno</label>
-                        <input type="text" class="form-control" id="campoNomeAluno" readonly />
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Escola</label>
-                        <input type="text" class="form-control" id="campoEscola" readonly />
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Turma</label>
-                        <input type="text" class="form-control" id="campoTurma" readonly />
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">CPF</label>
-                        <input type="text" class="form-control" id="campoCpf" readonly />
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">CEP</label>
-                        <input type="text" class="form-control" id="campoCep" />
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Rua</label>
-                        <input type="text" class="form-control" id="campoRua" />
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Bairro</label>
-                        <input type="text" class="form-control" id="campoBairro" />
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Número Endereço</label>
-                        <input type="text" class="form-control" id="campoNumeroEndereco" />
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Telefone</label>
-                        <input type="text" class="form-control" id="campoTelefone" />
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Filiação 1</label>
-                        <input type="text" class="form-control" id="campoFiliacao1" readonly />
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Filiação 2</label>
-                        <input type="text" class="form-control" id="campoFiliacao2" readonly />
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Responsável</label>
-                        <input type="text" class="form-control" id="campoResponsavel" readonly />
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Deficiência</label>
-                        <input type="text" class="form-control" id="campoDeficiencia" />
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Latitude</label>
-                        <input type="text" class="form-control" id="campoLatitude" readonly />
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label fw-semibold">Longitude</label>
-                        <input type="text" class="form-control" id="campoLongitude" readonly />
-                      </div>
-                    </div>
-
-                    <!-- Botões da etapa 1 -->
-                    <div class="d-flex justify-content-between mt-3">
-                      <!-- Botão "Próximo" que abre a etapa 2 (Modal) -->
-                      <button class="btn btn-secondary" id="btnProximo">Próximo</button>
-
-                      <!-- Botão que salva no BD -->
-                      <button class="btn btn-success" id="btnSalvarAluno">Salvar Alterações</button>
-                    </div>
-
+          <div class="row justify-content-center mt-4">
+            <div class="col-md-10">
+              <div class="d-none" id="dadosAlunoContainer">
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">ID Matrícula</label>
+                    <input type="text" class="form-control" id="campoIdMatricula" readonly />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Nome do Aluno</label>
+                    <input type="text" class="form-control" id="campoNomeAluno" readonly />
                   </div>
                 </div>
-              </div> <!-- row -->
-            </div> <!-- card-body -->
-          </div> <!-- card -->
-        </div> <!-- col-md-12 -->
-      </div> <!-- row -->
 
-      <!-- Modal = Etapa 2 -->
-      <div class="modal fade" id="modalMapaCriterios" tabindex="-1" aria-labelledby="modalMapaCriteriosLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-          <div class="modal-content">
-            <div class="modal-header">
-              <!-- Título dizendo que é a Etapa 2 do wizard -->
-              <h5 class="modal-title" id="modalMapaCriteriosLabel">Etapa 2: Verificar Critérios (Mapa)</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <div id="infoEndereco" style="margin-bottom:10px; font-size:0.95rem; font-weight:600;"></div>
-              <div id="mapCriterios"></div>
-              <div class="mt-3">
-                <strong>Distância (rota):</strong>
-                <span id="distanciaRota">--</span>
-                <span>km</span>
-              </div>
-              <div class="mt-2">
-                <button id="btnMeasure" class="btn btn-sm btn-warning">Medir Distância Manual</button>
-                <div id="measureInfo" class="d-none">
-                  <span>Medição manual: <span id="measureDistance">0</span> km</span>
-                  <button id="btnMeasureReset" class="btn btn-sm btn-outline-danger">Reset</button>
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Escola</label>
+                    <input type="text" class="form-control" id="campoEscola" readonly />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Turma</label>
+                    <input type="text" class="form-control" id="campoTurma" readonly />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">CPF</label>
+                    <input type="text" class="form-control" id="campoCpf" readonly />
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label fw-semibold">CEP</label>
+                    <input type="text" class="form-control" id="campoCep" />
+                  </div>
+                  <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-info w-100" id="btnConverterCep">Converter CEP</button>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Rua</label>
+                    <input type="text" class="form-control" id="campoRua" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Bairro</label>
+                    <input type="text" class="form-control" id="campoBairro" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Número Endereço</label>
+                    <input type="text" class="form-control" id="campoNumeroEndereco" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Telefone</label>
+                    <input type="text" class="form-control" id="campoTelefone" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Filiação 1</label>
+                    <input type="text" class="form-control" id="campoFiliacao1" readonly />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Filiação 2</label>
+                    <input type="text" class="form-control" id="campoFiliacao2" readonly />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Responsável</label>
+                    <input type="text" class="form-control" id="campoResponsavel" readonly />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Deficiência</label>
+                    <input type="text" class="form-control" id="campoDeficiencia" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Latitude</label>
+                    <input type="text" class="form-control" id="campoLatitude" readonly />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Longitude</label>
+                    <input type="text" class="form-control" id="campoLongitude" readonly />
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                  <button class="btn btn-success" id="btnSalvarAluno">Salvar Alterações</button>
+                  <button class="btn btn-primary" id="btnProximo">Próximo</button>
                 </div>
               </div>
-            </div>
-            <div class="modal-footer">
-              <!-- Botão "Voltar" (Etapa 2 -> Etapa 1) -->
-              <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Voltar</button>
             </div>
           </div>
         </div>
       </div>
-      <!-- Fim Modal (Etapa 2) -->
 
-    </div> <!-- page-inner -->
-  </div> <!-- container -->
+      <!-- ABA 2 -->
+      <div class="card wizard-step" id="etapa2">
+        <div class="card-header">
+          <div class="card-title">Etapa 2: Verificar Critérios (Mapa)</div>
+        </div>
+        <div class="card-body">
+          <div class="mb-2">
+            <strong>Endereço do Aluno:</strong>
+            <span id="infoEndereco"></span>
+          </div>
+          <div id="mapCriterios"></div>
+          <div class="mt-3">
+            <strong>Distância (rota):</strong>
+            <span id="distanciaRota">--</span>
+            <span>km</span>
+          </div>
+          <div class="mt-2">
+            <button id="btnMeasure" class="btn btn-sm btn-warning">Medir Distância Manual</button>
+            <div id="measureInfo" class="d-none">
+              <span>Medição manual: <span id="measureDistance">0</span> km</span>
+              <button id="btnMeasureReset" class="btn btn-sm btn-outline-danger">Reset</button>
+            </div>
+          </div>
 
-  <!-- Scripts do Google Maps e outros -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_AQUI&libraries=places,geometry"></script>
+          <div class="d-flex justify-content-between mt-4">
+            <button class="btn btn-secondary" id="btnVoltarEtapa1">Voltar</button>
+            <div>
+              <button class="btn btn-danger" id="btnNaoAprovado">Não Aprovado</button>
+              <button class="btn btn-success" id="btnAprovado">Aprovado</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 3 -->
+      <div class="card wizard-step" id="etapa3">
+        <div class="card-header">
+          <div class="card-title">Etapa 3: Resultado</div>
+        </div>
+        <div class="card-body">
+          <h4 class="text-center" id="resultadoTitulo"></h4>
+          <p class="text-center" id="resultadoDescricao"></p>
+          <div class="d-flex justify-content-center">
+            <button class="btn btn-info" id="btnFinalizar">Concluir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_GOOGLE&libraries=places,geometry"></script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -241,15 +244,22 @@
     let measurePolyline = null;
     let mapClickListener = null;
 
-    // Referências da primeira etapa
+    const etapa1 = document.getElementById("etapa1");
+    const etapa2 = document.getElementById("etapa2");
+    const etapa3 = document.getElementById("etapa3");
+
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
     const dadosAlunoContainer = document.getElementById("dadosAlunoContainer");
-    const btnProximo = document.getElementById("btnProximo"); // "Próximo" da etapa 1
-    const btnSalvarAluno = document.getElementById("btnSalvarAluno"); // Salvar
+    const btnConverterCep = document.getElementById("btnConverterCep");
+    const btnProximo = document.getElementById("btnProximo");
+    const btnSalvarAluno = document.getElementById("btnSalvarAluno");
 
-    // Referências do modal (etapa 2)
-    const modalMapaCriterios = new bootstrap.Modal(document.getElementById("modalMapaCriterios"));
+    const btnVoltarEtapa1 = document.getElementById("btnVoltarEtapa1");
+    const btnAprovado = document.getElementById("btnAprovado");
+    const btnNaoAprovado = document.getElementById("btnNaoAprovado");
+    const btnFinalizar = document.getElementById("btnFinalizar");
+
     const distanciaRota = document.getElementById("distanciaRota");
     const infoEndereco = document.getElementById("infoEndereco");
     const btnMeasure = document.getElementById("btnMeasure");
@@ -257,7 +267,6 @@
     const measureDistanceSpan = document.getElementById("measureDistance");
     const btnMeasureReset = document.getElementById("btnMeasureReset");
 
-    // Campos do formulário
     const campoIdMatricula = document.getElementById("campoIdMatricula");
     const campoNomeAluno = document.getElementById("campoNomeAluno");
     const campoEscola = document.getElementById("campoEscola");
@@ -275,7 +284,9 @@
     const campoLatitude = document.getElementById("campoLatitude");
     const campoLongitude = document.getElementById("campoLongitude");
 
-    // 1) Buscar Aluno
+    const resultadoTitulo = document.getElementById("resultadoTitulo");
+    const resultadoDescricao = document.getElementById("resultadoDescricao");
+
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -293,7 +304,6 @@
         originalData = data;
         alunoId = data.id || null;
 
-        // Preenche o formulário (Etapa 1)
         campoIdMatricula.value = data.id_matricula || "";
         campoNomeAluno.value = data.pessoa_nome || "";
         campoEscola.value = data.escola_nome || "";
@@ -322,46 +332,75 @@
         campoLongitude.value = alunoLongitude || "";
 
         dadosAlunoContainer.classList.remove("d-none");
-
       } catch (err) {
         console.error(err);
         alert("Erro ao buscar aluno.");
       }
     });
 
-    // 2) Botão "Próximo" da Etapa 1 -> abre a Etapa 2 (Modal Mapa)
-    btnProximo.addEventListener("click", async () => {
-      if (!originalData) {
-        alert("Nenhum aluno carregado para prosseguir.");
+    btnConverterCep.addEventListener("click", async () => {
+      const cepLimpo = campoCep.value.replace(/\D/g, "");
+      if (!cepLimpo) {
+        alert("Informe um CEP válido.");
         return;
       }
-
-      // Se CEP existir, mas rua estiver vazia, tenta preencher via ViaCEP (rua/logradouro)
-      if (campoCep.value.trim() && !campoRua.value.trim()) {
-        try {
-          const cepLimpo = campoCep.value.replace(/\D/g, "");
-          if (cepLimpo) {
-            const r = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-            if (r.ok) {
-              const viacep = await r.json();
-              if (!viacep.erro) {
-                campoRua.value = viacep.logradouro || campoRua.value;
-              }
-            }
+      try {
+        const r = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+        if (r.ok) {
+          const viacep = await r.json();
+          if (!viacep.erro) {
+            campoRua.value = viacep.logradouro || campoRua.value;
+            campoBairro.value = viacep.bairro || campoBairro.value;
+          } else {
+            alert("CEP não encontrado.");
           }
-        } catch { }
+        } else {
+          alert("Erro ao consultar ViaCEP.");
+        }
+      } catch (e) {
+        alert("Erro ao converter CEP.");
       }
-
-      // Abre o modal (Etapa 2)
-      modalMapaCriterios.show();
-
-      // Pequeno delay para carregamento do mapa
-      setTimeout(() => {
-        initMap();
-      }, 500);
     });
 
-    // Função que inicializa ou recarrega o mapa na Etapa 2
+    btnProximo.addEventListener("click", () => {
+      if (!originalData) {
+        alert("Nenhum aluno carregado.");
+        return;
+      }
+      etapa1.classList.remove("active");
+      etapa2.classList.add("active");
+      setTimeout(() => {
+        initMap();
+      }, 300);
+    });
+
+    btnVoltarEtapa1.addEventListener("click", () => {
+      etapa2.classList.remove("active");
+      etapa1.classList.add("active");
+    });
+
+    btnAprovado.addEventListener("click", () => {
+      etapa2.classList.remove("active");
+      etapa3.classList.add("active");
+      resultadoTitulo.innerText = "Aluno Aprovado!";
+      resultadoTitulo.className = "text-center text-success";
+      resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
+    });
+
+    btnNaoAprovado.addEventListener("click", () => {
+      etapa2.classList.remove("active");
+      etapa3.classList.add("active");
+      resultadoTitulo.innerText = "Não Aprovado";
+      resultadoTitulo.className = "text-center text-danger";
+      resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
+    });
+
+    btnFinalizar.addEventListener("click", () => {
+      alert("Atendimento finalizado!");
+      // Poderia redirecionar ou recarregar a página aqui
+      // window.location.reload();
+    });
+
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -380,7 +419,6 @@
           }
         });
 
-        // Clique no mapa => atualiza lat/lng do Aluno
         mapClickListener = map.addListener("click", (e) => {
           if (!markerAluno) {
             markerAluno = new google.maps.Marker({
@@ -412,31 +450,27 @@
       }
       distanciaRota.textContent = "--";
 
-      // Coordenadas da escola
       const escolaNome = originalData.escola_nome || "";
       const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
       const escolaJson = await escolaResp.json();
-      if (!escolaJson || !escolaJson.longitude || !escolaJson.latitude) {
+      if (!escolaJson || !escolaJson.latitude || !escolaJson.longitude) {
         alert("Não foi possível localizar a escola pelo nome informado.");
         return;
       }
       escolaPos = new google.maps.LatLng(escolaJson.latitude, escolaJson.longitude);
 
-      // Monta endereço sem usar o bairro (caso queira evitar problemas)
       let endAluno = "";
       if (campoRua.value.trim()) {
         endAluno = `${campoRua.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
       } else {
         endAluno = `${campoCep.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
       }
-      infoEndereco.innerText = `Endereço do Aluno: ${endAluno}`;
+      infoEndereco.innerText = endAluno;
 
-      // Se já tivermos lat/lng do aluno
       if (alunoLatitude && alunoLongitude) {
         alunoPos = new google.maps.LatLng(parseFloat(alunoLatitude), parseFloat(alunoLongitude));
         createOrMoveMarkers();
       } else {
-        // Tenta geocodificar
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ address: endAluno }, (results, status) => {
           if (status === "OK") {
@@ -476,7 +510,6 @@
         markerAluno.setPosition(alunoPos);
       }
 
-      // Marca a escola
       if (!markerEscola) {
         markerEscola = new google.maps.Marker({
           position: escolaPos,
@@ -509,7 +542,6 @@
       });
     }
 
-    // Funções de medição manual
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
@@ -543,7 +575,7 @@
         strokeOpacity: 1.0,
         strokeWeight: 3
       });
-      mapClickListener = map.addListener("click", (e) => {
+      mapClickListener = map.addEventListener("click", (e) => {
         measurePoints.push(e.latLng);
         measurePolyline.setPath(measurePoints);
         let totalDist = 0;
@@ -565,7 +597,6 @@
       }
     }
 
-    // Salvar alterações (etapa 1)
     btnSalvarAluno.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para salvar.");
@@ -600,14 +631,12 @@
           alert(result.message || "Falha ao salvar alterações.");
           return;
         }
-
         alert("Dados do aluno atualizados com sucesso!");
       } catch (err) {
         console.error(err);
         alert("Erro ao atualizar dados do aluno.");
       }
     });
-
   </script>
 </body>
 
