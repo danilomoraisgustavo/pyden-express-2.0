@@ -57,9 +57,7 @@
             <div class="card-body">
               <div class="row justify-content-center">
                 <div class="col-md-6 text-center">
-                  <label for="inputBusca" class="form-label">
-                    CPF ou ID de Matrícula
-                  </label>
+                  <label for="inputBusca" class="form-label">CPF ou ID de Matrícula</label>
                   <input type="text" class="form-control mx-auto" style="max-width: 300px;" id="inputBusca"
                     placeholder="Digite aqui..." />
                   <button id="btnBuscar" class="btn btn-primary mt-3">Buscar</button>
@@ -72,11 +70,11 @@
                     <div class="row">
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">ID Matrícula</label>
-                        <input type="text" class="form-control" id="campoIdMatricula" />
+                        <input type="text" class="form-control" id="campoIdMatricula" readonly />
                       </div>
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">Nome do Aluno</label>
-                        <input type="text" class="form-control" id="campoNomeAluno" />
+                        <input type="text" class="form-control" id="campoNomeAluno" readonly />
                       </div>
                     </div>
 
@@ -87,14 +85,14 @@
                       </div>
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">Turma</label>
-                        <input type="text" class="form-control" id="campoTurma" />
+                        <input type="text" class="form-control" id="campoTurma" readonly />
                       </div>
                     </div>
 
                     <div class="row">
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">CPF</label>
-                        <input type="text" class="form-control" id="campoCpf" />
+                        <input type="text" class="form-control" id="campoCpf" readonly />
                       </div>
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">CEP</label>
@@ -127,18 +125,18 @@
                     <div class="row">
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">Filiação 1</label>
-                        <input type="text" class="form-control" id="campoFiliacao1" />
+                        <input type="text" class="form-control" id="campoFiliacao1" readonly />
                       </div>
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">Filiação 2</label>
-                        <input type="text" class="form-control" id="campoFiliacao2" />
+                        <input type="text" class="form-control" id="campoFiliacao2" readonly />
                       </div>
                     </div>
 
                     <div class="row">
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">Responsável</label>
-                        <input type="text" class="form-control" id="campoResponsavel" />
+                        <input type="text" class="form-control" id="campoResponsavel" readonly />
                       </div>
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">Deficiência</label>
@@ -206,8 +204,7 @@
     </div>
   </div>
 
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=SEU_API_KEY&libraries=places,geometry"></script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -238,6 +235,7 @@
     const btnMeasureReset = document.getElementById("btnMeasureReset");
     const btnSalvarAluno = document.getElementById("btnSalvarAluno");
 
+    // Campos
     const campoIdMatricula = document.getElementById("campoIdMatricula");
     const campoNomeAluno = document.getElementById("campoNomeAluno");
     const campoEscola = document.getElementById("campoEscola");
@@ -255,6 +253,7 @@
     const campoLatitude = document.getElementById("campoLatitude");
     const campoLongitude = document.getElementById("campoLongitude");
 
+    // BUSCAR ALUNO
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -272,6 +271,7 @@
         originalData = data;
         alunoId = data.id || null;
 
+        // Preenche os campos (sendo que vários estão readonly)
         campoIdMatricula.value = data.id_matricula || "";
         campoNomeAluno.value = data.pessoa_nome || "";
         campoEscola.value = data.escola_nome || "";
@@ -306,8 +306,11 @@
       }
     });
 
+    // BOTÃO "VERIFICAR CRITÉRIOS" (abre modal + mapa)
     verificarCriterios.addEventListener("click", async () => {
       if (!originalData) return;
+
+      // Se houver CEP e não houver rua, tenta preencher via API do ViaCEP
       if (campoCep.value.trim() && !campoRua.value.trim()) {
         try {
           const cepLimpo = campoCep.value.replace(/\D/g, "");
@@ -324,11 +327,13 @@
         } catch { }
       }
       modalMapaCriterios.show();
+      // Dá um pequeno timeout para o mapa carregar corretamente
       setTimeout(() => {
         initMap();
       }, 500);
     });
 
+    // INICIA MAPA
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -349,6 +354,7 @@
       }
       distanciaRota.textContent = "--";
 
+      // Localiza a escola
       let escolaNome = originalData.escola_nome || "";
       const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
       const escolaJson = await escolaResp.json();
@@ -358,6 +364,7 @@
       }
       escolaPos = new google.maps.LatLng(escolaJson.latitude, escolaJson.longitude);
 
+      // Endereço do aluno (para geocodificar se não houver lat/lng)
       let endAluno = "";
       if (campoRua.value.trim()) {
         endAluno = `${campoRua.value}, ${campoBairro.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
@@ -386,6 +393,7 @@
       }
     }
 
+    // CRIA/MOVE MARKERS
     function createOrMoveMarkers() {
       if (!markerAluno) {
         markerAluno = new google.maps.Marker({
@@ -423,6 +431,7 @@
       calcularRota(alunoPos, escolaPos);
     }
 
+    // CALCULA ROTA / DISTÂNCIA
     function calcularRota(aPos, ePos) {
       const request = {
         origin: aPos,
@@ -441,6 +450,7 @@
       });
     }
 
+    // MEDIÇÃO MANUAL
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
@@ -496,38 +506,29 @@
       }
     }
 
+    // SALVAR ALTERAÇÕES (SOMENTE CAMPOS RELEVANTES)
     btnSalvarAluno.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para salvar.");
         return;
       }
+      // Deficiência pode ser array no banco, então tratamos:
       const defString = campoDeficiencia.value.trim();
       let defArray = [];
       if (defString) {
         defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
       }
 
+      // Aqui enviamos apenas os campos que serão atualizados no banco
       const mergeBody = {
-        id_matricula: (campoIdMatricula.value.trim() || originalData.id_matricula),
-        escola_id: (originalData.escola_id || null),
-        ano: (originalData.ano || null),
-        modalidade: (originalData.modalidade || null),
-        formato_letivo: (originalData.formato_letivo || null),
-        turma: (campoTurma.value.trim() || originalData.turma),
-        pessoa_nome: (campoNomeAluno.value.trim() || originalData.pessoa_nome),
-        cpf: (campoCpf.value.trim() || originalData.cpf),
-        transporte_escolar_poder_publico: (originalData.transporte_escolar_poder_publico || null),
-        cep: (campoCep.value.trim() || originalData.cep),
-        bairro: (campoBairro.value.trim() || originalData.bairro),
-        numero_pessoa_endereco: (campoNumeroEndereco.value.trim() || originalData.numero_pessoa_endereco),
-        filiacao_1: (campoFiliacao1.value.trim() || originalData.filiacao_1),
-        numero_telefone: (campoTelefone.value.trim() || originalData.numero_telefone),
-        filiacao_2: (campoFiliacao2.value.trim() || originalData.filiacao_2),
-        responsavel: (campoResponsavel.value.trim() || originalData.responsavel),
+        cep: campoCep.value.trim(),
+        bairro: campoBairro.value.trim(),
+        numero_pessoa_endereco: campoNumeroEndereco.value.trim(),
+        numero_telefone: campoTelefone.value.trim(),
         deficiencia: defArray.length ? defArray : null,
-        latitude: (alunoLatitude !== null ? alunoLatitude : (originalData.latitude || null)),
-        longitude: (alunoLongitude !== null ? alunoLongitude : (originalData.longitude || null)),
-        rua: (campoRua.value.trim() || (originalData.rua || ""))
+        latitude: alunoLatitude,
+        longitude: alunoLongitude,
+        rua: campoRua.value.trim()
       };
 
       try {
@@ -537,10 +538,12 @@
           body: JSON.stringify(mergeBody)
         });
         const result = await resp.json();
+
         if (!resp.ok) {
           alert(result.message || "Falha ao salvar alterações.");
           return;
         }
+
         alert("Dados do aluno atualizados com sucesso!");
       } catch (err) {
         console.error(err);
