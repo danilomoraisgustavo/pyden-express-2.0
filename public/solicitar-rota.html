@@ -222,6 +222,7 @@
     let measureActive = false;
     let measurePoints = [];
     let measurePolyline = null;
+    let mapClickListener = null;  // Para controlar o evento de clique no mapa
 
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
@@ -352,6 +353,37 @@
             strokeWeight: 5
           }
         });
+
+        // Aqui adicionamos o clique no mapa para reposicionar o marker do Aluno
+        // e atualizar latitude/longitude nos campos
+        mapClickListener = map.addListener("click", (e) => {
+          if (!markerAluno) {
+            markerAluno = new google.maps.Marker({
+              position: e.latLng,
+              map: map,
+              icon: {
+                url: "https://maps.google.com/mapfiles/kml/shapes/man.png",
+                scaledSize: new google.maps.Size(30, 30)
+              },
+              draggable: true
+            });
+            markerAluno.addListener("dragend", () => {
+              const pos = markerAluno.getPosition();
+              alunoLatitude = pos.lat();
+              alunoLongitude = pos.lng();
+              campoLatitude.value = alunoLatitude.toFixed(6);
+              campoLongitude.value = alunoLongitude.toFixed(6);
+              calcularRota(markerAluno.getPosition(), escolaPos);
+            });
+          } else {
+            markerAluno.setPosition(e.latLng);
+          }
+          alunoLatitude = e.latLng.lat();
+          alunoLongitude = e.latLng.lng();
+          campoLatitude.value = alunoLatitude.toFixed(6);
+          campoLongitude.value = alunoLongitude.toFixed(6);
+          calcularRota(e.latLng, escolaPos);
+        });
       }
       distanciaRota.textContent = "--";
 
@@ -418,6 +450,7 @@
         markerAluno.setPosition(alunoPos);
       }
 
+      // Marca a escola
       if (!markerEscola) {
         markerEscola = new google.maps.Marker({
           position: escolaPos,
@@ -474,7 +507,6 @@
       }
     });
 
-    let mapClickListener = null;
     function startMeasureMode() {
       if (!map) return;
       measurePoints = [];
@@ -500,6 +532,7 @@
         measureDistanceSpan.textContent = (totalDist / 1000).toFixed(3);
       });
     }
+
     function endMeasureMode() {
       if (mapClickListener) {
         google.maps.event.removeListener(mapClickListener);
