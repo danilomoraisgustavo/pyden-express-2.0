@@ -247,6 +247,11 @@
     let alunoLatitude = null;
     let alunoLongitude = null;
     let alunoId = null;
+    let oldAno = null;
+    let oldModalidade = null;
+    let oldFormatoLetivo = null;
+    let oldTranspEscolar = null;
+    let oldEscolaId = null;
 
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
@@ -284,6 +289,12 @@
         alunoLatitude = data.latitude || null;
         alunoLongitude = data.longitude || null;
         campoRua.value = "";
+
+        oldAno = data.ano || null;
+        oldModalidade = data.modalidade || null;
+        oldFormatoLetivo = data.formato_letivo || null;
+        oldTranspEscolar = data.transporte_escolar_poder_publico || null;
+        oldEscolaId = data.escola_id || null;
 
         dadosAlunoContainer.classList.remove("d-none");
       } catch (err) {
@@ -486,14 +497,14 @@
       }
       const body = {
         id_matricula: campoIdMatricula.value.trim() || null,
-        escola_id: null,
-        ano: null,
-        modalidade: null,
-        formato_letivo: null,
+        escola_id: oldEscolaId || null,
+        ano: oldAno || null,
+        modalidade: oldModalidade || null,
+        formato_letivo: oldFormatoLetivo || null,
         turma: campoTurma.value.trim() || null,
         pessoa_nome: campoNomeAluno.value.trim() || null,
         cpf: campoCpf.value.trim() || null,
-        transporte_escolar_poder_publico: null,
+        transporte_escolar_poder_publico: oldTranspEscolar || null,
         cep: campoCep.value.trim() || null,
         bairro: campoBairro.value.trim() || null,
         numero_pessoa_endereco: campoNumeroEndereco.value.trim() || null,
@@ -503,7 +514,8 @@
         responsavel: campoResponsavel.value.trim() || null,
         deficiencia: defArray,
         latitude: alunoLatitude || null,
-        longitude: alunoLongitude || null
+        longitude: alunoLongitude || null,
+        rua: campoRua.value.trim() || null
       };
       try {
         const resp = await fetch(`/api/alunos-ativos/${alunoId}`, {
