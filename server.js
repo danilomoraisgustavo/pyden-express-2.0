@@ -5749,20 +5749,19 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
       filiacao_2,
       responsavel,
       deficiencia,
-      latitude,
       longitude,
+      latitude,
+      rua  // NOVO CAMPO
     } = req.body;
 
-    const check = await pool.query("SELECT * FROM alunos_ativos WHERE id = $1", [
-      id,
-    ]);
+    // Busca o aluno
+    const check = await pool.query("SELECT * FROM alunos_ativos WHERE id = $1", [id]);
     if (check.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Aluno não encontrado." });
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
 
     const oldData = check.rows[0];
+    // Ajusta a lista de deficiências
     let defArray = oldData.deficiencia || null;
     try {
       if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
@@ -5771,43 +5770,45 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
         defArray = deficiencia;
       }
     } catch (e) {
-      // ignora erro de parse
+      // se der erro no parse, ignora e mantém oldData.deficiencia
     }
 
     const newData = {
-      id_matricula:
-        id_matricula !== undefined ? id_matricula : oldData.id_matricula,
-      escola_id: escola_id !== undefined ? escola_id : oldData.escola_id,
-      ano: ano !== undefined ? ano : oldData.ano,
-      modalidade: modalidade !== undefined ? modalidade : oldData.modalidade,
-      formato_letivo:
-        formato_letivo !== undefined ? formato_letivo : oldData.formato_letivo,
-      turma: turma !== undefined ? turma : oldData.turma,
-      pessoa_nome: pessoa_nome !== undefined ? pessoa_nome : oldData.pessoa_nome,
-      cpf: cpf !== undefined ? cpf : oldData.cpf,
-      transporte_escolar_poder_publico:
+      id_matricula: (id_matricula !== undefined ? id_matricula : oldData.id_matricula),
+      escola_id: (escola_id !== undefined ? escola_id : oldData.escola_id),
+      ano: (ano !== undefined ? ano : oldData.ano),
+      modalidade: (modalidade !== undefined ? modalidade : oldData.modalidade),
+      formato_letivo: (formato_letivo !== undefined ? formato_letivo : oldData.formato_letivo),
+      turma: (turma !== undefined ? turma : oldData.turma),
+      pessoa_nome: (pessoa_nome !== undefined ? pessoa_nome : oldData.pessoa_nome),
+      cpf: (cpf !== undefined ? cpf : oldData.cpf),
+      transporte_escolar_poder_publico: (
         transporte_escolar_poder_publico !== undefined
           ? transporte_escolar_poder_publico
-          : oldData.transporte_escolar_poder_publico,
-      cep: cep !== undefined ? cep : oldData.cep,
-      bairro: bairro !== undefined ? bairro : oldData.bairro,
-      numero_pessoa_endereco:
+          : oldData.transporte_escolar_poder_publico
+      ),
+      cep: (cep !== undefined ? cep : oldData.cep),
+      bairro: (bairro !== undefined ? bairro : oldData.bairro),
+      numero_pessoa_endereco: (
         numero_pessoa_endereco !== undefined
           ? numero_pessoa_endereco
-          : oldData.numero_pessoa_endereco,
-      filiacao_1: filiacao_1 !== undefined ? filiacao_1 : oldData.filiacao_1,
-      numero_telefone:
+          : oldData.numero_pessoa_endereco
+      ),
+      filiacao_1: (filiacao_1 !== undefined ? filiacao_1 : oldData.filiacao_1),
+      numero_telefone: (
         numero_telefone !== undefined
           ? numero_telefone
-          : oldData.numero_telefone,
-      filiacao_2: filiacao_2 !== undefined ? filiacao_2 : oldData.filiacao_2,
-      responsavel: responsavel !== undefined ? responsavel : oldData.responsavel,
-      deficiencia: defArray !== null ? defArray : oldData.deficiencia,
-      latitude: latitude !== undefined ? latitude : oldData.latitude,
-      longitude: longitude !== undefined ? longitude : oldData.longitude,
+          : oldData.numero_telefone
+      ),
+      filiacao_2: (filiacao_2 !== undefined ? filiacao_2 : oldData.filiacao_2),
+      responsavel: (responsavel !== undefined ? responsavel : oldData.responsavel),
+      deficiencia: (defArray !== null ? defArray : oldData.deficiencia),
+      longitude: (longitude !== undefined ? longitude : oldData.longitude),
+      latitude: (latitude !== undefined ? latitude : oldData.latitude),
+      rua: (rua !== undefined ? rua : oldData.rua) // NOVO
     };
 
-    const query = `
+    const updateQuery = `
       UPDATE alunos_ativos
       SET
         id_matricula = $1,
@@ -5827,12 +5828,13 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
         filiacao_2 = $15,
         responsavel = $16,
         deficiencia = $17,
-        latitude = $18,
-        longitude = $19
-      WHERE id = $20
+        longitude = $18,
+        latitude = $19,
+        rua = $20
+      WHERE id = $21
     `;
 
-    await pool.query(query, [
+    await pool.query(updateQuery, [
       newData.id_matricula,
       newData.escola_id,
       newData.ano,
@@ -5850,20 +5852,21 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
       newData.filiacao_2,
       newData.responsavel,
       newData.deficiencia,
-      newData.latitude,
       newData.longitude,
-      id,
+      newData.latitude,
+      newData.rua,
+      id
     ]);
 
     return res.json({
       success: true,
-      message: "Aluno atualizado com sucesso.",
+      message: "Aluno atualizado com sucesso."
     });
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao atualizar aluno:", err);
     return res.status(500).json({
       success: false,
-      message: "Erro ao atualizar o aluno.",
+      message: "Erro ao atualizar o aluno."
     });
   }
 });
