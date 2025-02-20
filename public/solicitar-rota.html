@@ -50,7 +50,6 @@
 
       <div class="row">
         <div class="col-md-12">
-
           <div class="card">
             <div class="card-header">
               <div class="card-title">Consulta de Aluno</div>
@@ -146,6 +145,7 @@
                         <input type="text" class="form-control" id="campoDeficiencia" />
                       </div>
                     </div>
+
                     <div class="row">
                       <div class="col-md-6 mb-2">
                         <label class="form-label fw-semibold">Latitude</label>
@@ -156,7 +156,6 @@
                         <input type="text" class="form-control" id="campoLongitude" readonly />
                       </div>
                     </div>
-
 
                     <div class="d-flex justify-content-between mt-3">
                       <button class="btn btn-secondary" id="verificarCriterios">Verificar Critérios</button>
@@ -195,9 +194,7 @@
                   </div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
-                    Fechar
-                  </button>
+                  <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
                 </div>
               </div>
             </div>
@@ -223,13 +220,11 @@
     let markerAluno = null, markerEscola = null;
     let escolaPos = null, alunoPos = null;
     let alunoId = null, alunoLatitude = null, alunoLongitude = null;
-
-    let originalData = null;  // Guardamos todos os dados retornados da API
+    let originalData = null;
     let measureActive = false;
     let measurePoints = [];
     let measurePolyline = null;
 
-    // Referências aos elementos da página (incluindo os novos campos):
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
     const dadosAlunoContainer = document.getElementById("dadosAlunoContainer");
@@ -257,8 +252,6 @@
     const campoFiliacao2 = document.getElementById("campoFiliacao2");
     const campoResponsavel = document.getElementById("campoResponsavel");
     const campoDeficiencia = document.getElementById("campoDeficiencia");
-
-    // Novos campos de latitude/longitude
     const campoLatitude = document.getElementById("campoLatitude");
     const campoLongitude = document.getElementById("campoLongitude");
 
@@ -268,22 +261,17 @@
         alert("Informe CPF ou ID de Matrícula.");
         return;
       }
-
       try {
-        // Continua usando seu endpoint de consulta normalmente (exemplo)
         const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
         if (!resp.ok) throw new Error("Erro ao buscar aluno.");
         const data = await resp.json();
-
         if (!data || !data.id_matricula) {
           alert("Nenhum aluno encontrado.");
           return;
         }
-
         originalData = data;
         alunoId = data.id || null;
 
-        // Preenche todos os campos
         campoIdMatricula.value = data.id_matricula || "";
         campoNomeAluno.value = data.pessoa_nome || "";
         campoEscola.value = data.escola_nome || "";
@@ -308,8 +296,6 @@
 
         alunoLatitude = data.latitude || null;
         alunoLongitude = data.longitude || null;
-
-        // Preenche os campos de latitude/longitude
         campoLatitude.value = alunoLatitude || "";
         campoLongitude.value = alunoLongitude || "";
 
@@ -322,8 +308,6 @@
 
     verificarCriterios.addEventListener("click", async () => {
       if (!originalData) return;
-
-      // Exemplo de busca de endereço via CEP, caso o campo rua esteja vazio:
       if (campoCep.value.trim() && !campoRua.value.trim()) {
         try {
           const cepLimpo = campoCep.value.replace(/\D/g, "");
@@ -339,8 +323,6 @@
           }
         } catch { }
       }
-
-      // Abre modal do mapa
       modalMapaCriterios.show();
       setTimeout(() => {
         initMap();
@@ -365,10 +347,8 @@
           }
         });
       }
-
       distanciaRota.textContent = "--";
 
-      // Exemplo de endpoint para buscar coordenadas da escola:
       let escolaNome = originalData.escola_nome || "";
       const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
       const escolaJson = await escolaResp.json();
@@ -394,6 +374,10 @@
         geocoder.geocode({ address: endAluno }, (results, status) => {
           if (status === "OK") {
             alunoPos = results[0].geometry.location;
+            alunoLatitude = alunoPos.lat();
+            alunoLongitude = alunoPos.lng();
+            campoLatitude.value = alunoLatitude.toFixed(6);
+            campoLongitude.value = alunoLongitude.toFixed(6);
             createOrMoveMarkers();
           } else {
             alert("Não foi possível localizar o endereço do aluno via Geocoder.");
@@ -417,7 +401,6 @@
           alunoPos = markerAluno.getPosition();
           alunoLatitude = alunoPos.lat();
           alunoLongitude = alunoPos.lng();
-          // Atualiza campos de latitude/longitude no formulário
           campoLatitude.value = alunoLatitude.toFixed(6);
           campoLongitude.value = alunoLongitude.toFixed(6);
           calcularRota(alunoPos, escolaPos);
@@ -503,8 +486,7 @@
           );
           totalDist += segDist;
         }
-        const kmDist = (totalDist / 1000).toFixed(3);
-        measureDistanceSpan.textContent = kmDist;
+        measureDistanceSpan.textContent = (totalDist / 1000).toFixed(3);
       });
     }
     function endMeasureMode() {
@@ -514,9 +496,6 @@
       }
     }
 
-    // ****
-    // AQUI ESTÁ O PONTO PRINCIPAL DA ALTERAÇÃO DE ENDPOINT
-    // ****
     btnSalvarAluno.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para salvar.");
@@ -528,7 +507,6 @@
         defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
       }
 
-      // Mantemos os dados que não estão na tela e substituímos somente o que precisa:
       const mergeBody = {
         id_matricula: (campoIdMatricula.value.trim() || originalData.id_matricula),
         escola_id: (originalData.escola_id || null),
@@ -546,18 +524,13 @@
         numero_telefone: (campoTelefone.value.trim() || originalData.numero_telefone),
         filiacao_2: (campoFiliacao2.value.trim() || originalData.filiacao_2),
         responsavel: (campoResponsavel.value.trim() || originalData.responsavel),
-        deficiencia: defArray.length ? defArray : (originalData.deficiencia || []),
-
-        // Atualizado com as coordenadas (incluso na requisição):
+        deficiencia: defArray.length ? defArray : null,
         latitude: (alunoLatitude !== null ? alunoLatitude : (originalData.latitude || null)),
         longitude: (alunoLongitude !== null ? alunoLongitude : (originalData.longitude || null)),
-
-        // Caso queira salvar a rua atualizada também
-        rua: (campoRua.value.trim() || (originalData.rua || "")),
+        rua: (campoRua.value.trim() || (originalData.rua || ""))
       };
 
       try {
-        // Agora usando o novo endpoint /api/alunos-recadastro
         const resp = await fetch(`/api/alunos-recadastro/${alunoId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
