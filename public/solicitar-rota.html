@@ -273,7 +273,11 @@
             markerAluno = new google.maps.Marker({
               position: alunoPos,
               map: map,
-              icon: "https://maps.google.com/mapfiles/kml/shapes/man.png",
+              icon: {
+                url: "https://maps.google.com/mapfiles/kml/shapes/man.png",
+                // Ajuste para o tamanho desejado
+                scaledSize: new google.maps.Size(30, 30),
+              },
               draggable: true // <== Permite arrastar
             });
             // Escuta o arrastar e recalcula rota
@@ -290,7 +294,7 @@
             markerEscola = new google.maps.Marker({
               position: escolaPos,
               map: map,
-              icon: "https://maps.google.com/mapfiles/kml/shapes/schools_maps.png"
+              icon: "https://maps.google.com/mapfiles/kml/pal3/icon56.png"
             });
           } else {
             markerEscola.setPosition(escolaPos);
