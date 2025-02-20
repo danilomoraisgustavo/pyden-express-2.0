@@ -4510,13 +4510,11 @@ app.get("/api/alunos-transporte-publico", async (req, res) => {
 app.get("/api/alunos_ativos", async (req, res) => {
   try {
     const search = req.query.search ? req.query.search.trim() : "";
-    // Se não informar nada, retornamos null ou algo que indique "não encontrado"
     if (!search) {
       return res.json(null);
     }
 
-    // Consulta: busca por CPF exato OU ID de Matrícula exato.
-    // Ajuste a query conforme necessário (pode usar UPPER ou LIKE se preferir).
+    // Ajuste principal: inclua "a.rua" na lista de colunas
     const query = `
       SELECT
         a.id,
@@ -4524,6 +4522,7 @@ app.get("/api/alunos_ativos", async (req, res) => {
         a.pessoa_nome,
         a.cpf,
         a.cep,
+        a.rua,
         a.bairro,
         a.numero_pessoa_endereco,
         a.filiacao_1,
@@ -4542,16 +4541,16 @@ app.get("/api/alunos_ativos", async (req, res) => {
     const result = await pool.query(query, [search]);
 
     if (result.rows.length === 0) {
-      // Nenhum aluno encontrado
       return res.json(null);
     }
-    // Retorna o primeiro (e único) encontrado
+
     return res.json(result.rows[0]);
   } catch (error) {
     console.error("Erro ao buscar aluno por CPF/ID:", error);
     return res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
+
 
 // 2) Rota para buscar as coordenadas de uma escola por NOME
 //    A página chama: fetch(`/api/escola-coordenadas?nome_escola=NOMEESCOLA`)
