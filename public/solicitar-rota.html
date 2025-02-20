@@ -146,6 +146,17 @@
                         <input type="text" class="form-control" id="campoDeficiencia" />
                       </div>
                     </div>
+                    <div class="row">
+                      <div class="col-md-6 mb-2">
+                        <label class="form-label fw-semibold">Latitude</label>
+                        <input type="text" class="form-control" id="campoLatitude" readonly />
+                      </div>
+                      <div class="col-md-6 mb-2">
+                        <label class="form-label fw-semibold">Longitude</label>
+                        <input type="text" class="form-control" id="campoLongitude" readonly />
+                      </div>
+                    </div>
+
 
                     <div class="d-flex justify-content-between mt-3">
                       <button class="btn btn-secondary" id="verificarCriterios">Verificar Critérios</button>
@@ -218,6 +229,7 @@
     let measurePoints = [];
     let measurePolyline = null;
 
+    // Referências aos elementos da página (incluindo os novos campos):
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
     const dadosAlunoContainer = document.getElementById("dadosAlunoContainer");
@@ -246,23 +258,32 @@
     const campoResponsavel = document.getElementById("campoResponsavel");
     const campoDeficiencia = document.getElementById("campoDeficiencia");
 
+    // Novos campos de latitude/longitude
+    const campoLatitude = document.getElementById("campoLatitude");
+    const campoLongitude = document.getElementById("campoLongitude");
+
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
         alert("Informe CPF ou ID de Matrícula.");
         return;
       }
+
       try {
+        // Continua usando seu endpoint de consulta normalmente (exemplo)
         const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
         if (!resp.ok) throw new Error("Erro ao buscar aluno.");
         const data = await resp.json();
+
         if (!data || !data.id_matricula) {
           alert("Nenhum aluno encontrado.");
           return;
         }
+
         originalData = data;
         alunoId = data.id || null;
 
+        // Preenche todos os campos
         campoIdMatricula.value = data.id_matricula || "";
         campoNomeAluno.value = data.pessoa_nome || "";
         campoEscola.value = data.escola_nome || "";
@@ -288,6 +309,10 @@
         alunoLatitude = data.latitude || null;
         alunoLongitude = data.longitude || null;
 
+        // Preenche os campos de latitude/longitude
+        campoLatitude.value = alunoLatitude || "";
+        campoLongitude.value = alunoLongitude || "";
+
         dadosAlunoContainer.classList.remove("d-none");
       } catch (err) {
         console.error(err);
@@ -297,6 +322,8 @@
 
     verificarCriterios.addEventListener("click", async () => {
       if (!originalData) return;
+
+      // Exemplo de busca de endereço via CEP, caso o campo rua esteja vazio:
       if (campoCep.value.trim() && !campoRua.value.trim()) {
         try {
           const cepLimpo = campoCep.value.replace(/\D/g, "");
@@ -312,6 +339,8 @@
           }
         } catch { }
       }
+
+      // Abre modal do mapa
       modalMapaCriterios.show();
       setTimeout(() => {
         initMap();
@@ -336,8 +365,10 @@
           }
         });
       }
+
       distanciaRota.textContent = "--";
 
+      // Exemplo de endpoint para buscar coordenadas da escola:
       let escolaNome = originalData.escola_nome || "";
       const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
       const escolaJson = await escolaResp.json();
@@ -386,6 +417,9 @@
           alunoPos = markerAluno.getPosition();
           alunoLatitude = alunoPos.lat();
           alunoLongitude = alunoPos.lng();
+          // Atualiza campos de latitude/longitude no formulário
+          campoLatitude.value = alunoLatitude.toFixed(6);
+          campoLongitude.value = alunoLongitude.toFixed(6);
           calcularRota(alunoPos, escolaPos);
         });
       } else {
@@ -480,6 +514,9 @@
       }
     }
 
+    // ****
+    // AQUI ESTÁ O PONTO PRINCIPAL DA ALTERAÇÃO DE ENDPOINT
+    // ****
     btnSalvarAluno.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para salvar.");
@@ -491,8 +528,7 @@
         defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
       }
 
-      // Mantemos os dados que não estão na tela (ano, modalidade, etc.)
-      // e apenas substituímos o que realmente foi alterado ou exibido:
+      // Mantemos os dados que não estão na tela e substituímos somente o que precisa:
       const mergeBody = {
         id_matricula: (campoIdMatricula.value.trim() || originalData.id_matricula),
         escola_id: (originalData.escola_id || null),
@@ -511,13 +547,18 @@
         filiacao_2: (campoFiliacao2.value.trim() || originalData.filiacao_2),
         responsavel: (campoResponsavel.value.trim() || originalData.responsavel),
         deficiencia: defArray.length ? defArray : (originalData.deficiencia || []),
+
+        // Atualizado com as coordenadas (incluso na requisição):
         latitude: (alunoLatitude !== null ? alunoLatitude : (originalData.latitude || null)),
         longitude: (alunoLongitude !== null ? alunoLongitude : (originalData.longitude || null)),
+
+        // Caso queira salvar a rua atualizada também
         rua: (campoRua.value.trim() || (originalData.rua || "")),
       };
 
       try {
-        const resp = await fetch(`/api/alunos-ativos/${alunoId}`, {
+        // Agora usando o novo endpoint /api/alunos-recadastro
+        const resp = await fetch(`/api/alunos-recadastro/${alunoId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(mergeBody)
