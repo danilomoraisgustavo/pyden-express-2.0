@@ -126,7 +126,8 @@
   </div>
 
   <!-- Google Maps API + bibliotecas geometry/places -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,geometry"></script>
+  <script
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry"></script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -195,8 +196,8 @@
         textoExibicao += `Filiação 2: ${data.filiacao_2 || ""}\n`;
         textoExibicao += `Responsável: ${data.responsavel || ""}\n`;
         textoExibicao += `Deficiência: ${data.deficiencia && data.deficiencia.length
-            ? data.deficiencia.join(", ")
-            : "Não informado"
+          ? data.deficiencia.join(", ")
+          : "Não informado"
           }\n`;
         dadosAluno.value = textoExibicao;
         dadosAlunoContainer.classList.remove("d-none");
