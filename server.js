@@ -5732,25 +5732,13 @@ app.put('/api/alunos-recadastro/:id', async (req, res) => {
   try {
     const alunoId = req.params.id;
 
-    // Dados enviados pelo front-end:
+    // Somente os campos que queremos atualizar no banco:
     const {
-      id_matricula,
-      escola_id,
-      ano,
-      modalidade,
-      formato_letivo,
-      turma,
-      pessoa_nome,
-      cpf,
-      transporte_escolar_poder_publico,
       cep,
       bairro,
       numero_pessoa_endereco,
-      filiacao_1,
       numero_telefone,
-      filiacao_2,
-      responsavel,
-      deficiencia,           // Pode vir como array ou string
+      deficiencia,
       latitude,
       longitude,
       rua
@@ -5760,15 +5748,7 @@ app.put('/api/alunos-recadastro/:id', async (req, res) => {
       return res.status(400).json({ message: "ID do aluno não informado." });
     }
 
-    // Exemplo de validações:
-    if (!id_matricula || !pessoa_nome) {
-      return res.status(400).json({
-        message: "Campos obrigatórios (id_matricula, pessoa_nome) não foram preenchidos."
-      });
-    }
-
-    // Se deficiencia for array, converte para string (ex.: CSV);
-    // Se for string, mantém; caso contrário, deixa como null ou vazio
+    // Tratamento do campo deficiencia (array -> CSV ou string -> string)
     let deficienciaStr = null;
     if (Array.isArray(deficiencia)) {
       deficienciaStr = deficiencia.join(",");
@@ -5776,72 +5756,45 @@ app.put('/api/alunos-recadastro/:id', async (req, res) => {
       deficienciaStr = deficiencia;
     }
 
-    // Monta a query e valores para o UPDATE (ajuste para suas colunas)
+    // Query que atualiza SOMENTE os campos desejados
     const sql = `
       UPDATE alunos_ativos
       SET
-        id_matricula = $1,
-        escola_id = $2,
-        ano = $3,
-        modalidade = $4,
-        formato_letivo = $5,
-        turma = $6,
-        pessoa_nome = $7,
-        cpf = $8,
-        transporte_escolar_poder_publico = $9,
-        cep = $10,
-        bairro = $11,
-        numero_pessoa_endereco = $12,
-        filiacao_1 = $13,
-        numero_telefone = $14,
-        filiacao_2 = $15,
-        responsavel = $16,
-        deficiencia = $17,
-        latitude = $18,
-        longitude = $19,
-        rua = $20
-      WHERE id = $21
+        cep = $1,
+        bairro = $2,
+        numero_pessoa_endereco = $3,
+        numero_telefone = $4,
+        deficiencia = $5,
+        latitude = $6,
+        longitude = $7,
+        rua = $8
+      WHERE id = $9
       RETURNING id
     `;
 
     const values = [
-      id_matricula,
-      escola_id,
-      ano,
-      modalidade,
-      formato_letivo,
-      turma,
-      pessoa_nome,
-      cpf,
-      transporte_escolar_poder_publico,
-      cep,
-      bairro,
-      numero_pessoa_endereco,
-      filiacao_1,
-      numero_telefone,
-      filiacao_2,
-      responsavel,
-      deficienciaStr,
-      latitude,
-      longitude,
-      rua,
+      cep || null,
+      bairro || null,
+      numero_pessoa_endereco || null,
+      numero_telefone || null,
+      deficienciaStr,             // pode ser null ou CSV
+      latitude || null,
+      longitude || null,
+      rua || null,
       alunoId
     ];
 
-    // Executa a query usando pool (PostgreSQL)
     const result = await pool.query(sql, values);
 
-    // Se result.rowCount for 0, significa que não encontrou registro para atualizar
     if (result.rowCount === 0) {
       return res.status(404).json({
         message: "Aluno não encontrado ou não foi possível atualizar."
       });
     }
 
-    // Retornando algo simples como resposta
     return res.json({
       success: true,
-      message: "Aluno atualizado com sucesso.",
+      message: "Dados do aluno atualizados com sucesso.",
       updatedId: result.rows[0].id
     });
 
@@ -5852,7 +5805,6 @@ app.put('/api/alunos-recadastro/:id', async (req, res) => {
     });
   }
 });
-
 
 app.put("/api/alunos-ativos/:id", async (req, res) => {
   try {
