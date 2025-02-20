@@ -63,6 +63,7 @@
                   <button id="btnBuscar" class="btn btn-primary mt-3">Buscar</button>
                 </div>
               </div>
+
               <div class="row justify-content-center mt-4">
                 <div class="col-md-10">
                   <div class="d-none" id="dadosAlunoContainer">
@@ -204,8 +205,7 @@
     </div>
   </div>
 
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=SUACHAVE&libraries=places,geometry"></script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -222,7 +222,7 @@
     let measureActive = false;
     let measurePoints = [];
     let measurePolyline = null;
-    let mapClickListener = null;  // Para controlar o evento de clique no mapa
+    let mapClickListener = null;
 
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
@@ -237,7 +237,6 @@
     const btnMeasureReset = document.getElementById("btnMeasureReset");
     const btnSalvarAluno = document.getElementById("btnSalvarAluno");
 
-    // Campos
     const campoIdMatricula = document.getElementById("campoIdMatricula");
     const campoNomeAluno = document.getElementById("campoNomeAluno");
     const campoEscola = document.getElementById("campoEscola");
@@ -273,7 +272,7 @@
         originalData = data;
         alunoId = data.id || null;
 
-        // Preenche os campos (sendo que vários estão readonly)
+        // Preenche os campos
         campoIdMatricula.value = data.id_matricula || "";
         campoNomeAluno.value = data.pessoa_nome || "";
         campoEscola.value = data.escola_nome || "";
@@ -312,7 +311,10 @@
     verificarCriterios.addEventListener("click", async () => {
       if (!originalData) return;
 
-      // Se houver CEP e não houver rua, tenta preencher via API do ViaCEP
+      // Se houver CEP e não houver rua, usa ViaCEP APENAS pra preencher a rua
+      // e ignorar o bairro. Assim, iremos usar:
+      // logradouro -> campoRua
+      // (não preenche bairro automaticamente)
       if (campoCep.value.trim() && !campoRua.value.trim()) {
         try {
           const cepLimpo = campoCep.value.replace(/\D/g, "");
@@ -321,15 +323,16 @@
             if (r.ok) {
               const viacep = await r.json();
               if (!viacep.erro) {
+                // Preenche somente rua (logradouro)
                 campoRua.value = viacep.logradouro || campoRua.value;
-                campoBairro.value = viacep.bairro || campoBairro.value;
               }
             }
           }
         } catch { }
       }
+
+      // Abre modal e inicia mapa
       modalMapaCriterios.show();
-      // Dá um pequeno timeout para o mapa carregar corretamente
       setTimeout(() => {
         initMap();
       }, 500);
@@ -354,8 +357,7 @@
           }
         });
 
-        // Aqui adicionamos o clique no mapa para reposicionar o marker do Aluno
-        // e atualizar latitude/longitude nos campos
+        // Clique no mapa => atualiza lat/lng do Aluno
         mapClickListener = map.addListener("click", (e) => {
           if (!markerAluno) {
             markerAluno = new google.maps.Marker({
@@ -387,8 +389,8 @@
       }
       distanciaRota.textContent = "--";
 
-      // Localiza a escola
-      let escolaNome = originalData.escola_nome || "";
+      // Coordenadas da escola
+      const escolaNome = originalData.escola_nome || "";
       const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
       const escolaJson = await escolaResp.json();
       if (!escolaJson || !escolaJson.longitude || !escolaJson.latitude) {
@@ -397,12 +399,14 @@
       }
       escolaPos = new google.maps.LatLng(escolaJson.latitude, escolaJson.longitude);
 
-      // Endereço do aluno (para geocodificar se não houver lat/lng)
+      // Endereço do aluno => Usar SOMENTE rua + numero + Canaã dos Carajás
+      // (removendo bairro do geocoding)
       let endAluno = "";
       if (campoRua.value.trim()) {
-        endAluno = `${campoRua.value}, ${campoBairro.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
+        endAluno = `${campoRua.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
       } else {
-        endAluno = `${campoCep.value}, ${campoBairro.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
+        // Caso não tenha rua, tentamos só CEP e número, mas sem bairro
+        endAluno = `${campoCep.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
       }
       infoEndereco.innerText = `Endereço do Aluno: ${endAluno}`;
 
@@ -546,14 +550,12 @@
         alert("Nenhum aluno carregado para salvar.");
         return;
       }
-      // Deficiência pode ser array no banco, então tratamos:
       const defString = campoDeficiencia.value.trim();
       let defArray = [];
       if (defString) {
         defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
       }
 
-      // Aqui enviamos apenas os campos que serão atualizados no banco
       const mergeBody = {
         cep: campoCep.value.trim(),
         bairro: campoBairro.value.trim(),
