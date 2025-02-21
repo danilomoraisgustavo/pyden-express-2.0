@@ -393,10 +393,10 @@
       return "PROTO-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     }
 
-    // SALVAR ALTERAÇÕES
+    // BOTÃO APROVADO
     async function salvarAlteracoes() {
       if (!alunoId) {
-        alert("Nenhum aluno carregado para salvar.");
+        alert("Nenhum aluno carregado.");
         return false;
       }
       const defString = campoDeficiencia.value.trim();
@@ -436,7 +436,6 @@
       }
     }
 
-    // BOTÃO APROVADO
     btnAprovado.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para aprovação.");
@@ -480,7 +479,6 @@
         alert("Nenhum aluno carregado para reprovação.");
         return;
       }
-
       const protocolo = gerarProtocolo();
       try {
         const bodyReq = {
@@ -525,7 +523,7 @@
       window.open(`/api/termo-cadastro/${alunoId}/gerar-pdf`, "_blank");
     });
 
-    // INIC MAP
+    // INIT MAP
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -533,7 +531,6 @@
           zoom: 14,
           mapTypeId: google.maps.MapTypeId.HYBRID
         });
-
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({
           map: map,
@@ -545,6 +542,7 @@
           }
         });
 
+        // Clique no mapa => ajusta lat/long do aluno
         mapClickListener = map.addListener("click", (e) => {
           if (!markerAluno) {
             markerAluno = new google.maps.Marker({
@@ -570,13 +568,14 @@
           alunoLatitude = e.latLng.lat();
           alunoLongitude = e.latLng.lng();
           campoLatitude.value = alunoLatitude.toFixed(6);
-          campoLongitude.value = alumnoLongitude.toFixed(6);
+          campoLongitude.value = alunoLongitude.toFixed(6);
           calcularRota(e.latLng, escolaPos);
         });
       }
 
       distanciaRota.textContent = "--";
 
+      // Localiza a escola
       const escolaNome = originalData.escola_nome || "";
       const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
       const escolaJson = await escolaResp.json();
@@ -586,6 +585,7 @@
       }
       escolaPos = new google.maps.LatLng(escolaJson.latitude, escolaJson.longitude);
 
+      // Monta endereço do aluno
       let endAluno = "";
       if (campoRua.value.trim()) {
         endAluno = `${campoRua.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
@@ -594,18 +594,20 @@
       }
       infoEndereco.innerText = endAluno;
 
+      // Se já tivermos lat/lng
       if (alunoLatitude && alunoLongitude) {
         alunoPos = new google.maps.LatLng(parseFloat(alunoLatitude), parseFloat(alunoLongitude));
         createOrMoveMarkers();
       } else {
+        // Senão geocodifica
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ address: endAluno }, (results, status) => {
           if (status === "OK") {
             alunoPos = results[0].geometry.location;
             alunoLatitude = alunoPos.lat();
-            alunoLongitude = alumnoPos.lng();
+            alunoLongitude = alunoPos.lng();
             campoLatitude.value = alunoLatitude.toFixed(6);
-            campoLongitude.value = alumnoLongitude.toFixed(6);
+            campoLongitude.value = alunoLongitude.toFixed(6);
             createOrMoveMarkers();
           } else {
             alert("Não foi possível localizar o endereço do aluno via Geocoder.");
@@ -628,10 +630,10 @@
         });
         markerAluno.addListener("dragend", () => {
           alunoPos = markerAluno.getPosition();
-          alunoLatitude = alumnoPos.lat();
-          alumnoLongitude = alumnoPos.lng();
-          campoLatitude.value = alumnoLatitude.toFixed(6);
-          campoLongitude.value = alumnoLongitude.toFixed(6);
+          alunoLatitude = alunoPos.lat();
+          alunoLongitude = alunoPos.lng();
+          campoLatitude.value = alunoLatitude.toFixed(6);
+          campoLongitude.value = alunoLongitude.toFixed(6);
           calcularRota(alunoPos, escolaPos);
         });
       } else {
@@ -652,7 +654,7 @@
       calcularRota(alunoPos, escolaPos);
     }
 
-    // CALCULAR ROTA
+    // CALCULA ROTA
     function calcularRota(aPos, ePos) {
       const request = {
         origin: aPos,
