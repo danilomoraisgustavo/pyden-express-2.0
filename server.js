@@ -5506,6 +5506,268 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
   }
 });
 
+// Exemplo de endpoint para gerar PDF de "Não Aprovado"
+app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  try {
+    // Consulta do aluno
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+    }
+    const aluno = result.rows[0];
+
+    // Gera PDF estilo "memorando"
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=nao_aprovado_${alunoId}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    // Cabeçalho
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("COMPROVANTE DE NÃO APROVAÇÃO Nº 2025", {
+        align: "justify",
+      })
+      .moveDown();
+
+    // Corpo do documento
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text("Informamos que o(a) aluno(a) acima mencionado não atende aos critérios estabelecidos para uso do Transporte Escolar. Portanto, não foi possível aprovar seu cadastro para o ano letivo vigente.", { align: "justify" })
+      .moveDown()
+      .text("Motivo da Não Aprovação:", { align: "justify", underline: true })
+      .moveDown()
+      .text("• Distância insuficiente entre residência e escola;", { align: "justify" })
+      .text("• Falta de documentação ou critérios não atendidos;", { align: "justify" })
+      .moveDown()
+      .text("Em caso de dúvidas ou para regularizar a situação, favor dirigir-se à Secretaria Municipal de Educação ou entrar em contato pelos canais oficiais.", { align: "justify" })
+      .moveDown();
+
+    // Assinatura
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
+      .text("Gestor de Transporte Escolar", { align: "center" })
+      .text("Portaria 118/2023 - GP", { align: "center" });
+
+    // Rodapé
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text(
+        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de não aprovação.",
+    });
+  }
+});
+
+// Exemplo de endpoint para gerar PDF de "Aprovado"
+app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  try {
+    // Consulta do aluno
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+    }
+    const aluno = result.rows[0];
+
+    // Gera PDF estilo "memorando"
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=aprovado_${alunoId}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    // Cabeçalho
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("COMPROVANTE DE APROVAÇÃO Nº 2025", {
+        align: "justify",
+      })
+      .moveDown();
+
+    // Corpo do documento
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text("Informamos que o(a) aluno(a) acima mencionado ATENDE aos critérios estabelecidos para uso do Transporte Escolar, estando devidamente autorizado a usufruir do serviço no ano letivo corrente, conforme as normas vigentes.", { align: "justify" })
+      .moveDown()
+      .text("Em caso de dúvidas ou alterações nos dados cadastrais, favor dirigir-se à Secretaria Municipal de Educação ou entrar em contato pelos canais oficiais.", { align: "justify" })
+      .moveDown();
+
+    // Assinatura
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
+      .text("Gestor de Transporte Escolar", { align: "center" })
+      .text("Portaria 118/2023 - GP", { align: "center" });
+
+    // Rodapé
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text(
+        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de aprovação.",
+    });
+  }
+});
+
+
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {

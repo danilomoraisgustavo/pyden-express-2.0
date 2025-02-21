@@ -386,21 +386,29 @@
     });
 
     btnAprovado.addEventListener("click", () => {
+      if (!alunoId) {
+        alert("Nenhum aluno carregado para gerar comprovante de aprovação.");
+        return;
+      }
+      window.open(`/api/comprovante-aprovado/${alunoId}/gerar-pdf`, "_blank");
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Aluno Aprovado!";
       resultadoTitulo.className = "text-center text-success";
-      resultadoDescricao.innerText =
-        "O aluno atende aos critérios e foi aprovado.";
+      resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
 
     btnNaoAprovado.addEventListener("click", () => {
+      if (!alunoId) {
+        alert("Nenhum aluno carregado para gerar comprovante de não aprovação.");
+        return;
+      }
+      window.open(`/api/comprovante-nao-aprovado/${alunoId}/gerar-pdf`, "_blank");
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Não Aprovado";
       resultadoTitulo.className = "text-center text-danger";
-      resultadoDescricao.innerText =
-        "O aluno não atende aos critérios estabelecidos.";
+      resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
     });
 
     btnFinalizar.addEventListener("click", () => {
