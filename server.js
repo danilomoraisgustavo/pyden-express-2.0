@@ -6278,6 +6278,204 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
   }
 });
 
+/***************************************************************
+ * POST /api/alunos-ativos-estadual
+ * Cria um novo aluno estadual na tabela alunos_ativos_estadual
+ ***************************************************************/
+app.post("/api/alunos-ativos-estadual", async (req, res) => {
+  try {
+    const {
+      id_matricula,
+      pessoa_nome,
+      escola_id,
+      turma,
+      turno,
+      cpf,
+      cep,
+      rua,
+      bairro,
+      numero_pessoa_endereco,
+      numero_telefone,
+      filiacao_1,
+      filiacao_2,
+      responsavel,
+      deficiencia,
+      latitude,
+      longitude
+    } = req.body;
+
+    // Validações básicas (exemplo)
+    if (!pessoa_nome) {
+      return res.status(400).json({
+        message: "O campo 'pessoa_nome' é obrigatório."
+      });
+    }
+
+    // Para o campo deficiencia do tipo TEXT[] em PostgreSQL, 
+    // basta enviar como array no body. Ex: deficiencia: ["auditiva", "visual"]
+    // Se preferir armazenar como string, seria necessária conversão (mas aqui vamos armazenar nativo em array).
+    
+    const insertSQL = `
+      INSERT INTO alunos_ativos_estadual (
+        id_matricula,
+        pessoa_nome,
+        escola_id,
+        turma,
+        turno,
+        cpf,
+        cep,
+        rua,
+        bairro,
+        numero_pessoa_endereco,
+        numero_telefone,
+        filiacao_1,
+        filiacao_2,
+        responsavel,
+        deficiencia,
+        latitude,
+        longitude
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      RETURNING id
+    `;
+
+    const values = [
+      id_matricula || null,
+      pessoa_nome,
+      escola_id || null,
+      turma || null,
+      turno || null,
+      cpf || null,
+      cep || null,
+      rua || null,
+      bairro || null,
+      numero_pessoa_endereco || null,
+      numero_telefone || null,
+      filiacao_1 || null,
+      filiacao_2 || null,
+      responsavel || null,
+      // deficiencia como array (nativo no PostgreSQL)
+      Array.isArray(deficiencia) && deficiencia.length > 0 ? deficiencia : null,
+      // Latitude e longitude
+      latitude || null,
+      longitude || null
+    ];
+
+    const result = await pool.query(insertSQL, values);
+
+    return res.status(201).json({
+      success: true,
+      message: "Aluno estadual cadastrado com sucesso.",
+      id: result.rows[0].id
+    });
+  } catch (error) {
+    console.error("Erro no POST /api/alunos-ativos-estadual:", error);
+    return res.status(500).json({
+      message: "Erro interno ao criar aluno estadual."
+    });
+  }
+});
+
+
+/***************************************************************
+ * PUT /api/alunos-ativos-estadual/:id
+ * Atualiza os dados de um aluno estadual já existente
+ ***************************************************************/
+app.put("/api/alunos-ativos-estadual/:id", async (req, res) => {
+  try {
+    const alunoId = req.params.id;
+    const {
+      id_matricula,
+      pessoa_nome,
+      escola_id,
+      turma,
+      turno,
+      cpf,
+      cep,
+      rua,
+      bairro,
+      numero_pessoa_endereco,
+      numero_telefone,
+      filiacao_1,
+      filiacao_2,
+      responsavel,
+      deficiencia,
+      latitude,
+      longitude
+    } = req.body;
+
+    if (!alunoId) {
+      return res.status(400).json({ message: "ID do aluno não informado." });
+    }
+
+    // Aqui também armazenamos deficiencia como array:
+    const updateSQL = `
+      UPDATE alunos_ativos_estadual
+      SET
+        id_matricula = $1,
+        pessoa_nome = $2,
+        escola_id = $3,
+        turma = $4,
+        turno = $5,
+        cpf = $6,
+        cep = $7,
+        rua = $8,
+        bairro = $9,
+        numero_pessoa_endereco = $10,
+        numero_telefone = $11,
+        filiacao_1 = $12,
+        filiacao_2 = $13,
+        responsavel = $14,
+        deficiencia = $15,
+        latitude = $16,
+        longitude = $17,
+        updated_at = NOW()
+      WHERE id = $18
+      RETURNING id
+    `;
+
+    const values = [
+      id_matricula || null,
+      pessoa_nome || null,
+      escola_id || null,
+      turma || null,
+      turno || null,
+      cpf || null,
+      cep || null,
+      rua || null,
+      bairro || null,
+      numero_pessoa_endereco || null,
+      numero_telefone || null,
+      filiacao_1 || null,
+      filiacao_2 || null,
+      responsavel || null,
+      // deficiencia como array (nativo no PostgreSQL)
+      Array.isArray(deficiencia) && deficiencia.length > 0 ? deficiencia : null,
+      latitude || null,
+      longitude || null,
+      alunoId
+    ];
+
+    const result = await pool.query(updateSQL, values);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "Aluno não encontrado ou não foi possível atualizar."
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Dados do aluno estadual atualizados com sucesso.",
+      updatedId: result.rows[0].id
+    });
+  } catch (error) {
+    console.error("Erro no PUT /api/alunos-ativos-estadual/:id:", error);
+    return res.status(500).json({
+      message: "Erro interno ao atualizar o aluno estadual."
+    });
+  }
+});
 
 app.put("/api/alunos-ativos/:id", async (req, res) => {
   try {
