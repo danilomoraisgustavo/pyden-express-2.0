@@ -5505,6 +5505,7 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
+
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
@@ -5576,52 +5577,42 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc.moveDown(1);
 
     // Corpo
-    doc.fontSize(12).font("Helvetica");
-    doc.text(
-      "Eu, _____________________________________________________________, confirmo que sou o(a) responsável pelo(a) aluno(a) ", 
-      { align: "justify" }
-    )
-      .font("Helvetica-Bold")
-      .text(`${aluno.aluno_nome || ""}`, { continued: true })
-      .font("Helvetica")
-      .text(`, CPF: `, { continued: true })
-      .font("Helvetica-Bold")
-      .text(`${aluno.cpf || ""}`, { continued: true })
-      .font("Helvetica")
-      .text(
-        `, estudante da Escola `,
-        { continued: true }
-      )
-      .font("Helvetica-Bold")
-      .text(`${aluno.escola_nome || ""}`, { continued: true })
-      .font("Helvetica")
-      .text(
-        `, Turma: `,
-        { continued: true }
-      )
-      .font("Helvetica-Bold")
-      .text(`${aluno.turma || ""}`, { continued: true })
-      .font("Helvetica")
-      .text(
-        `. Endereço atualizado: Rua `,
-        { continued: true }
-      )
-      .font("Helvetica-Bold")
-      .text(`${aluno.rua || ""}`, { continued: true })
-      .font("Helvetica")
-      .text(
-        `, nº `,
-        { continued: true }
-      )
-      .font("Helvetica-Bold")
-      .text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
-      .font("Helvetica")
-      .text(
-        `, Bairro `,
-        { continued: true }
-      )
-      .font("Helvetica-Bold")
-      .text(`${aluno.bairro || ""}.`, { align: "justify" });
+    doc
+  .fontSize(12)
+  .font("Helvetica")
+  // Inicia o parágrafo:
+  .text(
+    "Eu, _____________________________________________________________, confirmo que sou o(a) responsável pelo(a) aluno(a) ",
+    { align: "justify", continued: true }
+  )
+  .font("Helvetica-Bold")
+  .text(`${aluno.aluno_nome || ""}`, { continued: true })
+  .font("Helvetica")
+  .text(", CPF: ", { continued: true })
+  .font("Helvetica-Bold")
+  .text(`${aluno.cpf || ""}`, { continued: true })
+  .font("Helvetica")
+  .text(", estudante da Escola ", { continued: true })
+  .font("Helvetica-Bold")
+  .text(`${aluno.escola_nome || ""}`, { continued: true })
+  .font("Helvetica")
+  .text(", Turma: ", { continued: true })
+  .font("Helvetica-Bold")
+  .text(`${aluno.turma || ""}`, { continued: true })
+  .font("Helvetica")
+  .text(". Endereço atualizado: Rua ", { continued: true })
+  .font("Helvetica-Bold")
+  .text(`${aluno.rua || ""}`, { continued: true })
+  .font("Helvetica")
+  .text(", nº ", { continued: true })
+  .font("Helvetica-Bold")
+  .text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
+  .font("Helvetica")
+  .text(", Bairro ", { continued: true })
+  .font("Helvetica-Bold")
+  // **finaliza** o parágrafo sem `continued: true`:
+  .text(`${aluno.bairro || ""}.`, { continued: false, align: "justify" });
+;
 
     doc.moveDown(1);
     doc.font("Helvetica-Bold").text("CRITÉRIOS DE ELEGIBILIDADE:", { align: "left" });
@@ -5685,7 +5676,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
-
 
 // Import alunos ativos
 app.post("/api/import-alunos-ativos", async (req, res) => {
