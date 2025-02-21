@@ -5539,10 +5539,13 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc.pipe(res);
 
     const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    // Cabeçalho
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
-
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
@@ -5555,8 +5558,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
         { width: 300, align: "right" }
       );
 
-    // Linha separadora
-    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
@@ -5567,54 +5568,54 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc.x = 50;
     doc.fontSize(14).font("Helvetica-Bold").text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
       align: "center",
+      underline: true,
     });
     doc.moveDown();
 
+    // Corpo
     doc.fontSize(12).font("Helvetica");
-
-    doc.text(`Eu, RESPONSÁVEL DO ALUNO(A): ${aluno.aluno_nome || ""}`, {
+    doc.text(`Eu, ________________________________________________________ (Responsável)`, {
       align: "justify",
     });
-    doc.moveDown(1);
-
-    doc.text(
-      `CPF do Aluno: ${aluno.cpf || ""}, Escola: ${aluno.escola_nome || ""}, Turma: ${aluno.turma || ""}.`,
-      { align: "justify" }
-    );
 
     doc.moveDown(1);
     doc.text(
-      `Endereço: Rua ${aluno.rua || ""}, Nº ${
+      `Confirmo que sou o responsável pelo(a) aluno(a): ${aluno.aluno_nome || ""}, CPF: ${
+        aluno.cpf || ""
+      }, estudante da Escola ${aluno.escola_nome || ""}, Turma: ${
+        aluno.turma || ""
+      }. Endereço atualizado: Rua ${aluno.rua || ""}, nº ${
         aluno.numero_pessoa_endereco || ""
       }, Bairro ${aluno.bairro || ""}.`,
       { align: "justify" }
     );
-    doc.moveDown(1);
-
-    doc.text("Declaro ciência e concordância com os CRITÉRIOS DE ELEGIBILIDADE para transporte:", {
-      align: "justify",
-    });
-    doc.moveDown(1);
-
-    const criterios = [
-      "Idade Mínima: 4 anos completos até 31 de março do ano vigente.",
-      "Distância Mínima - Educação Infantil: residência a mais de 1,5 km.",
-      "Distância Mínima - Fundamental, Médio, EJA: residência a mais de 2 km.",
-      "Exigência para Alunos com Necessidades Especiais: apresentar laudo médico."
-    ];
-
-    criterios.forEach((crit) => {
-      doc
-        .text(`• ${crit}`, {
-          align: "justify",
-        })
-        .moveDown(0.3);
-    });
 
     doc.moveDown(1);
     doc.text(
-      "Estou ciente de que somente após a verificação destes critérios e do efetivo cadastro o aluno estará habilitado a receber o transporte escolar, quando necessário.",
+      "Declaro ciência e concordância com os CRITÉRIOS DE ELEGIBILIDADE para o Transporte Escolar, dispostos a seguir:",
       { align: "justify" }
+    );
+
+    doc.moveDown(1);
+    doc.list(
+      [
+        "Idade Mínima: 4 (quatro) anos completos até 31 de março do ano vigente.",
+        "Distância Mínima para Educação Infantil: residência a mais de 1,5 km da escola.",
+        "Distância Mínima para Ensino Fundamental, Médio e EJA: residência a mais de 2 km da escola.",
+        "Alunos com Necessidades Especiais: apresentar laudo médico. Priorização conforme necessidade física, demandando transporte adaptado.",
+      ],
+      { align: "justify" }
+    );
+
+    doc.moveDown(1);
+    doc.text(
+      "Estou ciente de que somente após a verificação dos critérios de distância e a efetivação do cadastro o(a) aluno(a) estará habilitado(a) para o uso do transporte escolar, caso necessário.",
+      { align: "justify" }
+    );
+
+    doc.moveDown(2);
+    doc.text(
+      "Concordo em cumprir e respeitar todos os requisitos estabelecidos pela Secretaria Municipal de Educação no tocante ao transporte escolar, isentando o Município de Canaã dos Carajás de quaisquer responsabilidades decorrentes de informações inverídicas ou omissões que possam acarretar a perda do direito ao transporte."
     );
 
     doc.moveDown(3);
@@ -5628,7 +5629,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
       const footerSepY = doc.page.height - 160;
       doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
     }
-    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
     if (fs.existsSync(logo2Path)) {
       const logo2X = (doc.page.width - 160) / 2;
       const logo2Y = doc.page.height - 150;
@@ -5643,7 +5643,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
         align: "center",
       })
       .text(
-        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        "Rua Itamarati, s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
         { align: "center" }
       )
       .text("Telefone: (94) 99293-4500", { align: "center" });
@@ -5657,6 +5657,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
+
 
 // Import alunos ativos
 app.post("/api/import-alunos-ativos", async (req, res) => {
