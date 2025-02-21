@@ -292,7 +292,6 @@
     const resultadoTitulo = document.getElementById("resultadoTitulo");
     const resultadoDescricao = document.getElementById("resultadoDescricao");
 
-    // BUSCAR ALUNO
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -344,7 +343,6 @@
       }
     });
 
-    // CONVERTER CEP
     btnConverterCep.addEventListener("click", async () => {
       const cepLimpo = campoCep.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -369,7 +367,6 @@
       }
     });
 
-    // BOTÃO PRÓXIMO
     btnProximo.addEventListener("click", () => {
       if (!originalData) {
         alert("Nenhum aluno carregado.");
@@ -382,18 +379,15 @@
       }, 300);
     });
 
-    // VOLTAR ETAPA 1
     btnVoltarEtapa1.addEventListener("click", () => {
       etapa2.classList.remove("active");
       etapa1.classList.add("active");
     });
 
-    // GERA PROTOCOLO
     function gerarProtocolo() {
       return "PROTO-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     }
 
-    // BOTÃO APROVADO
     async function salvarAlteracoes() {
       if (!alunoId) {
         alert("Nenhum aluno carregado.");
@@ -473,7 +467,6 @@
       resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
 
-    // BOTÃO NÃO APROVADO
     btnNaoAprovado.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para reprovação.");
@@ -508,13 +501,11 @@
       resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
     });
 
-    // BOTÃO FINALIZAR
     btnFinalizar.addEventListener("click", () => {
       alert("Atendimento finalizado!");
       location.reload();
     });
 
-    // BOTÃO IMPRIMIR CONFIRMAÇÃO
     btnImprimirConfirmacao.addEventListener("click", () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para gerar termo.");
@@ -523,7 +514,6 @@
       window.open(`/api/termo-cadastro/${alunoId}/gerar-pdf`, "_blank");
     });
 
-    // INIT MAP
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -542,7 +532,6 @@
           }
         });
 
-        // Clique no mapa => ajusta lat/long do aluno
         mapClickListener = map.addListener("click", (e) => {
           if (!markerAluno) {
             markerAluno = new google.maps.Marker({
@@ -575,7 +564,6 @@
 
       distanciaRota.textContent = "--";
 
-      // Localiza a escola
       const escolaNome = originalData.escola_nome || "";
       const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
       const escolaJson = await escolaResp.json();
@@ -585,7 +573,6 @@
       }
       escolaPos = new google.maps.LatLng(escolaJson.latitude, escolaJson.longitude);
 
-      // Monta endereço do aluno
       let endAluno = "";
       if (campoRua.value.trim()) {
         endAluno = `${campoRua.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
@@ -594,12 +581,10 @@
       }
       infoEndereco.innerText = endAluno;
 
-      // Se já tivermos lat/lng
       if (alunoLatitude && alunoLongitude) {
         alunoPos = new google.maps.LatLng(parseFloat(alunoLatitude), parseFloat(alunoLongitude));
         createOrMoveMarkers();
       } else {
-        // Senão geocodifica
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ address: endAluno }, (results, status) => {
           if (status === "OK") {
@@ -616,7 +601,6 @@
       }
     }
 
-    // CRIA OU MOVE MARCADORES
     function createOrMoveMarkers() {
       if (!markerAluno) {
         markerAluno = new google.maps.Marker({
@@ -654,7 +638,6 @@
       calcularRota(alunoPos, escolaPos);
     }
 
-    // CALCULA ROTA
     function calcularRota(aPos, ePos) {
       const request = {
         origin: aPos,
@@ -673,7 +656,6 @@
       });
     }
 
-    // MEDIR DISTÂNCIA
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {

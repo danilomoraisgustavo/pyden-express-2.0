@@ -6217,7 +6217,7 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
       deficiencia,
       latitude,
       longitude,
-      rua,
+      rua
     } = req.body;
 
     if (!alunoId) {
@@ -6241,7 +6241,8 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
         deficiencia = $5,
         latitude = $6,
         longitude = $7,
-        rua = $8
+        rua = $8,
+        transporte_escolar_poder_publico = 'Municipal'
       WHERE id = $9
       RETURNING id
     `;
@@ -6255,7 +6256,7 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
       latitude || null,
       longitude || null,
       rua || null,
-      alunoId,
+      alunoId
     ];
 
     const result = await pool.query(sql, values);
