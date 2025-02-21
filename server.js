@@ -5580,8 +5580,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc.text(
       "Eu, _____________________________________________________________, confirmo que sou o(a) responsável pelo(a) aluno(a) ", 
       { align: "justify" }
-    );
-    doc
       .font("Helvetica-Bold")
       .text(`${aluno.aluno_nome || ""}`, { continued: true })
       .font("Helvetica")
