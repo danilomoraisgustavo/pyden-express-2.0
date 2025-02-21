@@ -205,7 +205,6 @@
           <div class="d-flex justify-content-between mt-4">
             <button class="btn btn-secondary" id="btnVoltarEtapa1">Voltar</button>
             <div>
-              <button class="btn btn-success" id="btnSalvarAluno">Salvar Alterações</button>
               <button class="btn btn-danger" id="btnNaoAprovado">Não Aprovado</button>
               <button class="btn btn-success" id="btnAprovado">Aprovado</button>
             </div>
@@ -230,7 +229,8 @@
   </div>
 
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry"></script>
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry">
+    </script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -258,7 +258,6 @@
     const dadosAlunoContainer = document.getElementById("dadosAlunoContainer");
     const btnConverterCep = document.getElementById("btnConverterCep");
     const btnProximo = document.getElementById("btnProximo");
-    const btnSalvarAluno = document.getElementById("btnSalvarAluno");
 
     const btnVoltarEtapa1 = document.getElementById("btnVoltarEtapa1");
     const btnAprovado = document.getElementById("btnAprovado");
@@ -385,26 +384,69 @@
       etapa1.classList.add("active");
     });
 
-    // Função para gerar protocolo
     function gerarProtocolo() {
       return "PROTO-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     }
 
+    // Salvamento das alterações no banco
+    async function salvarAlteracoes() {
+      if (!alunoId) {
+        alert("Nenhum aluno carregado para salvar.");
+        return false;
+      }
+      const defString = campoDeficiencia.value.trim();
+      let defArray = [];
+      if (defString) {
+        defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
+      }
+
+      const mergeBody = {
+        cep: campoCep.value.trim(),
+        bairro: campoBairro.value.trim(),
+        numero_pessoa_endereco: campoNumeroEndereco.value.trim(),
+        numero_telefone: campoTelefone.value.trim(),
+        deficiencia: defArray.length ? defArray : null,
+        latitude: alunoLatitude,
+        longitude: alunoLongitude,
+        rua: campoRua.value.trim()
+      };
+
+      try {
+        const resp = await fetch(`/api/alunos-recadastro/${alunoId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mergeBody)
+        });
+        const result = await resp.json();
+
+        if (!resp.ok) {
+          alert(result.message || "Falha ao salvar alterações.");
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao atualizar dados do aluno.");
+        return false;
+      }
+    }
+
     btnAprovado.addEventListener("click", async () => {
       if (!alunoId) {
-        alert("Nenhum aluno carregado para gerar comprovante de aprovação.");
+        alert("Nenhum aluno carregado para aprovação.");
         return;
       }
+
+      const ok = await salvarAlteracoes();
+      if (!ok) return;
+
       const protocolo = gerarProtocolo();
-      // Salvar solicitação no banco
       try {
         const bodyReq = {
           aluno_id: alunoId,
           status: "APROVADO",
-          motivo: null, // ou algo do tipo
+          motivo: null
         };
-        // Adicionamos o protocolo no back-end, mas se quisermos exibir aqui, podemos
-        // Basta que o back-end gere ou usamos este "protocolo" e enviamos
         const resp = await fetch("/api/solicitacoes-transporte", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -418,9 +460,8 @@
       } catch (error) {
         alert("Falha ao salvar a solicitação.");
       }
-      // Abre comprovante
-      window.open(`/api/comprovante-aprovado/${alunoId}/gerar-pdf`, "_blank");
 
+      window.open(`/api/comprovante-aprovado/${alunoId}/gerar-pdf`, "_blank");
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Aluno Aprovado!";
@@ -430,15 +471,16 @@
 
     btnNaoAprovado.addEventListener("click", async () => {
       if (!alunoId) {
-        alert("Nenhum aluno carregado para gerar comprovante de não aprovação.");
+        alert("Nenhum aluno carregado para reprovação.");
         return;
       }
+
       const protocolo = gerarProtocolo();
       try {
         const bodyReq = {
           aluno_id: alunoId,
           status: "NAO_APROVADO",
-          motivo: "Critérios não atendidos", // ou outro motivo
+          motivo: "Critérios não atendidos"
         };
         const resp = await fetch("/api/solicitacoes-transporte", {
           method: "POST",
@@ -453,8 +495,8 @@
       } catch (error) {
         alert("Falha ao salvar a solicitação.");
       }
+      // Não salvamos as alterações, gera pdf de não aprovado
       window.open(`/api/comprovante-nao-aprovado/${alunoId}/gerar-pdf`, "_blank");
-
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Não Aprovado";
@@ -550,7 +592,7 @@
           if (status === "OK") {
             alunoPos = results[0].geometry.location;
             alunoLatitude = alunoPos.lat();
-            alunoLongitude = alunoPos.lng();
+            alunoLongitude = alumnoPos.lng();
             campoLatitude.value = alunoLatitude.toFixed(6);
             campoLongitude.value = alunoLongitude.toFixed(6);
             createOrMoveMarkers();
@@ -575,9 +617,9 @@
         markerAluno.addListener("dragend", () => {
           alunoPos = markerAluno.getPosition();
           alunoLatitude = alunoPos.lat();
-          alunoLongitude = alunoPos.lng();
-          campoLatitude.value = alunoLatitude.toFixed(6);
-          campoLongitude.value = alunoLongitude.toFixed(6);
+          alumnoLongitude = alumnoPos.lng();
+          campoLatitude.value = alumnoLatitude.toFixed(6);
+          campoLongitude.value = alumnoLongitude.toFixed(6);
           calcularRota(alunoPos, escolaPos);
         });
       } else {
@@ -638,79 +680,6 @@
       }
     });
 
-    function startMeasureMode() {
-      if (!map) return;
-      measurePoints = [];
-      measureDistanceSpan.textContent = "0";
-      measurePolyline = new google.maps.Polyline({
-        map: map,
-        path: measurePoints,
-        strokeColor: "#FF0000",
-        strokeOpacity: 1.0,
-        strokeWeight: 3
-      });
-      mapClickListener = map.addListener("click", (e) => {
-        measurePoints.push(e.latLng);
-        measurePolyline.setPath(measurePoints);
-        let totalDist = 0;
-        for (let i = 0; i < measurePoints.length - 1; i++) {
-          const segDist = google.maps.geometry.spherical.computeDistanceBetween(
-            measurePoints[i],
-            measurePoints[i + 1]
-          );
-          totalDist += segDist;
-        }
-        measureDistanceSpan.textContent = (totalDist / 1000).toFixed(3);
-      });
-    }
-
-    function endMeasureMode() {
-      if (mapClickListener) {
-        google.maps.event.removeListener(mapClickListener);
-        mapClickListener = null;
-      }
-    }
-
-    btnSalvarAluno.addEventListener("click", async () => {
-      if (!alunoId) {
-        alert("Nenhum aluno carregado para salvar.");
-        return;
-      }
-      const defString = campoDeficiencia.value.trim();
-      let defArray = [];
-      if (defString) {
-        defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
-      }
-
-      const mergeBody = {
-        cep: campoCep.value.trim(),
-        bairro: campoBairro.value.trim(),
-        numero_pessoa_endereco: campoNumeroEndereco.value.trim(),
-        numero_telefone: campoTelefone.value.trim(),
-        deficiencia: defArray.length ? defArray : null,
-        latitude: alunoLatitude,
-        longitude: alunoLongitude,
-        rua: campoRua.value.trim()
-      };
-
-      try {
-        const resp = await fetch(`/api/alunos-recadastro/${alunoId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(mergeBody)
-        });
-        const result = await resp.json();
-
-        if (!resp.ok) {
-          alert(result.message || "Falha ao salvar alterações.");
-          return;
-        }
-        alert("Dados do aluno atualizados com sucesso!");
-      } catch (err) {
-        console.error(err);
-        alert("Erro ao atualizar dados do aluno.");
-      }
-    });
   </script>
 </body>
 

@@ -6205,11 +6205,10 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
-app.put('/api/alunos-recadastro/:id', async (req, res) => {
+// PUT /api/alunos-recadastro/:id
+app.put("/api/alunos-recadastro/:id", async (req, res) => {
   try {
     const alunoId = req.params.id;
-
-    // Somente os campos que queremos atualizar no banco:
     const {
       cep,
       bairro,
@@ -6218,14 +6217,13 @@ app.put('/api/alunos-recadastro/:id', async (req, res) => {
       deficiencia,
       latitude,
       longitude,
-      rua
+      rua,
     } = req.body;
 
     if (!alunoId) {
       return res.status(400).json({ message: "ID do aluno não informado." });
     }
 
-    // Tratamento do campo deficiencia (array -> CSV ou string -> string)
     let deficienciaStr = null;
     if (Array.isArray(deficiencia)) {
       deficienciaStr = deficiencia.join(",");
@@ -6233,7 +6231,6 @@ app.put('/api/alunos-recadastro/:id', async (req, res) => {
       deficienciaStr = deficiencia;
     }
 
-    // Query que atualiza SOMENTE os campos desejados
     const sql = `
       UPDATE alunos_ativos
       SET
@@ -6254,34 +6251,33 @@ app.put('/api/alunos-recadastro/:id', async (req, res) => {
       bairro || null,
       numero_pessoa_endereco || null,
       numero_telefone || null,
-      deficienciaStr,             // pode ser null ou CSV
+      deficienciaStr,
       latitude || null,
       longitude || null,
       rua || null,
-      alunoId
+      alunoId,
     ];
 
     const result = await pool.query(sql, values);
-
     if (result.rowCount === 0) {
       return res.status(404).json({
-        message: "Aluno não encontrado ou não foi possível atualizar."
+        message: "Aluno não encontrado ou não foi possível atualizar.",
       });
     }
 
     return res.json({
       success: true,
       message: "Dados do aluno atualizados com sucesso.",
-      updatedId: result.rows[0].id
+      updatedId: result.rows[0].id,
     });
-
   } catch (error) {
     console.error("Erro no PUT /api/alunos-recadastro/:id:", error);
     return res.status(500).json({
-      message: "Erro interno ao atualizar o aluno."
+      message: "Erro interno ao atualizar o aluno.",
     });
   }
 });
+
 
 app.put("/api/alunos-ativos/:id", async (req, res) => {
   try {
