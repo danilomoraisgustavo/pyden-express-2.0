@@ -4554,7 +4554,6 @@ app.get("/api/alunos_ativos", async (req, res) => {
 });
 
 // 2) Rota para buscar as coordenadas de uma escola por NOME
-//    A página chama: fetch(`/api/escola-coordenadas?nome_escola=NOMEESCOLA`)
 app.get("/api/escola-coordenadas", async (req, res) => {
   try {
     const { nome_escola } = req.query;
