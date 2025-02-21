@@ -5577,37 +5577,45 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc.moveDown(1);
 
     // Corpo
-    doc
-  .fontSize(12)
-  .font("Helvetica")
-  // Inicia o parágrafo:
-  .text(
-    "Eu, ____________________________________________________________________, inscrito no CPF ______-______-______-____, confirmo que sou o(a) responsável pelo(a) aluno(a) ",
-    { align: "justify", continued: true }
-  )
-  .font("Helvetica-Bold")
-  .text(`${aluno.aluno_nome || ""}`, { continued: true })
-  .font("Helvetica")
-  .text(", CPF: ", { continued: true })
-  .font("Helvetica-Bold")
-  .text(`${aluno.cpf || ""}`, { continued: true })
-  .font("Helvetica")
-  .text(", estudante da Escola ", { continued: true })
-  .font("Helvetica-Bold")
-  .text(`${aluno.escola_nome || ""}`, { continued: true })
-  .font("Helvetica")
-  .text(". Residente à domicilio em Logradouro ", { continued: true })
-  .font("Helvetica-Bold")
-  .text(`${aluno.rua || ""}`, { continued: true })
-  .font("Helvetica")
-  .text(", nº ", { continued: true })
-  .font("Helvetica-Bold")
-  .text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
-  .font("Helvetica")
-  .text(", Bairro ", { continued: true })
-  .font("Helvetica-Bold")
-  // **finaliza** o parágrafo sem `continued: true`:
-  .text(`${aluno.bairro || ""}.`, { continued: false, align: "justify" });
+    // Corpo
+doc
+.fontSize(12)
+.font("Helvetica")
+.text(
+  "Eu, ____________________________________________________________, inscrito(a) no CPF nº ______.______.____-__, ",
+  { align: "justify", continued: true }
+)
+.text(
+  "confirmo que sou o(a) responsável pelo(a) aluno(a) ",
+  { continued: true }
+)
+.font("Helvetica-Bold")
+.text(`${aluno.aluno_nome || ""}`, { continued: true })
+.font("Helvetica")
+.text(", portador(a) do CPF nº ", { continued: true })
+.font("Helvetica-Bold")
+.text(`${aluno.cpf || ""}`, { continued: true })
+.font("Helvetica")
+.text(", devidamente matriculado(a) na Escola ", { continued: true })
+.font("Helvetica-Bold")
+.text(`${aluno.escola_nome || ""}`, { continued: true })
+.font("Helvetica")
+.text(". Residente no endereço: Logradouro ", { continued: true })
+.font("Helvetica-Bold")
+.text(`${aluno.rua || ""}`, { continued: true })
+.font("Helvetica")
+.text(", nº ", { continued: true })
+.font("Helvetica-Bold")
+.text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
+.font("Helvetica")
+.text(", Bairro ", { continued: true })
+.font("Helvetica-Bold")
+.text(`${aluno.bairro || ""}`, { continued: true })
+.font("Helvetica")
+.text(
+  ". Declaro, para os devidos fins, a veracidade das informações acima, bem como minha plena consciência e responsabilidade sobre os dados fornecidos.",
+  { align: "justify", continued: false }
+);
 ;
 
     doc.moveDown(1);
