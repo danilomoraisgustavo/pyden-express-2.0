@@ -385,12 +385,42 @@
       etapa1.classList.add("active");
     });
 
-    btnAprovado.addEventListener("click", () => {
+    // Função para gerar protocolo
+    function gerarProtocolo() {
+      return "PROTO-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    }
+
+    btnAprovado.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para gerar comprovante de aprovação.");
         return;
       }
+      const protocolo = gerarProtocolo();
+      // Salvar solicitação no banco
+      try {
+        const bodyReq = {
+          aluno_id: alunoId,
+          status: "APROVADO",
+          motivo: null, // ou algo do tipo
+        };
+        // Adicionamos o protocolo no back-end, mas se quisermos exibir aqui, podemos
+        // Basta que o back-end gere ou usamos este "protocolo" e enviamos
+        const resp = await fetch("/api/solicitacoes-transporte", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyReq),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          alert(data.message || "Erro ao salvar solicitação no banco.");
+          return;
+        }
+      } catch (error) {
+        alert("Falha ao salvar a solicitação.");
+      }
+      // Abre comprovante
       window.open(`/api/comprovante-aprovado/${alunoId}/gerar-pdf`, "_blank");
+
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Aluno Aprovado!";
@@ -398,12 +428,33 @@
       resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
 
-    btnNaoAprovado.addEventListener("click", () => {
+    btnNaoAprovado.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para gerar comprovante de não aprovação.");
         return;
       }
+      const protocolo = gerarProtocolo();
+      try {
+        const bodyReq = {
+          aluno_id: alunoId,
+          status: "NAO_APROVADO",
+          motivo: "Critérios não atendidos", // ou outro motivo
+        };
+        const resp = await fetch("/api/solicitacoes-transporte", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyReq),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          alert(data.message || "Erro ao salvar solicitação no banco.");
+          return;
+        }
+      } catch (error) {
+        alert("Falha ao salvar a solicitação.");
+      }
       window.open(`/api/comprovante-nao-aprovado/${alunoId}/gerar-pdf`, "_blank");
+
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Não Aprovado";
@@ -413,6 +464,7 @@
 
     btnFinalizar.addEventListener("click", () => {
       alert("Atendimento finalizado!");
+      location.reload();
     });
 
     btnImprimirConfirmacao.addEventListener("click", () => {

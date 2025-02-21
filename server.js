@@ -5767,6 +5767,47 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
   }
 });
 
+// Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
+app.post("/api/solicitacoes-transporte", async (req, res) => {
+  try {
+    const { aluno_id, status, motivo } = req.body;
+    if (!aluno_id || !status) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Dados insuficientes." });
+    }
+
+    // Gera número de protocolo simples (exemplo)
+    const protocolo =
+      "PROTO-" + Date.now().toString() + "-" + Math.floor(Math.random() * 1000);
+
+    const sql = `
+      INSERT INTO solicitacoes_transporte (aluno_id, protocolo, status, motivo)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, protocolo, status
+    `;
+    const values = [aluno_id, protocolo, status, motivo || null];
+
+    const result = await pool.query(sql, values);
+
+    return res.json({
+      success: true,
+      message: "Solicitação registrada com sucesso.",
+      data: {
+        id: result.rows[0].id,
+        protocolo: result.rows[0].protocolo,
+        status: result.rows[0].status,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao salvar solicitação:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao salvar solicitação.",
+    });
+  }
+});
+
 
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
