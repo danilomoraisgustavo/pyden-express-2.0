@@ -6020,14 +6020,16 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         transporte_escolar_poder_publico,
         cep,
         bairro,
-        numero_pessoa_endereco, // <== NOVO CAMPO VINDO DO XLSX
+        numero_pessoa_endereco,
         filiacao_1,
         numero_telefone,
         filiacao_2,
         RESPONSAVEL,
         deficiencia,
+        data_nascimento // <=== NOVO CAMPO
       } = aluno;
 
+      // Trata o campo "deficiencia" para garantir que seja um array
       let defArray = [];
       try {
         if (typeof deficiencia === "string") {
@@ -6038,12 +6040,13 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         defArray = [];
       }
 
+      // Verifica se já existe um aluno com mesmo CPF ou ID de matrícula
       let alreadyExists = false;
       if (cpf) {
         const check = await pool.query(
           `SELECT id FROM alunos_ativos 
-                     WHERE (cpf = $1 AND cpf <> '')
-                       OR (id_matricula = $2 AND id_matricula IS NOT NULL)`,
+           WHERE (cpf = $1 AND cpf <> '')
+             OR (id_matricula = $2 AND id_matricula IS NOT NULL)`,
           [cpf, id_matricula]
         );
         if (check.rows.length > 0) {
@@ -6052,7 +6055,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       } else if (id_matricula) {
         const check = await pool.query(
           `SELECT id FROM alunos_ativos 
-                     WHERE id_matricula = $1 AND id_matricula IS NOT NULL`,
+           WHERE id_matricula = $1 AND id_matricula IS NOT NULL`,
           [id_matricula]
         );
         if (check.rows.length > 0) {
@@ -6061,35 +6064,38 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       }
 
       if (alreadyExists) {
+        // Se já existe, não faz INSERT
         continue;
       }
 
+      // Insere novo aluno
       await pool.query(
         `INSERT INTO alunos_ativos(
-                    id_matricula,
-                    escola_id,
-                    ano,
-                    modalidade,
-                    formato_letivo,
-                    turma,
-                    pessoa_nome,
-                    cpf,
-                    transporte_escolar_poder_publico,
-                    cep,
-                    bairro,
-                    numero_pessoa_endereco,  -- <== INSERINDO NOVA COLUNA
-                    filiacao_1,
-                    numero_telefone,
-                    filiacao_2,
-                    responsavel,
-                    deficiencia
-                )
-                VALUES (
-                    $1,  $2,  $3,  $4,  $5,
-                    $6,  $7,  $8,  $9,  $10,
-                    $11, $12, $13, $14, $15,
-                    $16, $17
-                )`,
+          id_matricula,
+          escola_id,
+          ano,
+          modalidade,
+          formato_letivo,
+          turma,
+          pessoa_nome,
+          cpf,
+          transporte_escolar_poder_publico,
+          cep,
+          bairro,
+          numero_pessoa_endereco,
+          filiacao_1,
+          numero_telefone,
+          filiacao_2,
+          responsavel,
+          deficiencia,
+          data_nascimento  -- <== NOVA COLUNA
+        )
+        VALUES (
+          $1,  $2,  $3,  $4,  $5,
+          $6,  $7,  $8,  $9,  $10,
+          $11, $12, $13, $14, $15,
+          $16, $17, $18
+        )`,
         [
           id_matricula || null,
           escolaId,
@@ -6108,14 +6114,16 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           filiacao_2 || null,
           RESPONSAVEL || null,
           defArray,
+          data_nascimento || null // Valor do campo data_nascimento
         ]
       );
     }
 
+    // Insere notificação de importação
     const mensagem = `Importados alunos para a escola ID ${escolaId}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-             VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
+       VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
       [userId, mensagem]
     );
 
@@ -6128,6 +6136,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     return res.json({ success: false, message: "Erro ao importar os alunos." });
   }
 });
+
 
 // Rotas (exemplo) - Ajustando para permitir filtros na query
 app.get("/api/alunos-ativos", async (req, res) => {
