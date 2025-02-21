@@ -99,13 +99,17 @@
             <div class="col-md-10">
               <div class="d-none" id="dadosAlunoContainerMunicipal">
                 <div class="row">
-                  <div class="col-md-6 mb-2">
+                  <div class="col-md-4 mb-2">
                     <label class="form-label fw-semibold">ID Matrícula</label>
                     <input type="text" class="form-control" id="campoIdMatriculaMunicipal" readonly />
                   </div>
-                  <div class="col-md-6 mb-2">
+                  <div class="col-md-4 mb-2">
                     <label class="form-label fw-semibold">Nome do Aluno</label>
                     <input type="text" class="form-control" id="campoNomeAlunoMunicipal" readonly />
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label fw-semibold">Data de Nascimento</label>
+                    <input type="date" class="form-control" id="campoDataNascimentoMunicipal" />
                   </div>
                 </div>
 
@@ -117,6 +121,26 @@
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Turma</label>
                     <input type="text" class="form-control" id="campoTurmaMunicipal" readonly />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Nível de Ensino</label>
+                    <select class="form-control" id="campoNivelEnsinoMunicipal">
+                      <option value="">Selecione...</option>
+                      <option value="infantil">Infantil</option>
+                      <option value="fundamental">Fundamental</option>
+                      <option value="medio">Médio</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-2" id="campoZonaEnsinoContainerMunicipal" style="display:none;">
+                    <label class="form-label fw-semibold">Zona</label>
+                    <select class="form-control" id="campoZonaMunicipal">
+                      <option value="">Selecione...</option>
+                      <option value="rural">Rural</option>
+                      <option value="urbana">Urbana</option>
+                    </select>
                   </div>
                 </div>
 
@@ -173,7 +197,7 @@
                     <input type="text" class="form-control" id="campoResponsavelMunicipal" readonly />
                   </div>
                   <div class="col-md-6 mb-2">
-                    <label class="form-label fw-semibold">Deficiência</label>
+                    <label class="form-label fw-semibold">Deficiência (use vírgulas se mais de uma)</label>
                     <input type="text" class="form-control" id="campoDeficienciaMunicipal" />
                   </div>
                 </div>
@@ -203,13 +227,17 @@
             <div class="col-md-10">
               <div id="dadosAlunoContainerEstadual">
                 <div class="row">
-                  <div class="col-md-6 mb-2">
+                  <div class="col-md-4 mb-2">
                     <label class="form-label fw-semibold">ID Matrícula</label>
                     <input type="text" class="form-control" id="campoIdMatriculaEstadual" />
                   </div>
-                  <div class="col-md-6 mb-2">
+                  <div class="col-md-4 mb-2">
                     <label class="form-label fw-semibold">Nome do Aluno</label>
                     <input type="text" class="form-control" id="campoNomeAlunoEstadual" />
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label fw-semibold">Data de Nascimento</label>
+                    <input type="date" class="form-control" id="campoDataNascimentoEstadual" />
                   </div>
                 </div>
 
@@ -234,6 +262,26 @@
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">CPF</label>
                     <input type="text" class="form-control" id="campoCpfEstadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Nível de Ensino</label>
+                    <select class="form-control" id="campoNivelEnsinoEstadual">
+                      <option value="">Selecione...</option>
+                      <option value="infantil">Infantil</option>
+                      <option value="fundamental">Fundamental</option>
+                      <option value="medio">Médio</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-2" id="campoZonaEnsinoContainerEstadual" style="display:none;">
+                    <label class="form-label fw-semibold">Zona</label>
+                    <select class="form-control" id="campoZonaEstadual">
+                      <option value="">Selecione...</option>
+                      <option value="rural">Rural</option>
+                      <option value="urbana">Urbana</option>
+                    </select>
                   </div>
                 </div>
 
@@ -280,7 +328,7 @@
 
                 <div class="row">
                   <div class="col-md-12 mb-2">
-                    <label class="form-label fw-semibold">Deficiência</label>
+                    <label class="form-label fw-semibold">Deficiência (use vírgulas se mais de uma)</label>
                     <input type="text" class="form-control" id="campoDeficienciaEstadual" />
                   </div>
                 </div>
@@ -328,12 +376,13 @@
               <input type="text" class="form-control" id="campoLongitude" readonly />
             </div>
           </div>
+          <hr />
+          <div class="alert alert-secondary" id="divCritériosInfo">
+            <p><strong>Situação do Aluno:</strong> <span id="avaliacaoAutomatica"></span></p>
+          </div>
           <div class="d-flex justify-content-between mt-4">
             <button class="btn btn-secondary" id="btnVoltarEtapa1">Voltar</button>
-            <div>
-              <button class="btn btn-danger" id="btnNaoAprovado">Não Aprovado</button>
-              <button class="btn btn-success" id="btnAprovado">Aprovado</button>
-            </div>
+            <button class="btn btn-primary" id="btnAvaliar">Avaliar Critérios</button>
           </div>
         </div>
       </div>
@@ -398,8 +447,12 @@
 
     const campoIdMatriculaMunicipal = document.getElementById("campoIdMatriculaMunicipal");
     const campoNomeAlunoMunicipal = document.getElementById("campoNomeAlunoMunicipal");
+    const campoDataNascimentoMunicipal = document.getElementById("campoDataNascimentoMunicipal");
     const campoEscolaMunicipal = document.getElementById("campoEscolaMunicipal");
     const campoTurmaMunicipal = document.getElementById("campoTurmaMunicipal");
+    const campoNivelEnsinoMunicipal = document.getElementById("campoNivelEnsinoMunicipal");
+    const campoZonaEnsinoContainerMunicipal = document.getElementById("campoZonaEnsinoContainerMunicipal");
+    const campoZonaMunicipal = document.getElementById("campoZonaMunicipal");
     const campoCpfMunicipal = document.getElementById("campoCpfMunicipal");
     const campoCepMunicipal = document.getElementById("campoCepMunicipal");
     const campoRuaMunicipal = document.getElementById("campoRuaMunicipal");
@@ -417,10 +470,14 @@
 
     const campoIdMatriculaEstadual = document.getElementById("campoIdMatriculaEstadual");
     const campoNomeAlunoEstadual = document.getElementById("campoNomeAlunoEstadual");
+    const campoDataNascimentoEstadual = document.getElementById("campoDataNascimentoEstadual");
     const campoEscolaEstadual = document.getElementById("campoEscolaEstadual");
     const campoTurmaEstadual = document.getElementById("campoTurmaEstadual");
     const campoTurnoEstadual = document.getElementById("campoTurnoEstadual");
     const campoCpfEstadual = document.getElementById("campoCpfEstadual");
+    const campoNivelEnsinoEstadual = document.getElementById("campoNivelEnsinoEstadual");
+    const campoZonaEnsinoContainerEstadual = document.getElementById("campoZonaEnsinoContainerEstadual");
+    const campoZonaEstadual = document.getElementById("campoZonaEstadual");
     const campoCepEstadual = document.getElementById("campoCepEstadual");
     const campoRuaEstadual = document.getElementById("campoRuaEstadual");
     const campoBairroEstadual = document.getElementById("campoBairroEstadual");
@@ -433,8 +490,7 @@
 
     // ETAPA 2 E 3
     const btnVoltarEtapa1 = document.getElementById("btnVoltarEtapa1");
-    const btnAprovado = document.getElementById("btnAprovado");
-    const btnNaoAprovado = document.getElementById("btnNaoAprovado");
+    const btnAvaliar = document.getElementById("btnAvaliar");
     const btnFinalizar = document.getElementById("btnFinalizar");
     const distanciaRota = document.getElementById("distanciaRota");
     const infoEndereco = document.getElementById("infoEndereco");
@@ -446,6 +502,26 @@
     const campoLongitude = document.getElementById("campoLongitude");
     const resultadoTitulo = document.getElementById("resultadoTitulo");
     const resultadoDescricao = document.getElementById("resultadoDescricao");
+    const divCriteriosInfo = document.getElementById("divCritériosInfo");
+    const avaliacaoAutomatica = document.getElementById("avaliacaoAutomatica");
+
+    // Exibir/ocultar campo Zona quando Nível = Médio
+    campoNivelEnsinoMunicipal.addEventListener("change", () => {
+      if (campoNivelEnsinoMunicipal.value === "medio") {
+        campoZonaEnsinoContainerMunicipal.style.display = "block";
+      } else {
+        campoZonaEnsinoContainerMunicipal.style.display = "none";
+        campoZonaMunicipal.value = "";
+      }
+    });
+    campoNivelEnsinoEstadual.addEventListener("change", () => {
+      if (campoNivelEnsinoEstadual.value === "medio") {
+        campoZonaEnsinoContainerEstadual.style.display = "block";
+      } else {
+        campoZonaEnsinoContainerEstadual.style.display = "none";
+        campoZonaEstadual.value = "";
+      }
+    });
 
     btnContinuarFluxo.addEventListener("click", async () => {
       if (fluxoMunicipal.checked) {
@@ -462,14 +538,12 @@
       }
     });
 
-    // Carregar escolas no SELECT (Estadual)
     async function carregarEscolasEstaduais() {
       try {
         const response = await fetch("/api/escolas");
         if (!response.ok) throw new Error("Erro ao carregar escolas.");
         const listaEscolas = await response.json();
         const selectEscolaEstadual = document.getElementById("campoEscolaEstadual");
-        // Limpar opções antigas
         selectEscolaEstadual.innerHTML = '<option value="">Selecione a Escola</option>';
         listaEscolas.forEach(e => {
           const option = document.createElement("option");
@@ -514,7 +588,6 @@
         campoTelefoneMunicipal.value = data.numero_telefone || "";
         campoFiliacao2Municipal.value = data.filiacao_2 || "";
         campoResponsavelMunicipal.value = data.responsavel || "";
-
         if (Array.isArray(data.deficiencia)) {
           campoDeficienciaMunicipal.value = data.deficiencia.join(", ");
         } else if (typeof data.deficiencia === "string") {
@@ -530,7 +603,6 @@
       }
     });
 
-    // MUNICIPAL - CONVERTER CEP
     btnConverterCepMunicipal.addEventListener("click", async () => {
       const cepLimpo = campoCepMunicipal.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -555,7 +627,6 @@
       }
     });
 
-    // ESTADUAL - CONVERTER CEP
     btnConverterCepEstadual.addEventListener("click", async () => {
       const cepLimpo = campoCepEstadual.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -580,7 +651,9 @@
       }
     });
 
-    // MUNICIPAL - PRÓXIMO
+    campoNivelEnsinoMunicipal.addEventListener("change", () => { });
+    campoNivelEnsinoEstadual.addEventListener("change", () => { });
+
     btnProximoMunicipal.addEventListener("click", () => {
       if (!originalData) {
         alert("Nenhum aluno carregado.");
@@ -588,12 +661,9 @@
       }
       etapa1Municipal.classList.remove("active");
       etapa2.classList.add("active");
-      setTimeout(() => {
-        initMap();
-      }, 300);
+      setTimeout(() => initMap(), 300);
     });
 
-    // ESTADUAL - PRÓXIMO
     btnProximoEstadual.addEventListener("click", async () => {
       const defString = campoDeficienciaEstadual.value.trim();
       let defArray = [];
@@ -616,9 +686,8 @@
         filiacao_1: campoFiliacao1Estadual.value.trim(),
         filiacao_2: campoFiliacao2Estadual.value.trim(),
         responsavel: campoResponsavelEstadual.value.trim(),
-        deficiencia: defArray.length ? defArray : null
+        deficiencia: defArray.length ? defArray : null,
       };
-
       try {
         const resp = await fetch("/api/alunos-ativos-estadual", {
           method: "POST",
@@ -635,15 +704,12 @@
         etapa1Estadual.classList.remove("active");
         etapa2.classList.add("active");
         originalData = bodyAlunoEstadual;
-        setTimeout(() => {
-          initMap();
-        }, 300);
+        setTimeout(() => initMap(), 300);
       } catch (err) {
         alert("Falha ao cadastrar aluno estadual.");
       }
     });
 
-    // IMPRIMIR CONFIRMAÇÃO (MUNICIPAL)
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado para gerar termo.");
@@ -661,56 +727,57 @@
       }
     });
 
-    btnAprovado.addEventListener("click", async () => {
+    btnAvaliar.addEventListener("click", async () => {
+      const distancia = parseFloat(distanciaRota.textContent) || 0;
+      let nivelEnsino = "";
+      let zona = "";
+      let dataNasc = null;
+      let def = "";
+      let fluxId = null;
+
       if (tipoFluxoSelecionado === "municipal") {
-        if (!alunoIdMunicipal) {
-          alert("Nenhum aluno carregado para aprovação.");
-          return;
-        }
-        const ok = await salvarAlteracoesMunicipal();
-        if (!ok) return;
-        await criarSolicitacaoTransporte(alunoIdMunicipal, "APROVADO", null, "municipal");
-        window.open(`/api/comprovante-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+        nivelEnsino = campoNivelEnsinoMunicipal.value;
+        zona = campoZonaMunicipal.value;
+        dataNasc = campoDataNascimentoMunicipal.value;
+        def = campoDeficienciaMunicipal.value.toLowerCase();
+        fluxId = alunoIdMunicipal;
+        await salvarAlteracoesMunicipal();
       } else {
-        if (!alunoIdEstadual) {
-          alert("Nenhum aluno estadual cadastrado para aprovação.");
-          return;
-        }
-        const ok = await salvarAlteracoesEstadual(alunoIdEstadual);
-        if (!ok) return;
-        await criarSolicitacaoTransporte(alunoIdEstadual, "APROVADO", null, "estadual");
-        window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+        nivelEnsino = campoNivelEnsinoEstadual.value;
+        zona = campoZonaEstadual.value;
+        dataNasc = campoDataNascimentoEstadual.value;
+        def = campoDeficienciaEstadual.value.toLowerCase();
+        fluxId = alunoIdEstadual;
+        await salvarAlteracoesEstadual(fluxId);
       }
 
-      etapa2.classList.remove("active");
-      etapa3.classList.add("active");
-      resultadoTitulo.innerText = "Aluno Aprovado!";
-      resultadoTitulo.className = "text-center text-success";
-      resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
-    });
-
-    btnNaoAprovado.addEventListener("click", async () => {
-      if (tipoFluxoSelecionado === "municipal") {
-        if (!alunoIdMunicipal) {
-          alert("Nenhum aluno carregado para reprovação.");
-          return;
+      const resCrit = avaliarCriterios(distancia, nivelEnsino, zona, dataNasc, def);
+      avaliacaoAutomatica.textContent = resCrit.motivo;
+      setTimeout(async () => {
+        etapa2.classList.remove("active");
+        etapa3.classList.add("active");
+        if (resCrit.aprovado) {
+          resultadoTitulo.innerText = "Aluno Aprovado!";
+          resultadoTitulo.className = "text-center text-success";
+          resultadoDescricao.innerText = "O aluno atende aos critérios ou requer análise manual (deficiência).";
+          await criarSolicitacaoTransporte(fluxId, "APROVADO", null, tipoFluxoSelecionado);
+          if (tipoFluxoSelecionado === "municipal") {
+            window.open(`/api/comprovante-aprovado/${fluxId}/gerar-pdf`, "_blank");
+          } else {
+            window.open(`/api/comprovante-aprovado-estadual/${fluxId}/gerar-pdf`, "_blank");
+          }
+        } else {
+          resultadoTitulo.innerText = "Não Aprovado";
+          resultadoTitulo.className = "text-center text-danger";
+          resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
+          await criarSolicitacaoTransporte(fluxId, "NAO_APROVADO", "Critérios não atendidos", tipoFluxoSelecionado);
+          if (tipoFluxoSelecionado === "municipal") {
+            window.open(`/api/comprovante-nao-aprovado/${fluxId}/gerar-pdf`, "_blank");
+          } else {
+            window.open(`/api/comprovante-nao-aprovado-estadual/${fluxId}/gerar-pdf`, "_blank");
+          }
         }
-        await criarSolicitacaoTransporte(alunoIdMunicipal, "NAO_APROVADO", "Critérios não atendidos", "municipal");
-        window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-      } else {
-        if (!alunoIdEstadual) {
-          alert("Nenhum aluno estadual cadastrado para reprovação.");
-          return;
-        }
-        await criarSolicitacaoTransporte(alunoIdEstadual, "NAO_APROVADO", "Critérios não atendidos", "estadual");
-        window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
-      }
-
-      etapa2.classList.remove("active");
-      etapa3.classList.add("active");
-      resultadoTitulo.innerText = "Não Aprovado";
-      resultadoTitulo.className = "text-center text-danger";
-      resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
+      }, 800);
     });
 
     btnFinalizar.addEventListener("click", () => {
@@ -719,16 +786,12 @@
     });
 
     async function salvarAlteracoesMunicipal() {
-      if (!alunoIdMunicipal) {
-        alert("Nenhum aluno carregado.");
-        return false;
-      }
+      if (!alunoIdMunicipal) return false;
       const defString = campoDeficienciaMunicipal.value.trim();
       let defArray = [];
       if (defString) {
         defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
       }
-
       const mergeBody = {
         cep: campoCepMunicipal.value.trim(),
         bairro: campoBairroMunicipal.value.trim(),
@@ -739,34 +802,25 @@
         longitude: parseFloat(campoLongitude.value) || null,
         rua: campoRuaMunicipal.value.trim()
       };
-
       try {
         const resp = await fetch(`/api/alunos-recadastro/${alunoIdMunicipal}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(mergeBody)
         });
-        const result = await resp.json();
-
-        if (!resp.ok) {
-          alert(result.message || "Falha ao salvar alterações (municipal).");
-          return false;
-        }
-        return true;
+        return resp.ok;
       } catch (err) {
-        console.error(err);
-        alert("Erro ao atualizar dados do aluno (municipal).");
         return false;
       }
     }
 
     async function salvarAlteracoesEstadual(idEstadual) {
+      if (!idEstadual) return false;
       const defString = campoDeficienciaEstadual.value.trim();
       let defArray = [];
       if (defString) {
         defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
       }
-
       const mergeBody = {
         id_matricula: campoIdMatriculaEstadual.value.trim(),
         pessoa_nome: campoNomeAlunoEstadual.value.trim(),
@@ -786,23 +840,14 @@
         longitude: parseFloat(campoLongitude.value) || null,
         rua: campoRuaEstadual.value.trim()
       };
-
       try {
         const resp = await fetch(`/api/alunos-ativos-estadual/${idEstadual}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(mergeBody)
         });
-        const result = await resp.json();
-
-        if (!resp.ok) {
-          alert(result.message || "Falha ao salvar alterações (estadual).");
-          return false;
-        }
-        return true;
+        return resp.ok;
       } catch (err) {
-        console.error(err);
-        alert("Erro ao atualizar dados do aluno (estadual).");
         return false;
       }
     }
@@ -820,13 +865,66 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(bodyReq),
         });
-        const data = await resp.json();
-        if (!resp.ok) {
-          alert(data.message || "Erro ao salvar solicitação no banco.");
-          return;
-        }
+        return resp.ok;
       } catch (error) {
-        alert("Falha ao salvar a solicitação.");
+        return false;
+      }
+    }
+
+    function avaliarCriterios(distanciaKm, nivel, zona, dataNascimento, def) {
+      if (!dataNascimento) {
+        return { aprovado: false, motivo: "Data de nascimento não informada" };
+      }
+      // Verifica idade no dia 31/03 do ano corrente
+      const hoje = new Date();
+      const anoAtual = hoje.getFullYear();
+      const dataLimite = new Date(anoAtual, 2, 31); // 31 de março
+      const nascimento = new Date(dataNascimento);
+      let idade = anoAtual - nascimento.getFullYear();
+      const mesDiaNasc = `${nascimento.getMonth()}-${nascimento.getDate()}`;
+      const mesDiaLimite = `${dataLimite.getMonth()}-${dataLimite.getDate()}`;
+      if (mesDiaNasc > mesDiaLimite) {
+        idade = idade - 1;
+      }
+
+      // Regra de 4 anos completos até 31/03
+      if (idade < 4) {
+        return { aprovado: false, motivo: `Aluno com ${idade} anos (não completou 4 até 31/03)` };
+      }
+
+      // Se deficiência física, passar para avaliação manual
+      if (def.includes("física")) {
+        return { aprovado: true, motivo: "Deficiência física => Avaliação manual, mas liberado provisoriamente" };
+      }
+
+      // Níveis
+      // Infantil => min 1.6km
+      // Fundamental => min 2.1km
+      // Médio => somente se zona = rural, e usar 2.1km como base
+      if (nivel === "infantil") {
+        if (distanciaKm < 1.6) {
+          return { aprovado: false, motivo: "Distância menor que 1.6km para Infantil" };
+        }
+        return { aprovado: true, motivo: "Distância atende (Infantil)" };
+      } else if (nivel === "fundamental") {
+        if (distanciaKm < 2.1) {
+          return { aprovado: false, motivo: "Distância menor que 2.1km para Fundamental" };
+        }
+        return { aprovado: true, motivo: "Distância atende (Fundamental)" };
+      } else if (nivel === "medio") {
+        if (!zona) {
+          return { aprovado: false, motivo: "Zona não informada para o Ensino Médio" };
+        }
+        if (zona === "urbana") {
+          return { aprovado: false, motivo: "Ensino Médio somente para zona rural" };
+        }
+        // Se zona = rural, checar 2.1km
+        if (distanciaKm < 2.1) {
+          return { aprovado: false, motivo: "Distância menor que 2.1km (Médio - Rural)" };
+        }
+        return { aprovado: true, motivo: "Distância atende (Médio - Rural)" };
+      } else {
+        return { aprovado: false, motivo: "Nível de ensino não especificado corretamente" };
       }
     }
 
@@ -850,7 +948,6 @@
       }
 
       distanciaRota.textContent = "--";
-
       let endAluno = "";
       let latAluno = null;
       let lngAluno = null;
@@ -868,8 +965,6 @@
           endAluno = `${campoCepMunicipal.value}, ${campoNumeroEnderecoMunicipal.value}, Canaã dos Carajás, Pará, Brasil`;
         }
       } else {
-        latAluno = null;
-        lngAluno = null;
         const selectEscola = campoEscolaEstadual;
         const selectedOption = selectEscola.options[selectEscola.selectedIndex];
         escolaNome = selectedOption ? selectedOption.textContent : "";
@@ -879,7 +974,6 @@
           endAluno = `${campoCepEstadual.value}, ${campoNumeroEnderecoEstadual.value}, Canaã dos Carajás, Pará, Brasil`;
         }
       }
-
       infoEndereco.innerText = endAluno;
 
       try {
@@ -894,29 +988,21 @@
       } catch (err) {
         console.error("Erro ao buscar coordenadas da escola:", err);
       }
-
       if (latEscola && lngEscola) {
         escolaPos = new google.maps.LatLng(latEscola, lngEscola);
       } else {
         escolaPos = new google.maps.LatLng(-6.530066, -49.85163);
       }
 
-      if (latAluno && lngAluno) {
-        alunoPos = new google.maps.LatLng(parseFloat(latAluno), parseFloat(lngAluno));
-        createOrMoveMarkers();
+      if (tipoFluxoSelecionado === "municipal") {
+        if (latAluno && lngAluno) {
+          alunoPos = new google.maps.LatLng(parseFloat(latAluno), parseFloat(lngAluno));
+          createOrMoveMarkers();
+        } else {
+          geocodeAndCreateMarker(endAluno, escolaPos);
+        }
       } else {
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: endAluno }, (results, status) => {
-          if (status === "OK") {
-            alunoPos = results[0].geometry.location;
-            campoLatitude.value = alunoPos.lat().toFixed(6);
-            campoLongitude.value = alunoPos.lng().toFixed(6);
-            createOrMoveMarkers();
-          } else {
-            alert("Não foi possível localizar o endereço do aluno via Geocoder.");
-            map.setCenter(escolaPos);
-          }
-        });
+        geocodeAndCreateMarker(endAluno, escolaPos);
       }
 
       google.maps.event.addListener(map, "click", (e) => {
@@ -945,6 +1031,21 @@
       });
     }
 
+    function geocodeAndCreateMarker(endereco, escolaPos) {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: endereco }, (results, status) => {
+        if (status === "OK") {
+          alunoPos = results[0].geometry.location;
+          campoLatitude.value = alunoPos.lat().toFixed(6);
+          campoLongitude.value = alunoPos.lng().toFixed(6);
+          createOrMoveMarkers();
+        } else {
+          alert("Não foi possível localizar o endereço do aluno via Geocoder.");
+          map.setCenter(escolaPos);
+        }
+      });
+    }
+
     function createOrMoveMarkers() {
       if (!markerAluno) {
         markerAluno = new google.maps.Marker({
@@ -965,7 +1066,6 @@
       } else {
         markerAluno.setPosition(alunoPos);
       }
-
       if (!markerEscola) {
         markerEscola = new google.maps.Marker({
           position: escolaPos,
@@ -975,7 +1075,6 @@
       } else {
         markerEscola.setPosition(escolaPos);
       }
-
       map.setCenter(alunoPos);
       calcularRota(alunoPos, escolaPos);
     }
