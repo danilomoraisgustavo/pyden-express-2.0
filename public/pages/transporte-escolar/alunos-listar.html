@@ -528,6 +528,7 @@
                           <th>Turma</th>
                           <th>Nome Aluno</th>
                           <th>CPF</th>
+                          <th>Data Nascimento</th>
                           <th>Transp. Escolar</th>
                           <th>CEP</th>
                           <th>Bairro</th>
@@ -552,6 +553,7 @@
                           <th>Turma</th>
                           <th>Nome Aluno</th>
                           <th>CPF</th>
+                          <th>Data Nascimento</th>
                           <th>Transp. Escolar</th>
                           <th>CEP</th>
                           <th>Bairro</th>
@@ -650,6 +652,10 @@
             <div class="mb-3">
               <label for="editarCpf" class="form-label">CPF</label>
               <input type="text" class="form-control" id="editarCpf" />
+            </div>
+            <div class="mb-3">
+              <label for="editarDataNascimento" class="form-label">Data de Nascimento</label>
+              <input type="date" class="form-control" id="editarDataNascimento" />
             </div>
             <div class="mb-3">
               <label for="editarTransporte" class="form-label">Transp. Escolar</label>
@@ -752,6 +758,37 @@
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&v=beta"></script>
 
   <script>
+    /*
+      INSTRUÇÕES SQL ATUALIZADAS
+      ==========================
+      CREATE TABLE IF NOT EXISTS alunos_ativos (
+          id SERIAL PRIMARY KEY,
+          id_matricula INTEGER,
+          escola_id INTEGER REFERENCES escolas(id),
+          ano INTEGER,
+          modalidade VARCHAR(255),
+          formato_letivo VARCHAR(255),
+          turma VARCHAR(255),
+          pessoa_nome VARCHAR(255),
+          cpf VARCHAR(50),
+          transporte_escolar_poder_publico VARCHAR(255),
+          cep VARCHAR(50),
+          rua VARCHAR(255),
+          bairro VARCHAR(255),
+          numero_pessoa_endereco VARCHAR(50),
+          filiacao_1 VARCHAR(255),
+          numero_telefone VARCHAR(50),
+          filiacao_2 VARCHAR(255),
+          responsavel VARCHAR(255),
+          deficiencia TEXT[],
+          data_nascimento DATE,
+          longitude NUMERIC(9,6),
+          latitude NUMERIC(9,6)
+      );
+
+      ALTER TABLE alunos_ativos ADD COLUMN data_nascimento DATE;
+    */
+
     let dadosXLSX = [];
     let escolasLista = [];
     let dataTable = null;
@@ -874,7 +911,7 @@
       showLoader();
       const body = {
         escolaId: escolaIdSelecionada,
-        alunos: dadosXLSX,
+        alunos: dadosXLSX, // dadosXLSX já conterá 'data_nascimento' caso exista na planilha
       };
       fetch("/api/import-alunos-ativos", {
         method: "POST",
@@ -1049,6 +1086,7 @@
             <td>${item.turma || ""}</td>
             <td>${item.pessoa_nome || ""}</td>
             <td>${item.cpf || ""}</td>
+            <td>${item.data_nascimento || ""}</td>
             <td>${item.transporte_escolar_poder_publico || ""}</td>
             <td>${item.cep || ""}</td>
             <td>${item.bairro || ""}</td>
@@ -1166,6 +1204,7 @@
         $("#editarTurma").val(dataObj.turma || "");
         $("#editarNomeAluno").val(dataObj.pessoa_nome || "");
         $("#editarCpf").val(dataObj.cpf || "");
+        $("#editarDataNascimento").val(dataObj.data_nascimento || "");
         $("#editarTransporte").val(
           dataObj.transporte_escolar_poder_publico || ""
         );
@@ -1195,6 +1234,7 @@
           turma: $("#editarTurma").val(),
           pessoa_nome: $("#editarNomeAluno").val(),
           cpf: $("#editarCpf").val(),
+          data_nascimento: $("#editarDataNascimento").val(),
           transporte_escolar_poder_publico: $("#editarTransporte").val(),
           cep: $("#editarCep").val(),
           bairro: $("#editarBairro").val(),
