@@ -5571,14 +5571,14 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
       .font("Helvetica-Bold")
       .text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
         align: "center",
-        underline: true,
+        underline: false,
       });
     doc.moveDown(1);
 
     // Corpo
     doc.fontSize(12).font("Helvetica");
     doc.text(
-      "Eu, _________________________________________________ (Responsável),", 
+      "Eu, _____________________________________________________________,", 
       { align: "justify" }
     );
 
@@ -5586,7 +5586,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc
       .font("Helvetica")
       .text(
-        `Confirmo que sou o(a) responsável pelo(a) aluno(a): `
+        `confirmo que sou o(a) responsável pelo(a) aluno(a) `
       )
       .font("Helvetica-Bold")
       .text(`${aluno.aluno_nome || ""}`, { continued: true })
