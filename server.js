@@ -4506,6 +4506,7 @@ app.get("/api/alunos-transporte-publico", async (req, res) => {
     });
   }
 });
+
 app.put("/api/alunos-ativos-estadual/:id", async (req, res) => {
   try {
     const { id } = req.params;
