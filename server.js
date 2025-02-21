@@ -5600,7 +5600,7 @@ doc
 .font("Helvetica-Bold")
 .text(`${aluno.escola_nome || ""}`, { continued: true })
 .font("Helvetica")
-.text(". Residente no endereço: Logradouro ", { continued: true })
+.text(". Residente no endereço: ", { continued: true })
 .font("Helvetica-Bold")
 .text(`${aluno.rua || ""}`, { continued: true })
 .font("Helvetica")
