@@ -4506,7 +4506,93 @@ app.get("/api/alunos-transporte-publico", async (req, res) => {
     });
   }
 });
+app.put("/api/alunos-ativos-estadual/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      id_matricula,
+      pessoa_nome,
+      escola_id,
+      turma,
+      turno,
+      cpf,
+      cep,
+      rua,
+      bairro,
+      numero_pessoa_endereco,
+      numero_telefone,
+      filiacao_1,
+      filiacao_2,
+      responsavel,
+      deficiencia,
+      latitude,
+      longitude
+    } = req.body;
 
+    const queryText = `
+      UPDATE alunos_ativos_estadual
+      SET
+        id_matricula = $1,
+        pessoa_nome = $2,
+        escola_id = $3,
+        turma = $4,
+        turno = $5,
+        cpf = $6,
+        cep = $7,
+        rua = $8,
+        bairro = $9,
+        numero_pessoa_endereco = $10,
+        numero_telefone = $11,
+        filiacao_1 = $12,
+        filiacao_2 = $13,
+        responsavel = $14,
+        deficiencia = $15,
+        latitude = $16,
+        longitude = $17,
+        updated_at = NOW()
+      WHERE id = $18
+      RETURNING *
+    `;
+
+    const values = [
+      id_matricula || null,
+      pessoa_nome,
+      escola_id || null,
+      turma || null,
+      turno || null,
+      cpf || null,
+      cep || null,
+      rua || null,
+      bairro || null,
+      numero_pessoa_endereco || null,
+      numero_telefone || null,
+      filiacao_1 || null,
+      filiacao_2 || null,
+      Array.isArray(deficiencia) && deficiencia.length ? deficiencia : null,
+      latitude || null,
+      longitude || null,
+      id
+    ];
+
+    const result = await pool.query(queryText, values);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "Aluno estadual não encontrado para atualização."
+      });
+    }
+
+    return res.status(200).json({
+      message: "Dados do aluno estadual atualizados com sucesso.",
+      aluno: result.rows[0]
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar aluno estadual:", error);
+    return res.status(500).json({
+      message: "Não foi possível atualizar os dados do aluno estadual."
+    });
+  }
+});
 app.get("/api/alunos_ativos", async (req, res) => {
   try {
     const search = req.query.search ? req.query.search.trim() : "";

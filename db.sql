@@ -372,6 +372,30 @@ CREATE TABLE IF NOT EXISTS alunos_ativos (
     latitude NUMERIC(9,6)
 );
 
+-- CRIAÇÃO DA TABELA alunos_ativos_estadual
+CREATE TABLE IF NOT EXISTS alunos_ativos_estadual (
+    id SERIAL PRIMARY KEY,
+    id_matricula VARCHAR(50),
+    pessoa_nome VARCHAR(255) NOT NULL,
+    escola_id INTEGER REFERENCES escolas(id),
+    turma VARCHAR(255),
+    turno VARCHAR(255),
+    cpf VARCHAR(50),
+    cep VARCHAR(50),
+    rua VARCHAR(255),
+    bairro VARCHAR(255),
+    numero_pessoa_endereco VARCHAR(50),
+    numero_telefone VARCHAR(50),
+    filiacao_1 VARCHAR(255),
+    filiacao_2 VARCHAR(255),
+    responsavel VARCHAR(255),
+    deficiencia TEXT[],
+    latitude NUMERIC(9,6),
+    longitude NUMERIC(9,6),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
 
 -- ==========================================
 -- CRIAÇÃO DA TABELA "usuarios"
