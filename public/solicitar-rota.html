@@ -188,7 +188,7 @@
                     <label class="form-label fw-semibold">Responsável</label>
                     <input type="text" class="form-control" id="campoResponsavelMunicipal" readonly />
                   </div>
-                  <!-- Substituímos o input "Deficiência" por um SELECT -->
+                  <!-- SELECT para Deficiência -->
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
                     <select class="form-control" id="campoDeficienciaMunicipal">
@@ -200,12 +200,20 @@
                   </div>
                 </div>
 
+                <!-- BOTÕES -->
                 <div class="d-flex justify-content-between mt-3">
                   <div>
-                    <button class="btn btn-info" id="btnImprimirConfirmacaoMunicipal">Imprimir Confirmação</button>
+                    <!-- Novo botão: Salvar Alterações (desativado inicialmente) -->
+                    <button class="btn btn-success me-2" id="btnSalvarAlteracoesMunicipal" disabled>Salvar
+                      Alterações</button>
+
+                    <!-- Botão Imprimir Confirmação (desativado inicialmente) -->
+                    <button class="btn btn-info" id="btnImprimirConfirmacaoMunicipal" disabled>Imprimir
+                      Confirmação</button>
                   </div>
                   <div>
-                    <button class="btn btn-primary" id="btnProximoMunicipal">Próximo</button>
+                    <!-- Botão Próximo (desativado inicialmente) -->
+                    <button class="btn btn-primary" id="btnProximoMunicipal" disabled>Próximo</button>
                   </div>
                 </div>
 
@@ -448,6 +456,7 @@
     const btnConverterCepMunicipal = document.getElementById("btnConverterCepMunicipal");
     const btnProximoMunicipal = document.getElementById("btnProximoMunicipal");
     const btnImprimirConfirmacaoMunicipal = document.getElementById("btnImprimirConfirmacaoMunicipal");
+    const btnSalvarAlteracoesMunicipal = document.getElementById("btnSalvarAlteracoesMunicipal"); // NOVO BOTÃO
 
     const campoIdMatriculaMunicipal = document.getElementById("campoIdMatriculaMunicipal");
     const campoNomeAlunoMunicipal = document.getElementById("campoNomeAlunoMunicipal");
@@ -521,7 +530,6 @@
       }
     });
 
-    // Carregar escolas no SELECT (Estadual)
     async function carregarEscolasEstaduais() {
       try {
         const response = await fetch("/api/escolas");
@@ -573,7 +581,6 @@
         campoFiliacao2Municipal.value = data.filiacao_2 || "";
         campoResponsavelMunicipal.value = data.responsavel || "";
 
-        // Se houver data_nascimento, exibir e calcular idade
         if (data.data_nascimento) {
           const dt = data.data_nascimento.split("T")[0]; // "yyyy-mm-dd"
           campoDataNascimentoMunicipal.value = dt;
@@ -585,9 +592,7 @@
           campoIdadeMunicipal.classList.add("bg-secondary");
         }
 
-        // Deficiência pode vir como string ou array
         if (Array.isArray(data.deficiencia)) {
-          // Exemplo: pegar a primeira ou deixar vazio
           campoDeficienciaMunicipal.value = data.deficiencia[0] || "";
         } else if (typeof data.deficiencia === "string") {
           campoDeficienciaMunicipal.value = data.deficiencia;
@@ -602,7 +607,7 @@
       }
     });
 
-    // Função para calcular idade e indicar cor (Municipal)
+    // MUNICIPAL - Calcular idade
     function calcularIdadeMunicipal(dataNasc) {
       const hoje = new Date();
       let anos = hoje.getFullYear() - dataNasc.getFullYear();
@@ -613,9 +618,8 @@
       }
       campoIdadeMunicipal.textContent = `${anos} anos e ${meses} meses`;
 
-      // Verificar se completa 4 anos até 31/03
       const anoAtual = hoje.getFullYear();
-      const dataCorte = new Date(anoAtual, 2, 31); // 31 de março
+      const dataCorte = new Date(anoAtual, 2, 31);
       const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
 
       if (data4 <= dataCorte) {
@@ -644,12 +648,49 @@
           } else {
             alert("CEP não encontrado.");
           }
+          // Habilita botão de Salvar Alterações depois de converter CEP
+          btnSalvarAlteracoesMunicipal.disabled = false;
         } else {
           alert("Erro ao consultar ViaCEP.");
         }
       } catch (e) {
         alert("Erro ao converter CEP (Municipal).");
       }
+    });
+
+    // BOTÃO SALVAR ALTERAÇÕES (MUNICIPAL)
+    btnSalvarAlteracoesMunicipal.addEventListener("click", async () => {
+      const ok = await salvarAlteracoesMunicipal();
+      if (ok) {
+        // Se salvou com sucesso, habilita o botão de Imprimir Confirmação
+        btnImprimirConfirmacaoMunicipal.disabled = false;
+        alert("Alterações salvas com sucesso (Municipal)!");
+      }
+    });
+
+    // IMPRIMIR CONFIRMAÇÃO (MUNICIPAL)
+    btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
+      if (!alunoIdMunicipal) {
+        alert("Nenhum aluno carregado para gerar termo.");
+        return;
+      }
+      window.open(`/api/termo-cadastro/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+
+      // Após imprimir, habilita "Próximo"
+      btnProximoMunicipal.disabled = false;
+    });
+
+    // MUNICIPAL - PRÓXIMO
+    btnProximoMunicipal.addEventListener("click", () => {
+      if (!originalData) {
+        alert("Nenhum aluno carregado.");
+        return;
+      }
+      etapa1Municipal.classList.remove("active");
+      etapa2.classList.add("active");
+      setTimeout(() => {
+        initMap();
+      }, 300);
     });
 
     // ESTADUAL - BUSCAR
@@ -672,7 +713,7 @@
 
         campoIdMatriculaEstadual.value = data.id_matricula || "";
         campoNomeAlunoEstadual.value = data.pessoa_nome || "";
-        campoEscolaEstadual.value = ""; // se tiver ID de escola, setar
+        campoEscolaEstadual.value = "";
         campoTurmaEstadual.value = data.turma || "";
         campoTurnoEstadual.value = "";
         campoCpfEstadual.value = data.cpf || "";
@@ -703,6 +744,7 @@
         } else {
           campoDeficienciaEstadual.value = "";
         }
+
       } catch (err) {
         console.error(err);
         alert("Erro ao buscar aluno (Estadual).");
@@ -716,7 +758,6 @@
       }
     });
 
-    // Cálculo de idade (Estadual)
     function calcularIdadeEstadual(dataNasc) {
       const hoje = new Date();
       let anos = hoje.getFullYear() - dataNasc.getFullYear();
@@ -763,19 +804,6 @@
       } catch (e) {
         alert("Erro ao converter CEP (Estadual).");
       }
-    });
-
-    // MUNICIPAL - PRÓXIMO
-    btnProximoMunicipal.addEventListener("click", () => {
-      if (!originalData) {
-        alert("Nenhum aluno carregado.");
-        return;
-      }
-      etapa1Municipal.classList.remove("active");
-      etapa2.classList.add("active");
-      setTimeout(() => {
-        initMap();
-      }, 300);
     });
 
     // ESTADUAL - PRÓXIMO
@@ -826,15 +854,7 @@
       }
     });
 
-    // IMPRIMIR CONFIRMAÇÃO (MUNICIPAL)
-    btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
-      if (!alunoIdMunicipal) {
-        alert("Nenhum aluno carregado para gerar termo.");
-        return;
-      }
-      window.open(`/api/termo-cadastro/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-    });
-
+    // BOTÃO VOLTAR (AMBOS)
     btnVoltarEtapa1.addEventListener("click", () => {
       etapa2.classList.remove("active");
       if (tipoFluxoSelecionado === "municipal") {
@@ -844,6 +864,7 @@
       }
     });
 
+    // BOTÃO APROVADO
     btnAprovado.addEventListener("click", async () => {
       if (tipoFluxoSelecionado === "municipal") {
         if (!alunoIdMunicipal) {
@@ -872,6 +893,7 @@
       resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
 
+    // BOTÃO NÃO APROVADO
     btnNaoAprovado.addEventListener("click", async () => {
       if (tipoFluxoSelecionado === "municipal") {
         if (!alunoIdMunicipal) {
@@ -896,6 +918,7 @@
       resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
     });
 
+    // BOTÃO FINALIZAR
     btnFinalizar.addEventListener("click", () => {
       alert("Atendimento finalizado!");
       location.reload();
@@ -918,9 +941,7 @@
         deficiencia: defArray,
         latitude: parseFloat(campoLatitude.value) || null,
         longitude: parseFloat(campoLongitude.value) || null,
-        rua: campoRuaMunicipal.value.trim(),
-        // Caso queira atualizar data_nascimento no PUT:
-        data_nascimento: campoDataNascimentoMunicipal.value || null
+        rua: campoRuaMunicipal.value.trim()
       };
 
       try {
@@ -1186,6 +1207,7 @@
       });
     }
 
+    // Medição manual
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
