@@ -5638,6 +5638,351 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
     });
   }
 });
+app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  try {
+    // Consulta do aluno na tabela estadual
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.turno
+      FROM alunos_ativos_estadual a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Aluno estadual não encontrado."
+      });
+    }
+
+    const aluno = result.rows[0];
+
+    // Inicia o PDF
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename=aprovado_estadual_${alunoId}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    // Caminhos dos arquivos de imagem (ajuste conforme seu diretório)
+    const logoPath = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "logo_memorando1.png"
+    );
+    const separadorPath = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_separador.png"
+    );
+    const logo2Path = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_logo2.png"
+    );
+
+    // Cabeçalho (Logo + Texto)
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+          "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
+          "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    // Separador
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    // Título
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("DECLARAÇÃO DE USO DO TRANSPORTE ESCOLAR Nº 2025", {
+        align: "justify",
+      })
+      .moveDown();
+
+    // Corpo
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola (Estadual): ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        "Declaramos, para os devidos fins, que o(a) aluno(a) acima mencionado(a) encontra-se apto(a) e está autorizado(a) a utilizar o transporte escolar disponibilizado pela rede estadual. Esta declaração é válida durante o ano letivo corrente, desde que mantidas as condições de matrícula e frequência.",
+        { align: "justify" }
+      )
+      .moveDown()
+      .text(
+        "O aluno deverá portar esta declaração para embarque, juntamente com um documento de identificação, a fim de garantir o devido acesso ao transporte escolar oferecido.",
+        { align: "justify" }
+      )
+      .moveDown();
+
+    // Assinatura
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
+      .text("Estado do Pará", { align: "center" });
+
+    // Rodapé
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(
+        "SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC",
+        50,
+        doc.page.height - 85,
+        {
+          width: doc.page.width - 100,
+          align: "center",
+        }
+      )
+      .text(
+        "Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99999-9999", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF (Aprovado Estadual):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de aprovação (estadual).",
+    });
+  }
+});
+
+app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  try {
+    // Consulta do aluno na tabela estadual
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.turno
+      FROM alunos_ativos_estadual a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Aluno estadual não encontrado."
+      });
+    }
+
+    const aluno = result.rows[0];
+
+    // Inicia o PDF
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename=nao_aprovado_estadual_${alunoId}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    // Caminhos dos arquivos de imagem (ajuste conforme seu diretório)
+    const logoPath = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "logo_memorando1.png"
+    );
+    const separadorPath = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_separador.png"
+    );
+    const logo2Path = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_logo2.png"
+    );
+
+    // Cabeçalho (Logo + Texto)
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+          "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
+          "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    // Separador
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    // Título
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("COMPROVANTE DE NÃO APROVAÇÃO Nº 2025", {
+        align: "justify",
+      })
+      .moveDown();
+
+    // Corpo
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola (Estadual): ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        "Informamos que o(a) aluno(a) acima mencionado(a) não foi aprovado(a) para uso do Transporte Escolar na rede estadual, em virtude de não atendimento aos critérios estabelecidos para o ano letivo vigente.",
+        { align: "justify" }
+      )
+      .moveDown()
+      .text("Motivo(s):", { align: "justify", underline: true })
+      .moveDown()
+      .text("• Distância mínima entre residência e escola não atingida;", {
+        align: "justify"
+      })
+      .text("• Falta de documentação ou demais critérios não atendidos;", {
+        align: "justify"
+      })
+      .moveDown()
+      .text(
+        "Para maiores informações ou para regularizar a situação, solicitamos que entre em contato com a Secretaria de Estado de Educação (SEDUC) ou dirija-se à Coordenação de Transporte Escolar.",
+        { align: "justify" }
+      )
+      .moveDown();
+
+    // Assinatura
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
+      .text("Estado do Pará", { align: "center" });
+
+    // Rodapé
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(
+        "SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC",
+        50,
+        doc.page.height - 85,
+        {
+          width: doc.page.width - 100,
+          align: "center",
+        }
+      )
+      .text(
+        "Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99999-9999", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF (Não Aprovado Estadual):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de não aprovação (estadual).",
+    });
+  }
+});
+
 
 // Exemplo de endpoint para gerar PDF de "Aprovado"
 app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
