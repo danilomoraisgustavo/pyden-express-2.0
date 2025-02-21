@@ -5582,7 +5582,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   .font("Helvetica")
   // Inicia o parágrafo:
   .text(
-    "Eu, _____________________________________________________________, confirmo que sou o(a) responsável pelo(a) aluno(a) ",
+    "Eu, _____________________________________________________________, inscrito no CPF ______-______-______-____, confirmo que sou o(a) responsável pelo(a) aluno(a) ",
     { align: "justify", continued: true }
   )
   .font("Helvetica-Bold")
