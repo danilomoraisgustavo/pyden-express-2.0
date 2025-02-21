@@ -6194,6 +6194,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
+
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
@@ -6223,49 +6224,51 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
       });
     doc.moveDown(1);
 
+    // Aumenta levemente o espaçamento entre linhas
+    doc.lineGap(4);
+
     // Corpo
-    // Corpo
-doc
-.fontSize(12)
-.font("Helvetica")
-.text(
-  "Eu, ____________________________________________________________, inscrito(a) no CPF nº ______.______.____-__, ",
-  { align: "justify", continued: true }
-)
-.text(
-  "confirmo que sou o(a) responsável pelo(a) aluno(a) ",
-  { continued: true }
-)
-.font("Helvetica-Bold")
-.text(`${aluno.aluno_nome || ""}`, { continued: true })
-.font("Helvetica")
-.text(", portador(a) do CPF nº ", { continued: true })
-.font("Helvetica-Bold")
-.text(`${aluno.cpf || ""}`, { continued: true })
-.font("Helvetica")
-.text(", devidamente matriculado(a) na Escola ", { continued: true })
-.font("Helvetica-Bold")
-.text(`${aluno.escola_nome || ""}`, { continued: true })
-.font("Helvetica")
-.text(". Residente no endereço: ", { continued: true })
-.font("Helvetica-Bold")
-.text(`${aluno.rua || ""}`, { continued: true })
-.font("Helvetica")
-.text(", nº ", { continued: true })
-.font("Helvetica-Bold")
-.text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
-.font("Helvetica")
-.text(", Bairro ", { continued: true })
-.font("Helvetica-Bold")
-.text(`${aluno.bairro || ""}`, { continued: true })
-.font("Helvetica")
-.text(
-  ". Declaro, para os devidos fins, a veracidade das informações acima, bem como minha plena consciência e responsabilidade sobre os dados fornecidos.",
-  { align: "justify", continued: false }
-);
-;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(
+        "Eu, ____________________________________________________________, inscrito(a) no CPF nº ______.______.____-__, ",
+        { align: "justify", continued: true }
+      )
+      .text(
+        "confirmo que sou o(a) responsável pelo(a) aluno(a) ",
+        { continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.aluno_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(", portador(a) do CPF nº ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.cpf || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(", devidamente matriculado(a) na Escola ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.escola_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(". Residente no endereço: ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.rua || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(", nº ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(", Bairro ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.bairro || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        ". Declaro, para os devidos fins, a veracidade das informações acima, bem como minha plena consciência e responsabilidade sobre os dados fornecidos."
+      );
 
     doc.moveDown(1);
+
+    // Critérios de elegibilidade
     doc.font("Helvetica-Bold").text("CRITÉRIOS DE ELEGIBILIDADE:", { align: "left" });
     doc.font("Helvetica");
 
@@ -6286,6 +6289,13 @@ doc
     doc.moveDown(1);
     doc.font("Helvetica").text(
       "Comprometo-me a fornecer informações verídicas e completas, estando ciente de que a omissão ou falsidade de dados pode acarretar o cancelamento do direito ao transporte e responsabilizações legais cabíveis."
+    );
+
+    doc.moveDown(1);
+    // Parágrafo adicional - Autorização de uso de imagem
+    doc.font("Helvetica-Bold").text("AUTORIZAÇÃO DE USO DE IMAGEM:", { align: "left" });
+    doc.font("Helvetica").text(
+      "Por meio deste, autorizo o uso da imagem do(a) aluno(a) para fins de reconhecimento facial no sistema de embarque e desembarque do Transporte Escolar, ciente de que tal procedimento visa exclusivamente à segurança e identificação do(a) aluno(a)."
     );
 
     doc.moveDown(3);
