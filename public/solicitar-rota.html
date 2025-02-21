@@ -46,6 +46,12 @@
     .wizard-step.active {
       display: block;
     }
+
+    /* Badge de idade */
+    .badge-idade {
+      padding: 0.45rem 0.6rem;
+      font-size: 0.875rem;
+    }
   </style>
 </head>
 
@@ -64,15 +70,11 @@
         <div class="card-body">
           <div class="form-check">
             <input class="form-check-input" type="radio" name="tipoFluxo" id="fluxoMunicipal" value="municipal" />
-            <label class="form-check-label" for="fluxoMunicipal">
-              Municipal
-            </label>
+            <label class="form-check-label" for="fluxoMunicipal">Municipal</label>
           </div>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="tipoFluxo" id="fluxoEstadual" value="estadual" />
-            <label class="form-check-label" for="fluxoEstadual">
-              Estadual
-            </label>
+            <label class="form-check-label" for="fluxoEstadual">Estadual</label>
           </div>
           <div class="mt-4">
             <button class="btn btn-primary" id="btnContinuarFluxo">Continuar</button>
@@ -199,7 +201,20 @@
           <div class="card-title">Etapa 1 (Estadual): Dados do Aluno</div>
         </div>
         <div class="card-body">
-          <div class="row justify-content-center mt-4">
+          <!-- Busca por CPF ou Matrícula (para preencher automaticamente) -->
+          <div class="row">
+            <div class="col-md-6 mb-2">
+              <label class="form-label fw-semibold">CPF ou ID Matrícula</label>
+              <input type="text" class="form-control" id="inputBuscaEstadual"
+                placeholder="Digite CPF ou Matrícula..." />
+            </div>
+            <div class="col-md-2 d-flex align-items-end mb-2">
+              <button class="btn btn-primary w-100" id="btnBuscarEstadual">Buscar</button>
+            </div>
+          </div>
+          <hr />
+
+          <div class="row justify-content-center mt-2">
             <div class="col-md-10">
               <div id="dadosAlunoContainerEstadual">
                 <div class="row">
@@ -210,6 +225,19 @@
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Nome do Aluno</label>
                     <input type="text" class="form-control" id="campoNomeAlunoEstadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Data Nascimento</label>
+                    <input type="date" class="form-control" id="campoDataNascimentoEstadual" />
+                  </div>
+                  <div class="col-md-6 mb-2 d-flex align-items-end">
+                    <span class="fw-semibold">
+                      Idade:
+                      <span id="campoIdadeEstadual" class="badge bg-secondary badge-idade ms-1">--</span>
+                    </span>
                   </div>
                 </div>
 
@@ -278,7 +306,6 @@
                   </div>
                 </div>
 
-                <!-- Campo de Deficiência (agora SELECT) -->
                 <div class="row">
                   <div class="col-md-12 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
@@ -418,11 +445,15 @@
     const campoDeficienciaMunicipal = document.getElementById("campoDeficienciaMunicipal");
 
     // ESTADUAL
+    const btnBuscarEstadual = document.getElementById("btnBuscarEstadual");
+    const inputBuscaEstadual = document.getElementById("inputBuscaEstadual");
     const btnConverterCepEstadual = document.getElementById("btnConverterCepEstadual");
     const btnProximoEstadual = document.getElementById("btnProximoEstadual");
 
     const campoIdMatriculaEstadual = document.getElementById("campoIdMatriculaEstadual");
     const campoNomeAlunoEstadual = document.getElementById("campoNomeAlunoEstadual");
+    const campoDataNascimentoEstadual = document.getElementById("campoDataNascimentoEstadual");
+    const campoIdadeEstadual = document.getElementById("campoIdadeEstadual");
     const campoEscolaEstadual = document.getElementById("campoEscolaEstadual");
     const campoTurmaEstadual = document.getElementById("campoTurmaEstadual");
     const campoTurnoEstadual = document.getElementById("campoTurnoEstadual");
@@ -468,20 +499,17 @@
       }
     });
 
-    // Carregar escolas no SELECT (Estadual)
     async function carregarEscolasEstaduais() {
       try {
         const response = await fetch("/api/escolas");
         if (!response.ok) throw new Error("Erro ao carregar escolas.");
         const listaEscolas = await response.json();
-        const selectEscolaEstadual = document.getElementById("campoEscolaEstadual");
-        // Limpar opções antigas
-        selectEscolaEstadual.innerHTML = '<option value="">Selecione a Escola</option>';
+        campoEscolaEstadual.innerHTML = '<option value="">Selecione a Escola</option>';
         listaEscolas.forEach(e => {
           const option = document.createElement("option");
           option.value = e.id;
           option.textContent = e.nome;
-          selectEscolaEstadual.appendChild(option);
+          campoEscolaEstadual.appendChild(option);
         });
       } catch (err) {
         console.error("Erro ao buscar escolas:", err);
@@ -561,6 +589,97 @@
       }
     });
 
+    // ESTADUAL - BUSCAR
+    btnBuscarEstadual.addEventListener("click", async () => {
+      const valorBusca = inputBuscaEstadual.value.trim();
+      if (!valorBusca) {
+        alert("Informe CPF ou ID de Matrícula.");
+        return;
+      }
+      try {
+        const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
+        if (!resp.ok) throw new Error("Erro ao buscar aluno.");
+        const data = await resp.json();
+        if (!data || !data.id_matricula) {
+          alert("Nenhum aluno encontrado.");
+          return;
+        }
+        originalData = data;
+        alunoIdEstadual = data.id || null;
+
+        campoIdMatriculaEstadual.value = data.id_matricula || "";
+        campoNomeAlunoEstadual.value = data.pessoa_nome || "";
+        campoEscolaEstadual.value = ""; // se tiver ID de escola, setar
+        campoTurmaEstadual.value = data.turma || "";
+        campoTurnoEstadual.value = "";
+        campoCpfEstadual.value = data.cpf || "";
+        campoCepEstadual.value = data.cep || "";
+        campoRuaEstadual.value = data.rua || "";
+        campoBairroEstadual.value = data.bairro || "";
+        campoNumeroEnderecoEstadual.value = data.numero_pessoa_endereco || "";
+        campoTelefoneEstadual.value = data.numero_telefone || "";
+        campoFiliacao1Estadual.value = data.filiacao_1 || "";
+        campoFiliacao2Estadual.value = data.filiacao_2 || "";
+        campoResponsavelEstadual.value = data.responsavel || "";
+
+        // Se vier data_nascimento, converter para YYYY-MM-DD e calcular idade
+        if (data.data_nascimento) {
+          const dt = data.data_nascimento.split("T")[0]; // Exemplo
+          campoDataNascimentoEstadual.value = dt;
+          calcularIdadeEstadual(new Date(dt));
+        } else {
+          campoDataNascimentoEstadual.value = "";
+          campoIdadeEstadual.textContent = "--";
+          campoIdadeEstadual.classList.remove("bg-danger", "bg-success");
+          campoIdadeEstadual.classList.add("bg-secondary");
+        }
+
+        // Deficiência
+        if (Array.isArray(data.deficiencia)) {
+          campoDeficienciaEstadual.value = data.deficiencia[0] || "";
+        } else if (typeof data.deficiencia === "string") {
+          // Se era string, assume a primeira, ajustando se quiser
+          campoDeficienciaEstadual.value = data.deficiencia;
+        } else {
+          campoDeficienciaEstadual.value = "";
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao buscar aluno (Estadual).");
+      }
+    });
+
+    // ESTADUAL - listener para data de nascimento
+    campoDataNascimentoEstadual.addEventListener("change", () => {
+      if (campoDataNascimentoEstadual.value) {
+        calcularIdadeEstadual(new Date(campoDataNascimentoEstadual.value));
+      }
+    });
+
+    function calcularIdadeEstadual(dataNasc) {
+      const hoje = new Date();
+      let anos = hoje.getFullYear() - dataNasc.getFullYear();
+      let meses = hoje.getMonth() - dataNasc.getMonth();
+      if (meses < 0) {
+        anos--;
+        meses += 12;
+      }
+      campoIdadeEstadual.textContent = `${anos} anos e ${meses} meses`;
+
+      // Verificar se completa 4 anos até 31/03
+      const anoAtual = hoje.getFullYear();
+      const dataCorte = new Date(anoAtual, 2, 31); // 31 de março
+      const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
+
+      if (data4 <= dataCorte) {
+        campoIdadeEstadual.classList.remove("bg-danger", "bg-secondary");
+        campoIdadeEstadual.classList.add("bg-success");
+      } else {
+        campoIdadeEstadual.classList.remove("bg-success", "bg-secondary");
+        campoIdadeEstadual.classList.add("bg-danger");
+      }
+    }
+
     // ESTADUAL - CONVERTER CEP
     btnConverterCepEstadual.addEventListener("click", async () => {
       const cepLimpo = campoCepEstadual.value.replace(/\D/g, "");
@@ -601,13 +720,13 @@
 
     // ESTADUAL - PRÓXIMO
     btnProximoEstadual.addEventListener("click", async () => {
-      // Agora que "campoDeficienciaEstadual" é um SELECT, capturamos diretamente o valor selecionado
       const defValue = campoDeficienciaEstadual.value;
-      const defArray = defValue ? [defValue] : null; // Se tiver valor, jogamos em um array (caso a API espere array)
+      const defArray = defValue ? [defValue] : null;
 
       const bodyAlunoEstadual = {
         id_matricula: campoIdMatriculaEstadual.value.trim(),
         pessoa_nome: campoNomeAlunoEstadual.value.trim(),
+        data_nascimento: campoDataNascimentoEstadual.value || null,
         escola_id: campoEscolaEstadual.value ? parseInt(campoEscolaEstadual.value) : null,
         turma: campoTurmaEstadual.value.trim(),
         turno: campoTurnoEstadual.value.trim(),
@@ -620,7 +739,7 @@
         filiacao_1: campoFiliacao1Estadual.value.trim(),
         filiacao_2: campoFiliacao2Estadual.value.trim(),
         responsavel: campoResponsavelEstadual.value.trim(),
-        deficiencia: defArray // substitui a lógica anterior de split
+        deficiencia: defArray
       };
 
       try {
@@ -751,7 +870,6 @@
           body: JSON.stringify(mergeBody)
         });
         const result = await resp.json();
-
         if (!resp.ok) {
           alert(result.message || "Falha ao salvar alterações (municipal).");
           return false;
@@ -765,13 +883,13 @@
     }
 
     async function salvarAlteracoesEstadual(idEstadual) {
-      // Ajustamos aqui também para pegar o valor do SELECT e transformar em array (se necessário)
       const defValue = campoDeficienciaEstadual.value;
       const defArray = defValue ? [defValue] : null;
 
       const mergeBody = {
         id_matricula: campoIdMatriculaEstadual.value.trim(),
         pessoa_nome: campoNomeAlunoEstadual.value.trim(),
+        data_nascimento: campoDataNascimentoEstadual.value || null,
         escola_id: campoEscolaEstadual.value ? parseInt(campoEscolaEstadual.value) : null,
         turma: campoTurmaEstadual.value.trim(),
         turno: campoTurnoEstadual.value.trim(),
@@ -796,7 +914,6 @@
           body: JSON.stringify(mergeBody)
         });
         const result = await resp.json();
-
         if (!resp.ok) {
           alert(result.message || "Falha ao salvar alterações (estadual).");
           return false;
@@ -872,8 +989,7 @@
       } else {
         latAluno = null;
         lngAluno = null;
-        const selectEscola = campoEscolaEstadual;
-        const selectedOption = selectEscola.options[selectEscola.selectedIndex];
+        const selectedOption = campoEscolaEstadual.options[campoEscolaEstadual.selectedIndex];
         escolaNome = selectedOption ? selectedOption.textContent : "";
         if (campoRuaEstadual.value.trim()) {
           endAluno = `${campoRuaEstadual.value}, ${campoNumeroEnderecoEstadual.value}, Canaã dos Carajás, Pará, Brasil`;
@@ -948,7 +1064,7 @@
     }
 
     function createOrMoveMarkers() {
-      if (!markerAluno) {
+      if (!markerAluno && alunoPos) {
         markerAluno = new google.maps.Marker({
           position: alunoPos,
           map: map,
@@ -964,7 +1080,7 @@
           campoLongitude.value = pos.lng().toFixed(6);
           calcularRota(pos, escolaPos);
         });
-      } else {
+      } else if (markerAluno && alunoPos) {
         markerAluno.setPosition(alunoPos);
       }
 
@@ -978,8 +1094,12 @@
         markerEscola.setPosition(escolaPos);
       }
 
-      map.setCenter(alunoPos);
-      calcularRota(alunoPos, escolaPos);
+      if (alunoPos) {
+        map.setCenter(alunoPos);
+        calcularRota(alunoPos, escolaPos);
+      } else {
+        map.setCenter(escolaPos);
+      }
     }
 
     function calcularRota(aPos, ePos) {
