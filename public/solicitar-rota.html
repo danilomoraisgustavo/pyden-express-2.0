@@ -292,6 +292,7 @@
     const resultadoTitulo = document.getElementById("resultadoTitulo");
     const resultadoDescricao = document.getElementById("resultadoDescricao");
 
+    // BUSCAR ALUNO
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -343,6 +344,7 @@
       }
     });
 
+    // CONVERTER CEP
     btnConverterCep.addEventListener("click", async () => {
       const cepLimpo = campoCep.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -367,6 +369,7 @@
       }
     });
 
+    // BOTÃO PRÓXIMO
     btnProximo.addEventListener("click", () => {
       if (!originalData) {
         alert("Nenhum aluno carregado.");
@@ -379,16 +382,18 @@
       }, 300);
     });
 
+    // VOLTAR ETAPA 1
     btnVoltarEtapa1.addEventListener("click", () => {
       etapa2.classList.remove("active");
       etapa1.classList.add("active");
     });
 
+    // GERA PROTOCOLO
     function gerarProtocolo() {
       return "PROTO-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
     }
 
-    // Salvamento das alterações no banco
+    // SALVAR ALTERAÇÕES
     async function salvarAlteracoes() {
       if (!alunoId) {
         alert("Nenhum aluno carregado para salvar.");
@@ -431,12 +436,12 @@
       }
     }
 
+    // BOTÃO APROVADO
     btnAprovado.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para aprovação.");
         return;
       }
-
       const ok = await salvarAlteracoes();
       if (!ok) return;
 
@@ -469,6 +474,7 @@
       resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
 
+    // BOTÃO NÃO APROVADO
     btnNaoAprovado.addEventListener("click", async () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para reprovação.");
@@ -495,7 +501,7 @@
       } catch (error) {
         alert("Falha ao salvar a solicitação.");
       }
-      // Não salvamos as alterações, gera pdf de não aprovado
+
       window.open(`/api/comprovante-nao-aprovado/${alunoId}/gerar-pdf`, "_blank");
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
@@ -504,11 +510,13 @@
       resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
     });
 
+    // BOTÃO FINALIZAR
     btnFinalizar.addEventListener("click", () => {
       alert("Atendimento finalizado!");
       location.reload();
     });
 
+    // BOTÃO IMPRIMIR CONFIRMAÇÃO
     btnImprimirConfirmacao.addEventListener("click", () => {
       if (!alunoId) {
         alert("Nenhum aluno carregado para gerar termo.");
@@ -517,6 +525,7 @@
       window.open(`/api/termo-cadastro/${alunoId}/gerar-pdf`, "_blank");
     });
 
+    // INIC MAP
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -524,6 +533,7 @@
           zoom: 14,
           mapTypeId: google.maps.MapTypeId.HYBRID
         });
+
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({
           map: map,
@@ -560,10 +570,11 @@
           alunoLatitude = e.latLng.lat();
           alunoLongitude = e.latLng.lng();
           campoLatitude.value = alunoLatitude.toFixed(6);
-          campoLongitude.value = alunoLongitude.toFixed(6);
+          campoLongitude.value = alumnoLongitude.toFixed(6);
           calcularRota(e.latLng, escolaPos);
         });
       }
+
       distanciaRota.textContent = "--";
 
       const escolaNome = originalData.escola_nome || "";
@@ -594,7 +605,7 @@
             alunoLatitude = alunoPos.lat();
             alunoLongitude = alumnoPos.lng();
             campoLatitude.value = alunoLatitude.toFixed(6);
-            campoLongitude.value = alunoLongitude.toFixed(6);
+            campoLongitude.value = alumnoLongitude.toFixed(6);
             createOrMoveMarkers();
           } else {
             alert("Não foi possível localizar o endereço do aluno via Geocoder.");
@@ -603,6 +614,7 @@
       }
     }
 
+    // CRIA OU MOVE MARCADORES
     function createOrMoveMarkers() {
       if (!markerAluno) {
         markerAluno = new google.maps.Marker({
@@ -616,7 +628,7 @@
         });
         markerAluno.addListener("dragend", () => {
           alunoPos = markerAluno.getPosition();
-          alunoLatitude = alunoPos.lat();
+          alunoLatitude = alumnoPos.lat();
           alumnoLongitude = alumnoPos.lng();
           campoLatitude.value = alumnoLatitude.toFixed(6);
           campoLongitude.value = alumnoLongitude.toFixed(6);
@@ -640,6 +652,7 @@
       calcularRota(alunoPos, escolaPos);
     }
 
+    // CALCULAR ROTA
     function calcularRota(aPos, ePos) {
       const request = {
         origin: aPos,
@@ -658,6 +671,7 @@
       });
     }
 
+    // MEDIR DISTÂNCIA
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
@@ -680,6 +694,38 @@
       }
     });
 
+    function startMeasureMode() {
+      if (!map) return;
+      measurePoints = [];
+      measureDistanceSpan.textContent = "0";
+      measurePolyline = new google.maps.Polyline({
+        map: map,
+        path: measurePoints,
+        strokeColor: "#FF0000",
+        strokeOpacity: 1.0,
+        strokeWeight: 3
+      });
+      mapClickListener = map.addListener("click", (e) => {
+        measurePoints.push(e.latLng);
+        measurePolyline.setPath(measurePoints);
+        let totalDist = 0;
+        for (let i = 0; i < measurePoints.length - 1; i++) {
+          const segDist = google.maps.geometry.spherical.computeDistanceBetween(
+            measurePoints[i],
+            measurePoints[i + 1]
+          );
+          totalDist += segDist;
+        }
+        measureDistanceSpan.textContent = (totalDist / 1000).toFixed(3);
+      });
+    }
+
+    function endMeasureMode() {
+      if (mapClickListener) {
+        google.maps.event.removeListener(mapClickListener);
+        mapClickListener = null;
+      }
+    }
   </script>
 </body>
 
