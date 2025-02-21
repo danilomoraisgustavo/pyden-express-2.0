@@ -367,6 +367,7 @@ CREATE TABLE IF NOT EXISTS alunos_ativos (
     filiacao_2 VARCHAR(255),
     responsavel VARCHAR(255),
     deficiencia TEXT[],
+    data_nascimento DATE,
     longitude NUMERIC(9,6),
     latitude NUMERIC(9,6)
 );
