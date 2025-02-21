@@ -4507,93 +4507,6 @@ app.get("/api/alunos-transporte-publico", async (req, res) => {
   }
 });
 
-app.put("/api/alunos-ativos-estadual/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      id_matricula,
-      pessoa_nome,
-      escola_id,
-      turma,
-      turno,
-      cpf,
-      cep,
-      rua,
-      bairro,
-      numero_pessoa_endereco,
-      numero_telefone,
-      filiacao_1,
-      filiacao_2,
-      responsavel,
-      deficiencia,
-      latitude,
-      longitude
-    } = req.body;
-
-    const queryText = `
-      UPDATE alunos_ativos_estadual
-      SET
-        id_matricula = $1,
-        pessoa_nome = $2,
-        escola_id = $3,
-        turma = $4,
-        turno = $5,
-        cpf = $6,
-        cep = $7,
-        rua = $8,
-        bairro = $9,
-        numero_pessoa_endereco = $10,
-        numero_telefone = $11,
-        filiacao_1 = $12,
-        filiacao_2 = $13,
-        responsavel = $14,
-        deficiencia = $15,
-        latitude = $16,
-        longitude = $17,
-        updated_at = NOW()
-      WHERE id = $18
-      RETURNING *
-    `;
-
-    const values = [
-      id_matricula || null,
-      pessoa_nome,
-      escola_id || null,
-      turma || null,
-      turno || null,
-      cpf || null,
-      cep || null,
-      rua || null,
-      bairro || null,
-      numero_pessoa_endereco || null,
-      numero_telefone || null,
-      filiacao_1 || null,
-      filiacao_2 || null,
-      Array.isArray(deficiencia) && deficiencia.length ? deficiencia : null,
-      latitude || null,
-      longitude || null,
-      id
-    ];
-
-    const result = await pool.query(queryText, values);
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        message: "Aluno estadual não encontrado para atualização."
-      });
-    }
-
-    return res.status(200).json({
-      message: "Dados do aluno estadual atualizados com sucesso.",
-      aluno: result.rows[0]
-    });
-  } catch (error) {
-    console.error("Erro ao atualizar aluno estadual:", error);
-    return res.status(500).json({
-      message: "Não foi possível atualizar os dados do aluno estadual."
-    });
-  }
-});
 app.get("/api/alunos_ativos", async (req, res) => {
   try {
     const search = req.query.search ? req.query.search.trim() : "";
@@ -6107,16 +6020,14 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         transporte_escolar_poder_publico,
         cep,
         bairro,
-        numero_pessoa_endereco,
+        numero_pessoa_endereco, // <== NOVO CAMPO VINDO DO XLSX
         filiacao_1,
         numero_telefone,
         filiacao_2,
         RESPONSAVEL,
         deficiencia,
-        data_nascimento // <=== NOVO CAMPO
       } = aluno;
 
-      // Trata o campo "deficiencia" para garantir que seja um array
       let defArray = [];
       try {
         if (typeof deficiencia === "string") {
@@ -6127,13 +6038,12 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         defArray = [];
       }
 
-      // Verifica se já existe um aluno com mesmo CPF ou ID de matrícula
       let alreadyExists = false;
       if (cpf) {
         const check = await pool.query(
           `SELECT id FROM alunos_ativos 
-           WHERE (cpf = $1 AND cpf <> '')
-             OR (id_matricula = $2 AND id_matricula IS NOT NULL)`,
+                     WHERE (cpf = $1 AND cpf <> '')
+                       OR (id_matricula = $2 AND id_matricula IS NOT NULL)`,
           [cpf, id_matricula]
         );
         if (check.rows.length > 0) {
@@ -6142,7 +6052,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       } else if (id_matricula) {
         const check = await pool.query(
           `SELECT id FROM alunos_ativos 
-           WHERE id_matricula = $1 AND id_matricula IS NOT NULL`,
+                     WHERE id_matricula = $1 AND id_matricula IS NOT NULL`,
           [id_matricula]
         );
         if (check.rows.length > 0) {
@@ -6151,38 +6061,35 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       }
 
       if (alreadyExists) {
-        // Se já existe, não faz INSERT
         continue;
       }
 
-      // Insere novo aluno
       await pool.query(
         `INSERT INTO alunos_ativos(
-          id_matricula,
-          escola_id,
-          ano,
-          modalidade,
-          formato_letivo,
-          turma,
-          pessoa_nome,
-          cpf,
-          transporte_escolar_poder_publico,
-          cep,
-          bairro,
-          numero_pessoa_endereco,
-          filiacao_1,
-          numero_telefone,
-          filiacao_2,
-          responsavel,
-          deficiencia,
-          data_nascimento  -- <== NOVA COLUNA
-        )
-        VALUES (
-          $1,  $2,  $3,  $4,  $5,
-          $6,  $7,  $8,  $9,  $10,
-          $11, $12, $13, $14, $15,
-          $16, $17, $18
-        )`,
+                    id_matricula,
+                    escola_id,
+                    ano,
+                    modalidade,
+                    formato_letivo,
+                    turma,
+                    pessoa_nome,
+                    cpf,
+                    transporte_escolar_poder_publico,
+                    cep,
+                    bairro,
+                    numero_pessoa_endereco,  -- <== INSERINDO NOVA COLUNA
+                    filiacao_1,
+                    numero_telefone,
+                    filiacao_2,
+                    responsavel,
+                    deficiencia
+                )
+                VALUES (
+                    $1,  $2,  $3,  $4,  $5,
+                    $6,  $7,  $8,  $9,  $10,
+                    $11, $12, $13, $14, $15,
+                    $16, $17
+                )`,
         [
           id_matricula || null,
           escolaId,
@@ -6201,16 +6108,14 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           filiacao_2 || null,
           RESPONSAVEL || null,
           defArray,
-          data_nascimento || null // Valor do campo data_nascimento
         ]
       );
     }
 
-    // Insere notificação de importação
     const mensagem = `Importados alunos para a escola ID ${escolaId}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-       VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
+             VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
       [userId, mensagem]
     );
 
@@ -6223,7 +6128,6 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     return res.json({ success: false, message: "Erro ao importar os alunos." });
   }
 });
-
 
 // Rotas (exemplo) - Ajustando para permitir filtros na query
 app.get("/api/alunos-ativos", async (req, res) => {
@@ -6276,7 +6180,6 @@ app.get("/api/alunos-ativos", async (req, res) => {
     });
   }
 });
-
 
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
   try {
