@@ -5538,11 +5538,15 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
+    // Logotipos e separadores (ajuste os caminhos se necessário)
     const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    // Cabeçalho com logo e título
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
-
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
@@ -5555,55 +5559,75 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
         { width: 300, align: "right" }
       );
 
-    // Linha separadora
-    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
       doc.image(separadorPath, separadorX, separadorY, { width: 510 });
     }
 
-    doc.y = 130;
-    doc.x = 50;
-    doc.fontSize(14).font("Helvetica-Bold").text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
-      align: "center",
-    });
-    doc.moveDown();
+    doc.moveDown(4);
 
-    doc.fontSize(12).font("Helvetica");
+    // Título principal
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS PARA O TRANSPORTE ESCOLAR", {
+        align: "center",
+      });
 
-    doc.text(`Eu, RESPONSÁVEL DO ALUNO(A): ${aluno.aluno_nome || ""}`, {
-      align: "justify",
-    });
+    doc.moveDown(2);
+
+    // Bloco com dados do aluno
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("Dados do Aluno:", { underline: true });
+    doc.moveDown(0.5);
+
+    doc
+      .font("Helvetica")
+      .fontSize(11)
+      .text(`Nome do Aluno: ${aluno.aluno_nome || ""}`)
+      .text(`CPF do Aluno: ${aluno.cpf || ""}`)
+      .text(`Escola: ${aluno.escola_nome || ""}`)
+      .text(`Turma: ${aluno.turma || ""}`)
+      .text(
+        `Endereço: Rua ${aluno.rua || ""}, Nº ${
+          aluno.numero_pessoa_endereco || ""
+        }, Bairro ${aluno.bairro || ""}.`
+      );
+
     doc.moveDown(1);
 
-    doc.text(
-      `CPF do Aluno: ${aluno.cpf || ""}, Escola: ${aluno.escola_nome || ""}, Turma: ${aluno.turma || ""}.`,
-      { align: "justify" }
-    );
+    // Texto de introdução
+    doc
+      .font("Helvetica")
+      .fontSize(12)
+      .text(
+        "Eu, responsável pelo(a) aluno(a) acima identificado(a), declaro ciência e concordância com os critérios de elegibilidade para o Transporte Escolar, conforme descritos a seguir:",
+        { align: "justify" }
+      );
 
     doc.moveDown(1);
-    doc.text(
-      `Endereço: Rua ${aluno.rua || ""}, Nº ${
-        aluno.numero_pessoa_endereco || ""
-      }, Bairro ${aluno.bairro || ""}.`,
-      { align: "justify" }
-    );
-    doc.moveDown(1);
 
-    doc.text("Declaro ciência e concordância com os CRITÉRIOS DE ELEGIBILIDADE para transporte:", {
-      align: "justify",
-    });
-    doc.moveDown(1);
-
-    const criterios = [
+    // Caixa de critérios
+    const criteriosTexto = [
       "Idade Mínima: 4 anos completos até 31 de março do ano vigente.",
-      "Distância Mínima - Educação Infantil: residência a mais de 1,5 km.",
-      "Distância Mínima - Fundamental, Médio, EJA: residência a mais de 2 km.",
-      "Exigência para Alunos com Necessidades Especiais: apresentar laudo médico."
+      "Distância Mínima - Educação Infantil (1º e 2º Períodos): residência a mais de 1,5 km.",
+      "Distância Mínima - Ensino Fundamental I, II, Médio e EJA: residência a mais de 2 km.",
+      "Necessidades Especiais: apresentar laudo médico. Haverá prioridade de atendimento de acordo com a necessidade especial."
     ];
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(11)
+      .text("CRITÉRIOS DE ELEGIBILIDADE", {
+        align: "left",
+        underline: true,
+      });
 
-    criterios.forEach((crit) => {
+    doc.font("Helvetica").fontSize(11);
+
+    criteriosTexto.forEach((crit) => {
       doc
         .text(`• ${crit}`, {
           align: "justify",
@@ -5612,15 +5636,36 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     });
 
     doc.moveDown(1);
-    doc.text(
-      "Estou ciente de que somente após a verificação destes critérios e do efetivo cadastro o aluno estará habilitado a receber o transporte escolar, quando necessário.",
-      { align: "justify" }
-    );
 
-    doc.moveDown(3);
-    doc.text("__________________________________", { align: "center" });
-    doc.text("Assinatura do Responsável", { align: "center" });
+    // Mais informações
+    doc
+      .font("Helvetica")
+      .fontSize(11)
+      .text(
+        "Estou ciente de que somente após a verificação e cumprimento destes critérios o aluno estará apto a usufruir do transporte escolar. " +
+          "Para alunos com necessidades especiais, apresentarei o laudo médico que comprove a condição."
+      );
+
     doc.moveDown(2);
+
+    // Linha para assinatura
+    doc
+      .font("Helvetica")
+      .fontSize(11)
+      .text("__________________________________", { align: "center" })
+      .text("Assinatura do Responsável", { align: "center" });
+
+    doc.moveDown(2);
+
+    // Observação final
+    doc
+      .font("Helvetica-Oblique")
+      .fontSize(10)
+      .text(
+        "Ao assinar este termo, confirmo que li e compreendi todos os critérios, " +
+          "assim como autorizo a verificação dos dados informados.",
+        { align: "center" }
+      );
 
     // Rodapé
     if (fs.existsSync(separadorPath)) {
@@ -5628,7 +5673,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
       const footerSepY = doc.page.height - 160;
       doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
     }
-    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
     if (fs.existsSync(logo2Path)) {
       const logo2X = (doc.page.width - 160) / 2;
       const logo2Y = doc.page.height - 150;
