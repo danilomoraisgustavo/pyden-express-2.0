@@ -111,6 +111,20 @@
                   </div>
                 </div>
 
+                <!-- Data Nascimento e Idade (MUNICIPAL) -->
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Data de Nascimento</label>
+                    <input type="date" class="form-control" id="campoDataNascimentoMunicipal" readonly />
+                  </div>
+                  <div class="col-md-6 mb-2 d-flex align-items-end">
+                    <span class="fw-semibold">
+                      Idade:
+                      <span id="campoIdadeMunicipal" class="badge bg-secondary badge-idade ms-1">--</span>
+                    </span>
+                  </div>
+                </div>
+
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Escola</label>
@@ -174,9 +188,15 @@
                     <label class="form-label fw-semibold">Responsável</label>
                     <input type="text" class="form-control" id="campoResponsavelMunicipal" readonly />
                   </div>
+                  <!-- Substituímos o input "Deficiência" por um SELECT -->
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
-                    <input type="text" class="form-control" id="campoDeficienciaMunicipal" />
+                    <select class="form-control" id="campoDeficienciaMunicipal">
+                      <option value="">Selecione...</option>
+                      <option value="Deficiência Física">Deficiência Física</option>
+                      <option value="Deficiência Intelectual">Deficiência Intelectual</option>
+                      <option value="Transtornos e Síndromes">Transtornos e Síndromes</option>
+                    </select>
                   </div>
                 </div>
 
@@ -431,6 +451,8 @@
 
     const campoIdMatriculaMunicipal = document.getElementById("campoIdMatriculaMunicipal");
     const campoNomeAlunoMunicipal = document.getElementById("campoNomeAlunoMunicipal");
+    const campoDataNascimentoMunicipal = document.getElementById("campoDataNascimentoMunicipal");
+    const campoIdadeMunicipal = document.getElementById("campoIdadeMunicipal");
     const campoEscolaMunicipal = document.getElementById("campoEscolaMunicipal");
     const campoTurmaMunicipal = document.getElementById("campoTurmaMunicipal");
     const campoCpfMunicipal = document.getElementById("campoCpfMunicipal");
@@ -499,6 +521,7 @@
       }
     });
 
+    // Carregar escolas no SELECT (Estadual)
     async function carregarEscolasEstaduais() {
       try {
         const response = await fetch("/api/escolas");
@@ -526,7 +549,7 @@
       }
       try {
         const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
-        if (!resp.ok) throw new Error("Erro ao buscar aluno.");
+        if (!resp.ok) throw new Error("Erro ao buscar aluno (Municipal).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
           alert("Nenhum aluno encontrado.");
@@ -535,6 +558,7 @@
         originalData = data;
         alunoIdMunicipal = data.id || null;
 
+        // Preenche campos
         campoIdMatriculaMunicipal.value = data.id_matricula || "";
         campoNomeAlunoMunicipal.value = data.pessoa_nome || "";
         campoEscolaMunicipal.value = data.escola_nome || "";
@@ -549,8 +573,22 @@
         campoFiliacao2Municipal.value = data.filiacao_2 || "";
         campoResponsavelMunicipal.value = data.responsavel || "";
 
+        // Se houver data_nascimento, exibir e calcular idade
+        if (data.data_nascimento) {
+          const dt = data.data_nascimento.split("T")[0]; // "yyyy-mm-dd"
+          campoDataNascimentoMunicipal.value = dt;
+          calcularIdadeMunicipal(new Date(dt));
+        } else {
+          campoDataNascimentoMunicipal.value = "";
+          campoIdadeMunicipal.textContent = "--";
+          campoIdadeMunicipal.classList.remove("bg-danger", "bg-success");
+          campoIdadeMunicipal.classList.add("bg-secondary");
+        }
+
+        // Deficiência pode vir como string ou array
         if (Array.isArray(data.deficiencia)) {
-          campoDeficienciaMunicipal.value = data.deficiencia.join(", ");
+          // Exemplo: pegar a primeira ou deixar vazio
+          campoDeficienciaMunicipal.value = data.deficiencia[0] || "";
         } else if (typeof data.deficiencia === "string") {
           campoDeficienciaMunicipal.value = data.deficiencia;
         } else {
@@ -560,9 +598,34 @@
         dadosAlunoContainerMunicipal.classList.remove("d-none");
       } catch (err) {
         console.error(err);
-        alert("Erro ao buscar aluno.");
+        alert("Erro ao buscar aluno (Municipal).");
       }
     });
+
+    // Função para calcular idade e indicar cor (Municipal)
+    function calcularIdadeMunicipal(dataNasc) {
+      const hoje = new Date();
+      let anos = hoje.getFullYear() - dataNasc.getFullYear();
+      let meses = hoje.getMonth() - dataNasc.getMonth();
+      if (meses < 0) {
+        anos--;
+        meses += 12;
+      }
+      campoIdadeMunicipal.textContent = `${anos} anos e ${meses} meses`;
+
+      // Verificar se completa 4 anos até 31/03
+      const anoAtual = hoje.getFullYear();
+      const dataCorte = new Date(anoAtual, 2, 31); // 31 de março
+      const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
+
+      if (data4 <= dataCorte) {
+        campoIdadeMunicipal.classList.remove("bg-danger", "bg-secondary");
+        campoIdadeMunicipal.classList.add("bg-success");
+      } else {
+        campoIdadeMunicipal.classList.remove("bg-success", "bg-secondary");
+        campoIdadeMunicipal.classList.add("bg-danger");
+      }
+    }
 
     // MUNICIPAL - CONVERTER CEP
     btnConverterCepMunicipal.addEventListener("click", async () => {
@@ -585,7 +648,7 @@
           alert("Erro ao consultar ViaCEP.");
         }
       } catch (e) {
-        alert("Erro ao converter CEP.");
+        alert("Erro ao converter CEP (Municipal).");
       }
     });
 
@@ -598,7 +661,7 @@
       }
       try {
         const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
-        if (!resp.ok) throw new Error("Erro ao buscar aluno.");
+        if (!resp.ok) throw new Error("Erro ao buscar aluno (Estadual).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
           alert("Nenhum aluno encontrado.");
@@ -622,9 +685,8 @@
         campoFiliacao2Estadual.value = data.filiacao_2 || "";
         campoResponsavelEstadual.value = data.responsavel || "";
 
-        // Se vier data_nascimento, converter para YYYY-MM-DD e calcular idade
         if (data.data_nascimento) {
-          const dt = data.data_nascimento.split("T")[0]; // Exemplo
+          const dt = data.data_nascimento.split("T")[0];
           campoDataNascimentoEstadual.value = dt;
           calcularIdadeEstadual(new Date(dt));
         } else {
@@ -634,11 +696,9 @@
           campoIdadeEstadual.classList.add("bg-secondary");
         }
 
-        // Deficiência
         if (Array.isArray(data.deficiencia)) {
           campoDeficienciaEstadual.value = data.deficiencia[0] || "";
         } else if (typeof data.deficiencia === "string") {
-          // Se era string, assume a primeira, ajustando se quiser
           campoDeficienciaEstadual.value = data.deficiencia;
         } else {
           campoDeficienciaEstadual.value = "";
@@ -656,6 +716,7 @@
       }
     });
 
+    // Cálculo de idade (Estadual)
     function calcularIdadeEstadual(dataNasc) {
       const hoje = new Date();
       let anos = hoje.getFullYear() - dataNasc.getFullYear();
@@ -666,9 +727,8 @@
       }
       campoIdadeEstadual.textContent = `${anos} anos e ${meses} meses`;
 
-      // Verificar se completa 4 anos até 31/03
       const anoAtual = hoje.getFullYear();
-      const dataCorte = new Date(anoAtual, 2, 31); // 31 de março
+      const dataCorte = new Date(anoAtual, 2, 31);
       const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
 
       if (data4 <= dataCorte) {
@@ -698,10 +758,10 @@
             alert("CEP não encontrado.");
           }
         } else {
-          alert("Erro ao consultar ViaCEP.");
+          alert("Erro ao consultar ViaCEP (Estadual).");
         }
       } catch (e) {
-        alert("Erro ao converter CEP.");
+        alert("Erro ao converter CEP (Estadual).");
       }
     });
 
@@ -841,26 +901,26 @@
       location.reload();
     });
 
+    // SALVAR MUNICIPAL
     async function salvarAlteracoesMunicipal() {
       if (!alunoIdMunicipal) {
-        alert("Nenhum aluno carregado.");
+        alert("Nenhum aluno carregado (Municipal).");
         return false;
       }
-      const defString = campoDeficienciaMunicipal.value.trim();
-      let defArray = [];
-      if (defString) {
-        defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
-      }
+      const defValue = campoDeficienciaMunicipal.value;
+      const defArray = defValue ? [defValue] : null;
 
       const mergeBody = {
         cep: campoCepMunicipal.value.trim(),
         bairro: campoBairroMunicipal.value.trim(),
         numero_pessoa_endereco: campoNumeroEnderecoMunicipal.value.trim(),
         numero_telefone: campoTelefoneMunicipal.value.trim(),
-        deficiencia: defArray.length ? defArray : null,
+        deficiencia: defArray,
         latitude: parseFloat(campoLatitude.value) || null,
         longitude: parseFloat(campoLongitude.value) || null,
-        rua: campoRuaMunicipal.value.trim()
+        rua: campoRuaMunicipal.value.trim(),
+        // Caso queira atualizar data_nascimento no PUT:
+        data_nascimento: campoDataNascimentoMunicipal.value || null
       };
 
       try {
@@ -882,7 +942,12 @@
       }
     }
 
+    // SALVAR ESTADUAL
     async function salvarAlteracoesEstadual(idEstadual) {
+      if (!idEstadual) {
+        alert("Nenhum aluno estadual para atualizar.");
+        return false;
+      }
       const defValue = campoDeficienciaEstadual.value;
       const defArray = defValue ? [defValue] : null;
 
@@ -949,6 +1014,7 @@
       }
     }
 
+    // MAPA
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
