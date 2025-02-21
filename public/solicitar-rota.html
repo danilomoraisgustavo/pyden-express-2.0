@@ -56,10 +56,34 @@
         <h3 class="fw-bold mb-12 text-center">Cadastro de Alunos - Wizard</h3>
       </div>
 
-      <!-- ABA 1 -->
-      <div class="card wizard-step active" id="etapa1">
+      <!-- SELEÇÃO DE FLUXO (ETAPA 0) -->
+      <div class="card wizard-step active" id="etapaSelecaoFluxo">
         <div class="card-header">
-          <div class="card-title">Etapa 1: Dados do Aluno</div>
+          <div class="card-title">Selecione o tipo de cadastro</div>
+        </div>
+        <div class="card-body">
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="tipoFluxo" id="fluxoMunicipal" value="municipal" />
+            <label class="form-check-label" for="fluxoMunicipal">
+              Municipal
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="tipoFluxo" id="fluxoEstadual" value="estadual" />
+            <label class="form-check-label" for="fluxoEstadual">
+              Estadual
+            </label>
+          </div>
+          <div class="mt-4">
+            <button class="btn btn-primary" id="btnContinuarFluxo">Continuar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FLUXO MUNICIPAL (ETAPA 1) -->
+      <div class="card wizard-step" id="etapa1Municipal">
+        <div class="card-header">
+          <div class="card-title">Etapa 1 (Municipal): Dados do Aluno</div>
         </div>
         <div class="card-body">
           <div class="row justify-content-center">
@@ -73,93 +97,93 @@
 
           <div class="row justify-content-center mt-4">
             <div class="col-md-10">
-              <div class="d-none" id="dadosAlunoContainer">
+              <div class="d-none" id="dadosAlunoContainerMunicipal">
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">ID Matrícula</label>
-                    <input type="text" class="form-control" id="campoIdMatricula" readonly />
+                    <input type="text" class="form-control" id="campoIdMatriculaMunicipal" readonly />
                   </div>
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Nome do Aluno</label>
-                    <input type="text" class="form-control" id="campoNomeAluno" readonly />
+                    <input type="text" class="form-control" id="campoNomeAlunoMunicipal" readonly />
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Escola</label>
-                    <input type="text" class="form-control" id="campoEscola" readonly />
+                    <input type="text" class="form-control" id="campoEscolaMunicipal" readonly />
                   </div>
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Turma</label>
-                    <input type="text" class="form-control" id="campoTurma" readonly />
+                    <input type="text" class="form-control" id="campoTurmaMunicipal" readonly />
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">CPF</label>
-                    <input type="text" class="form-control" id="campoCpf" readonly />
+                    <input type="text" class="form-control" id="campoCpfMunicipal" readonly />
                   </div>
                   <div class="col-md-4 mb-2">
                     <label class="form-label fw-semibold">CEP</label>
-                    <input type="text" class="form-control" id="campoCep" />
+                    <input type="text" class="form-control" id="campoCepMunicipal" />
                   </div>
                   <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-info w-100" id="btnConverterCep">Converter CEP</button>
+                    <button class="btn btn-info w-100" id="btnConverterCepMunicipal">Converter CEP</button>
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Rua</label>
-                    <input type="text" class="form-control" id="campoRua" />
+                    <input type="text" class="form-control" id="campoRuaMunicipal" />
                   </div>
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Bairro</label>
-                    <input type="text" class="form-control" id="campoBairro" />
+                    <input type="text" class="form-control" id="campoBairroMunicipal" />
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Número Endereço</label>
-                    <input type="text" class="form-control" id="campoNumeroEndereco" />
+                    <input type="text" class="form-control" id="campoNumeroEnderecoMunicipal" />
                   </div>
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Telefone</label>
-                    <input type="text" class="form-control" id="campoTelefone" />
+                    <input type="text" class="form-control" id="campoTelefoneMunicipal" />
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Filiação 1</label>
-                    <input type="text" class="form-control" id="campoFiliacao1" readonly />
+                    <input type="text" class="form-control" id="campoFiliacao1Municipal" readonly />
                   </div>
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Filiação 2</label>
-                    <input type="text" class="form-control" id="campoFiliacao2" readonly />
+                    <input type="text" class="form-control" id="campoFiliacao2Municipal" readonly />
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Responsável</label>
-                    <input type="text" class="form-control" id="campoResponsavel" readonly />
+                    <input type="text" class="form-control" id="campoResponsavelMunicipal" readonly />
                   </div>
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
-                    <input type="text" class="form-control" id="campoDeficiencia" />
+                    <input type="text" class="form-control" id="campoDeficienciaMunicipal" />
                   </div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-3">
                   <div>
-                    <button class="btn btn-info" id="btnImprimirConfirmacao">Imprimir Confirmação</button>
+                    <button class="btn btn-info" id="btnImprimirConfirmacaoMunicipal">Imprimir Confirmação</button>
                   </div>
                   <div>
-                    <button class="btn btn-primary" id="btnProximo">Próximo</button>
+                    <button class="btn btn-primary" id="btnProximoMunicipal">Próximo</button>
                   </div>
                 </div>
 
@@ -169,7 +193,123 @@
         </div>
       </div>
 
-      <!-- ABA 2 -->
+      <!-- FLUXO ESTADUAL (ETAPA 1) -->
+      <div class="card wizard-step" id="etapa1Estadual">
+        <div class="card-header">
+          <div class="card-title">Etapa 1 (Estadual): Dados do Aluno</div>
+        </div>
+        <div class="card-body">
+          <div class="row justify-content-center mt-4">
+            <div class="col-md-10">
+              <div id="dadosAlunoContainerEstadual">
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Nome do Aluno</label>
+                    <input type="text" class="form-control" id="campoNomeAlunoEstadual" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Ano</label>
+                    <input type="number" class="form-control" id="campoAnoEstadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Modalidade</label>
+                    <input type="text" class="form-control" id="campoModalidadeEstadual" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Formato Letivo</label>
+                    <input type="text" class="form-control" id="campoFormatoLetivoEstadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Turma</label>
+                    <input type="text" class="form-control" id="campoTurmaEstadual" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Escola (ID ou Nome)</label>
+                    <input type="text" class="form-control" id="campoEscolaEstadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label fw-semibold">CPF</label>
+                    <input type="text" class="form-control" id="campoCpfEstadual" />
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label fw-semibold">CEP</label>
+                    <input type="text" class="form-control" id="campoCepEstadual" />
+                  </div>
+                  <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-info w-100" id="btnConverterCepEstadual">Converter CEP</button>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Rua</label>
+                    <input type="text" class="form-control" id="campoRuaEstadual" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Bairro</label>
+                    <input type="text" class="form-control" id="campoBairroEstadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Número Endereço</label>
+                    <input type="text" class="form-control" id="campoNumeroEnderecoEstadual" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Telefone</label>
+                    <input type="text" class="form-control" id="campoTelefoneEstadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Filiação 1</label>
+                    <input type="text" class="form-control" id="campoFiliacao1Estadual" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Filiação 2</label>
+                    <input type="text" class="form-control" id="campoFiliacao2Estadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Responsável</label>
+                    <input type="text" class="form-control" id="campoResponsavelEstadual" />
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label fw-semibold">Deficiência</label>
+                    <input type="text" class="form-control" id="campoDeficienciaEstadual" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-12 mb-2">
+                    <label class="form-label fw-semibold">Transporte Escolar Poder Público</label>
+                    <input type="text" class="form-control" id="campoTransporteEstadual" placeholder="Ex: Sim ou Não" />
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
+                  <button class="btn btn-primary" id="btnProximoEstadual">Próximo</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2 (COMUM AOS DOIS FLUXOS) -->
       <div class="card wizard-step" id="etapa2">
         <div class="card-header">
           <div class="card-title">Etapa 2: Verificar Critérios (Mapa)</div>
@@ -212,7 +352,7 @@
         </div>
       </div>
 
-      <!-- ABA 3 -->
+      <!-- ABA 3 (COMUM AOS DOIS FLUXOS) -->
       <div class="card wizard-step" id="etapa3">
         <div class="card-header">
           <div class="card-title">Etapa 3: Resultado</div>
@@ -225,6 +365,7 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -242,56 +383,108 @@
     let map, directionsService, directionsRenderer;
     let markerAluno = null, markerEscola = null;
     let escolaPos = null, alunoPos = null;
-    let alunoId = null, alunoLatitude = null, alunoLongitude = null;
+    let alunoIdMunicipal = null;
+    let alunoIdEstadual = null;
+    let tipoFluxoSelecionado = null;
     let originalData = null;
     let measureActive = false;
     let measurePoints = [];
     let measurePolyline = null;
     let mapClickListener = null;
 
-    const etapa1 = document.getElementById("etapa1");
+    // Etapas
+    const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
+    const etapa1Municipal = document.getElementById("etapa1Municipal");
+    const etapa1Estadual = document.getElementById("etapa1Estadual");
     const etapa2 = document.getElementById("etapa2");
     const etapa3 = document.getElementById("etapa3");
 
+    // Seleção de Fluxo
+    const fluxoMunicipal = document.getElementById("fluxoMunicipal");
+    const fluxoEstadual = document.getElementById("fluxoEstadual");
+    const btnContinuarFluxo = document.getElementById("btnContinuarFluxo");
+
+    // Botões e Inputs (Municipal)
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
-    const dadosAlunoContainer = document.getElementById("dadosAlunoContainer");
-    const btnConverterCep = document.getElementById("btnConverterCep");
-    const btnProximo = document.getElementById("btnProximo");
+    const dadosAlunoContainerMunicipal = document.getElementById("dadosAlunoContainerMunicipal");
+    const btnConverterCepMunicipal = document.getElementById("btnConverterCepMunicipal");
+    const btnProximoMunicipal = document.getElementById("btnProximoMunicipal");
+    const btnImprimirConfirmacaoMunicipal = document.getElementById("btnImprimirConfirmacaoMunicipal");
 
+    const campoIdMatriculaMunicipal = document.getElementById("campoIdMatriculaMunicipal");
+    const campoNomeAlunoMunicipal = document.getElementById("campoNomeAlunoMunicipal");
+    const campoEscolaMunicipal = document.getElementById("campoEscolaMunicipal");
+    const campoTurmaMunicipal = document.getElementById("campoTurmaMunicipal");
+    const campoCpfMunicipal = document.getElementById("campoCpfMunicipal");
+    const campoCepMunicipal = document.getElementById("campoCepMunicipal");
+    const campoRuaMunicipal = document.getElementById("campoRuaMunicipal");
+    const campoBairroMunicipal = document.getElementById("campoBairroMunicipal");
+    const campoNumeroEnderecoMunicipal = document.getElementById("campoNumeroEnderecoMunicipal");
+    const campoTelefoneMunicipal = document.getElementById("campoTelefoneMunicipal");
+    const campoFiliacao1Municipal = document.getElementById("campoFiliacao1Municipal");
+    const campoFiliacao2Municipal = document.getElementById("campoFiliacao2Municipal");
+    const campoResponsavelMunicipal = document.getElementById("campoResponsavelMunicipal");
+    const campoDeficienciaMunicipal = document.getElementById("campoDeficienciaMunicipal");
+
+    // Botões e Inputs (Estadual)
+    const btnConverterCepEstadual = document.getElementById("btnConverterCepEstadual");
+    const btnProximoEstadual = document.getElementById("btnProximoEstadual");
+
+    const campoNomeAlunoEstadual = document.getElementById("campoNomeAlunoEstadual");
+    const campoAnoEstadual = document.getElementById("campoAnoEstadual");
+    const campoModalidadeEstadual = document.getElementById("campoModalidadeEstadual");
+    const campoFormatoLetivoEstadual = document.getElementById("campoFormatoLetivoEstadual");
+    const campoTurmaEstadual = document.getElementById("campoTurmaEstadual");
+    const campoEscolaEstadual = document.getElementById("campoEscolaEstadual");
+    const campoCpfEstadual = document.getElementById("campoCpfEstadual");
+    const campoCepEstadual = document.getElementById("campoCepEstadual");
+    const campoRuaEstadual = document.getElementById("campoRuaEstadual");
+    const campoBairroEstadual = document.getElementById("campoBairroEstadual");
+    const campoNumeroEnderecoEstadual = document.getElementById("campoNumeroEnderecoEstadual");
+    const campoTelefoneEstadual = document.getElementById("campoTelefoneEstadual");
+    const campoFiliacao1Estadual = document.getElementById("campoFiliacao1Estadual");
+    const campoFiliacao2Estadual = document.getElementById("campoFiliacao2Estadual");
+    const campoResponsavelEstadual = document.getElementById("campoResponsavelEstadual");
+    const campoDeficienciaEstadual = document.getElementById("campoDeficienciaEstadual");
+    const campoTransporteEstadual = document.getElementById("campoTransporteEstadual");
+
+    // Etapa 2 e 3
     const btnVoltarEtapa1 = document.getElementById("btnVoltarEtapa1");
     const btnAprovado = document.getElementById("btnAprovado");
     const btnNaoAprovado = document.getElementById("btnNaoAprovado");
     const btnFinalizar = document.getElementById("btnFinalizar");
-    const btnImprimirConfirmacao = document.getElementById("btnImprimirConfirmacao");
-
     const distanciaRota = document.getElementById("distanciaRota");
     const infoEndereco = document.getElementById("infoEndereco");
     const btnMeasure = document.getElementById("btnMeasure");
     const measureInfoDiv = document.getElementById("measureInfo");
     const measureDistanceSpan = document.getElementById("measureDistance");
     const btnMeasureReset = document.getElementById("btnMeasureReset");
-
-    const campoIdMatricula = document.getElementById("campoIdMatricula");
-    const campoNomeAluno = document.getElementById("campoNomeAluno");
-    const campoEscola = document.getElementById("campoEscola");
-    const campoTurma = document.getElementById("campoTurma");
-    const campoCpf = document.getElementById("campoCpf");
-    const campoCep = document.getElementById("campoCep");
-    const campoRua = document.getElementById("campoRua");
-    const campoBairro = document.getElementById("campoBairro");
-    const campoNumeroEndereco = document.getElementById("campoNumeroEndereco");
-    const campoFiliacao1 = document.getElementById("campoFiliacao1");
-    const campoTelefone = document.getElementById("campoTelefone");
-    const campoFiliacao2 = document.getElementById("campoFiliacao2");
-    const campoResponsavel = document.getElementById("campoResponsavel");
-    const campoDeficiencia = document.getElementById("campoDeficiencia");
     const campoLatitude = document.getElementById("campoLatitude");
     const campoLongitude = document.getElementById("campoLongitude");
-
     const resultadoTitulo = document.getElementById("resultadoTitulo");
     const resultadoDescricao = document.getElementById("resultadoDescricao");
 
+    // --------------------------------------
+    // SELEÇÃO DE FLUXO
+    // --------------------------------------
+    btnContinuarFluxo.addEventListener("click", () => {
+      if (fluxoMunicipal.checked) {
+        tipoFluxoSelecionado = "municipal";
+        etapaSelecaoFluxo.classList.remove("active");
+        etapa1Municipal.classList.add("active");
+      } else if (fluxoEstadual.checked) {
+        tipoFluxoSelecionado = "estadual";
+        etapaSelecaoFluxo.classList.remove("active");
+        etapa1Estadual.classList.add("active");
+      } else {
+        alert("Selecione o tipo de fluxo (Municipal ou Estadual).");
+      }
+    });
+
+    // --------------------------------------
+    // FLUXO MUNICIPAL - BUSCAR ALUNO
+    // --------------------------------------
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -307,44 +500,42 @@
           return;
         }
         originalData = data;
-        alunoId = data.id || null;
+        alunoIdMunicipal = data.id || null;
 
-        campoIdMatricula.value = data.id_matricula || "";
-        campoNomeAluno.value = data.pessoa_nome || "";
-        campoEscola.value = data.escola_nome || "";
-        campoTurma.value = data.turma || "";
-        campoCpf.value = data.cpf || "";
-        campoCep.value = data.cep || "";
-        campoRua.value = data.rua || "";
-        campoBairro.value = data.bairro || "";
-        campoNumeroEndereco.value = data.numero_pessoa_endereco || "";
-        campoFiliacao1.value = data.filiacao_1 || "";
-        campoTelefone.value = data.numero_telefone || "";
-        campoFiliacao2.value = data.filiacao_2 || "";
-        campoResponsavel.value = data.responsavel || "";
+        campoIdMatriculaMunicipal.value = data.id_matricula || "";
+        campoNomeAlunoMunicipal.value = data.pessoa_nome || "";
+        campoEscolaMunicipal.value = data.escola_nome || "";
+        campoTurmaMunicipal.value = data.turma || "";
+        campoCpfMunicipal.value = data.cpf || "";
+        campoCepMunicipal.value = data.cep || "";
+        campoRuaMunicipal.value = data.rua || "";
+        campoBairroMunicipal.value = data.bairro || "";
+        campoNumeroEnderecoMunicipal.value = data.numero_pessoa_endereco || "";
+        campoFiliacao1Municipal.value = data.filiacao_1 || "";
+        campoTelefoneMunicipal.value = data.numero_telefone || "";
+        campoFiliacao2Municipal.value = data.filiacao_2 || "";
+        campoResponsavelMunicipal.value = data.responsavel || "";
 
         if (Array.isArray(data.deficiencia)) {
-          campoDeficiencia.value = data.deficiencia.join(", ");
+          campoDeficienciaMunicipal.value = data.deficiencia.join(", ");
         } else if (typeof data.deficiencia === "string") {
-          campoDeficiencia.value = data.deficiencia;
+          campoDeficienciaMunicipal.value = data.deficiencia;
         } else {
-          campoDeficiencia.value = "";
+          campoDeficienciaMunicipal.value = "";
         }
 
-        alunoLatitude = data.latitude || null;
-        alunoLongitude = data.longitude || null;
-        campoLatitude.value = alunoLatitude || "";
-        campoLongitude.value = alunoLongitude || "";
-
-        dadosAlunoContainer.classList.remove("d-none");
+        dadosAlunoContainerMunicipal.classList.remove("d-none");
       } catch (err) {
         console.error(err);
         alert("Erro ao buscar aluno.");
       }
     });
 
-    btnConverterCep.addEventListener("click", async () => {
-      const cepLimpo = campoCep.value.replace(/\D/g, "");
+    // --------------------------------------
+    // FLUXO MUNICIPAL - CONVERTER CEP
+    // --------------------------------------
+    btnConverterCepMunicipal.addEventListener("click", async () => {
+      const cepLimpo = campoCepMunicipal.value.replace(/\D/g, "");
       if (!cepLimpo) {
         alert("Informe um CEP válido.");
         return;
@@ -354,8 +545,8 @@
         if (r.ok) {
           const viacep = await r.json();
           if (!viacep.erro) {
-            campoRua.value = viacep.logradouro || campoRua.value;
-            campoBairro.value = viacep.bairro || campoBairro.value;
+            campoRuaMunicipal.value = viacep.logradouro || campoRuaMunicipal.value;
+            campoBairroMunicipal.value = viacep.bairro || campoBairroMunicipal.value;
           } else {
             alert("CEP não encontrado.");
           }
@@ -367,99 +558,153 @@
       }
     });
 
-    btnProximo.addEventListener("click", () => {
+    // --------------------------------------
+    // FLUXO ESTADUAL - CONVERTER CEP
+    // --------------------------------------
+    btnConverterCepEstadual.addEventListener("click", async () => {
+      const cepLimpo = campoCepEstadual.value.replace(/\D/g, "");
+      if (!cepLimpo) {
+        alert("Informe um CEP válido.");
+        return;
+      }
+      try {
+        const r = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+        if (r.ok) {
+          const viacep = await r.json();
+          if (!viacep.erro) {
+            campoRuaEstadual.value = viacep.logradouro || campoRuaEstadual.value;
+            campoBairroEstadual.value = viacep.bairro || campoBairroEstadual.value;
+          } else {
+            alert("CEP não encontrado.");
+          }
+        } else {
+          alert("Erro ao consultar ViaCEP.");
+        }
+      } catch (e) {
+        alert("Erro ao converter CEP.");
+      }
+    });
+
+    // --------------------------------------
+    // FLUXO MUNICIPAL - PRÓXIMO
+    // --------------------------------------
+    btnProximoMunicipal.addEventListener("click", () => {
       if (!originalData) {
         alert("Nenhum aluno carregado.");
         return;
       }
-      etapa1.classList.remove("active");
+      etapa1Municipal.classList.remove("active");
       etapa2.classList.add("active");
       setTimeout(() => {
         initMap();
       }, 300);
     });
 
-    btnVoltarEtapa1.addEventListener("click", () => {
-      etapa2.classList.remove("active");
-      etapa1.classList.add("active");
-    });
-
-    function gerarProtocolo() {
-      return "PROTO-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-    }
-
-    async function salvarAlteracoes() {
-      if (!alunoId) {
-        alert("Nenhum aluno carregado.");
-        return false;
-      }
-      const defString = campoDeficiencia.value.trim();
+    // --------------------------------------
+    // FLUXO ESTADUAL - PRÓXIMO
+    // --------------------------------------
+    btnProximoEstadual.addEventListener("click", async () => {
+      // Precisamos criar o aluno estadual antes de avançar para o mapa
+      // Assim teremos um ID para manipular depois
+      const defString = campoDeficienciaEstadual.value.trim();
       let defArray = [];
       if (defString) {
         defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
       }
 
-      const mergeBody = {
-        cep: campoCep.value.trim(),
-        bairro: campoBairro.value.trim(),
-        numero_pessoa_endereco: campoNumeroEndereco.value.trim(),
-        numero_telefone: campoTelefone.value.trim(),
+      const bodyAlunoEstadual = {
+        pessoa_nome: campoNomeAlunoEstadual.value.trim(),
+        ano: parseInt(campoAnoEstadual.value) || null,
+        modalidade: campoModalidadeEstadual.value.trim(),
+        formato_letivo: campoFormatoLetivoEstadual.value.trim(),
+        turma: campoTurmaEstadual.value.trim(),
+        escola_id: campoEscolaEstadual.value.trim(),  // ou algum ID/nome
+        cpf: campoCpfEstadual.value.trim(),
+        cep: campoCepEstadual.value.trim(),
+        rua: campoRuaEstadual.value.trim(),
+        bairro: campoBairroEstadual.value.trim(),
+        numero_pessoa_endereco: campoNumeroEnderecoEstadual.value.trim(),
+        numero_telefone: campoTelefoneEstadual.value.trim(),
+        filiacao_1: campoFiliacao1Estadual.value.trim(),
+        filiacao_2: campoFiliacao2Estadual.value.trim(),
+        responsavel: campoResponsavelEstadual.value.trim(),
         deficiencia: defArray.length ? defArray : null,
-        latitude: alunoLatitude,
-        longitude: alunoLongitude,
-        rua: campoRua.value.trim()
+        transporte_escolar_poder_publico: campoTransporteEstadual.value.trim()
       };
 
       try {
-        const resp = await fetch(`/api/alunos-recadastro/${alunoId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(mergeBody)
-        });
-        const result = await resp.json();
-
-        if (!resp.ok) {
-          alert(result.message || "Falha ao salvar alterações.");
-          return false;
-        }
-        return true;
-      } catch (err) {
-        console.error(err);
-        alert("Erro ao atualizar dados do aluno.");
-        return false;
-      }
-    }
-
-    btnAprovado.addEventListener("click", async () => {
-      if (!alunoId) {
-        alert("Nenhum aluno carregado para aprovação.");
-        return;
-      }
-      const ok = await salvarAlteracoes();
-      if (!ok) return;
-
-      const protocolo = gerarProtocolo();
-      try {
-        const bodyReq = {
-          aluno_id: alunoId,
-          status: "APROVADO",
-          motivo: null
-        };
-        const resp = await fetch("/api/solicitacoes-transporte", {
+        const resp = await fetch("/api/alunos-ativos-estadual", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(bodyReq),
+          body: JSON.stringify(bodyAlunoEstadual)
         });
-        const data = await resp.json();
         if (!resp.ok) {
-          alert(data.message || "Erro ao salvar solicitação no banco.");
+          const errorData = await resp.json();
+          alert(errorData.message || "Erro ao salvar aluno estadual.");
           return;
         }
-      } catch (error) {
-        alert("Falha ao salvar a solicitação.");
+        const result = await resp.json();
+        alunoIdEstadual = result.id; // ID retornado pela API do aluno recém cadastrado
+
+        etapa1Estadual.classList.remove("active");
+        etapa2.classList.add("active");
+        originalData = bodyAlunoEstadual; // armazenar para uso posterior
+        setTimeout(() => {
+          initMap();
+        }, 300);
+
+      } catch (err) {
+        alert("Falha ao cadastrar aluno estadual.");
+      }
+    });
+
+    // --------------------------------------
+    // IMPRIMIR CONFIRMAÇÃO (MUNICIPAL)
+    // --------------------------------------
+    btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
+      if (!alunoIdMunicipal) {
+        alert("Nenhum aluno carregado para gerar termo.");
+        return;
+      }
+      window.open(`/api/termo-cadastro/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+    });
+
+    // --------------------------------------
+    // VOLTAR ETAPA 1
+    // --------------------------------------
+    btnVoltarEtapa1.addEventListener("click", () => {
+      etapa2.classList.remove("active");
+      if (tipoFluxoSelecionado === "municipal") {
+        etapa1Municipal.classList.add("active");
+      } else {
+        etapa1Estadual.classList.add("active");
+      }
+    });
+
+    // --------------------------------------
+    // APROVAR / NÃO APROVAR
+    // --------------------------------------
+    btnAprovado.addEventListener("click", async () => {
+      if (tipoFluxoSelecionado === "municipal") {
+        if (!alunoIdMunicipal) {
+          alert("Nenhum aluno carregado para aprovação.");
+          return;
+        }
+        const ok = await salvarAlteracoesMunicipal();
+        if (!ok) return;
+        await criarSolicitacaoTransporte(alunoIdMunicipal, "APROVADO", null, "municipal");
+        window.open(`/api/comprovante-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+      } else {
+        if (!alunoIdEstadual) {
+          alert("Nenhum aluno estadual cadastrado para aprovação.");
+          return;
+        }
+        const ok = await salvarAlteracoesEstadual(alunoIdEstadual);
+        if (!ok) return;
+        await criarSolicitacaoTransporte(alunoIdEstadual, "APROVADO", null, "estadual");
+        window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
       }
 
-      window.open(`/api/comprovante-aprovado/${alunoId}/gerar-pdf`, "_blank");
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Aluno Aprovado!";
@@ -468,16 +713,141 @@
     });
 
     btnNaoAprovado.addEventListener("click", async () => {
-      if (!alunoId) {
-        alert("Nenhum aluno carregado para reprovação.");
-        return;
+      if (tipoFluxoSelecionado === "municipal") {
+        if (!alunoIdMunicipal) {
+          alert("Nenhum aluno carregado para reprovação.");
+          return;
+        }
+        await criarSolicitacaoTransporte(alunoIdMunicipal, "NAO_APROVADO", "Critérios não atendidos", "municipal");
+        window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+      } else {
+        if (!alunoIdEstadual) {
+          alert("Nenhum aluno estadual cadastrado para reprovação.");
+          return;
+        }
+        await criarSolicitacaoTransporte(alunoIdEstadual, "NAO_APROVADO", "Critérios não atendidos", "estadual");
+        window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
       }
-      const protocolo = gerarProtocolo();
+
+      etapa2.classList.remove("active");
+      etapa3.classList.add("active");
+      resultadoTitulo.innerText = "Não Aprovado";
+      resultadoTitulo.className = "text-center text-danger";
+      resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
+    });
+
+    // --------------------------------------
+    // BOTÃO FINALIZAR
+    // --------------------------------------
+    btnFinalizar.addEventListener("click", () => {
+      alert("Atendimento finalizado!");
+      location.reload();
+    });
+
+    // --------------------------------------
+    // FUNÇÕES DE SALVAR ALTERAÇÕES
+    // --------------------------------------
+    async function salvarAlteracoesMunicipal() {
+      if (!alunoIdMunicipal) {
+        alert("Nenhum aluno carregado.");
+        return false;
+      }
+      const defString = campoDeficienciaMunicipal.value.trim();
+      let defArray = [];
+      if (defString) {
+        defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
+      }
+
+      const mergeBody = {
+        cep: campoCepMunicipal.value.trim(),
+        bairro: campoBairroMunicipal.value.trim(),
+        numero_pessoa_endereco: campoNumeroEnderecoMunicipal.value.trim(),
+        numero_telefone: campoTelefoneMunicipal.value.trim(),
+        deficiencia: defArray.length ? defArray : null,
+        latitude: parseFloat(campoLatitude.value) || null,
+        longitude: parseFloat(campoLongitude.value) || null,
+        rua: campoRuaMunicipal.value.trim()
+      };
+
+      try {
+        const resp = await fetch(`/api/alunos-recadastro/${alunoIdMunicipal}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mergeBody)
+        });
+        const result = await resp.json();
+
+        if (!resp.ok) {
+          alert(result.message || "Falha ao salvar alterações (municipal).");
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao atualizar dados do aluno (municipal).");
+        return false;
+      }
+    }
+
+    async function salvarAlteracoesEstadual(idEstadual) {
+      const defString = campoDeficienciaEstadual.value.trim();
+      let defArray = [];
+      if (defString) {
+        defArray = defString.split(",").map(s => s.trim()).filter(Boolean);
+      }
+
+      const mergeBody = {
+        pessoa_nome: campoNomeAlunoEstadual.value.trim(),
+        cep: campoCepEstadual.value.trim(),
+        bairro: campoBairroEstadual.value.trim(),
+        numero_pessoa_endereco: campoNumeroEnderecoEstadual.value.trim(),
+        numero_telefone: campoTelefoneEstadual.value.trim(),
+        deficiencia: defArray.length ? defArray : null,
+        latitude: parseFloat(campoLatitude.value) || null,
+        longitude: parseFloat(campoLongitude.value) || null,
+        rua: campoRuaEstadual.value.trim(),
+        ano: parseInt(campoAnoEstadual.value) || null,
+        modalidade: campoModalidadeEstadual.value.trim(),
+        formato_letivo: campoFormatoLetivoEstadual.value.trim(),
+        turma: campoTurmaEstadual.value.trim(),
+        escola_id: campoEscolaEstadual.value.trim(),
+        cpf: campoCpfEstadual.value.trim(),
+        filiacao_1: campoFiliacao1Estadual.value.trim(),
+        filiacao_2: campoFiliacao2Estadual.value.trim(),
+        responsavel: campoResponsavelEstadual.value.trim(),
+        transporte_escolar_poder_publico: campoTransporteEstadual.value.trim()
+      };
+
+      try {
+        const resp = await fetch(`/api/alunos-ativos-estadual/${idEstadual}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mergeBody)
+        });
+        const result = await resp.json();
+
+        if (!resp.ok) {
+          alert(result.message || "Falha ao salvar alterações (estadual).");
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao atualizar dados do aluno (estadual).");
+        return false;
+      }
+    }
+
+    // --------------------------------------
+    // CRIAR SOLICITAÇÃO DE TRANSPORTE
+    // --------------------------------------
+    async function criarSolicitacaoTransporte(alunoId, status, motivo, fluxo) {
       try {
         const bodyReq = {
           aluno_id: alunoId,
-          status: "NAO_APROVADO",
-          motivo: "Critérios não atendidos"
+          status: status,
+          motivo: motivo,
+          tipo_fluxo: fluxo // ex: "municipal" ou "estadual"
         };
         const resp = await fetch("/api/solicitacoes-transporte", {
           method: "POST",
@@ -492,28 +862,11 @@
       } catch (error) {
         alert("Falha ao salvar a solicitação.");
       }
+    }
 
-      window.open(`/api/comprovante-nao-aprovado/${alunoId}/gerar-pdf`, "_blank");
-      etapa2.classList.remove("active");
-      etapa3.classList.add("active");
-      resultadoTitulo.innerText = "Não Aprovado";
-      resultadoTitulo.className = "text-center text-danger";
-      resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
-    });
-
-    btnFinalizar.addEventListener("click", () => {
-      alert("Atendimento finalizado!");
-      location.reload();
-    });
-
-    btnImprimirConfirmacao.addEventListener("click", () => {
-      if (!alunoId) {
-        alert("Nenhum aluno carregado para gerar termo.");
-        return;
-      }
-      window.open(`/api/termo-cadastro/${alunoId}/gerar-pdf`, "_blank");
-    });
-
+    // --------------------------------------
+    // INICIALIZAÇÃO DO MAPA E MEDIÇÃO
+    // --------------------------------------
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -531,74 +884,103 @@
             strokeWeight: 5
           }
         });
-
-        mapClickListener = map.addListener("click", (e) => {
-          if (!markerAluno) {
-            markerAluno = new google.maps.Marker({
-              position: e.latLng,
-              map: map,
-              icon: {
-                url: "https://maps.google.com/mapfiles/kml/shapes/man.png",
-                scaledSize: new google.maps.Size(30, 30)
-              },
-              draggable: true
-            });
-            markerAluno.addListener("dragend", () => {
-              const pos = markerAluno.getPosition();
-              alunoLatitude = pos.lat();
-              alunoLongitude = pos.lng();
-              campoLatitude.value = alunoLatitude.toFixed(6);
-              campoLongitude.value = alunoLongitude.toFixed(6);
-              calcularRota(markerAluno.getPosition(), escolaPos);
-            });
-          } else {
-            markerAluno.setPosition(e.latLng);
-          }
-          alunoLatitude = e.latLng.lat();
-          alunoLongitude = e.latLng.lng();
-          campoLatitude.value = alunoLatitude.toFixed(6);
-          campoLongitude.value = alunoLongitude.toFixed(6);
-          calcularRota(e.latLng, escolaPos);
-        });
       }
 
       distanciaRota.textContent = "--";
 
-      const escolaNome = originalData.escola_nome || "";
-      const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
-      const escolaJson = await escolaResp.json();
-      if (!escolaJson || !escolaJson.latitude || !escolaJson.longitude) {
-        alert("Não foi possível localizar a escola pelo nome informado.");
-        return;
-      }
-      escolaPos = new google.maps.LatLng(escolaJson.latitude, escolaJson.longitude);
-
       let endAluno = "";
-      if (campoRua.value.trim()) {
-        endAluno = `${campoRua.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
+      let latAluno = null;
+      let lngAluno = null;
+      let escolaNome = "";
+      let latEscola = null;
+      let lngEscola = null;
+
+      if (tipoFluxoSelecionado === "municipal") {
+        latAluno = originalData?.latitude || null;
+        lngAluno = originalData?.longitude || null;
+        escolaNome = originalData?.escola_nome || "";
+
+        if (campoRuaMunicipal.value.trim()) {
+          endAluno = `${campoRuaMunicipal.value}, ${campoNumeroEnderecoMunicipal.value}, Canaã dos Carajás, Pará, Brasil`;
+        } else {
+          endAluno = `${campoCepMunicipal.value}, ${campoNumeroEnderecoMunicipal.value}, Canaã dos Carajás, Pará, Brasil`;
+        }
       } else {
-        endAluno = `${campoCep.value}, ${campoNumeroEndereco.value}, Canaã dos Carajás, Pará, Brasil`;
+        latAluno = null; // Aluno estadual recém cadastrado ainda não tem coords
+        lngAluno = null;
+        escolaNome = campoEscolaEstadual.value.trim();
+
+        if (campoRuaEstadual.value.trim()) {
+          endAluno = `${campoRuaEstadual.value}, ${campoNumeroEnderecoEstadual.value}, Canaã dos Carajás, Pará, Brasil`;
+        } else {
+          endAluno = `${campoCepEstadual.value}, ${campoNumeroEnderecoEstadual.value}, Canaã dos Carajás, Pará, Brasil`;
+        }
       }
+
       infoEndereco.innerText = endAluno;
 
-      if (alunoLatitude && alunoLongitude) {
-        alunoPos = new google.maps.LatLng(parseFloat(alunoLatitude), parseFloat(alunoLongitude));
+      // Buscar coordenadas da escola
+      try {
+        const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
+        const escolaJson = await escolaResp.json();
+        if (escolaJson && escolaJson.latitude && escolaJson.longitude) {
+          latEscola = parseFloat(escolaJson.latitude);
+          lngEscola = parseFloat(escolaJson.longitude);
+        } else {
+          alert("Não foi possível localizar a escola pelo nome informado.");
+        }
+      } catch (err) {
+        console.error("Erro ao buscar coordenadas da escola:", err);
+      }
+      if (latEscola && lngEscola) {
+        escolaPos = new google.maps.LatLng(latEscola, lngEscola);
+      } else {
+        escolaPos = new google.maps.LatLng(-6.530066, -49.85163);
+      }
+
+      if (latAluno && lngAluno) {
+        alunoPos = new google.maps.LatLng(parseFloat(latAluno), parseFloat(lngAluno));
         createOrMoveMarkers();
       } else {
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ address: endAluno }, (results, status) => {
           if (status === "OK") {
             alunoPos = results[0].geometry.location;
-            alunoLatitude = alunoPos.lat();
-            alunoLongitude = alunoPos.lng();
-            campoLatitude.value = alunoLatitude.toFixed(6);
-            campoLongitude.value = alunoLongitude.toFixed(6);
+            campoLatitude.value = alunoPos.lat().toFixed(6);
+            campoLongitude.value = alunoPos.lng().toFixed(6);
             createOrMoveMarkers();
           } else {
             alert("Não foi possível localizar o endereço do aluno via Geocoder.");
+            // Mesmo assim mostra o mapa
+            map.setCenter(escolaPos);
           }
         });
       }
+
+      google.maps.event.addListener(map, "click", (e) => {
+        if (!markerAluno) {
+          markerAluno = new google.maps.Marker({
+            position: e.latLng,
+            map: map,
+            icon: {
+              url: "https://maps.google.com/mapfiles/kml/shapes/man.png",
+              scaledSize: new google.maps.Size(30, 30)
+            },
+            draggable: true
+          });
+          markerAluno.addListener("dragend", () => {
+            const pos = markerAluno.getPosition();
+            campoLatitude.value = pos.lat().toFixed(6);
+            campoLongitude.value = pos.lng().toFixed(6);
+            calcularRota(pos, escolaPos);
+          });
+        } else {
+          markerAluno.setPosition(e.latLng);
+        }
+        campoLatitude.value = e.latLng.lat().toFixed(6);
+        campoLongitude.value = e.latLng.lng().toFixed(6);
+        calcularRota(e.latLng, escolaPos);
+      });
     }
 
     function createOrMoveMarkers() {
@@ -613,12 +995,10 @@
           draggable: true
         });
         markerAluno.addListener("dragend", () => {
-          alunoPos = markerAluno.getPosition();
-          alunoLatitude = alunoPos.lat();
-          alunoLongitude = alunoPos.lng();
-          campoLatitude.value = alunoLatitude.toFixed(6);
-          campoLongitude.value = alunoLongitude.toFixed(6);
-          calcularRota(alunoPos, escolaPos);
+          const pos = markerAluno.getPosition();
+          campoLatitude.value = pos.lat().toFixed(6);
+          campoLongitude.value = pos.lng().toFixed(6);
+          calcularRota(pos, escolaPos);
         });
       } else {
         markerAluno.setPosition(alunoPos);
@@ -656,6 +1036,9 @@
       });
     }
 
+    // --------------------------------------
+    // FUNÇÕES DE MEDIÇÃO MANUAL
+    // --------------------------------------
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
@@ -708,6 +1091,10 @@
       if (mapClickListener) {
         google.maps.event.removeListener(mapClickListener);
         mapClickListener = null;
+      }
+      if (measurePolyline) {
+        measurePolyline.setMap(null);
+        measurePolyline = null;
       }
     }
   </script>
