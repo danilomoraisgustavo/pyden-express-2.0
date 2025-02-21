@@ -5505,6 +5505,158 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
   }
 });
 
+app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.deficiencia,
+        a.rua,
+        a.bairro,
+        a.numero_pessoa_endereco,
+        a.latitude,
+        a.longitude
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno não encontrado." });
+    }
+    const aluno = result.rows[0];
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_cadastro_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    // Linha separadora
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc.fontSize(14).font("Helvetica-Bold").text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
+      align: "center",
+    });
+    doc.moveDown();
+
+    doc.fontSize(12).font("Helvetica");
+
+    doc.text(`Eu, RESPONSÁVEL DO ALUNO(A): ${aluno.aluno_nome || ""}`, {
+      align: "justify",
+    });
+    doc.moveDown(1);
+
+    doc.text(
+      `CPF do Aluno: ${aluno.cpf || ""}, Escola: ${aluno.escola_nome || ""}, Turma: ${aluno.turma || ""}.`,
+      { align: "justify" }
+    );
+
+    doc.moveDown(1);
+    doc.text(
+      `Endereço: Rua ${aluno.rua || ""}, Nº ${
+        aluno.numero_pessoa_endereco || ""
+      }, Bairro ${aluno.bairro || ""}.`,
+      { align: "justify" }
+    );
+    doc.moveDown(1);
+
+    doc.text("Declaro ciência e concordância com os CRITÉRIOS DE ELEGIBILIDADE para transporte:", {
+      align: "justify",
+    });
+    doc.moveDown(1);
+
+    const criterios = [
+      "Idade Mínima: 4 anos completos até 31 de março do ano vigente.",
+      "Distância Mínima - Educação Infantil: residência a mais de 1,5 km.",
+      "Distância Mínima - Fundamental, Médio, EJA: residência a mais de 2 km.",
+      "Exigência para Alunos com Necessidades Especiais: apresentar laudo médico."
+    ];
+
+    criterios.forEach((crit) => {
+      doc
+        .text(`• ${crit}`, {
+          align: "justify",
+        })
+        .moveDown(0.3);
+    });
+
+    doc.moveDown(1);
+    doc.text(
+      "Estou ciente de que somente após a verificação destes critérios e do efetivo cadastro o aluno estará habilitado a receber o transporte escolar, quando necessário.",
+      { align: "justify" }
+    );
+
+    doc.moveDown(3);
+    doc.text("__________________________________", { align: "center" });
+    doc.text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(2);
+
+    // Rodapé
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text(
+        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF do termo:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF do termo.",
+    });
+  }
+});
 
 // Import alunos ativos
 app.post("/api/import-alunos-ativos", async (req, res) => {

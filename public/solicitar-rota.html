@@ -166,9 +166,15 @@
                 </div>
 
                 <div class="d-flex justify-content-between mt-3">
-                  <button class="btn btn-success" id="btnSalvarAluno">Salvar Alterações</button>
-                  <button class="btn btn-primary" id="btnProximo">Próximo</button>
+                  <div>
+                    <button class="btn btn-info" id="btnImprimirConfirmacao">Imprimir Confirmação</button>
+                  </div>
+                  <div>
+                    <button class="btn btn-success" id="btnSalvarAluno">Salvar Alterações</button>
+                    <button class="btn btn-primary" id="btnProximo">Próximo</button>
+                  </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -225,8 +231,7 @@
     </div>
   </div>
 
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_GOOGLE&libraries=places,geometry"></script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -260,6 +265,7 @@
     const btnAprovado = document.getElementById("btnAprovado");
     const btnNaoAprovado = document.getElementById("btnNaoAprovado");
     const btnFinalizar = document.getElementById("btnFinalizar");
+    const btnImprimirConfirmacao = document.getElementById("btnImprimirConfirmacao");
 
     const distanciaRota = document.getElementById("distanciaRota");
     const infoEndereco = document.getElementById("infoEndereco");
@@ -385,7 +391,8 @@
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Aluno Aprovado!";
       resultadoTitulo.className = "text-center text-success";
-      resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
+      resultadoDescricao.innerText =
+        "O aluno atende aos critérios e foi aprovado.";
     });
 
     btnNaoAprovado.addEventListener("click", () => {
@@ -393,13 +400,20 @@
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Não Aprovado";
       resultadoTitulo.className = "text-center text-danger";
-      resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
+      resultadoDescricao.innerText =
+        "O aluno não atende aos critérios estabelecidos.";
     });
 
     btnFinalizar.addEventListener("click", () => {
       alert("Atendimento finalizado!");
-      // Poderia redirecionar ou recarregar a página aqui
-      // window.location.reload();
+    });
+
+    btnImprimirConfirmacao.addEventListener("click", () => {
+      if (!alunoId) {
+        alert("Nenhum aluno carregado para gerar termo.");
+        return;
+      }
+      window.open(`/api/termo-cadastro/${alunoId}/gerar-pdf`, "_blank");
     });
 
     async function initMap() {
@@ -576,7 +590,7 @@
         strokeOpacity: 1.0,
         strokeWeight: 3
       });
-      mapClickListener = map.addEventListener("click", (e) => {
+      mapClickListener = map.addListener("click", (e) => {
         measurePoints.push(e.latLng);
         measurePolyline.setPath(measurePoints);
         let totalDist = 0;
