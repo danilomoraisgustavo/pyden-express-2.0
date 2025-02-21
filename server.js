@@ -4510,11 +4510,13 @@ app.get("/api/alunos-transporte-publico", async (req, res) => {
 app.get("/api/alunos_ativos", async (req, res) => {
   try {
     const search = req.query.search ? req.query.search.trim() : "";
+    // Se não informar nada, retornamos null ou algo que indique "não encontrado"
     if (!search) {
       return res.json(null);
     }
 
-    // Ajuste principal: inclua "a.rua" na lista de colunas
+    // Consulta: busca por CPF exato OU ID de Matrícula exato.
+    // Ajuste a query conforme necessário (pode usar UPPER ou LIKE se preferir).
     const query = `
       SELECT
         a.id,
@@ -4522,7 +4524,6 @@ app.get("/api/alunos_ativos", async (req, res) => {
         a.pessoa_nome,
         a.cpf,
         a.cep,
-        a.rua,
         a.bairro,
         a.numero_pessoa_endereco,
         a.filiacao_1,
@@ -4541,16 +4542,16 @@ app.get("/api/alunos_ativos", async (req, res) => {
     const result = await pool.query(query, [search]);
 
     if (result.rows.length === 0) {
+      // Nenhum aluno encontrado
       return res.json(null);
     }
-
+    // Retorna o primeiro (e único) encontrado
     return res.json(result.rows[0]);
   } catch (error) {
     console.error("Erro ao buscar aluno por CPF/ID:", error);
     return res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
-
 
 // 2) Rota para buscar as coordenadas de uma escola por NOME
 //    A página chama: fetch(`/api/escola-coordenadas?nome_escola=NOMEESCOLA`)
@@ -5504,7 +5505,6 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
-
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
@@ -5533,25 +5533,16 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     }
     const aluno = result.rows[0];
 
-    // Definindo margem de ~2cm à esquerda (e demais lados como preferir)
-    const doc = new PDFDocument({
-      size: "A4",
-      margins: { top: 50, left: 56, right: 50, bottom: 50 }
-    });
-
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Disposition", `inline; filename=termo_cadastro_${id}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
-    // Ajuste caminhos conforme seu projeto
     const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-    // Cabeçalho
     if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, doc.x, doc.y, { width: 60 });
+      doc.image(logoPath, 50, 20, { width: 60 });
     }
+
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
@@ -5559,118 +5550,77 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
         "ESTADO DO PARÁ\n" +
           "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
           "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
-        doc.page.width - 350, // para alinhar à direita, podemos ajustar X manualmente
-        doc.y,
+        250,
+        20,
         { width: 300, align: "right" }
       );
 
-    // Separador
-    doc.moveDown(2);
+    // Linha separadora
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
-      doc.image(separadorPath, separadorX, doc.y, { width: 510 });
-      doc.moveDown();
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
     }
 
-    doc.moveDown(2);
+    doc.y = 130;
+    doc.x = 50;
+    doc.fontSize(14).font("Helvetica-Bold").text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
+      align: "center",
+    });
+    doc.moveDown();
 
-    // Título principal
-    doc
-      .fontSize(14)
-      .font("Helvetica-Bold")
-      .text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS PARA O TRANSPORTE ESCOLAR", {
-        align: "center"
-      });
-    doc.moveDown(2);
+    doc.fontSize(12).font("Helvetica");
 
-    // Dados do Aluno (alinhados à esquerda)
-    doc
-      .fontSize(12)
-      .font("Helvetica-Bold")
-      .text("Dados do Aluno:", { underline: true, align: "left" });
-    doc.moveDown(0.5);
-
-    doc
-      .font("Helvetica")
-      .fontSize(11)
-      .text(`Nome do Aluno: ${aluno.aluno_nome || ""}`, { align: "left" })
-      .text(`CPF do Aluno: ${aluno.cpf || ""}`, { align: "left" })
-      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "left" })
-      .text(`Turma: ${aluno.turma || ""}`, { align: "left" })
-      .text(
-        `Endereço: Rua ${aluno.rua || ""}, Nº ${
-          aluno.numero_pessoa_endereco || ""
-        }, Bairro ${aluno.bairro || ""}.`,
-        { align: "left" }
-      );
-
+    doc.text(`Eu, RESPONSÁVEL DO ALUNO(A): ${aluno.aluno_nome || ""}`, {
+      align: "justify",
+    });
     doc.moveDown(1);
 
-    // Texto de introdução (alinhado à esquerda)
-    doc
-      .font("Helvetica")
-      .fontSize(12)
-      .text(
-        "Eu, responsável pelo(a) aluno(a) acima identificado(a), declaro ciência e concordância com os critérios de elegibilidade para o Transporte Escolar, conforme descritos a seguir:",
-        { align: "left" }
-      );
+    doc.text(
+      `CPF do Aluno: ${aluno.cpf || ""}, Escola: ${aluno.escola_nome || ""}, Turma: ${aluno.turma || ""}.`,
+      { align: "justify" }
+    );
 
     doc.moveDown(1);
+    doc.text(
+      `Endereço: Rua ${aluno.rua || ""}, Nº ${
+        aluno.numero_pessoa_endereco || ""
+      }, Bairro ${aluno.bairro || ""}.`,
+      { align: "justify" }
+    );
+    doc.moveDown(1);
 
-    // Critérios
-    const criteriosTexto = [
+    doc.text("Declaro ciência e concordância com os CRITÉRIOS DE ELEGIBILIDADE para transporte:", {
+      align: "justify",
+    });
+    doc.moveDown(1);
+
+    const criterios = [
       "Idade Mínima: 4 anos completos até 31 de março do ano vigente.",
-      "Distância Mínima - Educação Infantil (1º e 2º Períodos): residência a mais de 1,5 km.",
-      "Distância Mínima - Ensino Fundamental I, II, Médio e EJA: residência a mais de 2 km.",
-      "Necessidades Especiais: apresentar laudo médico. Haverá prioridade de atendimento de acordo com a necessidade especial."
+      "Distância Mínima - Educação Infantil: residência a mais de 1,5 km.",
+      "Distância Mínima - Fundamental, Médio, EJA: residência a mais de 2 km.",
+      "Exigência para Alunos com Necessidades Especiais: apresentar laudo médico."
     ];
 
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(11)
-      .text("CRITÉRIOS DE ELEGIBILIDADE", {
-        align: "left",
-        underline: true
-      });
-
-    doc.font("Helvetica").fontSize(11);
-
-    criteriosTexto.forEach((crit) => {
+    criterios.forEach((crit) => {
       doc
-        .text(`• ${crit}`, { align: "left" })
+        .text(`• ${crit}`, {
+          align: "justify",
+        })
         .moveDown(0.3);
     });
 
     doc.moveDown(1);
+    doc.text(
+      "Estou ciente de que somente após a verificação destes critérios e do efetivo cadastro o aluno estará habilitado a receber o transporte escolar, quando necessário.",
+      { align: "justify" }
+    );
 
-    // Mais informações
-    doc
-      .font("Helvetica")
-      .fontSize(11)
-      .text(
-        "Estou ciente de que somente após a verificação e cumprimento destes critérios o aluno estará apto a usufruir do transporte escolar. " +
-          "Para alunos com necessidades especiais, apresentarei o laudo médico que comprove a condição.",
-        { align: "left" }
-      );
-
+    doc.moveDown(3);
+    doc.text("__________________________________", { align: "center" });
+    doc.text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(2);
-
-    // Assinatura
-    doc
-      .font("Helvetica")
-      .fontSize(11)
-      .text("__________________________________", { align: "center" })
-      .text("Assinatura do Responsável", { align: "center" });
-
-    doc.moveDown(2);
-
-    doc
-      .font("Helvetica-Oblique")
-      .fontSize(10)
-      .text(
-        "Ao assinar este termo, confirmo que li e compreendi todos os critérios, assim como autorizo a verificação dos dados informados.",
-        { align: "center" }
-      );
 
     // Rodapé
     if (fs.existsSync(separadorPath)) {
@@ -5678,6 +5628,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
       const footerSepY = doc.page.height - 160;
       doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
     }
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
     if (fs.existsSync(logo2Path)) {
       const logo2X = (doc.page.width - 160) / 2;
       const logo2Y = doc.page.height - 150;
@@ -5687,15 +5638,10 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc
       .fontSize(10)
       .font("Helvetica")
-      .text(
-        "SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED",
-        doc.page.margins.left,
-        doc.page.height - 85,
-        {
-          width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
-          align: "center"
-        }
-      )
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
       .text(
         "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
         { align: "center" }
