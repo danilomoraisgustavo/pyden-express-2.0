@@ -5566,61 +5566,96 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
 
     doc.y = 130;
     doc.x = 50;
-    doc.fontSize(14).font("Helvetica-Bold").text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
-      align: "center",
-      underline: true,
-    });
-    doc.moveDown();
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
+        align: "center",
+        underline: true,
+      });
+    doc.moveDown(1);
 
     // Corpo
     doc.fontSize(12).font("Helvetica");
-    doc.text(`Eu, ________________________________________________________ (Responsável)`, {
-      align: "justify",
-    });
-
-    doc.moveDown(1);
     doc.text(
-      `Confirmo que sou o responsável pelo(a) aluno(a): ${aluno.aluno_nome || ""}, CPF: ${
-        aluno.cpf || ""
-      }, estudante da Escola ${aluno.escola_nome || ""}, Turma: ${
-        aluno.turma || ""
-      }. Endereço atualizado: Rua ${aluno.rua || ""}, nº ${
-        aluno.numero_pessoa_endereco || ""
-      }, Bairro ${aluno.bairro || ""}.`,
+      "Eu, _________________________________________________ (Responsável),", 
       { align: "justify" }
     );
 
     doc.moveDown(1);
-    doc.text(
-      "Declaro ciência e concordância com os CRITÉRIOS DE ELEGIBILIDADE para o Transporte Escolar, dispostos a seguir:",
-      { align: "justify" }
+    doc
+      .font("Helvetica")
+      .text(
+        `Confirmo que sou o(a) responsável pelo(a) aluno(a): `
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.aluno_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(`, CPF: `, { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.cpf || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `, estudante da Escola `,
+        { continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.escola_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `, Turma: `,
+        { continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.turma || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `. Endereço atualizado: Rua `,
+        { continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.rua || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `, nº `,
+        { continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `, Bairro `,
+        { continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.bairro || ""}.`, { align: "justify" });
+
+    doc.moveDown(1);
+    doc.font("Helvetica-Bold").text("CRITÉRIOS DE ELEGIBILIDADE:", { align: "left" });
+    doc.font("Helvetica");
+
+    const criterios = [
+      "Idade Mínima: 4 (quatro) anos completos até 31 de março do ano vigente.",
+      "Distância Mínima para Educação Infantil: residência a mais de 1,5 km da escola.",
+      "Distância Mínima para Ensino Fundamental, Médio e EJA: residência a mais de 2 km da escola.",
+      "Alunos com Necessidades Especiais: apresentar laudo médico. Priorização conforme a necessidade, demandando transporte adaptado."
+    ];
+
+    doc.moveDown(0.5).list(criterios, { align: "justify" });
+
+    doc.moveDown(1);
+    doc.font("Helvetica").text(
+      "Declaro ciência e concordância com os critérios acima descritos para a utilização do Transporte Escolar no Município de Canaã dos Carajás. Estou ciente de que somente após a verificação desses critérios e a efetivação do cadastro o(a) aluno(a) estará habilitado(a) para o uso do transporte escolar, caso necessário. "
     );
 
     doc.moveDown(1);
-    doc.list(
-      [
-        "Idade Mínima: 4 (quatro) anos completos até 31 de março do ano vigente.",
-        "Distância Mínima para Educação Infantil: residência a mais de 1,5 km da escola.",
-        "Distância Mínima para Ensino Fundamental, Médio e EJA: residência a mais de 2 km da escola.",
-        "Alunos com Necessidades Especiais: apresentar laudo médico. Priorização conforme necessidade física, demandando transporte adaptado.",
-      ],
-      { align: "justify" }
-    );
-
-    doc.moveDown(1);
-    doc.text(
-      "Estou ciente de que somente após a verificação dos critérios de distância e a efetivação do cadastro o(a) aluno(a) estará habilitado(a) para o uso do transporte escolar, caso necessário.",
-      { align: "justify" }
-    );
-
-    doc.moveDown(2);
-    doc.text(
-      "Concordo em cumprir e respeitar todos os requisitos estabelecidos pela Secretaria Municipal de Educação no tocante ao transporte escolar, isentando o Município de Canaã dos Carajás de quaisquer responsabilidades decorrentes de informações inverídicas ou omissões que possam acarretar a perda do direito ao transporte."
+    doc.font("Helvetica").text(
+      "Comprometo-me a fornecer informações verídicas e completas, estando ciente de que a omissão ou falsidade de dados pode acarretar o cancelamento do direito ao transporte e responsabilizações legais cabíveis."
     );
 
     doc.moveDown(3);
-    doc.text("__________________________________", { align: "center" });
-    doc.text("Assinatura do Responsável", { align: "center" });
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(2);
 
     // Rodapé
