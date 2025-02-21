@@ -5620,7 +5620,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
         { continued: true }
       )
       .font("Helvetica-Bold")
-      .text(`${aluno.bairro || ""}.`, { align: "justify" });
+      .text(`${aluno.bairro || ""}.`, { align: "justify" }));
 
     doc.moveDown(1);
     doc.font("Helvetica-Bold").text("CRITÉRIOS DE ELEGIBILIDADE:", { align: "left" });
