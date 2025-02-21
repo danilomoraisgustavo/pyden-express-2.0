@@ -5580,6 +5580,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc.text(
       "Eu, _____________________________________________________________, confirmo que sou o(a) responsável pelo(a) aluno(a) ", 
       { align: "justify" }
+    )
       .font("Helvetica-Bold")
       .text(`${aluno.aluno_nome || ""}`, { continued: true })
       .font("Helvetica")
@@ -5620,7 +5621,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
         { continued: true }
       )
       .font("Helvetica-Bold")
-      .text(`${aluno.bairro || ""}.`, { align: "justify" }));
+      .text(`${aluno.bairro || ""}.`, { align: "justify" });
 
     doc.moveDown(1);
     doc.font("Helvetica-Bold").text("CRITÉRIOS DE ELEGIBILIDADE:", { align: "left" });
