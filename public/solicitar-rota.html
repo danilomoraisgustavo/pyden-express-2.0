@@ -6,7 +6,6 @@
   <title>Cadastro de Alunos</title>
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
-
   <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
   <script>
     WebFont.load({
@@ -20,12 +19,10 @@
       }
     });
   </script>
-
   <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
-
   <style>
     #mapCriterios {
       width: 100%;
@@ -64,7 +61,6 @@
       max-width: 600px;
     }
 
-    /* Modal para escolha de quem assina */
     #modalEscolherAssinatura .modal-dialog {
       max-width: 500px;
     }
@@ -77,7 +73,6 @@
       <div class="page-header">
         <h3 class="fw-bold mb-12 text-center">Cadastro de Alunos</h3>
       </div>
-
       <div class="card wizard-step active" id="etapaSelecaoFluxo">
         <div class="card-header">
           <div class="card-title">Selecione o tipo de cadastro</div>
@@ -96,7 +91,6 @@
           </div>
         </div>
       </div>
-
       <div class="card wizard-step" id="etapa1Municipal">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Municipal): Dados do Aluno</div>
@@ -195,12 +189,8 @@
                   </div>
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
-                    <select class="form-control" id="campoDeficienciaMunicipal">
-                      <option value="">Selecione...</option>
-                      <option value="Deficiência Física">Deficiência Física</option>
-                      <option value="Deficiência Intelectual">Deficiência Intelectual</option>
-                      <option value="Transtornos e Síndromes">Transtornos e Síndromes</option>
-                    </select>
+                    <input type="text" class="form-control" id="campoDeficienciaMunicipal"
+                      placeholder="NADA INFORMADO" />
                   </div>
                 </div>
                 <div class="d-flex justify-content-between mt-3">
@@ -214,7 +204,7 @@
                     <button class="btn btn-primary" id="btnProximoMunicipal" disabled>Próximo</button>
                   </div>
                 </div>
-              </div><!-- fim dadosAlunoContainerMunicipal -->
+              </div>
             </div>
           </div>
         </div>
@@ -324,12 +314,8 @@
                 <div class="row">
                   <div class="col-md-12 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
-                    <select class="form-control" id="campoDeficienciaEstadual">
-                      <option value="">Selecione...</option>
-                      <option value="Deficiência Física">Deficiência Física</option>
-                      <option value="Deficiência Intelectual">Deficiência Intelectual</option>
-                      <option value="Transtornos e Síndromes">Transtornos e Síndromes</option>
-                    </select>
+                    <input type="text" class="form-control" id="campoDeficienciaEstadual"
+                      placeholder="NADA INFORMADO" />
                   </div>
                 </div>
                 <div class="d-flex justify-content-end mt-3">
@@ -408,7 +394,6 @@
     </div>
   </div>
 
-  <!-- MODAL PARA ALUNOS MENORES DE 10 ANOS -->
   <div class="modal fade" id="modalMenores10" tabindex="-1" aria-labelledby="modalMenores10Label" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -443,7 +428,6 @@
     </div>
   </div>
 
-  <!-- MODAL PARA ALUNOS ENTRE 10 E 12 ANOS -->
   <div class="modal fade" id="modalDesembarque10a12" tabindex="-1" aria-labelledby="modalDesembarque10a12Label"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -472,7 +456,6 @@
     </div>
   </div>
 
-  <!-- MODAL PARA OUTROS RESPONSAVEIS 10 A 12 -->
   <div class="modal fade" id="modalOutrosResponsaveis10a12" tabindex="-1"
     aria-labelledby="modalOutrosResponsaveis10a12Label" aria-hidden="true">
     <div class="modal-dialog">
@@ -506,7 +489,6 @@
     </div>
   </div>
 
-  <!-- MODAL PARA ESCOLHER QUEM ASSINA O TERMO DE CONFIRMAÇÃO -->
   <div class="modal fade" id="modalEscolherAssinatura" tabindex="-1" aria-labelledby="modalEscolherAssinaturaLabel"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -542,15 +524,13 @@
   </div>
 
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry">
-    </script>
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry"></script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
-
   <script>
     let map, directionsService, directionsRenderer;
     let markerAluno = null, markerEscola = null;
@@ -571,7 +551,7 @@
     let desembarqueSozinho10a12 = false;
     let resultadoFinal = null;
     let outrosResponsaveis10a12 = [];
-    let signerChoice = null; // 'filiacao1', 'filiacao2', 'responsavel'
+    let signerChoice = null;
 
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
@@ -590,7 +570,6 @@
     const btnProximoMunicipal = document.getElementById("btnProximoMunicipal");
     const btnImprimirConfirmacaoMunicipal = document.getElementById("btnImprimirConfirmacaoMunicipal");
     const btnSalvarAlteracoesMunicipal = document.getElementById("btnSalvarAlteracoesMunicipal");
-
     const campoIdMatriculaMunicipal = document.getElementById("campoIdMatriculaMunicipal");
     const campoNomeAlunoMunicipal = document.getElementById("campoNomeAlunoMunicipal");
     const campoDataNascimentoMunicipal = document.getElementById("campoDataNascimentoMunicipal");
@@ -724,7 +703,6 @@
         }
         originalData = data;
         alunoIdMunicipal = data.id || null;
-
         campoIdMatriculaMunicipal.value = data.id_matricula || "";
         campoNomeAlunoMunicipal.value = data.pessoa_nome || "";
         campoEscolaMunicipal.value = data.escola_nome || "";
@@ -738,7 +716,6 @@
         campoTelefoneMunicipal.value = data.numero_telefone || "";
         campoFiliacao2Municipal.value = data.filiacao_2 || "";
         campoResponsavelMunicipal.value = data.responsavel || "";
-
         if (data.data_nascimento) {
           const dt = data.data_nascimento.split("T")[0];
           campoDataNascimentoMunicipal.value = dt;
@@ -749,7 +726,6 @@
           campoIdadeMunicipal.classList.remove("bg-danger", "bg-success");
           campoIdadeMunicipal.classList.add("bg-secondary");
         }
-
         if (Array.isArray(data.deficiencia)) {
           campoDeficienciaMunicipal.value = data.deficiencia[0] || "";
         } else if (typeof data.deficiencia === "string") {
@@ -757,7 +733,6 @@
         } else {
           campoDeficienciaMunicipal.value = "";
         }
-
         dadosAlunoContainerMunicipal.classList.remove("d-none");
       } catch (err) {
         console.error(err);
@@ -782,7 +757,6 @@
       idadeAlunoMeses = meses;
       idadeAlunoDias = dias;
       campoIdadeMunicipal.textContent = `${anos} anos, ${meses} meses e ${dias} dias`;
-
       const anoAtual = hoje.getFullYear();
       const dataCorte = new Date(anoAtual, 2, 31);
       const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
@@ -811,7 +785,7 @@
           } else {
             alert("CEP não encontrado.");
           }
-          btnSalvarAlteracoesMunicipal.disabled = false;
+          btnSalvarAlteracoesMunicipal.disabled = true;
         } else {
           alert("Erro ao consultar ViaCEP.");
         }
@@ -864,7 +838,6 @@
       }
     }
 
-    // Ao clicar em "Imprimir Confirmação"
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado para gerar termo.");
@@ -874,7 +847,6 @@
       modalEscolherAssinatura.show();
     });
 
-    // Confirma o modal de escolha de assinatura
     btnConfirmarAssinatura.addEventListener("click", () => {
       if (radioAssinaturaFiliacao1.checked) {
         signerChoice = "filiacao1";
@@ -918,7 +890,6 @@
         }
         originalData = data;
         alunoIdEstadual = data.id || null;
-
         campoIdMatriculaEstadual.value = data.id_matricula || "";
         campoNomeAlunoEstadual.value = data.pessoa_nome || "";
         campoEscolaEstadual.value = "";
@@ -933,7 +904,6 @@
         campoFiliacao1Estadual.value = data.filiacao_1 || "";
         campoFiliacao2Estadual.value = data.filiacao_2 || "";
         campoResponsavelEstadual.value = data.responsavel || "";
-
         if (data.data_nascimento) {
           const dt = data.data_nascimento.split("T")[0];
           campoDataNascimentoEstadual.value = dt;
@@ -944,7 +914,6 @@
           campoIdadeEstadual.classList.remove("bg-danger", "bg-success");
           campoIdadeEstadual.classList.add("bg-secondary");
         }
-
         if (Array.isArray(data.deficiencia)) {
           campoDeficienciaEstadual.value = data.deficiencia[0] || "";
         } else if (typeof data.deficiencia === "string") {
@@ -981,11 +950,9 @@
       idadeAlunoMeses = meses;
       idadeAlunoDias = dias;
       campoIdadeEstadual.textContent = `${anos} anos, ${meses} meses e ${dias} dias`;
-
       const anoAtual = hoje.getFullYear();
       const dataCorte = new Date(anoAtual, 2, 31);
       const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
-
       if (data4 <= dataCorte) {
         campoIdadeEstadual.classList.remove("bg-danger", "bg-secondary");
         campoIdadeEstadual.classList.add("bg-success");
@@ -1040,7 +1007,6 @@
         responsavel: campoResponsavelEstadual.value.trim(),
         deficiencia: defArray
       };
-
       try {
         const resp = await fetch("/api/alunos-ativos-estadual", {
           method: "POST",
@@ -1142,11 +1108,9 @@
       const distKm = parseFloat(distanciaRota.textContent) || 0;
       let idadeMinimaOk = false;
       let distanciaMinimaOk = false;
-
       if (idadeAlunoAnos >= 4) {
         idadeMinimaOk = true;
       }
-
       if (nivel === "infantil") {
         if (distKm > 1.5) {
           distanciaMinimaOk = true;
@@ -1156,7 +1120,6 @@
           distanciaMinimaOk = true;
         }
       }
-
       if (!idadeMinimaOk || !distanciaMinimaOk) {
         btnNaoAprovado.click();
       } else {
@@ -1219,7 +1182,6 @@
         div.innerHTML = htmlResponsavel;
         listaResponsaveisDiv.appendChild(div);
       });
-
       listaResponsaveisDiv.querySelectorAll("input").forEach(input => {
         input.addEventListener("change", e => {
           const index = parseInt(e.target.dataset.rindex);
@@ -1317,7 +1279,6 @@
         div.innerHTML = htmlResp;
         listaOutrosResponsaveis10a12.appendChild(div);
       });
-
       listaOutrosResponsaveis10a12.querySelectorAll("input").forEach(input => {
         input.addEventListener("change", e => {
           const index = parseInt(e.target.dataset.oindex);
@@ -1469,14 +1430,12 @@
         });
       }
       distanciaRota.textContent = "--";
-
       let endAluno = "";
       let latAluno = null;
       let lngAluno = null;
       let escolaNome = "";
       let latEscola = null;
       let lngEscola = null;
-
       if (tipoFluxoSelecionado === "municipal") {
         latAluno = originalData?.latitude || null;
         lngAluno = originalData?.longitude || null;
@@ -1497,9 +1456,7 @@
           endAluno = `${campoCepEstadual.value}, ${campoNumeroEnderecoEstadual.value}, Canaã dos Carajás, Pará, Brasil`;
         }
       }
-
       infoEndereco.innerText = endAluno;
-
       try {
         const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
         const escolaJson = await escolaResp.json();
@@ -1512,13 +1469,11 @@
       } catch (err) {
         console.error("Erro ao buscar coordenadas da escola:", err);
       }
-
       if (latEscola && lngEscola) {
         escolaPos = new google.maps.LatLng(latEscola, lngEscola);
       } else {
         escolaPos = new google.maps.LatLng(-6.530066, -49.85163);
       }
-
       if (latAluno && lngAluno) {
         alunoPos = new google.maps.LatLng(parseFloat(latAluno), parseFloat(lngAluno));
         createOrMoveMarkers();
@@ -1536,7 +1491,6 @@
           }
         });
       }
-
       google.maps.event.addListener(map, "click", (e) => {
         if (!markerAluno) {
           markerAluno = new google.maps.Marker({
@@ -1583,7 +1537,6 @@
       } else if (markerAluno && alunoPos) {
         markerAluno.setPosition(alunoPos);
       }
-
       if (!markerEscola) {
         markerEscola = new google.maps.Marker({
           position: escolaPos,
@@ -1593,7 +1546,6 @@
       } else {
         markerEscola.setPosition(escolaPos);
       }
-
       if (alunoPos) {
         map.setCenter(alunoPos);
         calcularRota(alunoPos, escolaPos);
