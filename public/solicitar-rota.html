@@ -541,7 +541,6 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
 
   <script>
-    // Código completo incorporado (sem explicações, mantendo toda a lógica)
     let map, directionsService, directionsRenderer;
     let markerAluno = null, markerEscola = null;
     let escolaPos = null, alunoPos = null;
@@ -562,7 +561,7 @@
     let desembarqueSozinho10a12 = false;
     let resultadoFinal = null;
     let outrosResponsaveis10a12 = [];
-    let signerChoice = null; // para guardar quem assina (filiacao1, filiacao2 ou responsavel)
+    let signerChoice = null;
 
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
@@ -1255,7 +1254,6 @@
     btnConfirmar10a12.addEventListener("click", () => {
       if (modal10a12_radioSim.checked) {
         desembarqueSozinho10a12 = true;
-        // IMPORTANTE: aqui adicionamos o signerChoice na URL:
         if (tipoFluxoSelecionado === "municipal") {
           if (!alunoIdMunicipal) return;
           window.open(`/api/termo-desembarque/${alunoIdMunicipal}/gerar-pdf?signer=${signerChoice || 'responsavel'}`, "_blank");
@@ -1323,8 +1321,27 @@
       });
     }
 
-    btnConfirmarOutrosResponsaveis10a12.addEventListener("click", () => {
+    btnConfirmarOutrosResponsaveis10a12.addEventListener("click", async () => {
       if (radioOutrosRespSim.checked) {
+        if (outrosResponsaveis10a12.length === 0) {
+          alert("Adicione ao menos um responsável.");
+          return;
+        }
+        try {
+          const currentAlunoId = tipoFluxoSelecionado === "municipal" ? alunoIdMunicipal : alunoIdEstadual;
+          await fetch("/api/outros-responsaveis", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              aluno_id: currentAlunoId,
+              responsaveis: outrosResponsaveis10a12
+            })
+          });
+        } catch (err) {
+          alert("Falha ao salvar responsáveis no banco.");
+          return;
+        }
+
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
           window.open(`/api/termo-autorizacao-outros-responsaveis/${alunoIdMunicipal}/gerar-pdf`, "_blank");
         } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {

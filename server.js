@@ -6516,6 +6516,13 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
       solicitacaoId = solResult.rows[0].id;
     }
 
+    // Buscar na tabela 'outros_responsaveis'
+    const respOutros = await pool.query(
+      "SELECT nome, rg, cpf FROM outros_responsaveis WHERE aluno_id = $1 ORDER BY id ASC",
+      [id]
+    );
+    const listaOutros = respOutros.rows;
+
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Disposition", `inline; filename=termo_outros_responsaveis_${id}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
@@ -6571,13 +6578,18 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
       )
       .moveDown();
 
-    doc
-      .text("Nome: _______________, cpf:____________, rg:____________", { indent: 20 })
-      .moveDown(0.5)
-      .text("Nome: _______________, cpf:____________, rg:____________", { indent: 20 })
-      .moveDown(0.5)
-      .text("Nome: _______________, cpf:____________, rg:____________", { indent: 20 })
-      .moveDown(1);
+    doc.text("Pessoas Autorizadas:", { align: "justify" }).moveDown(0.5);
+
+    if (listaOutros.length === 0) {
+      doc.text("Nenhum responsável cadastrado.", { indent: 20 }).moveDown(1);
+    } else {
+      listaOutros.forEach((r) => {
+        doc
+          .text(`Nome: ${r.nome || "___"}, CPF: ${r.cpf || "___"}, RG: ${r.rg || "___"}`, { indent: 20 })
+          .moveDown(0.5);
+      });
+      doc.moveDown(1);
+    }
 
     doc
       .text(
@@ -6632,6 +6644,47 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
       success: false,
       message: "Erro ao gerar termo de outros responsáveis.",
     });
+  }
+});
+
+
+app.post("/api/outros-responsaveis", async (req, res) => {
+  const { aluno_id, responsaveis } = req.body;
+  if (!aluno_id || !Array.isArray(responsaveis)) {
+    return res.status(400).json({ success: false, message: "Dados inválidos." });
+  }
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      // Se desejar, pode-se apagar todos os antigos antes:
+      await client.query("DELETE FROM outros_responsaveis WHERE aluno_id = $1", [aluno_id]);
+
+      for (const r of responsaveis) {
+        await client.query(
+          `INSERT INTO outros_responsaveis (aluno_id, nome, rg, cpf, data_nascimento)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            aluno_id,
+            r.nome || "",
+            r.rg || "",
+            r.cpf || "",
+            r.dataNascimento || null
+          ]
+        );
+      }
+      await client.query("COMMIT");
+      return res.json({ success: true });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      console.error("Erro ao salvar outros_responsaveis:", err);
+      return res.status(500).json({ success: false, message: "Erro ao salvar responsáveis." });
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error("Erro de conexão:", err);
+    return res.status(500).json({ success: false, message: "Erro de conexão." });
   }
 });
 
