@@ -59,6 +59,10 @@
     #modalDesembarque10a12 .modal-dialog {
       max-width: 500px;
     }
+
+    #modalOutrosResponsaveis10a12 .modal-dialog {
+      max-width: 600px;
+    }
   </style>
 </head>
 
@@ -68,8 +72,6 @@
       <div class="page-header">
         <h3 class="fw-bold mb-12 text-center">Cadastro de Alunos</h3>
       </div>
-
-      <!-- ETAPA DE SELEÇÃO DO FLUXO -->
       <div class="card wizard-step active" id="etapaSelecaoFluxo">
         <div class="card-header">
           <div class="card-title">Selecione o tipo de cadastro</div>
@@ -88,9 +90,6 @@
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA DE SELEÇÃO DO FLUXO -->
-
-      <!-- ETAPA 1 MUNICIPAL -->
       <div class="card wizard-step" id="etapa1Municipal">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Municipal): Dados do Aluno</div>
@@ -104,7 +103,6 @@
               <button id="btnBuscar" class="btn btn-primary mt-3">Buscar</button>
             </div>
           </div>
-
           <div class="row justify-content-center mt-4">
             <div class="col-md-10">
               <div class="d-none" id="dadosAlunoContainerMunicipal">
@@ -209,14 +207,11 @@
                     <button class="btn btn-primary" id="btnProximoMunicipal" disabled>Próximo</button>
                   </div>
                 </div>
-              </div><!-- fim dadosAlunoContainerMunicipal -->
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA 1 MUNICIPAL -->
-
-      <!-- ETAPA 1 ESTADUAL -->
       <div class="card wizard-step" id="etapa1Estadual">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Estadual): Dados do Aluno</div>
@@ -333,14 +328,12 @@
                   <button class="btn btn-info" id="btnConverterCepEstadual">Converter CEP</button>
                   <button class="btn btn-primary ms-2" id="btnProximoEstadual">Próximo</button>
                 </div>
-              </div><!-- fim dadosAlunoContainerEstadual -->
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA 1 ESTADUAL -->
 
-      <!-- ETAPA 2: MAPA E CRITÉRIOS -->
       <div class="card wizard-step" id="etapa2">
         <div class="card-header">
           <div class="card-title">Etapa 2: Verificar Critérios (Mapa)</div>
@@ -391,9 +384,7 @@
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA 2 -->
 
-      <!-- ETAPA 3: RESULTADO FINAL -->
       <div class="card wizard-step" id="etapa3">
         <div class="card-header">
           <div class="card-title">Etapa 3: Resultado</div>
@@ -406,11 +397,9 @@
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA 3 -->
     </div>
   </div>
 
-  <!-- MODAL PARA ALUNOS MENORES DE 10 ANOS -->
   <div class="modal fade" id="modalMenores10" tabindex="-1" aria-labelledby="modalMenores10Label" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -431,7 +420,6 @@
               value="nao" checked>
             <label class="form-check-label" for="radioAcompanhamentoNao">Não</label>
           </div>
-
           <div class="mt-3 d-none" id="containerResponsaveisExtras">
             <p class="fw-bold mb-1">Responsáveis Adicionais</p>
             <button class="btn btn-sm btn-primary mb-2" id="btnAddResponsavel">+ Adicionar</button>
@@ -446,13 +434,12 @@
     </div>
   </div>
 
-  <!-- MODAL PARA ALUNOS ENTRE 10 E 12 ANOS -->
   <div class="modal fade" id="modalDesembarque10a12" tabindex="-1" aria-labelledby="modalDesembarque10a12Label"
     aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="modalDesembarque10a12Label">Autorização de Desembarque</h5>
+          <h5 class="modal-title" id="modalDesembarque10a12Label">O aluno está apto para o transporte</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
@@ -474,7 +461,39 @@
       </div>
     </div>
   </div>
-  <!-- FIM DOS MODAIS -->
+
+  <div class="modal fade" id="modalOutrosResponsaveis10a12" tabindex="-1"
+    aria-labelledby="modalOutrosResponsaveis10a12Label" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalOutrosResponsaveis10a12Label">Indicar Responsáveis Não-Parentes</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Gostaria de indicar até 3 responsáveis (maiores de 18 anos) que não são parentes diretos?</p>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="radioOutrosResp" id="radioOutrosRespSim" value="sim">
+            <label class="form-check-label" for="radioOutrosRespSim">Sim</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="radioOutrosResp" id="radioOutrosRespNao" value="nao"
+              checked>
+            <label class="form-check-label" for="radioOutrosRespNao">Não</label>
+          </div>
+          <div class="mt-3 d-none" id="containerOutrosResponsaveis10a12">
+            <p class="fw-bold mb-1">Responsáveis Indicados</p>
+            <button class="btn btn-sm btn-primary mb-2" id="btnAddOutroResponsavel10a12">+ Adicionar</button>
+            <div id="listaOutrosResponsaveis10a12"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          <button type="button" class="btn btn-success" id="btnConfirmarOutrosResponsaveis10a12">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry">
@@ -485,9 +504,7 @@
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
-
   <script>
-    // Variáveis gerais
     let map, directionsService, directionsRenderer;
     let markerAluno = null, markerEscola = null;
     let escolaPos = null, alunoPos = null;
@@ -499,30 +516,22 @@
     let measurePoints = [];
     let measurePolyline = null;
     let mapClickListener = null;
-
-    // Variáveis de idade/acompanhamento
     let idadeAlunoAnos = 0;
     let idadeAlunoMeses = 0;
     let idadeAlunoDias = 0;
     let responsaveisExtras = [];
     let menor10_acompanhado = false;
     let desembarqueSozinho10a12 = false;
-
-    // Variáveis de controle de fluxo
-    let resultadoFinal = null; // "APROVADO" ou "NAO_APROVADO"
-
-    // ELEMENTOS DOM - FLUXO
+    let resultadoFinal = null;
+    let outrosResponsaveis10a12 = [];
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
     const etapa1Estadual = document.getElementById("etapa1Estadual");
     const etapa2 = document.getElementById("etapa2");
     const etapa3 = document.getElementById("etapa3");
-
     const fluxoMunicipal = document.getElementById("fluxoMunicipal");
     const fluxoEstadual = document.getElementById("fluxoEstadual");
     const btnContinuarFluxo = document.getElementById("btnContinuarFluxo");
-
-    // ELEMENTOS DOM - MUNICIPAL
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
     const dadosAlunoContainerMunicipal = document.getElementById("dadosAlunoContainerMunicipal");
@@ -530,7 +539,6 @@
     const btnProximoMunicipal = document.getElementById("btnProximoMunicipal");
     const btnImprimirConfirmacaoMunicipal = document.getElementById("btnImprimirConfirmacaoMunicipal");
     const btnSalvarAlteracoesMunicipal = document.getElementById("btnSalvarAlteracoesMunicipal");
-
     const campoIdMatriculaMunicipal = document.getElementById("campoIdMatriculaMunicipal");
     const campoNomeAlunoMunicipal = document.getElementById("campoNomeAlunoMunicipal");
     const campoDataNascimentoMunicipal = document.getElementById("campoDataNascimentoMunicipal");
@@ -547,13 +555,10 @@
     const campoFiliacao2Municipal = document.getElementById("campoFiliacao2Municipal");
     const campoResponsavelMunicipal = document.getElementById("campoResponsavelMunicipal");
     const campoDeficienciaMunicipal = document.getElementById("campoDeficienciaMunicipal");
-
-    // ELEMENTOS DOM - ESTADUAL
     const btnBuscarEstadual = document.getElementById("btnBuscarEstadual");
     const inputBuscaEstadual = document.getElementById("inputBuscaEstadual");
     const btnConverterCepEstadual = document.getElementById("btnConverterCepEstadual");
     const btnProximoEstadual = document.getElementById("btnProximoEstadual");
-
     const campoIdMatriculaEstadual = document.getElementById("campoIdMatriculaEstadual");
     const campoNomeAlunoEstadual = document.getElementById("campoNomeAlunoEstadual");
     const campoDataNascimentoEstadual = document.getElementById("campoDataNascimentoEstadual");
@@ -571,8 +576,6 @@
     const campoFiliacao2Estadual = document.getElementById("campoFiliacao2Estadual");
     const campoResponsavelEstadual = document.getElementById("campoResponsavelEstadual");
     const campoDeficienciaEstadual = document.getElementById("campoDeficienciaEstadual");
-
-    // ELEMENTOS DOM - ETAPA 2
     const btnVoltarEtapa1 = document.getElementById("btnVoltarEtapa1");
     const btnAprovado = document.getElementById("btnAprovado");
     const btnNaoAprovado = document.getElementById("btnNaoAprovado");
@@ -586,13 +589,9 @@
     const campoLongitude = document.getElementById("campoLongitude");
     const selectNivelEnsino = document.getElementById("selectNivelEnsino");
     const btnVerificarCriterios = document.getElementById("btnVerificarCriterios");
-
-    // ELEMENTOS DOM - ETAPA 3
     const resultadoTitulo = document.getElementById("resultadoTitulo");
     const resultadoDescricao = document.getElementById("resultadoDescricao");
     const btnFinalizar = document.getElementById("btnFinalizar");
-
-    // ELEMENTOS DOM - MODAIS
     const modalMenores10 = new bootstrap.Modal(document.getElementById("modalMenores10"), { backdrop: 'static', keyboard: false });
     const modalDesembarque10a12 = new bootstrap.Modal(document.getElementById("modalDesembarque10a12"), { backdrop: 'static', keyboard: false });
     const btnConfirmarMenor10 = document.getElementById("btnConfirmarMenor10");
@@ -601,16 +600,16 @@
     const radioAcompanhamentoSim = document.getElementById("radioAcompanhamentoSim");
     const radioAcompanhamentoNao = document.getElementById("radioAcompanhamentoNao");
     const listaResponsaveisDiv = document.getElementById("listaResponsaveis");
-
     const modal10a12_radioSim = document.getElementById("radioDesembarqueSim");
     const modal10a12_radioNao = document.getElementById("radioDesembarqueNao");
     const btnConfirmar10a12 = document.getElementById("btnConfirmar10a12");
-
-    /*
-    =====================================
-    SELEÇÃO DO FLUXO
-    =====================================
-    */
+    const modalOutrosResponsaveis10a12 = new bootstrap.Modal(document.getElementById("modalOutrosResponsaveis10a12"), { backdrop: 'static', keyboard: false });
+    const radioOutrosRespSim = document.getElementById("radioOutrosRespSim");
+    const radioOutrosRespNao = document.getElementById("radioOutrosRespNao");
+    const containerOutrosResponsaveis10a12 = document.getElementById("containerOutrosResponsaveis10a12");
+    const btnAddOutroResponsavel10a12 = document.getElementById("btnAddOutroResponsavel10a12");
+    const listaOutrosResponsaveis10a12 = document.getElementById("listaOutrosResponsaveis10a12");
+    const btnConfirmarOutrosResponsaveis10a12 = document.getElementById("btnConfirmarOutrosResponsaveis10a12");
     btnContinuarFluxo.addEventListener("click", async () => {
       if (fluxoMunicipal.checked) {
         tipoFluxoSelecionado = "municipal";
@@ -625,7 +624,6 @@
         alert("Selecione o tipo de fluxo (Municipal ou Estadual).");
       }
     });
-
     async function carregarEscolasEstaduais() {
       try {
         const response = await fetch("/api/escolas");
@@ -643,12 +641,6 @@
         alert("Não foi possível carregar a lista de escolas.");
       }
     }
-
-    /*
-    =====================================
-    ETAPA 1 - MUNICIPAL
-    =====================================
-    */
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -665,7 +657,6 @@
         }
         originalData = data;
         alunoIdMunicipal = data.id || null;
-
         campoIdMatriculaMunicipal.value = data.id_matricula || "";
         campoNomeAlunoMunicipal.value = data.pessoa_nome || "";
         campoEscolaMunicipal.value = data.escola_nome || "";
@@ -679,7 +670,6 @@
         campoTelefoneMunicipal.value = data.numero_telefone || "";
         campoFiliacao2Municipal.value = data.filiacao_2 || "";
         campoResponsavelMunicipal.value = data.responsavel || "";
-
         if (data.data_nascimento) {
           const dt = data.data_nascimento.split("T")[0];
           campoDataNascimentoMunicipal.value = dt;
@@ -690,7 +680,6 @@
           campoIdadeMunicipal.classList.remove("bg-danger", "bg-success");
           campoIdadeMunicipal.classList.add("bg-secondary");
         }
-
         if (Array.isArray(data.deficiencia)) {
           campoDeficienciaMunicipal.value = data.deficiencia[0] || "";
         } else if (typeof data.deficiencia === "string") {
@@ -698,14 +687,12 @@
         } else {
           campoDeficienciaMunicipal.value = "";
         }
-
         dadosAlunoContainerMunicipal.classList.remove("d-none");
       } catch (err) {
         console.error(err);
         alert("Erro ao buscar aluno (Municipal).");
       }
     });
-
     function calcularIdadeMunicipal(dataNasc) {
       const hoje = new Date();
       let anos = hoje.getFullYear() - dataNasc.getFullYear();
@@ -722,13 +709,10 @@
       idadeAlunoAnos = anos;
       idadeAlunoMeses = meses;
       idadeAlunoDias = dias;
-
       campoIdadeMunicipal.textContent = `${anos} anos, ${meses} meses e ${dias} dias`;
-
       const anoAtual = hoje.getFullYear();
-      const dataCorte = new Date(anoAtual, 2, 31); // 31 de março
+      const dataCorte = new Date(anoAtual, 2, 31);
       const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
-
       if (data4 <= dataCorte) {
         campoIdadeMunicipal.classList.remove("bg-danger", "bg-secondary");
         campoIdadeMunicipal.classList.add("bg-success");
@@ -737,7 +721,6 @@
         campoIdadeMunicipal.classList.add("bg-danger");
       }
     }
-
     btnConverterCepMunicipal.addEventListener("click", async () => {
       const cepLimpo = campoCepMunicipal.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -762,7 +745,6 @@
         alert("Erro ao converter CEP (Municipal).");
       }
     });
-
     btnSalvarAlteracoesMunicipal.addEventListener("click", async () => {
       const ok = await salvarAlteracoesMunicipal();
       if (ok) {
@@ -770,7 +752,6 @@
         alert("Alterações salvas com sucesso (Municipal)!");
       }
     });
-
     async function salvarAlteracoesMunicipal() {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado (Municipal).");
@@ -806,7 +787,6 @@
         return false;
       }
     }
-
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado para gerar termo.");
@@ -815,7 +795,6 @@
       window.open(`/api/termo-cadastro/${alunoIdMunicipal}/gerar-pdf`, "_blank");
       btnProximoMunicipal.disabled = false;
     });
-
     btnProximoMunicipal.addEventListener("click", () => {
       if (!originalData) {
         alert("Nenhum aluno carregado.");
@@ -827,12 +806,6 @@
         initMap();
       }, 300);
     });
-
-    /*
-    =====================================
-    ETAPA 1 - ESTADUAL
-    =====================================
-    */
     btnBuscarEstadual.addEventListener("click", async () => {
       const valorBusca = inputBuscaEstadual.value.trim();
       if (!valorBusca) {
@@ -849,7 +822,6 @@
         }
         originalData = data;
         alunoIdEstadual = data.id || null;
-
         campoIdMatriculaEstadual.value = data.id_matricula || "";
         campoNomeAlunoEstadual.value = data.pessoa_nome || "";
         campoEscolaEstadual.value = "";
@@ -864,7 +836,6 @@
         campoFiliacao1Estadual.value = data.filiacao_1 || "";
         campoFiliacao2Estadual.value = data.filiacao_2 || "";
         campoResponsavelEstadual.value = data.responsavel || "";
-
         if (data.data_nascimento) {
           const dt = data.data_nascimento.split("T")[0];
           campoDataNascimentoEstadual.value = dt;
@@ -875,7 +846,6 @@
           campoIdadeEstadual.classList.remove("bg-danger", "bg-success");
           campoIdadeEstadual.classList.add("bg-secondary");
         }
-
         if (Array.isArray(data.deficiencia)) {
           campoDeficienciaEstadual.value = data.deficiencia[0] || "";
         } else if (typeof data.deficiencia === "string") {
@@ -888,13 +858,11 @@
         alert("Erro ao buscar aluno (Estadual).");
       }
     });
-
     campoDataNascimentoEstadual.addEventListener("change", () => {
       if (campoDataNascimentoEstadual.value) {
         calcularIdadeEstadual(new Date(campoDataNascimentoEstadual.value));
       }
     });
-
     function calcularIdadeEstadual(dataNasc) {
       const hoje = new Date();
       let anos = hoje.getFullYear() - dataNasc.getFullYear();
@@ -911,13 +879,10 @@
       idadeAlunoAnos = anos;
       idadeAlunoMeses = meses;
       idadeAlunoDias = dias;
-
       campoIdadeEstadual.textContent = `${anos} anos, ${meses} meses e ${dias} dias`;
-
       const anoAtual = hoje.getFullYear();
-      const dataCorte = new Date(anoAtual, 2, 31); // 31 de março
+      const dataCorte = new Date(anoAtual, 2, 31);
       const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
-
       if (data4 <= dataCorte) {
         campoIdadeEstadual.classList.remove("bg-danger", "bg-secondary");
         campoIdadeEstadual.classList.add("bg-success");
@@ -926,7 +891,6 @@
         campoIdadeEstadual.classList.add("bg-danger");
       }
     }
-
     btnConverterCepEstadual.addEventListener("click", async () => {
       const cepLimpo = campoCepEstadual.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -950,7 +914,6 @@
         alert("Erro ao converter CEP (Estadual).");
       }
     });
-
     btnProximoEstadual.addEventListener("click", async () => {
       const defValue = campoDeficienciaEstadual.value;
       const defArray = defValue ? [defValue] : null;
@@ -972,7 +935,6 @@
         responsavel: campoResponsavelEstadual.value.trim(),
         deficiencia: defArray
       };
-
       try {
         const resp = await fetch("/api/alunos-ativos-estadual", {
           method: "POST",
@@ -986,7 +948,6 @@
         }
         const result = await resp.json();
         alunoIdEstadual = result.id;
-
         etapa1Estadual.classList.remove("active");
         etapa2.classList.add("active");
         originalData = bodyAlunoEstadual;
@@ -997,12 +958,6 @@
         alert("Falha ao cadastrar aluno estadual.");
       }
     });
-
-    /*
-    =====================================
-    ETAPA 2 - MAPA E CRITÉRIOS
-    =====================================
-    */
     btnVoltarEtapa1.addEventListener("click", () => {
       etapa2.classList.remove("active");
       if (tipoFluxoSelecionado === "municipal") {
@@ -1011,8 +966,6 @@
         etapa1Estadual.classList.add("active");
       }
     });
-
-    // Medição manual
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
@@ -1025,7 +978,6 @@
         endMeasureMode();
       }
     });
-
     btnMeasureReset.addEventListener("click", () => {
       measurePoints = [];
       measureDistanceSpan.textContent = "0";
@@ -1034,7 +986,6 @@
         measurePolyline = null;
       }
     });
-
     function startMeasureMode() {
       if (!map) return;
       measurePoints = [];
@@ -1060,7 +1011,6 @@
         measureDistanceSpan.textContent = (totalDist / 1000).toFixed(3);
       });
     }
-
     function endMeasureMode() {
       if (mapClickListener) {
         google.maps.event.removeListener(mapClickListener);
@@ -1071,8 +1021,6 @@
         measurePolyline = null;
       }
     }
-
-    // Verificar critérios
     btnVerificarCriterios.addEventListener("click", () => {
       const nivel = selectNivelEnsino.value;
       if (!nivel) {
@@ -1082,13 +1030,9 @@
       const distKm = parseFloat(distanciaRota.textContent) || 0;
       let idadeMinimaOk = false;
       let distanciaMinimaOk = false;
-
-      // Checa idade >= 4 anos
       if (idadeAlunoAnos >= 4) {
         idadeMinimaOk = true;
       }
-
-      // Distância
       if (nivel === "infantil") {
         if (distKm > 1.5) {
           distanciaMinimaOk = true;
@@ -1098,20 +1042,14 @@
           distanciaMinimaOk = true;
         }
       }
-
-      // Decide
       if (!idadeMinimaOk || !distanciaMinimaOk) {
-        // Reprovar
         btnNaoAprovado.click();
       } else {
-        // Passa ao fluxo adicional
         checkFluxoIntermediario();
       }
     });
-
     function checkFluxoIntermediario() {
       if (idadeAlunoAnos < 10) {
-        // Modal p/ menores de 10
         responsaveisExtras = [];
         menor10_acompanhado = false;
         renderListaResponsaveis();
@@ -1119,29 +1057,19 @@
         radioAcompanhamentoNao.checked = true;
         modalMenores10.show();
       } else if (idadeAlunoAnos >= 10 && idadeAlunoAnos < 13) {
-        // Modal 10 a 12
         desembarqueSozinho10a12 = false;
         modal10a12_radioNao.checked = true;
         modalDesembarque10a12.show();
       } else {
-        // Idade >= 13 => Aprovado direto
-        // Mostra botão Aprovado
         btnAprovado.click();
       }
     }
-
-    /*
-    =====================================
-    MODAL MENORES DE 10
-    =====================================
-    */
     radioAcompanhamentoSim.addEventListener("change", () => {
       containerResponsaveisExtras.classList.remove("d-none");
     });
     radioAcompanhamentoNao.addEventListener("change", () => {
       containerResponsaveisExtras.classList.add("d-none");
     });
-
     btnAddResponsavel.addEventListener("click", () => {
       if (responsaveisExtras.length >= 3) {
         alert("É permitido no máximo 3 responsáveis extras.");
@@ -1155,13 +1083,11 @@
       responsaveisExtras.push(responsavelObj);
       renderListaResponsaveis();
     });
-
     function renderListaResponsaveis() {
       listaResponsaveisDiv.innerHTML = "";
       responsaveisExtras.forEach((resp, idx) => {
         const div = document.createElement("div");
         div.classList.add("mb-2", "p-2", "border", "rounded");
-
         const htmlResponsavel = `
           <label class="form-label fw-semibold">Nome</label>
           <input type="text" class="form-control mb-2" data-rindex="${idx}" data-field="nome" placeholder="Nome" value="${resp.nome || ""}">
@@ -1174,7 +1100,6 @@
         div.innerHTML = htmlResponsavel;
         listaResponsaveisDiv.appendChild(div);
       });
-
       listaResponsaveisDiv.querySelectorAll("input").forEach(input => {
         input.addEventListener("change", e => {
           const index = parseInt(e.target.dataset.rindex);
@@ -1190,7 +1115,6 @@
         });
       });
     }
-
     btnConfirmarMenor10.addEventListener("click", () => {
       if (radioAcompanhamentoSim.checked) {
         menor10_acompanhado = true;
@@ -1199,7 +1123,6 @@
             alert("Preencha todos os campos dos responsáveis extras.");
             return;
           }
-          // Confere se é maior de 18
           const dataResp = new Date(r.dataNascimento);
           const hoje = new Date();
           let anos = hoje.getFullYear() - dataResp.getFullYear();
@@ -1217,18 +1140,11 @@
         responsaveisExtras = [];
       }
       modalMenores10.hide();
-      btnAprovado.click(); // Confirma fluxo -> Aprovado
+      btnAprovado.click();
     });
-
-    /*
-    =====================================
-    MODAL 10 a 12
-    =====================================
-    */
     btnConfirmar10a12.addEventListener("click", () => {
       if (modal10a12_radioSim.checked) {
         desembarqueSozinho10a12 = true;
-        // CHAMA API TERMO DE DESEMBARQUE IMEDIATAMENTE
         if (tipoFluxoSelecionado === "municipal") {
           if (!alunoIdMunicipal) return;
           window.open(`/api/termo-desembarque/${alunoIdMunicipal}/gerar-pdf`, "_blank");
@@ -1236,18 +1152,80 @@
           if (!alunoIdEstadual) return;
           window.open(`/api/termo-desembarque-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
         }
+        modalDesembarque10a12.hide();
+        btnAprovado.click();
       } else {
         desembarqueSozinho10a12 = false;
+        modalDesembarque10a12.hide();
+        modalOutrosResponsaveis10a12.show();
       }
-      modalDesembarque10a12.hide();
+    });
+    radioOutrosRespSim.addEventListener("change", () => {
+      containerOutrosResponsaveis10a12.classList.remove("d-none");
+    });
+    radioOutrosRespNao.addEventListener("change", () => {
+      containerOutrosResponsaveis10a12.classList.add("d-none");
+    });
+    btnAddOutroResponsavel10a12.addEventListener("click", () => {
+      if (outrosResponsaveis10a12.length >= 3) {
+        alert("É permitido no máximo 3 responsáveis extras.");
+        return;
+      }
+      const obj = { nome: "", rg: "", cpf: "" };
+      outrosResponsaveis10a12.push(obj);
+      renderListaOutrosResponsaveis10a12();
+    });
+    function renderListaOutrosResponsaveis10a12() {
+      listaOutrosResponsaveis10a12.innerHTML = "";
+      outrosResponsaveis10a12.forEach((resp, idx) => {
+        const div = document.createElement("div");
+        div.classList.add("mb-2", "p-2", "border", "rounded");
+        const htmlResp = `
+          <label class="form-label fw-semibold">Nome</label>
+          <input type="text" class="form-control mb-2" data-oindex="${idx}" data-field="nome" placeholder="Nome" value="${resp.nome || ""}">
+          <label class="form-label fw-semibold">RG</label>
+          <input type="text" class="form-control mb-2" data-oindex="${idx}" data-field="rg" placeholder="RG" value="${resp.rg || ""}">
+          <label class="form-label fw-semibold">CPF</label>
+          <input type="text" class="form-control mb-2" data-oindex="${idx}" data-field="cpf" placeholder="CPF" value="${resp.cpf || ""}">
+          <button class="btn btn-sm btn-danger" data-action="remove2" data-oindex="${idx}">Remover</button>
+        `;
+        div.innerHTML = htmlResp;
+        listaOutrosResponsaveis10a12.appendChild(div);
+      });
+      listaOutrosResponsaveis10a12.querySelectorAll("input").forEach(input => {
+        input.addEventListener("change", e => {
+          const index = parseInt(e.target.dataset.oindex);
+          const field = e.target.dataset.field;
+          outrosResponsaveis10a12[index][field] = e.target.value;
+        });
+      });
+      listaOutrosResponsaveis10a12.querySelectorAll("button[data-action='remove2']").forEach(btn => {
+        btn.addEventListener("click", e => {
+          const index = parseInt(e.target.dataset.oindex);
+          outrosResponsaveis10a12.splice(index, 1);
+          renderListaOutrosResponsaveis10a12();
+        });
+      });
+    }
+    btnConfirmarOutrosResponsaveis10a12.addEventListener("click", () => {
+      if (radioOutrosRespSim.checked) {
+        for (const r of outrosResponsaveis10a12) {
+          if (!r.nome || !r.rg || !r.cpf) {
+            alert("Preencha todos os campos dos responsáveis extras.");
+            return;
+          }
+        }
+        if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
+          window.open(`/api/termo-autorizacao-outros-responsaveis/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+        } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
+          window.open(`/api/termo-autorizacao-outros-responsaveis-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+        }
+      } else {
+        outrosResponsaveis10a12 = [];
+      }
+      modalOutrosResponsaveis10a12.hide();
       btnAprovado.click();
     });
-
-    /*
-    =====================================
-    BOTÃO NÃO APROVADO
-    =====================================
-    */
     btnNaoAprovado.addEventListener("click", () => {
       resultadoFinal = "NAO_APROVADO";
       etapa2.classList.remove("active");
@@ -1256,12 +1234,6 @@
       resultadoTitulo.className = "text-center text-danger";
       resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
     });
-
-    /*
-    =====================================
-    BOTÃO APROVADO
-    =====================================
-    */
     btnAprovado.addEventListener("click", () => {
       resultadoFinal = "APROVADO";
       etapa2.classList.remove("active");
@@ -1270,18 +1242,9 @@
       resultadoTitulo.className = "text-center text-success";
       resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
-
-    /*
-    =====================================
-    BOTÃO FINALIZAR
-    =====================================
-    */
     btnFinalizar.addEventListener("click", async () => {
-      // Ao concluir, chamamos a API de comprovante de acordo com o resultado
       if (resultadoFinal === "APROVADO") {
-        // Gera comprovante de aprovado
         if (tipoFluxoSelecionado === "municipal") {
-          // Criar solicitação e depois abrir PDF
           if (alunoIdMunicipal) {
             await criarSolicitacaoTransporte(
               alunoIdMunicipal,
@@ -1313,7 +1276,6 @@
           }
         }
       } else if (resultadoFinal === "NAO_APROVADO") {
-        // Gera comprovante de não aprovado
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
           await criarSolicitacaoTransporte(
             alunoIdMunicipal,
@@ -1334,16 +1296,9 @@
           window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
         }
       }
-
       alert("Atendimento finalizado!");
       location.reload();
     });
-
-    /*
-    =====================================
-    FUNÇÕES DE SUPORTE
-    =====================================
-    */
     async function criarSolicitacaoTransporte(alunoId, status, motivo, fluxo, extraData) {
       try {
         const bodyReq = {
@@ -1369,12 +1324,6 @@
         alert("Falha ao salvar a solicitação.");
       }
     }
-
-    /*
-    =====================================
-    INICIALIZA MAPA
-    =====================================
-    */
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -1394,14 +1343,12 @@
         });
       }
       distanciaRota.textContent = "--";
-
       let endAluno = "";
       let latAluno = null;
       let lngAluno = null;
       let escolaNome = "";
       let latEscola = null;
       let lngEscola = null;
-
       if (tipoFluxoSelecionado === "municipal") {
         latAluno = originalData?.latitude || null;
         lngAluno = originalData?.longitude || null;
@@ -1422,10 +1369,7 @@
           endAluno = `${campoCepEstadual.value}, ${campoNumeroEnderecoEstadual.value}, Canaã dos Carajás, Pará, Brasil`;
         }
       }
-
       infoEndereco.innerText = endAluno;
-
-      // Tenta obter coordenadas da escola
       try {
         const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
         const escolaJson = await escolaResp.json();
@@ -1438,13 +1382,11 @@
       } catch (err) {
         console.error("Erro ao buscar coordenadas da escola:", err);
       }
-
       if (latEscola && lngEscola) {
         escolaPos = new google.maps.LatLng(latEscola, lngEscola);
       } else {
         escolaPos = new google.maps.LatLng(-6.530066, -49.85163);
       }
-
       if (latAluno && lngAluno) {
         alunoPos = new google.maps.LatLng(parseFloat(latAluno), parseFloat(lngAluno));
         createOrMoveMarkers();
@@ -1462,8 +1404,6 @@
           }
         });
       }
-
-      // Listener para adicionar/ajustar posição do aluno no clique
       google.maps.event.addListener(map, "click", (e) => {
         if (!markerAluno) {
           markerAluno = new google.maps.Marker({
@@ -1489,7 +1429,6 @@
         calcularRota(e.latLng, escolaPos);
       });
     }
-
     function createOrMoveMarkers() {
       if (!markerAluno && alunoPos) {
         markerAluno = new google.maps.Marker({
@@ -1510,7 +1449,6 @@
       } else if (markerAluno && alunoPos) {
         markerAluno.setPosition(alunoPos);
       }
-
       if (!markerEscola) {
         markerEscola = new google.maps.Marker({
           position: escolaPos,
@@ -1520,7 +1458,6 @@
       } else {
         markerEscola.setPosition(escolaPos);
       }
-
       if (alunoPos) {
         map.setCenter(alunoPos);
         calcularRota(alunoPos, escolaPos);
@@ -1528,7 +1465,6 @@
         map.setCenter(escolaPos);
       }
     }
-
     function calcularRota(aPos, ePos) {
       const request = {
         origin: aPos,

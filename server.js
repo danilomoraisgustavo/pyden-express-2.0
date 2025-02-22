@@ -6449,7 +6449,290 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
-
+app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const queryAluno = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        a.responsavel,
+        e.nome AS escola_nome,
+        a.turma
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(queryAluno, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+    }
+    const aluno = result.rows[0];
+    const solQuery = `
+      SELECT id, responsaveis_extras
+      FROM solicitacoes_transporte
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const solResult = await pool.query(solQuery, [id]);
+    let listaResponsaveis = [];
+    let solicitacaoId = null;
+    if (solResult.rows.length > 0) {
+      solicitacaoId = solResult.rows[0].id;
+      listaResponsaveis = solResult.rows[0].responsaveis_extras || [];
+    }
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_outros_responsaveis_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text(`TERMO DE AUTORIZAÇÃO Nº ${solicitacaoId || "000"} - OUTROS RESPONSÁVEIS`, {
+        align: "justify",
+      })
+      .moveDown(1);
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        `Eu, ${aluno.responsavel || "______________________"}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar.`,
+        { align: "justify" }
+      )
+      .moveDown();
+    listaResponsaveis.forEach((resp, idx) => {
+      doc
+        .font("Helvetica-Bold")
+        .text(`Responsável ${idx + 1}:`, { align: "left" })
+        .font("Helvetica")
+        .text(`Nome: ${resp.nome || ""}`, { indent: 20 })
+        .text(`RG: ${resp.rg || ""}`, { indent: 20 })
+        .text(`CPF: ${resp.cpf || ""}`, { indent: 20 })
+        .moveDown();
+    });
+    doc
+      .text(
+        "Declaro que todos os responsáveis indicados possuem mais de 18 anos e que responderei por quaisquer informações inverídicas.",
+        { align: "justify" }
+      )
+      .moveDown();
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("_____________________________________", { align: "center" })
+      .text("Assinatura do Responsável", { align: "center" });
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center",
+      })
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar termo de outros responsáveis:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar termo de outros responsáveis.",
+    });
+  }
+});
+app.get("/api/termo-autorizacao-outros-responsaveis-estadual/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const queryAluno = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        a.responsavel,
+        e.nome AS escola_nome,
+        a.turma
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(queryAluno, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+    }
+    const aluno = result.rows[0];
+    const solQuery = `
+      SELECT id, responsaveis_extras
+      FROM solicitacoes_transporte
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const solResult = await pool.query(solQuery, [id]);
+    let listaResponsaveis = [];
+    let solicitacaoId = null;
+    if (solResult.rows.length > 0) {
+      solicitacaoId = solResult.rows[0].id;
+      listaResponsaveis = solResult.rows[0].responsaveis_extras || [];
+    }
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_outros_responsaveis_estadual_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text(`TERMO DE AUTORIZAÇÃO Nº ${solicitacaoId || "000"} - OUTROS RESPONSÁVEIS (ESTADUAL)`, {
+        align: "justify",
+      })
+      .moveDown(1);
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        `Eu, ${aluno.responsavel || "______________________"}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar (Rede Estadual).`,
+        { align: "justify" }
+      )
+      .moveDown();
+    listaResponsaveis.forEach((resp, idx) => {
+      doc
+        .font("Helvetica-Bold")
+        .text(`Responsável ${idx + 1}:`, { align: "left" })
+        .font("Helvetica")
+        .text(`Nome: ${resp.nome || ""}`, { indent: 20 })
+        .text(`RG: ${resp.rg || ""}`, { indent: 20 })
+        .text(`CPF: ${resp.cpf || ""}`, { indent: 20 })
+        .moveDown();
+    });
+    doc
+      .text(
+        "Declaro que todos os responsáveis indicados possuem mais de 18 anos e que responderei por quaisquer informações inverídicas.",
+        { align: "justify" }
+      )
+      .moveDown();
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("_____________________________________", { align: "center" })
+      .text("Assinatura do Responsável", { align: "center" });
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center",
+      })
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar termo de outros responsáveis (Estadual):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar termo de outros responsáveis (Estadual).",
+    });
+  }
+});
 // Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
 app.post("/api/solicitacoes-transporte", async (req, res) => {
   try {
