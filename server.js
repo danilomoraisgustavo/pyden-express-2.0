@@ -6262,7 +6262,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
       .text(`${aluno.bairro || ""}`, { continued: true })
       .font("Helvetica")
       .text(
-        ". Declaro, para os devidos fins, a veracidade das informações acima, bem como minha plena consciência e responsabilidade sobre os dados fornecidos."
+        ". Declaro, para os devidos fins, a veracidade das informações acima, bem como minha plena consciência e responsabilidade sobre os dados fornecidos, estando ciente de que a omissão ou falsidade de dados pode acarretar o cancelamento do direito ao transporte e responsabilizações legais cabíveis."
       );
 
     doc.moveDown(1);
@@ -6282,11 +6282,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc.moveDown(1);
     doc.font("Helvetica").text(
       "Declaro ciência e concordância com os critérios acima descritos para a utilização do Transporte Escolar no Município de Canaã dos Carajás. Estou ciente de que somente após a verificação desses critérios e a efetivação do cadastro o(a) aluno(a) estará habilitado(a) para o uso do transporte escolar, caso necessário. "
-    );
-
-    doc.moveDown(1);
-    doc.font("Helvetica").text(
-      "Comprometo-me a fornecer informações verídicas e completas, estando ciente de que a omissão ou falsidade de dados pode acarretar o cancelamento do direito ao transporte e responsabilizações legais cabíveis."
     );
 
     doc.moveDown(1);
