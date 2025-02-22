@@ -6185,63 +6185,6 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
   }
 });
 
-
-
-
-// Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
-app.post("/api/solicitacoes-transporte", async (req, res) => {
-  try {
-    const {
-      aluno_id,
-      status,
-      motivo,
-      tipo_fluxo,
-      menor10_acompanhado,
-      responsaveis_extras,
-      desembarque_sozinho_10a12,
-    } = req.body;
-
-    const protocoloGerado = "PROTO-" + Date.now();
-
-    const insertQuery = `
-      INSERT INTO solicitacoes_transporte (
-        protocolo,
-        aluno_id,
-        status,
-        motivo,
-        tipo_fluxo,
-        menor10_acompanhado,
-        responsaveis_extras,
-        desembarque_sozinho_10a12
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id
-    `;
-
-    const values = [
-      protocoloGerado,
-      aluno_id,
-      status,
-      motivo || null,                       // caso o motivo não venha preenchido
-      tipo_fluxo,
-      menor10_acompanhado,
-      JSON.stringify(responsaveis_extras || []),
-      desembarque_sozinho_10a12,
-    ];
-
-    const result = await pool.query(insertQuery, values);
-    return res.json({ success: true, id: result.rows[0].id });
-  } catch (err) {
-    console.error("Erro ao criar solicitação de transporte", err);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno ao criar solicitação"
-    });
-  }
-});
-
-
-
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
@@ -6419,6 +6362,197 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
+
+app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.deficiencia,
+        a.rua,
+        a.bairro,
+        a.numero_pessoa_endereco,
+        a.latitude,
+        a.longitude,
+        a.responsavel
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno não encontrado." });
+    }
+    const aluno = result.rows[0];
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_desembarque_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("TERMO DE RESPONSABILIDADE PARA DESEMBARQUE DESACOMPANHADO", {
+        align: "center",
+        underline: false,
+      });
+    doc.moveDown(1);
+
+    doc.lineGap(4);
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(
+        `Eu, ${aluno.responsavel || "_______________________________"}, responsável legal pelo(a) aluno(a) `,
+        { align: "justify", continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.aluno_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `, CPF: ${aluno.cpf || "___"}, matriculado(a) na escola ${aluno.escola_nome || "___"}, turma ${aluno.turma ||
+        "___"}, autorizo, por meio deste documento, o desembarque desacompanhado do(a) estudante no trajeto de transporte escolar.`
+      );
+
+    doc.moveDown(1);
+    doc
+      .font("Helvetica")
+      .text(
+        "Declaro estar ciente de que esta autorização exime os responsáveis pelo transporte escolar, bem como a Secretaria Municipal de Educação, de quaisquer responsabilidades relativas à segurança e acompanhamento do(a) aluno(a) após o desembarque. "
+      );
+    doc.moveDown(1);
+    doc
+      .text(
+        "Reafirmo minha plena ciência de que tal autorização se aplica exclusivamente ao momento de desembarque, devendo ser respeitadas todas as demais regras e orientações estabelecidas pelo serviço de transporte escolar."
+      );
+
+    doc.moveDown(2);
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(2);
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 100, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text(
+        "Rua Itamarati, s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF do termo de desembarque:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF do termo de desembarque.",
+    });
+  }
+});
+
+// Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
+app.post("/api/solicitacoes-transporte", async (req, res) => {
+  try {
+    const {
+      aluno_id,
+      status,
+      motivo,
+      tipo_fluxo,
+      menor10_acompanhado,
+      responsaveis_extras,
+      desembarque_sozinho_10a12,
+    } = req.body;
+
+    const protocoloGerado = "PROTO-" + Date.now();
+
+    const insertQuery = `
+      INSERT INTO solicitacoes_transporte (
+        protocolo,
+        aluno_id,
+        status,
+        motivo,
+        tipo_fluxo,
+        menor10_acompanhado,
+        responsaveis_extras,
+        desembarque_sozinho_10a12
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `;
+
+    const values = [
+      protocoloGerado,
+      aluno_id,
+      status,
+      motivo || null,                       // caso o motivo não venha preenchido
+      tipo_fluxo,
+      menor10_acompanhado,
+      JSON.stringify(responsaveis_extras || []),
+      desembarque_sozinho_10a12,
+    ];
+
+    const result = await pool.query(insertQuery, values);
+    return res.json({ success: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error("Erro ao criar solicitação de transporte", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao criar solicitação"
+    });
+  }
+});
+
 
 // Import alunos ativos
 app.post("/api/import-alunos-ativos", async (req, res) => {
