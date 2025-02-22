@@ -6273,8 +6273,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
 
     const criterios = [
       "Idade Mínima: 4 (quatro) anos completos até 31 de março do ano vigente.",
-      "Distância Mínima para Educação Infantil: residência a mais de 1,5 km da escola.",
-      "Distância Mínima para Ensino Fundamental, Médio e EJA: residência a mais de 2 km da escola.",
+      "Distância Mínima para Educação Infantil: residência a mais de 1,5 km da escola e para Ensino Fundamental e EJA: residência a mais de 2 km da escola.",
       "Alunos com Necessidades Especiais: apresentar laudo médico. Priorização conforme a necessidade, demandando transporte adaptado."
     ];
 
@@ -6292,7 +6291,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
 
     doc.moveDown(1);
     // Parágrafo adicional - Autorização de uso de imagem
-    doc.font("Helvetica-Bold").text("AUTORIZAÇÃO DE USO DE IMAGEM:", { align: "left" });
     doc.font("Helvetica").text(
       "Por meio deste, autorizo o uso da imagem do(a) aluno(a) para fins de reconhecimento facial no sistema de embarque e desembarque do Transporte Escolar, ciente de que tal procedimento visa exclusivamente à segurança e identificação do(a) aluno(a)."
     );
