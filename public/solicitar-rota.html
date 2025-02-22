@@ -1374,36 +1374,34 @@
 
     btnFinalizar.addEventListener("click", async () => {
       if (resultadoFinal === "APROVADO") {
-        if (tipoFluxoSelecionado === "municipal") {
-          if (alunoIdMunicipal) {
-            await criarSolicitacaoTransporte(
-              alunoIdMunicipal,
-              "APROVADO",
-              null,
-              "municipal",
-              {
-                menor10_acompanhado,
-                responsaveisExtras,
-                desembarqueSozinho10a12
-              }
-            );
-            window.open(`/api/comprovante-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-          }
-        } else {
-          if (alunoIdEstadual) {
-            await criarSolicitacaoTransporte(
-              alunoIdEstadual,
-              "APROVADO",
-              null,
-              "estadual",
-              {
-                menor10_acompanhado,
-                responsaveisExtras,
-                desembarqueSozinho10a12
-              }
-            );
-            window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
-          }
+        await salvarLocalizacaoFinal();
+
+        if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
+          await criarSolicitacaoTransporte(
+            alunoIdMunicipal,
+            "APROVADO",
+            null,
+            "municipal",
+            {
+              menor10_acompanhado,
+              responsaveisExtras,
+              desembarqueSozinho10a12
+            }
+          );
+          window.open(`/api/comprovante-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+        } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
+          await criarSolicitacaoTransporte(
+            alunoIdEstadual,
+            "APROVADO",
+            null,
+            "estadual",
+            {
+              menor10_acompanhado,
+              responsaveisExtras,
+              desembarqueSozinho10a12
+            }
+          );
+          window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
         }
       } else if (resultadoFinal === "NAO_APROVADO") {
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
@@ -1429,6 +1427,54 @@
       alert("Atendimento finalizado!");
       location.reload();
     });
+
+    async function salvarLocalizacaoFinal() {
+      if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
+        const defValue = campoDeficienciaMunicipal.value;
+        const defArray = defValue ? [defValue] : null;
+        const mergeBody = {
+          cep: campoCepMunicipal.value.trim(),
+          bairro: campoBairroMunicipal.value.trim(),
+          numero_pessoa_endereco: campoNumeroEnderecoMunicipal.value.trim(),
+          numero_telefone: campoTelefoneMunicipal.value.trim(),
+          deficiencia: defArray,
+          latitude: parseFloat(campoLatitude.value) || null,
+          longitude: parseFloat(campoLongitude.value) || null,
+          rua: campoRuaMunicipal.value.trim()
+        };
+        try {
+          await fetch(`/api/alunos-recadastro/${alunoIdMunicipal}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(mergeBody)
+          });
+        } catch (err) {
+          console.error("Erro ao salvar localização final (municipal):", err);
+        }
+      } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
+        const defValueEst = campoDeficienciaEstadual.value;
+        const defArrayEst = defValueEst ? [defValueEst] : null;
+        const mergeBodyEst = {
+          cep: campoCepEstadual.value.trim(),
+          bairro: campoBairroEstadual.value.trim(),
+          numero_pessoa_endereco: campoNumeroEnderecoEstadual.value.trim(),
+          numero_telefone: campoTelefoneEstadual.value.trim(),
+          deficiencia: defArrayEst,
+          latitude: parseFloat(campoLatitude.value) || null,
+          longitude: parseFloat(campoLongitude.value) || null,
+          rua: campoRuaEstadual.value.trim()
+        };
+        try {
+          await fetch(`/api/alunos-recadastro/${alunoIdEstadual}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(mergeBodyEst)
+          });
+        } catch (err) {
+          console.error("Erro ao salvar localização final (estadual):", err);
+        }
+      }
+    }
 
     async function criarSolicitacaoTransporte(alunoId, status, motivo, fluxo, extraData) {
       try {
