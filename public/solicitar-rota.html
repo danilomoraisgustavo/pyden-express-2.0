@@ -64,7 +64,6 @@
       max-width: 600px;
     }
 
-    /* Modal para escolha de quem assina */
     #modalEscolherAssinatura .modal-dialog {
       max-width: 500px;
     }
@@ -195,12 +194,7 @@
                   </div>
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
-                    <select class="form-control" id="campoDeficienciaMunicipal">
-                      <option value="">Selecione...</option>
-                      <option value="Deficiência Física">Deficiência Física</option>
-                      <option value="Deficiência Intelectual">Deficiência Intelectual</option>
-                      <option value="Transtornos e Síndromes">Transtornos e Síndromes</option>
-                    </select>
+                    <input type="text" class="form-control" id="campoDeficienciaMunicipal" />
                   </div>
                 </div>
                 <div class="d-flex justify-content-between mt-3">
@@ -324,12 +318,7 @@
                 <div class="row">
                   <div class="col-md-12 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
-                    <select class="form-control" id="campoDeficienciaEstadual">
-                      <option value="">Selecione...</option>
-                      <option value="Deficiência Física">Deficiência Física</option>
-                      <option value="Deficiência Intelectual">Deficiência Intelectual</option>
-                      <option value="Transtornos e Síndromes">Transtornos e Síndromes</option>
-                    </select>
+                    <input type="text" class="form-control" id="campoDeficienciaEstadual" />
                   </div>
                 </div>
                 <div class="d-flex justify-content-end mt-3">
@@ -408,7 +397,6 @@
     </div>
   </div>
 
-  <!-- MODAL PARA ALUNOS MENORES DE 10 ANOS -->
   <div class="modal fade" id="modalMenores10" tabindex="-1" aria-labelledby="modalMenores10Label" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -443,7 +431,6 @@
     </div>
   </div>
 
-  <!-- MODAL PARA ALUNOS ENTRE 10 E 12 ANOS -->
   <div class="modal fade" id="modalDesembarque10a12" tabindex="-1" aria-labelledby="modalDesembarque10a12Label"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -472,7 +459,6 @@
     </div>
   </div>
 
-  <!-- MODAL PARA OUTROS RESPONSAVEIS 10 A 12 -->
   <div class="modal fade" id="modalOutrosResponsaveis10a12" tabindex="-1"
     aria-labelledby="modalOutrosResponsaveis10a12Label" aria-hidden="true">
     <div class="modal-dialog">
@@ -506,7 +492,6 @@
     </div>
   </div>
 
-  <!-- MODAL PARA ESCOLHER QUEM ASSINA O TERMO DE CONFIRMAÇÃO -->
   <div class="modal fade" id="modalEscolherAssinatura" tabindex="-1" aria-labelledby="modalEscolherAssinaturaLabel"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -563,6 +548,7 @@
     let measurePoints = [];
     let measurePolyline = null;
     let mapClickListener = null;
+
     let idadeAlunoAnos = 0;
     let idadeAlunoMeses = 0;
     let idadeAlunoDias = 0;
@@ -571,7 +557,7 @@
     let desembarqueSozinho10a12 = false;
     let resultadoFinal = null;
     let outrosResponsaveis10a12 = [];
-    let signerChoice = null; // 'filiacao1', 'filiacao2', 'responsavel'
+    let signerChoice = null;
 
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
@@ -751,11 +737,11 @@
         }
 
         if (Array.isArray(data.deficiencia)) {
-          campoDeficienciaMunicipal.value = data.deficiencia[0] || "";
+          campoDeficienciaMunicipal.value = data.deficiencia[0] || "NADA INFORMADO";
         } else if (typeof data.deficiencia === "string") {
-          campoDeficienciaMunicipal.value = data.deficiencia;
+          campoDeficienciaMunicipal.value = data.deficiencia || "NADA INFORMADO";
         } else {
-          campoDeficienciaMunicipal.value = "";
+          campoDeficienciaMunicipal.value = "NADA INFORMADO";
         }
 
         dadosAlunoContainerMunicipal.classList.remove("d-none");
@@ -864,7 +850,6 @@
       }
     }
 
-    // Ao clicar em "Imprimir Confirmação"
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado para gerar termo.");
@@ -874,7 +859,6 @@
       modalEscolherAssinatura.show();
     });
 
-    // Confirma o modal de escolha de assinatura
     btnConfirmarAssinatura.addEventListener("click", () => {
       if (radioAssinaturaFiliacao1.checked) {
         signerChoice = "filiacao1";
@@ -903,13 +887,13 @@
     });
 
     btnBuscarEstadual.addEventListener("click", async () => {
-      const valorBusca = inputBuscaEstadual.value.trim();
-      if (!valorBusca) {
+      const valorBuscaEst = inputBuscaEstadual.value.trim();
+      if (!valorBuscaEst) {
         alert("Informe CPF ou ID de Matrícula.");
         return;
       }
       try {
-        const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
+        const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBuscaEst)}`);
         if (!resp.ok) throw new Error("Erro ao buscar aluno (Estadual).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
@@ -946,11 +930,11 @@
         }
 
         if (Array.isArray(data.deficiencia)) {
-          campoDeficienciaEstadual.value = data.deficiencia[0] || "";
+          campoDeficienciaEstadual.value = data.deficiencia[0] || "NADA INFORMADO";
         } else if (typeof data.deficiencia === "string") {
-          campoDeficienciaEstadual.value = data.deficiencia;
+          campoDeficienciaEstadual.value = data.deficiencia || "NADA INFORMADO";
         } else {
-          campoDeficienciaEstadual.value = "";
+          campoDeficienciaEstadual.value = "NADA INFORMADO";
         }
       } catch (err) {
         console.error(err);
@@ -996,13 +980,13 @@
     }
 
     btnConverterCepEstadual.addEventListener("click", async () => {
-      const cepLimpo = campoCepEstadual.value.replace(/\D/g, "");
-      if (!cepLimpo) {
+      const cepLimpoEst = campoCepEstadual.value.replace(/\D/g, "");
+      if (!cepLimpoEst) {
         alert("Informe um CEP válido.");
         return;
       }
       try {
-        const r = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+        const r = await fetch(`https://viacep.com.br/ws/${cepLimpoEst}/json/`);
         if (r.ok) {
           const viacep = await r.json();
           if (!viacep.erro) {
@@ -1020,8 +1004,8 @@
     });
 
     btnProximoEstadual.addEventListener("click", async () => {
-      const defValue = campoDeficienciaEstadual.value;
-      const defArray = defValue ? [defValue] : null;
+      const defValueEst = campoDeficienciaEstadual.value;
+      const defArrayEst = defValueEst ? [defValueEst] : null;
       const bodyAlunoEstadual = {
         id_matricula: campoIdMatriculaEstadual.value.trim(),
         pessoa_nome: campoNomeAlunoEstadual.value.trim(),
@@ -1038,7 +1022,7 @@
         filiacao_1: campoFiliacao1Estadual.value.trim(),
         filiacao_2: campoFiliacao2Estadual.value.trim(),
         responsavel: campoResponsavelEstadual.value.trim(),
-        deficiencia: defArray
+        deficiencia: defArrayEst
       };
 
       try {
