@@ -487,6 +487,7 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
 
   <script>
+    // Variáveis gerais
     let map, directionsService, directionsRenderer;
     let markerAluno = null, markerEscola = null;
     let escolaPos = null, alunoPos = null;
@@ -499,6 +500,7 @@
     let measurePolyline = null;
     let mapClickListener = null;
 
+    // Variáveis de idade/acompanhamento
     let idadeAlunoAnos = 0;
     let idadeAlunoMeses = 0;
     let idadeAlunoDias = 0;
@@ -506,6 +508,10 @@
     let menor10_acompanhado = false;
     let desembarqueSozinho10a12 = false;
 
+    // Variáveis de controle de fluxo
+    let resultadoFinal = null; // "APROVADO" ou "NAO_APROVADO"
+
+    // ELEMENTOS DOM - FLUXO
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
     const etapa1Estadual = document.getElementById("etapa1Estadual");
@@ -516,7 +522,7 @@
     const fluxoEstadual = document.getElementById("fluxoEstadual");
     const btnContinuarFluxo = document.getElementById("btnContinuarFluxo");
 
-    // Municipal
+    // ELEMENTOS DOM - MUNICIPAL
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
     const dadosAlunoContainerMunicipal = document.getElementById("dadosAlunoContainerMunicipal");
@@ -542,7 +548,7 @@
     const campoResponsavelMunicipal = document.getElementById("campoResponsavelMunicipal");
     const campoDeficienciaMunicipal = document.getElementById("campoDeficienciaMunicipal");
 
-    // Estadual
+    // ELEMENTOS DOM - ESTADUAL
     const btnBuscarEstadual = document.getElementById("btnBuscarEstadual");
     const inputBuscaEstadual = document.getElementById("inputBuscaEstadual");
     const btnConverterCepEstadual = document.getElementById("btnConverterCepEstadual");
@@ -566,7 +572,7 @@
     const campoResponsavelEstadual = document.getElementById("campoResponsavelEstadual");
     const campoDeficienciaEstadual = document.getElementById("campoDeficienciaEstadual");
 
-    // Etapa 2
+    // ELEMENTOS DOM - ETAPA 2
     const btnVoltarEtapa1 = document.getElementById("btnVoltarEtapa1");
     const btnAprovado = document.getElementById("btnAprovado");
     const btnNaoAprovado = document.getElementById("btnNaoAprovado");
@@ -581,12 +587,12 @@
     const selectNivelEnsino = document.getElementById("selectNivelEnsino");
     const btnVerificarCriterios = document.getElementById("btnVerificarCriterios");
 
-    // Etapa 3
+    // ELEMENTOS DOM - ETAPA 3
     const resultadoTitulo = document.getElementById("resultadoTitulo");
     const resultadoDescricao = document.getElementById("resultadoDescricao");
     const btnFinalizar = document.getElementById("btnFinalizar");
 
-    // Modais
+    // ELEMENTOS DOM - MODAIS
     const modalMenores10 = new bootstrap.Modal(document.getElementById("modalMenores10"), { backdrop: 'static', keyboard: false });
     const modalDesembarque10a12 = new bootstrap.Modal(document.getElementById("modalDesembarque10a12"), { backdrop: 'static', keyboard: false });
     const btnConfirmarMenor10 = document.getElementById("btnConfirmarMenor10");
@@ -600,6 +606,11 @@
     const modal10a12_radioNao = document.getElementById("radioDesembarqueNao");
     const btnConfirmar10a12 = document.getElementById("btnConfirmar10a12");
 
+    /*
+    =====================================
+    SELEÇÃO DO FLUXO
+    =====================================
+    */
     btnContinuarFluxo.addEventListener("click", async () => {
       if (fluxoMunicipal.checked) {
         tipoFluxoSelecionado = "municipal";
@@ -633,7 +644,11 @@
       }
     }
 
-    // MUNICIPAL
+    /*
+    =====================================
+    ETAPA 1 - MUNICIPAL
+    =====================================
+    */
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -711,7 +726,7 @@
       campoIdadeMunicipal.textContent = `${anos} anos, ${meses} meses e ${dias} dias`;
 
       const anoAtual = hoje.getFullYear();
-      const dataCorte = new Date(anoAtual, 2, 31);
+      const dataCorte = new Date(anoAtual, 2, 31); // 31 de março
       const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
 
       if (data4 <= dataCorte) {
@@ -813,7 +828,11 @@
       }, 300);
     });
 
-    // ESTADUAL
+    /*
+    =====================================
+    ETAPA 1 - ESTADUAL
+    =====================================
+    */
     btnBuscarEstadual.addEventListener("click", async () => {
       const valorBusca = inputBuscaEstadual.value.trim();
       if (!valorBusca) {
@@ -896,7 +915,7 @@
       campoIdadeEstadual.textContent = `${anos} anos, ${meses} meses e ${dias} dias`;
 
       const anoAtual = hoje.getFullYear();
-      const dataCorte = new Date(anoAtual, 2, 31);
+      const dataCorte = new Date(anoAtual, 2, 31); // 31 de março
       const data4 = new Date(dataNasc.getFullYear() + 4, dataNasc.getMonth(), dataNasc.getDate());
 
       if (data4 <= dataCorte) {
@@ -979,7 +998,11 @@
       }
     });
 
-    // ETAPA 2
+    /*
+    =====================================
+    ETAPA 2 - MAPA E CRITÉRIOS
+    =====================================
+    */
     btnVoltarEtapa1.addEventListener("click", () => {
       etapa2.classList.remove("active");
       if (tipoFluxoSelecionado === "municipal") {
@@ -989,6 +1012,7 @@
       }
     });
 
+    // Medição manual
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
@@ -1048,6 +1072,7 @@
       }
     }
 
+    // Verificar critérios
     btnVerificarCriterios.addEventListener("click", () => {
       const nivel = selectNivelEnsino.value;
       if (!nivel) {
@@ -1058,12 +1083,12 @@
       let idadeMinimaOk = false;
       let distanciaMinimaOk = false;
 
-      const totalDiasIdade = (idadeAlunoAnos * 365) + (idadeAlunoMeses * 30) + idadeAlunoDias;
-
+      // Checa idade >= 4 anos
       if (idadeAlunoAnos >= 4) {
         idadeMinimaOk = true;
       }
 
+      // Distância
       if (nivel === "infantil") {
         if (distKm > 1.5) {
           distanciaMinimaOk = true;
@@ -1074,15 +1099,19 @@
         }
       }
 
+      // Decide
       if (!idadeMinimaOk || !distanciaMinimaOk) {
+        // Reprovar
         btnNaoAprovado.click();
       } else {
+        // Passa ao fluxo adicional
         checkFluxoIntermediario();
       }
     });
 
     function checkFluxoIntermediario() {
       if (idadeAlunoAnos < 10) {
+        // Modal p/ menores de 10
         responsaveisExtras = [];
         menor10_acompanhado = false;
         renderListaResponsaveis();
@@ -1090,15 +1119,22 @@
         radioAcompanhamentoNao.checked = true;
         modalMenores10.show();
       } else if (idadeAlunoAnos >= 10 && idadeAlunoAnos < 13) {
+        // Modal 10 a 12
         desembarqueSozinho10a12 = false;
         modal10a12_radioNao.checked = true;
         modalDesembarque10a12.show();
       } else {
+        // Idade >= 13 => Aprovado direto
+        // Mostra botão Aprovado
         btnAprovado.click();
       }
     }
 
-    // MODAL MENORES DE 10
+    /*
+    =====================================
+    MODAL MENORES DE 10
+    =====================================
+    */
     radioAcompanhamentoSim.addEventListener("change", () => {
       containerResponsaveisExtras.classList.remove("d-none");
     });
@@ -1163,6 +1199,7 @@
             alert("Preencha todos os campos dos responsáveis extras.");
             return;
           }
+          // Confere se é maior de 18
           const dataResp = new Date(r.dataNascimento);
           const hoje = new Date();
           let anos = hoje.getFullYear() - dataResp.getFullYear();
@@ -1180,13 +1217,25 @@
         responsaveisExtras = [];
       }
       modalMenores10.hide();
-      btnAprovado.click();
+      btnAprovado.click(); // Confirma fluxo -> Aprovado
     });
 
-    // MODAL 10 A 12
+    /*
+    =====================================
+    MODAL 10 a 12
+    =====================================
+    */
     btnConfirmar10a12.addEventListener("click", () => {
       if (modal10a12_radioSim.checked) {
         desembarqueSozinho10a12 = true;
+        // CHAMA API TERMO DE DESEMBARQUE IMEDIATAMENTE
+        if (tipoFluxoSelecionado === "municipal") {
+          if (!alunoIdMunicipal) return;
+          window.open(`/api/termo-desembarque/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+        } else {
+          if (!alunoIdEstadual) return;
+          window.open(`/api/termo-desembarque-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+        }
       } else {
         desembarqueSozinho10a12 = false;
       }
@@ -1194,24 +1243,13 @@
       btnAprovado.click();
     });
 
-    // BTN NAO APROVADO
-    btnNaoAprovado.addEventListener("click", async () => {
-      if (tipoFluxoSelecionado === "municipal") {
-        if (!alunoIdMunicipal) {
-          alert("Nenhum aluno carregado para reprovação.");
-          return;
-        }
-        await criarSolicitacaoTransporte(alunoIdMunicipal, "NAO_APROVADO", "Critérios não atendidos", "municipal", null);
-        window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-      } else {
-        if (!alunoIdEstadual) {
-          alert("Nenhum aluno estadual cadastrado para reprovação.");
-          return;
-        }
-        await criarSolicitacaoTransporte(alunoIdEstadual, "NAO_APROVADO", "Critérios não atendidos", "estadual", null);
-        window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
-      }
-
+    /*
+    =====================================
+    BOTÃO NÃO APROVADO
+    =====================================
+    */
+    btnNaoAprovado.addEventListener("click", () => {
+      resultadoFinal = "NAO_APROVADO";
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Não Aprovado";
@@ -1219,60 +1257,13 @@
       resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
     });
 
-    // BTN APROVADO
-    btnAprovado.addEventListener("click", async () => {
-      if (tipoFluxoSelecionado === "municipal") {
-        if (!alunoIdMunicipal) {
-          alert("Nenhum aluno carregado para aprovação.");
-          return;
-        }
-        const ok = await salvarAlteracoesMunicipal();
-        if (!ok) return;
-
-        await criarSolicitacaoTransporte(
-          alunoIdMunicipal,
-          "APROVADO",
-          null,
-          "municipal",
-          {
-            menor10_acompanhado,
-            responsaveisExtras,
-            desembarqueSozinho10a12
-          }
-        );
-        window.open(`/api/comprovante-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-
-        // SE ESCOLHEU DESEMBARQUE SOZINHO, GERAR SEGUNDO DOCUMENTO
-        if (desembarqueSozinho10a12) {
-          window.open(`/api/termo-desembarque/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-        }
-
-      } else {
-        if (!alunoIdEstadual) {
-          alert("Nenhum aluno estadual cadastrado para aprovação.");
-          return;
-        }
-        const ok = await salvarAlteracoesEstadual(alunoIdEstadual);
-        if (!ok) return;
-
-        await criarSolicitacaoTransporte(
-          alunoIdEstadual,
-          "APROVADO",
-          null,
-          "estadual",
-          {
-            menor10_acompanhado,
-            responsaveisExtras,
-            desembarqueSozinho10a12
-          }
-        );
-        window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
-
-        if (desembarqueSozinho10a12) {
-          window.open(`/api/termo-desembarque-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
-        }
-      }
-
+    /*
+    =====================================
+    BOTÃO APROVADO
+    =====================================
+    */
+    btnAprovado.addEventListener("click", () => {
+      resultadoFinal = "APROVADO";
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Aluno Aprovado!";
@@ -1280,52 +1271,79 @@
       resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
 
-    async function salvarAlteracoesEstadual(idEstadual) {
-      if (!idEstadual) {
-        alert("Nenhum aluno estadual para atualizar.");
-        return false;
-      }
-      const defValue = campoDeficienciaEstadual.value;
-      const defArray = defValue ? [defValue] : null;
-      const mergeBody = {
-        id_matricula: campoIdMatriculaEstadual.value.trim(),
-        pessoa_nome: campoNomeAlunoEstadual.value.trim(),
-        data_nascimento: campoDataNascimentoEstadual.value || null,
-        escola_id: campoEscolaEstadual.value ? parseInt(campoEscolaEstadual.value) : null,
-        turma: campoTurmaEstadual.value.trim(),
-        turno: campoTurnoEstadual.value.trim(),
-        cpf: campoCpfEstadual.value.trim(),
-        cep: campoCepEstadual.value.trim(),
-        bairro: campoBairroEstadual.value.trim(),
-        numero_pessoa_endereco: campoNumeroEnderecoEstadual.value.trim(),
-        numero_telefone: campoTelefoneEstadual.value.trim(),
-        filiacao_1: campoFiliacao1Estadual.value.trim(),
-        filiacao_2: campoFiliacao2Estadual.value.trim(),
-        responsavel: campoResponsavelEstadual.value.trim(),
-        deficiencia: defArray,
-        latitude: parseFloat(campoLatitude.value) || null,
-        longitude: parseFloat(campoLongitude.value) || null,
-        rua: campoRuaEstadual.value.trim()
-      };
-      try {
-        const resp = await fetch(`/api/alunos-ativos-estadual/${idEstadual}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(mergeBody)
-        });
-        const result = await resp.json();
-        if (!resp.ok) {
-          alert(result.message || "Falha ao salvar alterações (estadual).");
-          return false;
+    /*
+    =====================================
+    BOTÃO FINALIZAR
+    =====================================
+    */
+    btnFinalizar.addEventListener("click", async () => {
+      // Ao concluir, chamamos a API de comprovante de acordo com o resultado
+      if (resultadoFinal === "APROVADO") {
+        // Gera comprovante de aprovado
+        if (tipoFluxoSelecionado === "municipal") {
+          // Criar solicitação e depois abrir PDF
+          if (alunoIdMunicipal) {
+            await criarSolicitacaoTransporte(
+              alunoIdMunicipal,
+              "APROVADO",
+              null,
+              "municipal",
+              {
+                menor10_acompanhado,
+                responsaveisExtras,
+                desembarqueSozinho10a12
+              }
+            );
+            window.open(`/api/comprovante-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+          }
+        } else {
+          if (alunoIdEstadual) {
+            await criarSolicitacaoTransporte(
+              alunoIdEstadual,
+              "APROVADO",
+              null,
+              "estadual",
+              {
+                menor10_acompanhado,
+                responsaveisExtras,
+                desembarqueSozinho10a12
+              }
+            );
+            window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+          }
         }
-        return true;
-      } catch (err) {
-        console.error(err);
-        alert("Erro ao atualizar dados do aluno (estadual).");
-        return false;
+      } else if (resultadoFinal === "NAO_APROVADO") {
+        // Gera comprovante de não aprovado
+        if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
+          await criarSolicitacaoTransporte(
+            alunoIdMunicipal,
+            "NAO_APROVADO",
+            "Critérios não atendidos",
+            "municipal",
+            null
+          );
+          window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+        } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
+          await criarSolicitacaoTransporte(
+            alunoIdEstadual,
+            "NAO_APROVADO",
+            "Critérios não atendidos",
+            "estadual",
+            null
+          );
+          window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+        }
       }
-    }
 
+      alert("Atendimento finalizado!");
+      location.reload();
+    });
+
+    /*
+    =====================================
+    FUNÇÕES DE SUPORTE
+    =====================================
+    */
     async function criarSolicitacaoTransporte(alunoId, status, motivo, fluxo, extraData) {
       try {
         const bodyReq = {
@@ -1352,6 +1370,11 @@
       }
     }
 
+    /*
+    =====================================
+    INICIALIZA MAPA
+    =====================================
+    */
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -1371,6 +1394,7 @@
         });
       }
       distanciaRota.textContent = "--";
+
       let endAluno = "";
       let latAluno = null;
       let lngAluno = null;
@@ -1400,6 +1424,8 @@
       }
 
       infoEndereco.innerText = endAluno;
+
+      // Tenta obter coordenadas da escola
       try {
         const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
         const escolaJson = await escolaResp.json();
@@ -1412,11 +1438,13 @@
       } catch (err) {
         console.error("Erro ao buscar coordenadas da escola:", err);
       }
+
       if (latEscola && lngEscola) {
         escolaPos = new google.maps.LatLng(latEscola, lngEscola);
       } else {
         escolaPos = new google.maps.LatLng(-6.530066, -49.85163);
       }
+
       if (latAluno && lngAluno) {
         alunoPos = new google.maps.LatLng(parseFloat(latAluno), parseFloat(lngAluno));
         createOrMoveMarkers();
@@ -1434,6 +1462,8 @@
           }
         });
       }
+
+      // Listener para adicionar/ajustar posição do aluno no clique
       google.maps.event.addListener(map, "click", (e) => {
         if (!markerAluno) {
           markerAluno = new google.maps.Marker({
@@ -1480,6 +1510,7 @@
       } else if (markerAluno && alunoPos) {
         markerAluno.setPosition(alunoPos);
       }
+
       if (!markerEscola) {
         markerEscola = new google.maps.Marker({
           position: escolaPos,
@@ -1489,6 +1520,7 @@
       } else {
         markerEscola.setPosition(escolaPos);
       }
+
       if (alunoPos) {
         map.setCenter(alunoPos);
         calcularRota(alunoPos, escolaPos);
@@ -1514,12 +1546,6 @@
         }
       });
     }
-
-    // ETAPA 3
-    btnFinalizar.addEventListener("click", () => {
-      alert("Atendimento finalizado!");
-      location.reload();
-    });
   </script>
 </body>
 
