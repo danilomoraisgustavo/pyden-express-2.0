@@ -6200,8 +6200,12 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
       responsaveis_extras,
       desembarque_sozinho_10a12,
     } = req.body;
+
+    const protocoloGerado = "PROTO-" + Date.now();
+
     const insertQuery = `
       INSERT INTO solicitacoes_transporte (
+        protocolo,
         aluno_id,
         status,
         motivo,
@@ -6210,25 +6214,32 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
         responsaveis_extras,
         desembarque_sozinho_10a12
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
     `;
+
     const values = [
+      protocoloGerado,
       aluno_id,
       status,
-      motivo || null,
+      motivo || null,                       // caso o motivo não venha preenchido
       tipo_fluxo,
       menor10_acompanhado,
       JSON.stringify(responsaveis_extras || []),
       desembarque_sozinho_10a12,
     ];
+
     const result = await pool.query(insertQuery, values);
     return res.json({ success: true, id: result.rows[0].id });
   } catch (err) {
     console.error("Erro ao criar solicitação de transporte", err);
-    return res.status(500).json({ success: false, message: "Erro interno ao criar solicitação" });
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao criar solicitação"
+    });
   }
 });
+
 
 
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
