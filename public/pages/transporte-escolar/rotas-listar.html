@@ -1,114 +1,566 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Definir Rota</title>
-    <meta
-      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-      name="viewport"
-    />
-    <link
-      rel="icon"
-      href="../../assets/img/pydenadmin/favicon.png"
-      type="image/x-icon"
-    />
 
-    <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
-    <script>
-      WebFont.load({
-        google: { families: ["Public Sans:300,400,500,600,700"] },
-        custom: {
-          families: [
-            "Font Awesome 5 Solid",
-            "Font Awesome 5 Regular",
-            "Font Awesome 5 Brands",
-            "simple-line-icons",
-          ],
-          urls: ["../../assets/css/fonts.min.css"],
-        },
-        active: function () {
-          sessionStorage.fonts = true;
-        },
-      });
-    </script>
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Definir Rota</title>
+  <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+  <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
-    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
-    <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
-    <link rel="stylesheet" href="../../assets/css/demo.css" />
+  <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+  <script>
+    WebFont.load({
+      google: { families: ["Public Sans:300,400,500,600,700"] },
+      custom: {
+        families: [
+          "Font Awesome 5 Solid",
+          "Font Awesome 5 Regular",
+          "Font Awesome 5 Brands",
+          "simple-line-icons",
+        ],
+        urls: ["../../assets/css/fonts.min.css"],
+      },
+      active: function () {
+        sessionStorage.fonts = true;
+      },
+    });
+  </script>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+  <link rel="stylesheet" href="../../assets/css/demo.css" />
 
-    <style>
-      #map-modal-create,
-      #map-modal-edit {
-        height: 400px;
-        width: 100%;
-      }
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
 
-      #map-modal-view {
-        height: 500px;
-        width: 100%;
-      }
+  <style>
+    #map-modal-create,
+    #map-modal-edit {
+      height: 400px;
+      width: 100%;
+    }
 
-      .legend-marker {
-        font-size: 14px;
-        padding: 4px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+    #map-modal-view {
+      height: 500px;
+      width: 100%;
+    }
 
-      .legend-marker img {
-        width: 24px;
-        height: 24px;
-        margin-right: 5px;
-      }
+    .legend-marker {
+      font-size: 14px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-      .dropdown-download {
-        margin-right: 10px;
-        display: inline-block;
-      }
+    .legend-marker img {
+      width: 24px;
+      height: 24px;
+      margin-right: 5px;
+    }
 
-      .dataTables_wrapper .row > div:nth-child(1) {
-      }
+    .dropdown-download {
+      margin-right: 10px;
+      display: inline-block;
+    }
 
-      .dataTables_wrapper .row > div:nth-child(2) {
-        display: flex !important;
-        justify-content: flex-end;
-        align-items: center;
-      }
+    .dataTables_wrapper .row>div:nth-child(1) {}
 
-      .dataTables_filter {
-        margin: 0 !important;
-      }
+    .dataTables_wrapper .row>div:nth-child(2) {
+      display: flex !important;
+      justify-content: flex-end;
+      align-items: center;
+    }
 
-      .dataTables_filter label {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0;
-      }
+    .dataTables_filter {
+      margin: 0 !important;
+    }
 
-      .dataTables_filter input {
-        margin-left: 0.5rem;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="wrapper">
-      <div class="sidebar" data-background-color="dark">
-        <div class="sidebar-logo">
+    .dataTables_filter label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0;
+    }
+
+    .dataTables_filter input {
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="sidebar" data-background-color="dark">
+      <div class="sidebar-logo">
+        <div class="logo-header" data-background-color="dark">
+          <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
+            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
+          </a>
+          <div class="nav-toggle">
+            <button class="btn btn-toggle toggle-sidebar">
+              <i class="gg-menu-right"></i>
+            </button>
+            <button class="btn btn-toggle sidenav-toggler">
+              <i class="gg-menu-left"></i>
+            </button>
+          </div>
+          <button class="topbar-toggler more">
+            <i class="gg-more-vertical-alt"></i>
+          </button>
+        </div>
+      </div>
+      <div class="sidebar-wrapper scrollbar scrollbar-inner">
+        <div class="sidebar-content">
+          <ul class="nav nav-secondary">
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Transporte Escolar</h4>
+            </li>
+            <li class="nav-item">
+              <a href="../../pages/transporte-escolar/dashboard-escolar.html">
+                <i class="fas fa-tachometer-alt"></i>
+                <p>Dashboard Escolar</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
+                <i class="fas fa-user-graduate"></i>
+                <p>Alunos</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teAlunos">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html">
+                      <span class="sub-item">Listar Solicitações de Transporte</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/alunos-listar.html">
+                      <span class="sub-item">Listar Alunos</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
+                <i class="fas fa-id-card"></i>
+                <p>Motoristas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teMotoristas">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/motoristas-listar.html">
+                      <span class="sub-item">Listar Motoristas</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/motoristas-licencas.html">
+                      <span class="sub-item">Licenças e Certificações</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="false">
+                <i class="fas fa-user-check"></i>
+                <p>Monitores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teMonitores">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/monitores-listar.html">
+                      <span class="sub-item">Listar Monitores</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
+                <i class="fas fa-bus"></i>
+                <p>Veículos</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teVeiculos">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/veiculos-listar.html">
+                      <span class="sub-item">Listar Veículos</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/veiculos-manutencao.html">
+                      <span class="sub-item">Manutenção</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/veiculos-documentacao.html">
+                      <span class="sub-item">Documentação e Seguros</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teRotas" aria-expanded="false">
+                <i class="fas fa-route"></i>
+                <p>Rotas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teRotas">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/rotas-listar.html">
+                      <span class="sub-item">Listar Rotas</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/pontos-cadastrar.html">
+                      <span class="sub-item">Pontos de Parada</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teRelatorios" aria-expanded="false">
+                <i class="fas fa-chart-line"></i>
+                <p>Relatórios</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teRelatorios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/relatorios-mensais.html">
+                      <span class="sub-item">Mensais</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/relatorios-rotas.html">
+                      <span class="sub-item">Por Rota</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/relatorios-comparativos.html">
+                      <span class="sub-item">Comparativos</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
+                <i class="fas fa-school"></i>
+                <p>Zoneamento</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teZoneamento">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/zoneamento-listar.html">
+                      <span class="sub-item">Listar Zoneamento</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/zoneamento-cadastrar.html">
+                      <span class="sub-item">Cadastrar Zoneamento</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teEscolas" aria-expanded="false">
+                <i class="fas fa-school"></i>
+                <p>Escolas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teEscolas">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/escolas-listar.html">
+                      <span class="sub-item">Listar Escolas</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teFornecedores" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Fornecedores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teFornecedores">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/fornecedores-listar.html">
+                      <span class="sub-item">Listar Fornecedores</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/fornecedores-cadastrar.html">
+                      <span class="sub-item">Cadastrar Fornecedor</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Transporte Administrativo</h4>
+            </li>
+            <li class="nav-item">
+              <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
+                <i class="fas fa-tachometer-alt"></i>
+                <p>Dashboard Administrativo</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taFuncionarios" aria-expanded="false">
+                <i class="fas fa-users-cog"></i>
+                <p>Funcionários</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taFuncionarios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/funcionarios-listar.html">
+                      <span class="sub-item">Listar Funcionários</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/funcionarios-cadastrar.html">
+                      <span class="sub-item">Cadastrar Funcionário</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/funcionarios-cargos.html">
+                      <span class="sub-item">Funções e Cargos</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/funcionarios-visualizar.html">
+                      <span class="sub-item">Visualizar Funcionário</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
+                <i class="fas fa-id-card"></i>
+                <p>Motoristas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taMotoristas">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-listar.html">
+                      <span class="sub-item">Listar Motoristas</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-cadastrar.html">
+                      <span class="sub-item">Cadastrar Motorista</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-licencas.html">
+                      <span class="sub-item">Licenças e Certificações</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taMonitores" aria-expanded="false">
+                <i class="fas fa-user-check"></i>
+                <p>Monitores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taMonitores">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/monitores-listar.html">
+                      <span class="sub-item">Listar Monitores</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/monitores-cadastrar.html">
+                      <span class="sub-item">Cadastrar Monitor</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
+                <i class="fas fa-warehouse"></i>
+                <p>Frota Administrativa</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taFrota">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-listar.html">
+                      <span class="sub-item">Listar Frota</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-manutencao.html">
+                      <span class="sub-item">Manutenção</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-rotas.html">
+                      <span class="sub-item">Rotas Internas</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
+                <i class="far fa-calendar-alt"></i>
+                <p>Agenda de Viagens</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taAgenda">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-listar.html">
+                      <span class="sub-item">Listar Viagens</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-nova.html">
+                      <span class="sub-item">Agendar Nova Viagem</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-historico.html">
+                      <span class="sub-item">Histórico de Viagens</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taLogistica" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Logística Interna</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taLogistica">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/logistica-materiais.html">
+                      <span class="sub-item">Transporte de Materiais</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/logistica-manutencoes.html">
+                      <span class="sub-item">Agendamento Manutenção</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/logistica-suprimentos.html">
+                      <span class="sub-item">Controle de Suprimentos</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taRelatorios" aria-expanded="false">
+                <i class="fas fa-chart-pie"></i>
+                <p>Relatórios</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taRelatorios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/gerar-memorando.html">
+                      <span class="sub-item">Gerar Memorando</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-eficiencia.html">
+                      <span class="sub-item">Eficiência</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-custos.html">
+                      <span class="sub-item">Custos Operacionais</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-comparativos.html">
+                      <span class="sub-item">Comparativos</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-mensais.html">
+                      <span class="sub-item">Mensais</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-rotas.html">
+                      <span class="sub-item">Por Rota</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Financeiro</h4>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#finRelatorios" aria-expanded="false">
+                <i class="far fa-chart-bar"></i>
+                <p>Relatórios Financeiros</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="finRelatorios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/financeiro/relatorios-mensal.html">
+                      <span class="sub-item">Relatório Mensal</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/financeiro/relatorios-custos-setor.html">
+                      <span class="sub-item">Custos por Setor</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/financeiro/relatorios-comparativos.html">
+                      <span class="sub-item">Comparativos</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-panel">
+      <div class="main-header" style="top: 0">
+        <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
-            <a
-              href="../../pages/transporte-escolar/dashboard-escolar.html"
-              class="logo"
-            >
-              <img
-                src="../../assets/img/pydenadmin/logo_light.png"
-                alt="navbar brand"
-                class="navbar-brand"
-                height="20"
-              />
+            <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                height="20" />
             </a>
             <div class="nav-toggle">
               <button class="btn btn-toggle toggle-sidebar">
@@ -123,1718 +575,835 @@
             </button>
           </div>
         </div>
-        <div class="sidebar-wrapper scrollbar scrollbar-inner">
-          <div class="sidebar-content">
-            <ul class="nav nav-secondary">
-              <li class="nav-section">
-                <span class="sidebar-mini-icon"
-                  ><i class="fa fa-ellipsis-h"></i
-                ></span>
-                <h4 class="text-section">Transporte Escolar</h4>
-              </li>
-              <li class="nav-item">
-                <a href="../../pages/transporte-escolar/dashboard-escolar.html">
-                  <i class="fas fa-tachometer-alt"></i>
-                  <p>Dashboard Escolar</p>
-                </a>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teAlunos"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-user-graduate"></i>
-                  <p>Alunos</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teAlunos">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html"
-                      >
-                        <span class="sub-item"
-                          >Listar Solicitações de Transporte</span
-                        >
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/alunos-listar.html"
-                      >
-                        <span class="sub-item">Listar ALunos</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teMotoristas"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-id-card"></i>
-                  <p>Motoristas</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teMotoristas">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/motoristas-listar.html"
-                      >
-                        <span class="sub-item">Listar Motoristas</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/motoristas-licencas.html"
-                      >
-                        <span class="sub-item">Licenças e Certificações</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teMonitores"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-user-check"></i>
-                  <p>Monitores</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teMonitores">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/monitores-listar.html"
-                      >
-                        <span class="sub-item">Listar Monitores</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teVeiculos"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-bus"></i>
-                  <p>Veículos</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teVeiculos">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/veiculos-listar.html"
-                      >
-                        <span class="sub-item">Listar Veículos</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/veiculos-manutencao.html"
-                      >
-                        <span class="sub-item">Manutenção</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/veiculos-documentacao.html"
-                      >
-                        <span class="sub-item">Documentação e Seguros</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teRotas"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-route"></i>
-                  <p>Rotas</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teRotas">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/rotas-listar.html"
-                      >
-                        <span class="sub-item">Listar Rotas</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/pontos-cadastrar.html"
-                      >
-                        <span class="sub-item">Pontos de Parada</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teRelatorios"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-chart-line"></i>
-                  <p>Relatórios</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teRelatorios">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/relatorios-mensais.html"
-                      >
-                        <span class="sub-item">Mensais</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/relatorios-rotas.html"
-                      >
-                        <span class="sub-item">Por Rota</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/relatorios-comparativos.html"
-                      >
-                        <span class="sub-item">Comparativos</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teZoneamento"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-school"></i>
-                  <p>Zoneamento</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teZoneamento">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/zoneamento-listar.html"
-                      >
-                        <span class="sub-item">Listar Zoneamento</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/zoneamento-cadastrar.html"
-                      >
-                        <span class="sub-item">Cadastrar Zoneamento</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teEscolas"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-school"></i>
-                  <p>Escolas</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teEscolas">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/escolas-listar.html"
-                      >
-                        <span class="sub-item">Listar Escolas</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#teFornecedores"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-truck-loading"></i>
-                  <p>Fornecedores</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="teFornecedores">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/fornecedores-listar.html"
-                      >
-                        <span class="sub-item">Listar Fornecedores</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-escolar/fornecedores-cadastrar.html"
-                      >
-                        <span class="sub-item">Cadastrar Fornecedor</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
 
-              <li class="nav-section">
-                <span class="sidebar-mini-icon"
-                  ><i class="fa fa-ellipsis-h"></i
-                ></span>
-                <h4 class="text-section">Transporte Administrativo</h4>
-              </li>
-              <li class="nav-item">
-                <a
-                  href="../../pages/transporte-administrativo/dashboard-administrativo.html"
-                >
-                  <i class="fas fa-tachometer-alt"></i>
-                  <p>Dashboard Administrativo</p>
+        <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+          <div class="container-fluid">
+            <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-envelope"></i>
                 </a>
+                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
+                  <li>
+                    <div class="dropdown-title d-flex justify-content-between align-items-center">
+                      Mensagens
+                      <a href="#" class="small">Marcar todas como lidas</a>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="message-notif-scroll scrollbar-outer">
+                      <div class="notif-center">
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="subject">Jimmy Denis</span>
+                            <span class="block">Como você está?</span>
+                            <span class="time">Há 5 minutos</span>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);">
+                      Ver todas as mensagens
+                      <i class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
               </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taFuncionarios"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-users-cog"></i>
-                  <p>Funcionários</p>
-                  <span class="caret"></span>
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-bell"></i>
+                  <span class="notification" id="notifCount">0</span>
                 </a>
-                <div class="collapse" id="taFuncionarios">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/funcionarios-listar.html"
-                      >
-                        <span class="sub-item">Listar Funcionários</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/funcionarios-cadastrar.html"
-                      >
-                        <span class="sub-item">Cadastrar Funcionário</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/funcionarios-cargos.html"
-                      >
-                        <span class="sub-item">Funções e Cargos</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/funcionarios-visualizar.html"
-                      >
-                        <span class="sub-item">Visualizar Funcionário</span>
-                      </a>
-                    </li>
-                  </ul>
+                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
+                  <li>
+                    <div class="dropdown-title" id="notifTitle">
+                      Você não tem novas notificações
+                    </div>
+                  </li>
+                  <li>
+                    <div class="notif-scroll scrollbar-outer">
+                      <div class="notif-center" id="notifList"></div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
+                      Ver todas as notificações
+                      <i class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-layer-group"></i>
+                </a>
+                <div class="dropdown-menu quick-actions animated fadeIn">
+                  <div class="quick-actions-header">
+                    <span class="title mb-1">Ações Rápidas</span>
+                    <span class="subtitle op-7">Atalhos</span>
+                  </div>
+                  <div class="quick-actions-scroll scrollbar-outer">
+                    <div class="quick-actions-items">
+                      <div class="row m-0">
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-primary rounded-circle">
+                              <i class="fas fa-school"></i>
+                            </div>
+                            <span class="text">Cad. Escola</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/monitores-cadastrar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-success rounded-circle">
+                              <i class="fas fa-user-check"></i>
+                            </div>
+                            <span class="text">Cad. Monitor</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/rotas-listar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-warning rounded-circle">
+                              <i class="fas fa-route"></i>
+                            </div>
+                            <span class="text">Listar Rotas</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-administrativo/frota-listar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-info rounded-circle">
+                              <i class="fas fa-warehouse"></i>
+                            </div>
+                            <span class="text">Listar Frota</span>
+                          </div>
+                        </a>
+                        <!-- ... -->
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taMotoristas"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-id-card"></i>
-                  <p>Motoristas</p>
-                  <span class="caret"></span>
+              <li class="nav-item topbar-user dropdown hidden-caret">
+                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                  <div class="avatar-sm">
+                    <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
+                  </div>
+                  <span class="profile-username">
+                    <span class="op-7">Olá,</span>
+                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
+                  </span>
                 </a>
-                <div class="collapse" id="taMotoristas">
-                  <ul class="nav nav-collapse">
+                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                  <div class="dropdown-user-scroll scrollbar-outer">
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/motoristas-listar.html"
-                      >
-                        <span class="sub-item">Listar Motoristas</span>
-                      </a>
+                      <div class="user-box">
+                        <div class="avatar-lg">
+                          <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
+                        </div>
+                        <div class="u-text">
+                          <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
+                          <p class="text-muted" id="dropdownUserEmail">
+                            email@exemplo.com
+                          </p>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
+                            Perfil</a>
+                        </div>
+                      </div>
                     </li>
                     <li>
-                      <a
-                        href="../../pages/transporte-administrativo/motoristas-cadastrar.html"
-                      >
-                        <span class="sub-item">Cadastrar Motorista</span>
-                      </a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu Perfil</a>
+                      <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/configuracoes.html">Configurações</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
                     </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/motoristas-licencas.html"
-                      >
-                        <span class="sub-item">Licenças e Certificações</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+                  </div>
+                </ul>
               </li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+
+      <div class="container">
+        <div class="page-inner">
+          <div class="page-header">
+            <h3 class="fw-bold mb-3">Definir Rotas</h3>
+            <ul class="breadcrumbs mb-3">
+              <li class="nav-home">
+                <a href="../../"><i class="icon-home"></i></a>
+              </li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Rotas</a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Listar / Cadastrar</a></li>
+            </ul>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <h4 class="card-title mb-0">Rotas Cadastradas</h4>
+                </div>
+                <div class="card-body">
+                  <div class="mb-2 text-end">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaRota">
+                      <i class="fa fa-plus"></i> Nova Rota
+                    </button>
+                  </div>
+
+                  <div class="table-responsive">
+                    <table id="rotas-table" class="display table table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Identificador</th>
+                          <th>Descrição</th>
+                          <th>Zona</th>
+                          <th>Zoneamentos (Pontos)</th>
+                          <th>Escolas</th>
+                          <th>Fornecedores</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tfoot>
+                        <tr>
+                          <th>Identificador</th>
+                          <th>Descrição</th>
+                          <th>Zona</th>
+                          <th>Zoneamentos (Pontos)</th>
+                          <th>Escolas</th>
+                          <th>Fornecedores</th>
+                          <th>Ações</th>
+                        </tr>
+                      </tfoot>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="card-footer text-right">
+                  <div class="dropdown dropdown-download">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                      Exportar Todas
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a class="dropdown-item" href="#" onclick="downloadAll('kml')">Baixar em KML</a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="#" onclick="downloadAll('kmz')">Baixar em KMZ</a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="#" onclick="downloadAll('gpx')">Baixar em GPX</a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <div class="container-fluid d-flex justify-content-between">
+          <nav class="pull-left">
+            <ul class="nav">
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taMonitores"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-user-check"></i>
-                  <p>Monitores</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="taMonitores">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/monitores-listar.html"
-                      >
-                        <span class="sub-item">Listar Monitores</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/monitores-cadastrar.html"
-                      >
-                        <span class="sub-item">Cadastrar Monitor</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+                <a class="nav-link" href="#">ThemeKita</a>
               </li>
+              <li class="nav-item"><a class="nav-link" href="#">Help</a></li>
               <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taFrota"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-warehouse"></i>
-                  <p>Frota Administrativa</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="taFrota">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/frota-listar.html"
-                      >
-                        <span class="sub-item">Listar Frota</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/frota-manutencao.html"
-                      >
-                        <span class="sub-item">Manutenção</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/frota-rotas.html"
-                      >
-                        <span class="sub-item">Rotas Internas</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+                <a class="nav-link" href="#">Licenses</a>
               </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taAgenda"
-                  aria-expanded="false"
-                >
-                  <i class="far fa-calendar-alt"></i>
-                  <p>Agenda de Viagens</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="taAgenda">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/agenda-viagens-listar.html"
-                      >
-                        <span class="sub-item">Listar Viagens</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/agenda-viagens-nova.html"
-                      >
-                        <span class="sub-item">Agendar Nova Viagem</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/agenda-viagens-historico.html"
-                      >
-                        <span class="sub-item">Histórico de Viagens</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+            </ul>
+          </nav>
+          <div class="copyright">
+            2024, made with <i class="fa fa-heart heart text-danger"></i> by
+            <a href="http://www.themekita.com">ThemeKita</a>
+          </div>
+          <div>
+            Distributed by
+            <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- MODAL NOVA ROTA -->
+  <div class="modal fade" id="modalNovaRota" tabindex="-1" aria-labelledby="modalNovaRotaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalNovaRotaLabel">
+            Cadastrar Nova Rota
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <button id="startMarkerBtn" class="btn btn-primary mb-2">
+              Definir Ponto de Partida/Chegada
+            </button>
+            <div id="map-modal-create"></div>
+          </div>
+          <hr />
+          <form id="formDadosRota">
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label for="identificador" class="form-label">Identificador</label>
+                <input type="text" class="form-control" id="identificador" name="identificador" required />
+              </div>
+              <div class="col-md-9 mb-3">
+                <label for="descricao" class="form-label">Descrição da Rota</label>
+                <input type="text" class="form-control" id="descricao" name="descricao" required />
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="area_zona" class="form-label">É zona rural ou urbana?</label>
+              <select class="form-control" id="area_zona" name="area_zona" required>
+                <option value="URBANA">Urbana</option>
+                <option value="RURAL">Rural</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="fornecedoresBuscar" class="form-label">Pesquisar Fornecedores</label>
+              <input type="text" class="form-control" id="fornecedoresBuscar"
+                placeholder="Digite para filtrar fornecedores..." />
+              <div id="listaFornecedores" style="
+                    max-height: 200px;
+                    overflow-y: auto;
+                    border: 1px solid #ccc;
+                    margin-top: 10px;
+                    padding: 5px;
+                  "></div>
+            </div>
+
+            <input type="hidden" id="partidaLat" name="partidaLat" />
+            <input type="hidden" id="partidaLng" name="partidaLng" />
+            <input type="hidden" id="pontosParadaSelecionados" name="pontosParadaSelecionados" />
+            <input type="hidden" id="escolasSelecionadas" name="escolasSelecionadas" />
+            <input type="hidden" id="fornecedoresSelecionados" name="fornecedoresSelecionados" />
+
+            <div class="mt-3">
+              <strong>Legenda:</strong>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/ms/icons/green-dot.png" alt="Partida/Chegada" />
+                Ponto de Partida/Chegada
+              </div>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/kml/pal3/icon56.png" alt="Escola" />
+                Escola (clique para selecionar)
+              </div>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/kml/pal2/icon13.png" alt="Ponto de Parada" />
+                Ponto de Parada (clique para selecionar)
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-success mt-4">
+              Salvar Rota
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR ROTA -->
+  <div class="modal fade" id="modalEditarRota" tabindex="-1" aria-labelledby="modalEditarRotaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarRotaLabel">Editar Rota</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <button id="editStartMarkerBtn" class="btn btn-primary mb-2">
+              Redefinir Ponto de Partida/Chegada
+            </button>
+            <div id="map-modal-edit"></div>
+          </div>
+          <hr />
+          <form id="formEditarRota">
+            <input type="hidden" id="editRotaId" />
+
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label for="editIdentificador" class="form-label">Identificador</label>
+                <input type="text" class="form-control" id="editIdentificador" required />
+              </div>
+              <div class="col-md-9 mb-3">
+                <label for="editDescricao" class="form-label">Descrição da Rota</label>
+                <input type="text" class="form-control" id="editDescricao" required />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="editAreaZona" class="form-label">É zona rural ou urbana?</label>
+              <select class="form-control" id="editAreaZona" required>
+                <option value="URBANA">Urbana</option>
+                <option value="RURAL">Rural</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="editFornecedoresBuscar" class="form-label">Pesquisar Fornecedores</label>
+              <input type="text" class="form-control" id="editFornecedoresBuscar"
+                placeholder="Digite para filtrar fornecedores..." />
+              <div id="editListaFornecedores" style="
+                    max-height: 200px;
+                    overflow-y: auto;
+                    border: 1px solid #ccc;
+                    margin-top: 10px;
+                    padding: 5px;
+                  "></div>
+            </div>
+
+            <input type="hidden" id="editPartidaLat" />
+            <input type="hidden" id="editPartidaLng" />
+            <input type="hidden" id="editPontosParadaSelecionados" />
+            <input type="hidden" id="editEscolasSelecionadas" />
+            <input type="hidden" id="editFornecedoresSelecionados" />
+
+            <div class="mt-3">
+              <strong>Legenda:</strong>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/ms/icons/green-dot.png" alt="Partida/Chegada" />
+                Ponto de Partida/Chegada
+              </div>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/kml/pal3/icon56.png" alt="Escola" />
+                Escola (clique para adicionar/remover)
+              </div>
+              <div class="legend-marker">
+                <img src="https://maps.google.com/mapfiles/kml/pal2/icon13.png" alt="Ponto de Parada" />
+                Ponto de Parada (clique para adicionar/remover)
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-success mt-4">
+              Salvar Alterações
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL VIEW ROTA -->
+  <div class="modal fade" id="viewRouteModal" tabindex="-1" aria-labelledby="viewRouteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" style="max-width: 90%">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="viewRouteModalLabel">
+            Visualizar Rota
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div id="map-modal-view"></div>
+          <hr />
+          <div class="dropdown-download">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              Exportar Rota
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" href="#" id="downloadKml">Baixar em KML</a>
               </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taLogistica"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-truck-loading"></i>
-                  <p>Logística Interna</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="taLogistica">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/logistica-materiais.html"
-                      >
-                        <span class="sub-item">Transporte de Materiais</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/logistica-manutencoes.html"
-                      >
-                        <span class="sub-item">Agendamento Manutenção</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/logistica-suprimentos.html"
-                      >
-                        <span class="sub-item">Controle de Suprimentos</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+              <li>
+                <a class="dropdown-item" href="#" id="downloadKmz">Baixar em KMZ</a>
               </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#taRelatorios"
-                  aria-expanded="false"
-                >
-                  <i class="fas fa-chart-pie"></i>
-                  <p>Relatórios</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="taRelatorios">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/gerar-memorando.html"
-                      >
-                        <span class="sub-item">Gerar Memorando</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-eficiencia.html"
-                      >
-                        <span class="sub-item">Eficiência</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-custos.html"
-                      >
-                        <span class="sub-item">Custos Operacionais</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-comparativos.html"
-                      >
-                        <span class="sub-item">Comparativos</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-mensais.html"
-                      >
-                        <span class="sub-item">Mensais</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/transporte-administrativo/relatorios-rotas.html"
-                      >
-                        <span class="sub-item">Por Rota</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-              <li class="nav-section">
-                <span class="sidebar-mini-icon"
-                  ><i class="fa fa-ellipsis-h"></i
-                ></span>
-                <h4 class="text-section">Financeiro</h4>
-              </li>
-              <li class="nav-item">
-                <a
-                  data-bs-toggle="collapse"
-                  href="#finRelatorios"
-                  aria-expanded="false"
-                >
-                  <i class="far fa-chart-bar"></i>
-                  <p>Relatórios Financeiros</p>
-                  <span class="caret"></span>
-                </a>
-                <div class="collapse" id="finRelatorios">
-                  <ul class="nav nav-collapse">
-                    <li>
-                      <a href="../../pages/financeiro/relatorios-mensal.html">
-                        <span class="sub-item">Relatório Mensal</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/financeiro/relatorios-custos-setor.html"
-                      >
-                        <span class="sub-item">Custos por Setor</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="../../pages/financeiro/relatorios-comparativos.html"
-                      >
-                        <span class="sub-item">Comparativos</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+              <li>
+                <a class="dropdown-item" href="#" id="downloadGpx">Baixar em GPX</a>
               </li>
             </ul>
           </div>
         </div>
       </div>
-
-      <div class="main-panel">
-        <div class="main-header" style="top: 0">
-          <div class="main-header-logo">
-            <div class="logo-header" data-background-color="dark">
-              <a
-                href="../../pages/transporte-escolar/dashboard-escolar.html"
-                class="logo"
-              >
-                <img
-                  src="../../assets/img/pydenadmin/logo_light.png"
-                  alt="navbar brand"
-                  class="navbar-brand"
-                  height="20"
-                />
-              </a>
-              <div class="nav-toggle">
-                <button class="btn btn-toggle toggle-sidebar">
-                  <i class="gg-menu-right"></i>
-                </button>
-                <button class="btn btn-toggle sidenav-toggler">
-                  <i class="gg-menu-left"></i>
-                </button>
-              </div>
-              <button class="topbar-toggler more">
-                <i class="gg-more-vertical-alt"></i>
-              </button>
-            </div>
-          </div>
-
-          <nav
-            class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom"
-          >
-            <div class="container-fluid">
-              <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-                <li class="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="#"
-                    id="messageDropdown"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <i class="fa fa-envelope"></i>
-                  </a>
-                  <ul
-                    class="dropdown-menu messages-notif-box animated fadeIn"
-                    aria-labelledby="messageDropdown"
-                  >
-                    <li>
-                      <div
-                        class="dropdown-title d-flex justify-content-between align-items-center"
-                      >
-                        Mensagens
-                        <a href="#" class="small">Marcar todas como lidas</a>
-                      </div>
-                    </li>
-                    <li>
-                      <div class="message-notif-scroll scrollbar-outer">
-                        <div class="notif-center">
-                          <a href="#">
-                            <div class="notif-img">
-                              <img
-                                src="../../assets/img/jm_denis.jpg"
-                                alt="Img Profile"
-                              />
-                            </div>
-                            <div class="notif-content">
-                              <span class="subject">Jimmy Denis</span>
-                              <span class="block">Como você está?</span>
-                              <span class="time">Há 5 minutos</span>
-                            </div>
-                          </a>
-                        </div>
-                      </div>
-                    </li>
-                    <li>
-                      <a class="see-all" href="javascript:void(0);">
-                        Ver todas as mensagens
-                        <i class="fa fa-angle-right"></i>
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-                <li class="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="#"
-                    id="notifDropdown"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <i class="fa fa-bell"></i>
-                    <span class="notification" id="notifCount">0</span>
-                  </a>
-                  <ul
-                    class="dropdown-menu notif-box animated fadeIn"
-                    aria-labelledby="notifDropdown"
-                  >
-                    <li>
-                      <div class="dropdown-title" id="notifTitle">
-                        Você não tem novas notificações
-                      </div>
-                    </li>
-                    <li>
-                      <div class="notif-scroll scrollbar-outer">
-                        <div class="notif-center" id="notifList"></div>
-                      </div>
-                    </li>
-                    <li>
-                      <a
-                        class="see-all"
-                        href="javascript:void(0);"
-                        id="notifSeeAll"
-                      >
-                        Ver todas as notificações
-                        <i class="fa fa-angle-right"></i>
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-                <li class="nav-item topbar-icon dropdown hidden-caret">
-                  <a
-                    class="nav-link dropdown-toggle"
-                    href="#"
-                    id="quickActionsDropdown"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    <i class="fas fa-layer-group"></i>
-                  </a>
-                  <div class="dropdown-menu quick-actions animated fadeIn">
-                    <div class="quick-actions-header">
-                      <span class="title mb-1">Ações Rápidas</span>
-                      <span class="subtitle op-7">Atalhos</span>
-                    </div>
-                    <div class="quick-actions-scroll scrollbar-outer">
-                      <div class="quick-actions-items">
-                        <div class="row m-0">
-                          <a
-                            class="col-6 col-md-4 p-0"
-                            href="/pages/transporte-escolar/escolas-cadastrar.html"
-                          >
-                            <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-primary rounded-circle"
-                              >
-                                <i class="fas fa-school"></i>
-                              </div>
-                              <span class="text">Cad. Escola</span>
-                            </div>
-                          </a>
-                          <a
-                            class="col-6 col-md-4 p-0"
-                            href="/pages/transporte-escolar/monitores-cadastrar.html"
-                          >
-                            <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-success rounded-circle"
-                              >
-                                <i class="fas fa-user-check"></i>
-                              </div>
-                              <span class="text">Cad. Monitor</span>
-                            </div>
-                          </a>
-                          <a
-                            class="col-6 col-md-4 p-0"
-                            href="/pages/transporte-escolar/rotas-listar.html"
-                          >
-                            <div class="quick-actions-item">
-                              <div
-                                class="avatar-item bg-warning rounded-circle"
-                              >
-                                <i class="fas fa-route"></i>
-                              </div>
-                              <span class="text">Listar Rotas</span>
-                            </div>
-                          </a>
-                          <a
-                            class="col-6 col-md-4 p-0"
-                            href="/pages/transporte-administrativo/frota-listar.html"
-                          >
-                            <div class="quick-actions-item">
-                              <div class="avatar-item bg-info rounded-circle">
-                                <i class="fas fa-warehouse"></i>
-                              </div>
-                              <span class="text">Listar Frota</span>
-                            </div>
-                          </a>
-                          <!-- ... -->
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-                <li class="nav-item topbar-user dropdown hidden-caret">
-                  <a
-                    class="dropdown-toggle profile-pic"
-                    data-bs-toggle="dropdown"
-                    href="#"
-                    aria-expanded="false"
-                  >
-                    <div class="avatar-sm">
-                      <img
-                        src="../../assets/img/profile.jpg"
-                        alt="..."
-                        class="avatar-img rounded-circle"
-                      />
-                    </div>
-                    <span class="profile-username">
-                      <span class="op-7">Olá,</span>
-                      <span class="fw-bold" id="dropdownUserName"
-                        >Carregando...</span
-                      >
-                    </span>
-                  </a>
-                  <ul class="dropdown-menu dropdown-user animated fadeIn">
-                    <div class="dropdown-user-scroll scrollbar-outer">
-                      <li>
-                        <div class="user-box">
-                          <div class="avatar-lg">
-                            <img
-                              src="../../assets/img/profile.jpg"
-                              alt="image profile"
-                              class="avatar-img rounded"
-                            />
-                          </div>
-                          <div class="u-text">
-                            <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
-                            <p class="text-muted" id="dropdownUserEmail">
-                              email@exemplo.com
-                            </p>
-                            <a
-                              href="/pages/usuarios/meu-perfil.html"
-                              class="btn btn-xs btn-secondary btn-sm"
-                              >Ver Perfil</a
-                            >
-                          </div>
-                        </div>
-                      </li>
-                      <li>
-                        <div class="dropdown-divider"></div>
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/meu-perfil.html"
-                          >Meu Perfil</a
-                        >
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/caixa-entrada.html"
-                          >Caixa de Entrada</a
-                        >
-                        <div class="dropdown-divider"></div>
-                        <a
-                          class="dropdown-item"
-                          href="/pages/usuarios/configuracoes.html"
-                          >Configurações</a
-                        >
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#" id="logoutLink"
-                          >Sair</a
-                        >
-                      </li>
-                    </div>
-                  </ul>
-                </li>
-              </ul>
-            </div>
-          </nav>
-        </div>
-
-        <div class="container">
-          <div class="page-inner">
-            <div class="page-header">
-              <h3 class="fw-bold mb-3">Definir Rotas</h3>
-              <ul class="breadcrumbs mb-3">
-                <li class="nav-home">
-                  <a href="../../"><i class="icon-home"></i></a>
-                </li>
-                <li class="separator"><i class="icon-arrow-right"></i></li>
-                <li class="nav-item"><a href="#">Rotas</a></li>
-                <li class="separator"><i class="icon-arrow-right"></i></li>
-                <li class="nav-item"><a href="#">Listar / Cadastrar</a></li>
-              </ul>
-            </div>
-
-            <div class="row">
-              <div class="col-md-12">
-                <div class="card">
-                  <div class="card-header">
-                    <h4 class="card-title mb-0">Rotas Cadastradas</h4>
-                  </div>
-                  <div class="card-body">
-                    <div class="mb-2 text-end">
-                      <button
-                        class="btn btn-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalNovaRota"
-                      >
-                        <i class="fa fa-plus"></i> Nova Rota
-                      </button>
-                    </div>
-
-                    <div class="table-responsive">
-                      <table
-                        id="rotas-table"
-                        class="display table table-striped table-hover"
-                      >
-                        <thead>
-                          <tr>
-                            <th>Identificador</th>
-                            <th>Descrição</th>
-                            <th>Zona</th>
-                            <th>Zoneamentos (Pontos)</th>
-                            <th>Escolas</th>
-                            <th>Fornecedores</th>
-                            <th>Ações</th>
-                          </tr>
-                        </thead>
-                        <tfoot>
-                          <tr>
-                            <th>Identificador</th>
-                            <th>Descrição</th>
-                            <th>Zona</th>
-                            <th>Zoneamentos (Pontos)</th>
-                            <th>Escolas</th>
-                            <th>Fornecedores</th>
-                            <th>Ações</th>
-                          </tr>
-                        </tfoot>
-                        <tbody></tbody>
-                      </table>
-                    </div>
-                  </div>
-                  <div class="card-footer text-right">
-                    <div class="dropdown dropdown-download">
-                      <button
-                        class="btn btn-outline-primary dropdown-toggle"
-                        type="button"
-                        data-bs-toggle="dropdown"
-                      >
-                        Exportar Todas
-                      </button>
-                      <ul class="dropdown-menu">
-                        <li>
-                          <a
-                            class="dropdown-item"
-                            href="#"
-                            onclick="downloadAll('kml')"
-                            >Baixar em KML</a
-                          >
-                        </li>
-                        <li>
-                          <a
-                            class="dropdown-item"
-                            href="#"
-                            onclick="downloadAll('kmz')"
-                            >Baixar em KMZ</a
-                          >
-                        </li>
-                        <li>
-                          <a
-                            class="dropdown-item"
-                            href="#"
-                            onclick="downloadAll('gpx')"
-                            >Baixar em GPX</a
-                          >
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <footer class="footer">
-          <div class="container-fluid d-flex justify-content-between">
-            <nav class="pull-left">
-              <ul class="nav">
-                <li class="nav-item">
-                  <a class="nav-link" href="#">ThemeKita</a>
-                </li>
-                <li class="nav-item"><a class="nav-link" href="#">Help</a></li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#">Licenses</a>
-                </li>
-              </ul>
-            </nav>
-            <div class="copyright">
-              2024, made with <i class="fa fa-heart heart text-danger"></i> by
-              <a href="http://www.themekita.com">ThemeKita</a>
-            </div>
-            <div>
-              Distributed by
-              <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
-            </div>
-          </div>
-        </footer>
-      </div>
     </div>
+  </div>
 
-    <!-- MODAL NOVA ROTA -->
-    <div
-      class="modal fade"
-      id="modalNovaRota"
-      tabindex="-1"
-      aria-labelledby="modalNovaRotaLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalNovaRotaLabel">
-              Cadastrar Nova Rota
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Fechar"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <button id="startMarkerBtn" class="btn btn-primary mb-2">
-                Definir Ponto de Partida/Chegada
-              </button>
-              <div id="map-modal-create"></div>
-            </div>
-            <hr />
-            <form id="formDadosRota">
-              <div class="row">
-                <div class="col-md-3 mb-3">
-                  <label for="identificador" class="form-label"
-                    >Identificador</label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="identificador"
-                    name="identificador"
-                    required
-                  />
-                </div>
-                <div class="col-md-9 mb-3">
-                  <label for="descricao" class="form-label"
-                    >Descrição da Rota</label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="descricao"
-                    name="descricao"
-                    required
-                  />
-                </div>
-              </div>
-              <div class="mb-3">
-                <label for="area_zona" class="form-label"
-                  >É zona rural ou urbana?</label
-                >
-                <select
-                  class="form-control"
-                  id="area_zona"
-                  name="area_zona"
-                  required
-                >
-                  <option value="URBANA">Urbana</option>
-                  <option value="RURAL">Rural</option>
-                </select>
-              </div>
+  <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+  <script src="../../assets/js/core/popper.min.js"></script>
+  <script src="../../assets/js/core/bootstrap.min.js"></script>
+  <script src="../../assets/js/usuario.js"></script>
+  <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+  <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+  <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+  <script src="../../assets/js/pydenadmin.min.js"></script>
+  <script src="../../assets/js/setting-demo2.js"></script>
 
-              <div class="mb-3">
-                <label for="fornecedoresBuscar" class="form-label"
-                  >Pesquisar Fornecedores</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="fornecedoresBuscar"
-                  placeholder="Digite para filtrar fornecedores..."
-                />
-                <div
-                  id="listaFornecedores"
-                  style="
-                    max-height: 200px;
-                    overflow-y: auto;
-                    border: 1px solid #ccc;
-                    margin-top: 10px;
-                    padding: 5px;
-                  "
-                ></div>
-              </div>
+  <script>
+    let mapCreate;
+    let startMarker = null;
+    let isPlacingStart = false;
 
-              <input type="hidden" id="partidaLat" name="partidaLat" />
-              <input type="hidden" id="partidaLng" name="partidaLng" />
-              <input
-                type="hidden"
-                id="pontosParadaSelecionados"
-                name="pontosParadaSelecionados"
-              />
-              <input
-                type="hidden"
-                id="escolasSelecionadas"
-                name="escolasSelecionadas"
-              />
-              <input
-                type="hidden"
-                id="fornecedoresSelecionados"
-                name="fornecedoresSelecionados"
-              />
+    let mapEdit;
+    let editStartMarker = null;
+    let isPlacingEditStart = false;
 
-              <div class="mt-3">
-                <strong>Legenda:</strong>
-                <div class="legend-marker">
-                  <img
-                    src="https://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                    alt="Partida/Chegada"
-                  />
-                  Ponto de Partida/Chegada
-                </div>
-                <div class="legend-marker">
-                  <img
-                    src="https://maps.google.com/mapfiles/kml/pal3/icon56.png"
-                    alt="Escola"
-                  />
-                  Escola (clique para selecionar)
-                </div>
-                <div class="legend-marker">
-                  <img
-                    src="https://maps.google.com/mapfiles/kml/pal2/icon13.png"
-                    alt="Ponto de Parada"
-                  />
-                  Ponto de Parada (clique para selecionar)
-                </div>
-              </div>
+    const iconStartEnd =
+      "https://maps.google.com/mapfiles/ms/icons/green-dot.png";
+    const iconEscola = "https://maps.google.com/mapfiles/kml/pal3/icon56.png";
+    const iconPonto = "https://maps.google.com/mapfiles/kml/pal2/icon13.png";
 
-              <button type="submit" class="btn btn-success mt-4">
-                Salvar Rota
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+    let escolasData = [];
+    let pontosData = [];
+    let fornecedoresData = [];
 
-    <!-- MODAL EDITAR ROTA -->
-    <div
-      class="modal fade"
-      id="modalEditarRota"
-      tabindex="-1"
-      aria-labelledby="modalEditarRotaLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalEditarRotaLabel">Editar Rota</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Fechar"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-3">
-              <button id="editStartMarkerBtn" class="btn btn-primary mb-2">
-                Redefinir Ponto de Partida/Chegada
-              </button>
-              <div id="map-modal-edit"></div>
-            </div>
-            <hr />
-            <form id="formEditarRota">
-              <input type="hidden" id="editRotaId" />
+    let escolaMarkers = [];
+    let pontoMarkers = [];
+    let escolasSelecionadas = [];
+    let pontosParadaSelecionados = [];
+    let fornecedoresSelecionados = [];
 
-              <div class="row">
-                <div class="col-md-3 mb-3">
-                  <label for="editIdentificador" class="form-label"
-                    >Identificador</label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="editIdentificador"
-                    required
-                  />
-                </div>
-                <div class="col-md-9 mb-3">
-                  <label for="editDescricao" class="form-label"
-                    >Descrição da Rota</label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="editDescricao"
-                    required
-                  />
-                </div>
-              </div>
+    let editEscolaMarkers = [];
+    let editPontoMarkers = [];
+    let editEscolasSelecionadas = [];
+    let editPontosParadaSelecionados = [];
+    let editFornecedoresSelecionados = [];
+    let editRotasEscolasData = [];
+    let editRotasPontosData = [];
 
-              <div class="mb-3">
-                <label for="editAreaZona" class="form-label"
-                  >É zona rural ou urbana?</label
-                >
-                <select class="form-control" id="editAreaZona" required>
-                  <option value="URBANA">Urbana</option>
-                  <option value="RURAL">Rural</option>
-                </select>
-              </div>
+    let modalMapView = null;
+    let directionsService = null;
+    let directionsRenderer = null;
+    let currentRotaId = null;
+    let rotasTable;
 
-              <div class="mb-3">
-                <label for="editFornecedoresBuscar" class="form-label"
-                  >Pesquisar Fornecedores</label
-                >
-                <input
-                  type="text"
-                  class="form-control"
-                  id="editFornecedoresBuscar"
-                  placeholder="Digite para filtrar fornecedores..."
-                />
-                <div
-                  id="editListaFornecedores"
-                  style="
-                    max-height: 200px;
-                    overflow-y: auto;
-                    border: 1px solid #ccc;
-                    margin-top: 10px;
-                    padding: 5px;
-                  "
-                ></div>
-              </div>
+    function showNotification(type, message) {
+      let icon = "fa fa-bell";
+      if (type === "success") icon = "fa fa-check-circle";
+      else if (type === "danger") icon = "fa fa-exclamation-circle";
+      else if (type === "warning") icon = "fa fa-exclamation-triangle";
+      else if (type === "info") icon = "fa fa-info-circle";
 
-              <input type="hidden" id="editPartidaLat" />
-              <input type="hidden" id="editPartidaLng" />
-              <input type="hidden" id="editPontosParadaSelecionados" />
-              <input type="hidden" id="editEscolasSelecionadas" />
-              <input type="hidden" id="editFornecedoresSelecionados" />
+      $.notify(
+        { icon: icon, message: message },
+        {
+          type: type,
+          placement: { from: "top", align: "right" },
+          offset: 20,
+          spacing: 10,
+          z_index: 1031,
+          delay: 3000,
+          timer: 1000,
+          animate: {
+            enter: "animated fadeInDown",
+            exit: "animated fadeOutUp",
+          },
+        }
+      );
+    }
 
-              <div class="mt-3">
-                <strong>Legenda:</strong>
-                <div class="legend-marker">
-                  <img
-                    src="https://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                    alt="Partida/Chegada"
-                  />
-                  Ponto de Partida/Chegada
-                </div>
-                <div class="legend-marker">
-                  <img
-                    src="https://maps.google.com/mapfiles/kml/pal3/icon56.png"
-                    alt="Escola"
-                  />
-                  Escola (clique para adicionar/remover)
-                </div>
-                <div class="legend-marker">
-                  <img
-                    src="https://maps.google.com/mapfiles/kml/pal2/icon13.png"
-                    alt="Ponto de Parada"
-                  />
-                  Ponto de Parada (clique para adicionar/remover)
-                </div>
-              </div>
+    function loadEscolasEPontos() {
+      const escolasPromise = fetch("/api/escolas").then((r) => r.json());
+      const pontosPromise = fetch("/api/pontos").then((r) => r.json());
+      const fornecedoresPromise = fetch("/api/fornecedores").then((r) =>
+        r.json()
+      );
+      Promise.all([escolasPromise, pontosPromise, fornecedoresPromise])
+        .then(([escData, ptData, fornData]) => {
+          escolasData = escData;
+          pontosData = ptData;
+          fornecedoresData = fornData;
+          placeEscolas();
+          initFornecedoresList();
+        })
+        .catch((err) => {
+          console.error(err);
+          showNotification(
+            "danger",
+            "Erro ao carregar Escolas, Pontos ou Fornecedores."
+          );
+        });
+    }
 
-              <button type="submit" class="btn btn-success mt-4">
-                Salvar Alterações
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+    function placeEscolas() {
+      escolasData.forEach((escola) => {
+        if (!escola.latitude || !escola.longitude) return;
+        const lat = parseFloat(escola.latitude);
+        const lng = parseFloat(escola.longitude);
+        if (isNaN(lat) || isNaN(lng)) return;
 
-    <!-- MODAL VIEW ROTA -->
-    <div
-      class="modal fade"
-      id="viewRouteModal"
-      tabindex="-1"
-      aria-labelledby="viewRouteModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog modal-xl" style="max-width: 90%">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="viewRouteModalLabel">
-              Visualizar Rota
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Fechar"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <div id="map-modal-view"></div>
-            <hr />
-            <div class="dropdown-download">
-              <button
-                class="btn btn-outline-secondary dropdown-toggle"
-                type="button"
-                data-bs-toggle="dropdown"
-              >
-                Exportar Rota
-              </button>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" href="#" id="downloadKml"
-                    >Baixar em KML</a
-                  >
-                </li>
-                <li>
-                  <a class="dropdown-item" href="#" id="downloadKmz"
-                    >Baixar em KMZ</a
-                  >
-                </li>
-                <li>
-                  <a class="dropdown-item" href="#" id="downloadGpx"
-                    >Baixar em GPX</a
-                  >
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        const marker = new google.maps.Marker({
+          position: { lat, lng },
+          map: mapCreate,
+          icon: iconEscola,
+          title: escola.nome,
+        });
+        escolaMarkers.push(marker);
 
-    <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
-    <script src="../../assets/js/core/popper.min.js"></script>
-    <script src="../../assets/js/core/bootstrap.min.js"></script>
-    <script src="../../assets/js/usuario.js"></script>
-    <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
-    <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
-    <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
-    <script src="../../assets/js/pydenadmin.min.js"></script>
-    <script src="../../assets/js/setting-demo2.js"></script>
-
-    <script>
-      let mapCreate;
-      let startMarker = null;
-      let isPlacingStart = false;
-
-      let mapEdit;
-      let editStartMarker = null;
-      let isPlacingEditStart = false;
-
-      const iconStartEnd =
-        "https://maps.google.com/mapfiles/ms/icons/green-dot.png";
-      const iconEscola = "https://maps.google.com/mapfiles/kml/pal3/icon56.png";
-      const iconPonto = "https://maps.google.com/mapfiles/kml/pal2/icon13.png";
-
-      let escolasData = [];
-      let pontosData = [];
-      let fornecedoresData = [];
-
-      let escolaMarkers = [];
-      let pontoMarkers = [];
-      let escolasSelecionadas = [];
-      let pontosParadaSelecionados = [];
-      let fornecedoresSelecionados = [];
-
-      let editEscolaMarkers = [];
-      let editPontoMarkers = [];
-      let editEscolasSelecionadas = [];
-      let editPontosParadaSelecionados = [];
-      let editFornecedoresSelecionados = [];
-      let editRotasEscolasData = [];
-      let editRotasPontosData = [];
-
-      let modalMapView = null;
-      let directionsService = null;
-      let directionsRenderer = null;
-      let currentRotaId = null;
-      let rotasTable;
-
-      function showNotification(type, message) {
-        let icon = "fa fa-bell";
-        if (type === "success") icon = "fa fa-check-circle";
-        else if (type === "danger") icon = "fa fa-exclamation-circle";
-        else if (type === "warning") icon = "fa fa-exclamation-triangle";
-        else if (type === "info") icon = "fa fa-info-circle";
-
-        $.notify(
-          { icon: icon, message: message },
-          {
-            type: type,
-            placement: { from: "top", align: "right" },
-            offset: 20,
-            spacing: 10,
-            z_index: 1031,
-            delay: 3000,
-            timer: 1000,
-            animate: {
-              enter: "animated fadeInDown",
-              exit: "animated fadeOutUp",
-            },
-          }
-        );
-      }
-
-      function loadEscolasEPontos() {
-        const escolasPromise = fetch("/api/escolas").then((r) => r.json());
-        const pontosPromise = fetch("/api/pontos").then((r) => r.json());
-        const fornecedoresPromise = fetch("/api/fornecedores").then((r) =>
-          r.json()
-        );
-        Promise.all([escolasPromise, pontosPromise, fornecedoresPromise])
-          .then(([escData, ptData, fornData]) => {
-            escolasData = escData;
-            pontosData = ptData;
-            fornecedoresData = fornData;
-            placeEscolas();
-            initFornecedoresList();
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification(
-              "danger",
-              "Erro ao carregar Escolas, Pontos ou Fornecedores."
+        marker.addListener("click", () => {
+          if (!escolasSelecionadas.includes(escola.id)) {
+            escolasSelecionadas.push(escola.id);
+            showNotification("info", `Escola "${escola.nome}" selecionada!`);
+          } else {
+            escolasSelecionadas = escolasSelecionadas.filter(
+              (id) => id !== escola.id
             );
-          });
-      }
+            showNotification(
+              "warning",
+              `Escola "${escola.nome}" removida da seleção!`
+            );
+          }
+          reloadPontos();
+        });
+      });
+    }
 
-      function placeEscolas() {
-        escolasData.forEach((escola) => {
-          if (!escola.latitude || !escola.longitude) return;
-          const lat = parseFloat(escola.latitude);
-          const lng = parseFloat(escola.longitude);
+    function reloadPontos() {
+      pontoMarkers.forEach((m) => m.setMap(null));
+      pontoMarkers = [];
+      // MANTER os pontos já selecionados caso queira,
+      // mas se quiser limpar sempre, faça:
+      pontosParadaSelecionados = [];
+
+      if (escolasSelecionadas.length === 0) return;
+
+      const zoneSet = new Set();
+      escolasSelecionadas.forEach((eId) => {
+        const esc = escolasData.find((e) => e.id == eId);
+        if (esc && esc.zoneamentos) {
+          esc.zoneamentos.forEach((z) => {
+            zoneSet.add(z.id);
+          });
+        }
+      });
+
+      pontosData.forEach((p) => {
+        // Evitar erro se zoneamentos for undefined
+        const ptZoneamentos = p.zoneamentos || [];
+        const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
+        if (hasZone) {
+          const lat = parseFloat(p.latitude);
+          const lng = parseFloat(p.longitude);
           if (isNaN(lat) || isNaN(lng)) return;
 
           const marker = new google.maps.Marker({
             position: { lat, lng },
             map: mapCreate,
-            icon: iconEscola,
-            title: escola.nome,
+            icon: iconPonto,
+            title: p.nome_ponto,
           });
-          escolaMarkers.push(marker);
+          pontoMarkers.push(marker);
 
           marker.addListener("click", () => {
-            if (!escolasSelecionadas.includes(escola.id)) {
-              escolasSelecionadas.push(escola.id);
-              showNotification("info", `Escola "${escola.nome}" selecionada!`);
+            if (!pontosParadaSelecionados.includes(p.id)) {
+              pontosParadaSelecionados.push(p.id);
+              showNotification(
+                "info",
+                `Ponto "${p.nome_ponto}" adicionado à rota!`
+              );
             } else {
-              escolasSelecionadas = escolasSelecionadas.filter(
-                (id) => id !== escola.id
+              pontosParadaSelecionados = pontosParadaSelecionados.filter(
+                (id) => id !== p.id
               );
               showNotification(
                 "warning",
-                `Escola "${escola.nome}" removida da seleção!`
+                `Ponto "${p.nome_ponto}" removido da rota!`
               );
             }
-            reloadPontos();
           });
-        });
-      }
+        }
+      });
+    }
 
-      function reloadPontos() {
-        pontoMarkers.forEach((m) => m.setMap(null));
-        pontoMarkers = [];
-        // MANTER os pontos já selecionados caso queira,
-        // mas se quiser limpar sempre, faça:
-        pontosParadaSelecionados = [];
-
-        if (escolasSelecionadas.length === 0) return;
-
-        const zoneSet = new Set();
-        escolasSelecionadas.forEach((eId) => {
-          const esc = escolasData.find((e) => e.id == eId);
-          if (esc && esc.zoneamentos) {
-            esc.zoneamentos.forEach((z) => {
-              zoneSet.add(z.id);
-            });
-          }
-        });
-
-        pontosData.forEach((p) => {
-          // Evitar erro se zoneamentos for undefined
-          const ptZoneamentos = p.zoneamentos || [];
-          const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
-          if (hasZone) {
-            const lat = parseFloat(p.latitude);
-            const lng = parseFloat(p.longitude);
-            if (isNaN(lat) || isNaN(lng)) return;
-
-            const marker = new google.maps.Marker({
-              position: { lat, lng },
-              map: mapCreate,
-              icon: iconPonto,
-              title: p.nome_ponto,
-            });
-            pontoMarkers.push(marker);
-
-            marker.addListener("click", () => {
-              if (!pontosParadaSelecionados.includes(p.id)) {
-                pontosParadaSelecionados.push(p.id);
-                showNotification(
-                  "info",
-                  `Ponto "${p.nome_ponto}" adicionado à rota!`
-                );
-              } else {
-                pontosParadaSelecionados = pontosParadaSelecionados.filter(
-                  (id) => id !== p.id
-                );
-                showNotification(
-                  "warning",
-                  `Ponto "${p.nome_ponto}" removido da rota!`
-                );
-              }
-            });
-          }
-        });
-      }
-
-      function initFornecedoresList() {
-        const lista = document.getElementById("listaFornecedores");
-        lista.innerHTML = "";
-        fornecedoresData.forEach((forn) => {
-          const item = document.createElement("div");
-          item.style.padding = "5px";
-          item.style.cursor = "pointer";
-          item.innerHTML = `
+    function initFornecedoresList() {
+      const lista = document.getElementById("listaFornecedores");
+      lista.innerHTML = "";
+      fornecedoresData.forEach((forn) => {
+        const item = document.createElement("div");
+        item.style.padding = "5px";
+        item.style.cursor = "pointer";
+        item.innerHTML = `
             <input type="checkbox" data-id="${forn.id}" style="margin-right:5px;" />
             <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
           `;
-          item.querySelector("input").addEventListener("change", function () {
-            const fid = parseInt(this.getAttribute("data-id"), 10);
-            if (this.checked) {
-              if (!fornecedoresSelecionados.includes(fid)) {
-                fornecedoresSelecionados.push(fid);
-              }
-            } else {
-              fornecedoresSelecionados = fornecedoresSelecionados.filter(
-                (x) => x !== fid
-              );
+        item.querySelector("input").addEventListener("change", function () {
+          const fid = parseInt(this.getAttribute("data-id"), 10);
+          if (this.checked) {
+            if (!fornecedoresSelecionados.includes(fid)) {
+              fornecedoresSelecionados.push(fid);
             }
-          });
-          lista.appendChild(item);
+          } else {
+            fornecedoresSelecionados = fornecedoresSelecionados.filter(
+              (x) => x !== fid
+            );
+          }
         });
+        lista.appendChild(item);
+      });
 
-        document
-          .getElementById("fornecedoresBuscar")
-          .addEventListener("keyup", function () {
-            const search = this.value.toLowerCase();
-            const children = lista.querySelectorAll("div");
-            children.forEach((child) => {
-              const txt = child.innerText.toLowerCase();
-              child.style.display = txt.includes(search) ? "block" : "none";
-            });
+      document
+        .getElementById("fornecedoresBuscar")
+        .addEventListener("keyup", function () {
+          const search = this.value.toLowerCase();
+          const children = lista.querySelectorAll("div");
+          children.forEach((child) => {
+            const txt = child.innerText.toLowerCase();
+            child.style.display = txt.includes(search) ? "block" : "none";
           });
+        });
+    }
+
+    function initMapCreate() {
+      mapCreate = new google.maps.Map(
+        document.getElementById("map-modal-create"),
+        {
+          center: { lat: -6.530066, lng: -49.85163 },
+          zoom: 13,
+          mapTypeId: "roadmap",
+        }
+      );
+
+      loadEscolasEPontos();
+
+      mapCreate.addListener("click", (event) => {
+        if (isPlacingStart) {
+          const lat = event.latLng.lat();
+          const lng = event.latLng.lng();
+
+          if (startMarker) {
+            startMarker.setMap(null);
+          }
+          startMarker = new google.maps.Marker({
+            position: { lat, lng },
+            map: mapCreate,
+            icon: iconStartEnd,
+            title: "Partida/Chegada",
+          });
+
+          document.getElementById("partidaLat").value = lat;
+          document.getElementById("partidaLng").value = lng;
+          showNotification("success", "Ponto de Partida/Chegada definido!");
+          isPlacingStart = false;
+        }
+      });
+    }
+
+    $("#modalNovaRota").on("shown.bs.modal", function () {
+      if (!mapCreate) {
+        initMapCreate();
+      }
+    });
+
+    $("#startMarkerBtn").click(function () {
+      isPlacingStart = true;
+      showNotification(
+        "info",
+        "Clique no mapa para definir o Ponto de Partida/Chegada."
+      );
+    });
+
+    $("#formDadosRota").on("submit", function (e) {
+      e.preventDefault();
+      const identificador = $("#identificador").val().trim();
+      const descricao = $("#descricao").val().trim();
+      const partidaLat = $("#partidaLat").val().trim();
+      const partidaLng = $("#partidaLng").val().trim();
+      const areaZona = $("#area_zona").val().trim();
+
+      if (
+        !identificador ||
+        !descricao ||
+        !partidaLat ||
+        !partidaLng ||
+        !areaZona
+      ) {
+        showNotification(
+          "warning",
+          "Preencha todos os campos e defina o ponto de partida!"
+        );
+        return;
       }
 
-      function initMapCreate() {
-        mapCreate = new google.maps.Map(
-          document.getElementById("map-modal-create"),
-          {
-            center: { lat: -6.530066, lng: -49.85163 },
-            zoom: 13,
-            mapTypeId: "roadmap",
-          }
-        );
+      const rotaData = {
+        identificador: identificador,
+        descricao: descricao,
+        partidaLat: parseFloat(partidaLat),
+        partidaLng: parseFloat(partidaLng),
+        chegadaLat: parseFloat(partidaLat),
+        chegadaLng: parseFloat(partidaLng),
+        pontosParada: pontosParadaSelecionados,
+        escolas: escolasSelecionadas,
+        fornecedores: fornecedoresSelecionados,
+        areaZona: areaZona,
+      };
 
-        loadEscolasEPontos();
-
-        mapCreate.addListener("click", (event) => {
-          if (isPlacingStart) {
-            const lat = event.latLng.lat();
-            const lng = event.latLng.lng();
-
+      fetch("/api/rotas/cadastrar-simples", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rotaData),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            showNotification("success", "Rota cadastrada com sucesso!");
+            $("#formDadosRota")[0].reset();
             if (startMarker) {
               startMarker.setMap(null);
+              startMarker = null;
             }
-            startMarker = new google.maps.Marker({
-              position: { lat, lng },
-              map: mapCreate,
-              icon: iconStartEnd,
-              title: "Partida/Chegada",
-            });
-
-            document.getElementById("partidaLat").value = lat;
-            document.getElementById("partidaLng").value = lng;
-            showNotification("success", "Ponto de Partida/Chegada definido!");
-            isPlacingStart = false;
+            escolaMarkers.forEach((m) => m.setMap(null));
+            pontoMarkers.forEach((m) => m.setMap(null));
+            escolaMarkers = [];
+            pontoMarkers = [];
+            escolasSelecionadas = [];
+            pontosParadaSelecionados = [];
+            fornecedoresSelecionados = [];
+            $("#modalNovaRota").modal("hide");
+            loadRotas();
+          } else {
+            showNotification(
+              "danger",
+              "Erro ao cadastrar rota: " + data.message
+            );
           }
-        });
-      }
-
-      $("#modalNovaRota").on("shown.bs.modal", function () {
-        if (!mapCreate) {
-          initMapCreate();
-        }
-      });
-
-      $("#startMarkerBtn").click(function () {
-        isPlacingStart = true;
-        showNotification(
-          "info",
-          "Clique no mapa para definir o Ponto de Partida/Chegada."
-        );
-      });
-
-      $("#formDadosRota").on("submit", function (e) {
-        e.preventDefault();
-        const identificador = $("#identificador").val().trim();
-        const descricao = $("#descricao").val().trim();
-        const partidaLat = $("#partidaLat").val().trim();
-        const partidaLng = $("#partidaLng").val().trim();
-        const areaZona = $("#area_zona").val().trim();
-
-        if (
-          !identificador ||
-          !descricao ||
-          !partidaLat ||
-          !partidaLng ||
-          !areaZona
-        ) {
-          showNotification(
-            "warning",
-            "Preencha todos os campos e defina o ponto de partida!"
-          );
-          return;
-        }
-
-        const rotaData = {
-          identificador: identificador,
-          descricao: descricao,
-          partidaLat: parseFloat(partidaLat),
-          partidaLng: parseFloat(partidaLng),
-          chegadaLat: parseFloat(partidaLat),
-          chegadaLng: parseFloat(partidaLng),
-          pontosParada: pontosParadaSelecionados,
-          escolas: escolasSelecionadas,
-          fornecedores: fornecedoresSelecionados,
-          areaZona: areaZona,
-        };
-
-        fetch("/api/rotas/cadastrar-simples", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(rotaData),
         })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) {
-              showNotification("success", "Rota cadastrada com sucesso!");
-              $("#formDadosRota")[0].reset();
-              if (startMarker) {
-                startMarker.setMap(null);
-                startMarker = null;
-              }
-              escolaMarkers.forEach((m) => m.setMap(null));
-              pontoMarkers.forEach((m) => m.setMap(null));
-              escolaMarkers = [];
-              pontoMarkers = [];
-              escolasSelecionadas = [];
-              pontosParadaSelecionados = [];
-              fornecedoresSelecionados = [];
-              $("#modalNovaRota").modal("hide");
-              loadRotas();
-            } else {
-              showNotification(
-                "danger",
-                "Erro ao cadastrar rota: " + data.message
-              );
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro interno ao cadastrar rota.");
-          });
-      });
+        .catch((err) => {
+          console.error(err);
+          showNotification("danger", "Erro interno ao cadastrar rota.");
+        });
+    });
 
-      function loadRotas() {
-        fetch("/api/rotas-simples-detalhes")
-          .then((r) => r.json())
-          .then((rotas) => {
-            const tableBody = $("#rotas-table tbody");
-            tableBody.empty();
+    function loadRotas() {
+      fetch("/api/rotas-simples-detalhes")
+        .then((r) => r.json())
+        .then((rotas) => {
+          const tableBody = $("#rotas-table tbody");
+          tableBody.empty();
 
-            rotas.forEach((rt) => {
-              const zoneamentosNomes = (rt.zoneamentos || [])
-                .map((z) => z.nome)
-                .join(", ");
-              const escolasNomes = (rt.escolas || [])
-                .map((e) => e.nome)
-                .join(", ");
-              const fornecedoresNomes =
-                rt.fornecedores && rt.fornecedores.length
-                  ? rt.fornecedores.map((f) => f.nome_fornecedor).join(", ")
-                  : "";
+          rotas.forEach((rt) => {
+            const zoneamentosNomes = (rt.zoneamentos || [])
+              .map((z) => z.nome)
+              .join(", ");
+            const escolasNomes = (rt.escolas || [])
+              .map((e) => e.nome)
+              .join(", ");
+            const fornecedoresNomes =
+              rt.fornecedores && rt.fornecedores.length
+                ? rt.fornecedores.map((f) => f.nome_fornecedor).join(", ")
+                : "";
 
-              const rowData = encodeURIComponent(JSON.stringify(rt));
+            const rowData = encodeURIComponent(JSON.stringify(rt));
 
-              const row = `
+            const row = `
               <tr>
                 <td>${rt.identificador}</td>
                 <td>${rt.descricao || ""}</td>
@@ -1873,15 +1442,12 @@
                         <i class="fa fa-download"></i>
                       </button>
                       <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${
-                          rt.id
-                        }','kml')">Baixar KML</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${
-                          rt.id
-                        }','kmz')">Baixar KMZ</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${
-                          rt.id
-                        }','gpx')">Baixar GPX</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id
+              }','kml')">Baixar KML</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id
+              }','kmz')">Baixar KMZ</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id
+              }','gpx')">Baixar GPX</a></li>
                       </ul>
                       <button
                         type="button"
@@ -1906,615 +1472,615 @@
                 </td>
               </tr>
             `;
-              tableBody.append(row);
-            });
+            tableBody.append(row);
+          });
 
-            if (rotasTable) {
-              rotasTable.destroy();
-            }
-            rotasTable = $("#rotas-table").DataTable({
-              pageLength: 10,
-              language: {
-                decimal: ",",
-                thousands: ".",
-                info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-                infoEmpty: "Mostrando 0 até 0 de 0 registros",
-                infoFiltered: "(filtrado de _MAX_ registros no total)",
-                lengthMenu: "Mostrar _MENU_ registros",
-                loadingRecords: "Carregando...",
-                processing: "Processando...",
-                search: "Pesquisar:",
-                zeroRecords: "Nenhum registro encontrado",
-                paginate: {
-                  first: "Primeiro",
-                  last: "Último",
-                  next: "Próximo",
-                  previous: "Anterior",
-                },
-                emptyTable: "Nenhuma rota disponível",
+          if (rotasTable) {
+            rotasTable.destroy();
+          }
+          rotasTable = $("#rotas-table").DataTable({
+            pageLength: 10,
+            language: {
+              decimal: ",",
+              thousands: ".",
+              info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+              infoEmpty: "Mostrando 0 até 0 de 0 registros",
+              infoFiltered: "(filtrado de _MAX_ registros no total)",
+              lengthMenu: "Mostrar _MENU_ registros",
+              loadingRecords: "Carregando...",
+              processing: "Processando...",
+              search: "Pesquisar:",
+              zeroRecords: "Nenhum registro encontrado",
+              paginate: {
+                first: "Primeiro",
+                last: "Último",
+                next: "Próximo",
+                previous: "Anterior",
               },
-            });
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro ao carregar lista de rotas.");
+              emptyTable: "Nenhuma rota disponível",
+            },
           });
-      }
-
-      loadRotas();
-
-      function deleteRota(rotaId) {
-        if (!confirm("Tem certeza que deseja excluir esta rota?")) return;
-        fetch("/api/rotas-simples/" + rotaId, {
-          method: "DELETE",
         })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) {
-              showNotification("success", "Rota excluída com sucesso!");
-              loadRotas();
-            } else {
-              showNotification(
-                "danger",
-                "Não foi possível excluir a rota: " + (data.message || "")
-              );
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro interno ao excluir a rota.");
-          });
-      }
+        .catch((err) => {
+          console.error(err);
+          showNotification("danger", "Erro ao carregar lista de rotas.");
+        });
+    }
 
-      function shareRota(rotaId) {
-        fetch(`/api/rotas_simples/${rotaId}`)
-          .then((res) => res.json())
-          .then((detalhes) => {
-            if (!detalhes.partidaLat || !detalhes.partidaLng) {
-              showNotification(
-                "warning",
-                "A rota não possui ponto de partida definido."
-              );
-              return;
+    loadRotas();
+
+    function deleteRota(rotaId) {
+      if (!confirm("Tem certeza que deseja excluir esta rota?")) return;
+      fetch("/api/rotas-simples/" + rotaId, {
+        method: "DELETE",
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            showNotification("success", "Rota excluída com sucesso!");
+            loadRotas();
+          } else {
+            showNotification(
+              "danger",
+              "Não foi possível excluir a rota: " + (data.message || "")
+            );
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          showNotification("danger", "Erro interno ao excluir a rota.");
+        });
+    }
+
+    function shareRota(rotaId) {
+      fetch(`/api/rotas_simples/${rotaId}`)
+        .then((res) => res.json())
+        .then((detalhes) => {
+          if (!detalhes.partidaLat || !detalhes.partidaLng) {
+            showNotification(
+              "warning",
+              "A rota não possui ponto de partida definido."
+            );
+            return;
+          }
+          const routeCoords = [];
+          routeCoords.push({
+            lat: detalhes.partidaLat,
+            lng: detalhes.partidaLng,
+          });
+
+          (detalhes.pontosParada || []).forEach((pt) => {
+            if (pt.latitude && pt.longitude) {
+              routeCoords.push({ lat: pt.latitude, lng: pt.longitude });
             }
-            const routeCoords = [];
+          });
+          (detalhes.escolas || []).forEach((es) => {
+            if (es.latitude && es.longitude) {
+              routeCoords.push({ lat: es.latitude, lng: es.longitude });
+            }
+          });
+
+          if (detalhes.chegadaLat && detalhes.chegadaLng) {
+            routeCoords.push({
+              lat: detalhes.chegadaLat,
+              lng: detalhes.chegadaLng,
+            });
+          } else {
             routeCoords.push({
               lat: detalhes.partidaLat,
               lng: detalhes.partidaLng,
             });
+          }
 
-            (detalhes.pontosParada || []).forEach((pt) => {
-              if (pt.latitude && pt.longitude) {
-                routeCoords.push({ lat: pt.latitude, lng: pt.longitude });
-              }
-            });
-            (detalhes.escolas || []).forEach((es) => {
-              if (es.latitude && es.longitude) {
-                routeCoords.push({ lat: es.latitude, lng: es.longitude });
-              }
-            });
-
-            if (detalhes.chegadaLat && detalhes.chegadaLng) {
-              routeCoords.push({
-                lat: detalhes.chegadaLat,
-                lng: detalhes.chegadaLng,
-              });
-            } else {
-              routeCoords.push({
-                lat: detalhes.partidaLat,
-                lng: detalhes.partidaLng,
-              });
-            }
-
-            if (routeCoords.length < 2) {
-              showNotification(
-                "warning",
-                "A rota não possui paradas suficientes para compartilhar."
-              );
-              return;
-            }
-
-            const isMobile = /Android|iPhone|iPad|iPod/i.test(
-              navigator.userAgent
-            );
-
-            const origin = routeCoords[0];
-            const destination = routeCoords[routeCoords.length - 1];
-            const midPoints = routeCoords.slice(1, routeCoords.length - 1);
-
-            if (isMobile) {
-              let deepLink = `comgooglemaps://?saddr=${origin.lat},${origin.lng}&daddr=${destination.lat},${destination.lng}`;
-              if (midPoints.length > 0) {
-                const wps = midPoints.map((m) => `${m.lat},${m.lng}`).join("|");
-                deepLink += `&waypoints=${encodeURIComponent(wps)}`;
-              }
-              deepLink += `&directionsmode=driving`;
-
-              let fallbackLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
-              fallbackLink += `&origin=${encodeURIComponent(
-                origin.lat + "," + origin.lng
-              )}`;
-              fallbackLink += `&destination=${encodeURIComponent(
-                destination.lat + "," + destination.lng
-              )}`;
-              if (midPoints.length > 0) {
-                const wps2 = midPoints
-                  .map((m) => `${m.lat},${m.lng}`)
-                  .join("|");
-                fallbackLink += `&waypoints=${encodeURIComponent(wps2)}`;
-              }
-
-              window.location.href = deepLink;
-              setTimeout(() => {
-                window.location.href = fallbackLink;
-              }, 1000);
-            } else {
-              let shareLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
-              shareLink += `&origin=${encodeURIComponent(
-                origin.lat + "," + origin.lng
-              )}`;
-              shareLink += `&destination=${encodeURIComponent(
-                destination.lat + "," + destination.lng
-              )}`;
-
-              if (midPoints.length > 0) {
-                const wps = midPoints.map((m) => `${m.lat},${m.lng}`).join("|");
-                shareLink += `&waypoints=${encodeURIComponent(wps)}`;
-              }
-
-              navigator.clipboard
-                .writeText(shareLink)
-                .then(() => {
-                  showNotification(
-                    "info",
-                    "Link do trajeto copiado para a área de transferência!"
-                  );
-                })
-                .catch(() => {
-                  showNotification(
-                    "warning",
-                    "Não foi possível copiar o link automaticamente."
-                  );
-                });
-            }
-          })
-          .catch((err) => {
-            console.error(err);
+          if (routeCoords.length < 2) {
             showNotification(
-              "danger",
-              "Erro ao carregar rota para compartilhar."
+              "warning",
+              "A rota não possui paradas suficientes para compartilhar."
             );
-          });
-      }
-
-      function openRouteModal(encodedData) {
-        const rotaData = JSON.parse(decodeURIComponent(encodedData));
-        currentRotaId = rotaData.id;
-        $("#viewRouteModal").modal("show");
-
-        setTimeout(() => {
-          if (!modalMapView) {
-            modalMapView = new google.maps.Map(
-              document.getElementById("map-modal-view"),
-              {
-                center: { lat: -6.530066, lng: -49.85163 },
-                zoom: 13,
-                mapTypeId: "roadmap",
-              }
-            );
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
-            directionsRenderer.setMap(modalMapView);
+            return;
           }
 
-          if (rotaData.id) {
-            fetch(`/api/rotas_simples/${rotaData.id}`)
-              .then((r) => r.json())
-              .then((detalhesRota) => {
-                const origin = {
-                  lat: parseFloat(detalhesRota.partidaLat),
-                  lng: parseFloat(detalhesRota.partidaLng),
-                };
-                const destination = {
-                  lat: parseFloat(detalhesRota.chegadaLat),
-                  lng: parseFloat(detalhesRota.chegadaLng),
-                };
+          const isMobile = /Android|iPhone|iPad|iPod/i.test(
+            navigator.userAgent
+          );
 
-                const waypoints = [];
-                (detalhesRota.pontosParada || []).forEach((pt) => {
-                  waypoints.push({
-                    location: new google.maps.LatLng(
-                      parseFloat(pt.latitude),
-                      parseFloat(pt.longitude)
-                    ),
-                    stopover: true,
-                  });
-                });
-                (detalhesRota.escolas || []).forEach((es) => {
-                  waypoints.push({
-                    location: new google.maps.LatLng(
-                      parseFloat(es.latitude),
-                      parseFloat(es.longitude)
-                    ),
-                    stopover: true,
-                  });
-                });
+          const origin = routeCoords[0];
+          const destination = routeCoords[routeCoords.length - 1];
+          const midPoints = routeCoords.slice(1, routeCoords.length - 1);
 
-                const request = {
-                  origin: origin,
-                  destination: destination,
-                  waypoints: waypoints,
-                  optimizeWaypoints: true,
-                  travelMode: google.maps.TravelMode.DRIVING,
-                };
-                directionsService.route(request, function (result, status) {
-                  if (status === google.maps.DirectionsStatus.OK) {
-                    directionsRenderer.setDirections(result);
-                  }
-                });
-              })
-              .catch((err) => {
-                console.error(err);
+          if (isMobile) {
+            let deepLink = `comgooglemaps://?saddr=${origin.lat},${origin.lng}&daddr=${destination.lat},${destination.lng}`;
+            if (midPoints.length > 0) {
+              const wps = midPoints.map((m) => `${m.lat},${m.lng}`).join("|");
+              deepLink += `&waypoints=${encodeURIComponent(wps)}`;
+            }
+            deepLink += `&directionsmode=driving`;
+
+            let fallbackLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
+            fallbackLink += `&origin=${encodeURIComponent(
+              origin.lat + "," + origin.lng
+            )}`;
+            fallbackLink += `&destination=${encodeURIComponent(
+              destination.lat + "," + destination.lng
+            )}`;
+            if (midPoints.length > 0) {
+              const wps2 = midPoints
+                .map((m) => `${m.lat},${m.lng}`)
+                .join("|");
+              fallbackLink += `&waypoints=${encodeURIComponent(wps2)}`;
+            }
+
+            window.location.href = deepLink;
+            setTimeout(() => {
+              window.location.href = fallbackLink;
+            }, 1000);
+          } else {
+            let shareLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
+            shareLink += `&origin=${encodeURIComponent(
+              origin.lat + "," + origin.lng
+            )}`;
+            shareLink += `&destination=${encodeURIComponent(
+              destination.lat + "," + destination.lng
+            )}`;
+
+            if (midPoints.length > 0) {
+              const wps = midPoints.map((m) => `${m.lat},${m.lng}`).join("|");
+              shareLink += `&waypoints=${encodeURIComponent(wps)}`;
+            }
+
+            navigator.clipboard
+              .writeText(shareLink)
+              .then(() => {
                 showNotification(
-                  "danger",
-                  "Erro ao carregar detalhes da rota para exibição."
+                  "info",
+                  "Link do trajeto copiado para a área de transferência!"
+                );
+              })
+              .catch(() => {
+                showNotification(
+                  "warning",
+                  "Não foi possível copiar o link automaticamente."
                 );
               });
           }
-        }, 400);
-      }
+        })
+        .catch((err) => {
+          console.error(err);
+          showNotification(
+            "danger",
+            "Erro ao carregar rota para compartilhar."
+          );
+        });
+    }
 
-      function downloadRota(rotaId, formato) {
-        window.open(`/api/download-rota/${rotaId}?format=${formato}`, "_blank");
-      }
+    function openRouteModal(encodedData) {
+      const rotaData = JSON.parse(decodeURIComponent(encodedData));
+      currentRotaId = rotaData.id;
+      $("#viewRouteModal").modal("show");
 
-      function downloadAll(formato) {
-        window.open(`/api/download-rotas-todas?format=${formato}`, "_blank");
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        document
-          .getElementById("downloadKml")
-          .addEventListener("click", (e) => {
-            e.preventDefault();
-            if (currentRotaId) {
-              downloadRota(currentRotaId, "kml");
+      setTimeout(() => {
+        if (!modalMapView) {
+          modalMapView = new google.maps.Map(
+            document.getElementById("map-modal-view"),
+            {
+              center: { lat: -6.530066, lng: -49.85163 },
+              zoom: 13,
+              mapTypeId: "roadmap",
             }
-          });
-        document
-          .getElementById("downloadKmz")
-          .addEventListener("click", (e) => {
-            e.preventDefault();
-            if (currentRotaId) {
-              downloadRota(currentRotaId, "kmz");
-            }
-          });
-        document
-          .getElementById("downloadGpx")
-          .addEventListener("click", (e) => {
-            e.preventDefault();
-            if (currentRotaId) {
-              downloadRota(currentRotaId, "gpx");
-            }
-          });
-      });
+          );
+          directionsService = new google.maps.DirectionsService();
+          directionsRenderer = new google.maps.DirectionsRenderer();
+          directionsRenderer.setMap(modalMapView);
+        }
 
-      function openEditModal(encodedData) {
-        const rotaData = JSON.parse(decodeURIComponent(encodedData));
-        $("#modalEditarRota").modal("show");
-
-        setTimeout(() => {
-          if (!mapEdit) {
-            mapEdit = new google.maps.Map(
-              document.getElementById("map-modal-edit"),
-              {
-                center: { lat: -6.530066, lng: -49.85163 },
-                zoom: 13,
-                mapTypeId: "roadmap",
-              }
-            );
-
-            mapEdit.addListener("click", (event) => {
-              if (isPlacingEditStart) {
-                const lat = event.latLng.lat();
-                const lng = event.latLng.lng();
-                if (editStartMarker) {
-                  editStartMarker.setMap(null);
-                }
-                editStartMarker = new google.maps.Marker({
-                  position: { lat, lng },
-                  map: mapEdit,
-                  icon: iconStartEnd,
-                  title: "Partida/Chegada",
-                });
-                document.getElementById("editPartidaLat").value = lat;
-                document.getElementById("editPartidaLng").value = lng;
-                showNotification(
-                  "success",
-                  "Novo ponto de Partida/Chegada definido!"
-                );
-                isPlacingEditStart = false;
-              }
-            });
-          }
-
-          document.getElementById("editRotaId").value = rotaData.id || "";
-          document.getElementById("editIdentificador").value =
-            rotaData.identificador || "";
-          document.getElementById("editDescricao").value =
-            rotaData.descricao || "";
-          document.getElementById("editAreaZona").value =
-            rotaData.area_zona || "URBANA";
-
-          editEscolasSelecionadas = [];
-          editPontosParadaSelecionados = [];
-          editFornecedoresSelecionados = [];
-
-          editEscolaMarkers.forEach((m) => m.setMap(null));
-          editPontoMarkers.forEach((m) => m.setMap(null));
-          editEscolaMarkers = [];
-          editPontoMarkers = [];
-
+        if (rotaData.id) {
           fetch(`/api/rotas_simples/${rotaData.id}`)
             .then((r) => r.json())
-            .then((detalhes) => {
-              document.getElementById("editPartidaLat").value =
-                detalhes.partidaLat || "";
-              document.getElementById("editPartidaLng").value =
-                detalhes.partidaLng || "";
-              if (editStartMarker) {
-                editStartMarker.setMap(null);
-              }
-              if (detalhes.partidaLat && detalhes.partidaLng) {
-                const lat = parseFloat(detalhes.partidaLat);
-                const lng = parseFloat(detalhes.partidaLng);
-                editStartMarker = new google.maps.Marker({
-                  position: { lat, lng },
-                  map: mapEdit,
-                  icon: iconStartEnd,
-                  title: "Partida/Chegada",
+            .then((detalhesRota) => {
+              const origin = {
+                lat: parseFloat(detalhesRota.partidaLat),
+                lng: parseFloat(detalhesRota.partidaLng),
+              };
+              const destination = {
+                lat: parseFloat(detalhesRota.chegadaLat),
+                lng: parseFloat(detalhesRota.chegadaLng),
+              };
+
+              const waypoints = [];
+              (detalhesRota.pontosParada || []).forEach((pt) => {
+                waypoints.push({
+                  location: new google.maps.LatLng(
+                    parseFloat(pt.latitude),
+                    parseFloat(pt.longitude)
+                  ),
+                  stopover: true,
                 });
-                mapEdit.setCenter({ lat, lng });
-                mapEdit.setZoom(13);
-              }
-
-              // Evitar erro se estiver vazio
-              (detalhes.escolas || []).forEach((e) => {
-                editEscolasSelecionadas.push(e.id);
               });
-              (detalhes.pontosParada || []).forEach((p) => {
-                editPontosParadaSelecionados.push(p.id);
-              });
-              (detalhes.fornecedores || []).forEach((f) => {
-                editFornecedoresSelecionados.push(f.id);
-              });
-
-              const ePromise = fetch("/api/escolas").then((rr) => rr.json());
-              const pPromise = fetch("/api/pontos").then((rr) => rr.json());
-              const fPromise = fetch("/api/fornecedores").then((rr) =>
-                rr.json()
-              );
-
-              Promise.all([ePromise, pPromise, fPromise])
-                .then(([esc, pts, forn]) => {
-                  editRotasEscolasData = esc;
-                  editRotasPontosData = pts;
-                  fornecedoresData = forn;
-
-                  placeEditEscolas();
-                  initEditFornecedoresList();
-                })
-                .catch((err) => {
-                  console.error(err);
-                  showNotification(
-                    "danger",
-                    "Erro ao recarregar dados para edição."
-                  );
+              (detalhesRota.escolas || []).forEach((es) => {
+                waypoints.push({
+                  location: new google.maps.LatLng(
+                    parseFloat(es.latitude),
+                    parseFloat(es.longitude)
+                  ),
+                  stopover: true,
                 });
+              });
+
+              const request = {
+                origin: origin,
+                destination: destination,
+                waypoints: waypoints,
+                optimizeWaypoints: true,
+                travelMode: google.maps.TravelMode.DRIVING,
+              };
+              directionsService.route(request, function (result, status) {
+                if (status === google.maps.DirectionsStatus.OK) {
+                  directionsRenderer.setDirections(result);
+                }
+              });
             })
             .catch((err) => {
               console.error(err);
               showNotification(
                 "danger",
-                "Erro ao carregar detalhes para edição."
+                "Erro ao carregar detalhes da rota para exibição."
               );
             });
-        }, 400);
-      }
+        }
+      }, 400);
+    }
 
-      function initEditFornecedoresList() {
-        const lista = document.getElementById("editListaFornecedores");
-        lista.innerHTML = "";
-        fornecedoresData.forEach((forn) => {
-          const item = document.createElement("div");
-          item.style.padding = "5px";
-          item.style.cursor = "pointer";
-          const isChecked = editFornecedoresSelecionados.includes(forn.id);
-          item.innerHTML = `
-            <input type="checkbox" data-id="${
-              forn.id
-            }" style="margin-right:5px;" ${isChecked ? "checked" : ""} />
-            <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
-          `;
-          item.querySelector("input").addEventListener("change", function () {
-            const fid = parseInt(this.getAttribute("data-id"), 10);
-            if (this.checked) {
-              if (!editFornecedoresSelecionados.includes(fid)) {
-                editFornecedoresSelecionados.push(fid);
+    function downloadRota(rotaId, formato) {
+      window.open(`/api/download-rota/${rotaId}?format=${formato}`, "_blank");
+    }
+
+    function downloadAll(formato) {
+      window.open(`/api/download-rotas-todas?format=${formato}`, "_blank");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document
+        .getElementById("downloadKml")
+        .addEventListener("click", (e) => {
+          e.preventDefault();
+          if (currentRotaId) {
+            downloadRota(currentRotaId, "kml");
+          }
+        });
+      document
+        .getElementById("downloadKmz")
+        .addEventListener("click", (e) => {
+          e.preventDefault();
+          if (currentRotaId) {
+            downloadRota(currentRotaId, "kmz");
+          }
+        });
+      document
+        .getElementById("downloadGpx")
+        .addEventListener("click", (e) => {
+          e.preventDefault();
+          if (currentRotaId) {
+            downloadRota(currentRotaId, "gpx");
+          }
+        });
+    });
+
+    function openEditModal(encodedData) {
+      const rotaData = JSON.parse(decodeURIComponent(encodedData));
+      $("#modalEditarRota").modal("show");
+
+      setTimeout(() => {
+        if (!mapEdit) {
+          mapEdit = new google.maps.Map(
+            document.getElementById("map-modal-edit"),
+            {
+              center: { lat: -6.530066, lng: -49.85163 },
+              zoom: 13,
+              mapTypeId: "roadmap",
+            }
+          );
+
+          mapEdit.addListener("click", (event) => {
+            if (isPlacingEditStart) {
+              const lat = event.latLng.lat();
+              const lng = event.latLng.lng();
+              if (editStartMarker) {
+                editStartMarker.setMap(null);
               }
-            } else {
-              editFornecedoresSelecionados =
-                editFornecedoresSelecionados.filter((x) => x !== fid);
+              editStartMarker = new google.maps.Marker({
+                position: { lat, lng },
+                map: mapEdit,
+                icon: iconStartEnd,
+                title: "Partida/Chegada",
+              });
+              document.getElementById("editPartidaLat").value = lat;
+              document.getElementById("editPartidaLng").value = lng;
+              showNotification(
+                "success",
+                "Novo ponto de Partida/Chegada definido!"
+              );
+              isPlacingEditStart = false;
             }
           });
-          lista.appendChild(item);
-        });
+        }
 
-        document
-          .getElementById("editFornecedoresBuscar")
-          .addEventListener("keyup", function () {
-            const search = this.value.toLowerCase();
-            const children = lista.querySelectorAll("div");
-            children.forEach((child) => {
-              const txt = child.innerText.toLowerCase();
-              child.style.display = txt.includes(search) ? "block" : "none";
+        document.getElementById("editRotaId").value = rotaData.id || "";
+        document.getElementById("editIdentificador").value =
+          rotaData.identificador || "";
+        document.getElementById("editDescricao").value =
+          rotaData.descricao || "";
+        document.getElementById("editAreaZona").value =
+          rotaData.area_zona || "URBANA";
+
+        editEscolasSelecionadas = [];
+        editPontosParadaSelecionados = [];
+        editFornecedoresSelecionados = [];
+
+        editEscolaMarkers.forEach((m) => m.setMap(null));
+        editPontoMarkers.forEach((m) => m.setMap(null));
+        editEscolaMarkers = [];
+        editPontoMarkers = [];
+
+        fetch(`/api/rotas_simples/${rotaData.id}`)
+          .then((r) => r.json())
+          .then((detalhes) => {
+            document.getElementById("editPartidaLat").value =
+              detalhes.partidaLat || "";
+            document.getElementById("editPartidaLng").value =
+              detalhes.partidaLng || "";
+            if (editStartMarker) {
+              editStartMarker.setMap(null);
+            }
+            if (detalhes.partidaLat && detalhes.partidaLng) {
+              const lat = parseFloat(detalhes.partidaLat);
+              const lng = parseFloat(detalhes.partidaLng);
+              editStartMarker = new google.maps.Marker({
+                position: { lat, lng },
+                map: mapEdit,
+                icon: iconStartEnd,
+                title: "Partida/Chegada",
+              });
+              mapEdit.setCenter({ lat, lng });
+              mapEdit.setZoom(13);
+            }
+
+            // Evitar erro se estiver vazio
+            (detalhes.escolas || []).forEach((e) => {
+              editEscolasSelecionadas.push(e.id);
             });
-          });
-      }
+            (detalhes.pontosParada || []).forEach((p) => {
+              editPontosParadaSelecionados.push(p.id);
+            });
+            (detalhes.fornecedores || []).forEach((f) => {
+              editFornecedoresSelecionados.push(f.id);
+            });
 
-      function placeEditEscolas() {
-        editRotasEscolasData.forEach((escola) => {
-          if (!escola.latitude || !escola.longitude) return;
-          const lat = parseFloat(escola.latitude);
-          const lng = parseFloat(escola.longitude);
+            const ePromise = fetch("/api/escolas").then((rr) => rr.json());
+            const pPromise = fetch("/api/pontos").then((rr) => rr.json());
+            const fPromise = fetch("/api/fornecedores").then((rr) =>
+              rr.json()
+            );
+
+            Promise.all([ePromise, pPromise, fPromise])
+              .then(([esc, pts, forn]) => {
+                editRotasEscolasData = esc;
+                editRotasPontosData = pts;
+                fornecedoresData = forn;
+
+                placeEditEscolas();
+                initEditFornecedoresList();
+              })
+              .catch((err) => {
+                console.error(err);
+                showNotification(
+                  "danger",
+                  "Erro ao recarregar dados para edição."
+                );
+              });
+          })
+          .catch((err) => {
+            console.error(err);
+            showNotification(
+              "danger",
+              "Erro ao carregar detalhes para edição."
+            );
+          });
+      }, 400);
+    }
+
+    function initEditFornecedoresList() {
+      const lista = document.getElementById("editListaFornecedores");
+      lista.innerHTML = "";
+      fornecedoresData.forEach((forn) => {
+        const item = document.createElement("div");
+        item.style.padding = "5px";
+        item.style.cursor = "pointer";
+        const isChecked = editFornecedoresSelecionados.includes(forn.id);
+        item.innerHTML = `
+            <input type="checkbox" data-id="${forn.id
+          }" style="margin-right:5px;" ${isChecked ? "checked" : ""} />
+            <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
+          `;
+        item.querySelector("input").addEventListener("change", function () {
+          const fid = parseInt(this.getAttribute("data-id"), 10);
+          if (this.checked) {
+            if (!editFornecedoresSelecionados.includes(fid)) {
+              editFornecedoresSelecionados.push(fid);
+            }
+          } else {
+            editFornecedoresSelecionados =
+              editFornecedoresSelecionados.filter((x) => x !== fid);
+          }
+        });
+        lista.appendChild(item);
+      });
+
+      document
+        .getElementById("editFornecedoresBuscar")
+        .addEventListener("keyup", function () {
+          const search = this.value.toLowerCase();
+          const children = lista.querySelectorAll("div");
+          children.forEach((child) => {
+            const txt = child.innerText.toLowerCase();
+            child.style.display = txt.includes(search) ? "block" : "none";
+          });
+        });
+    }
+
+    function placeEditEscolas() {
+      editRotasEscolasData.forEach((escola) => {
+        if (!escola.latitude || !escola.longitude) return;
+        const lat = parseFloat(escola.latitude);
+        const lng = parseFloat(escola.longitude);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        const marker = new google.maps.Marker({
+          position: { lat, lng },
+          map: mapEdit,
+          icon: iconEscola,
+          title: escola.nome,
+        });
+        editEscolaMarkers.push(marker);
+
+        marker.addListener("click", () => {
+          if (!editEscolasSelecionadas.includes(escola.id)) {
+            editEscolasSelecionadas.push(escola.id);
+            showNotification("info", `Escola "${escola.nome}" selecionada!`);
+          } else {
+            editEscolasSelecionadas = editEscolasSelecionadas.filter(
+              (id) => id !== escola.id
+            );
+            showNotification(
+              "warning",
+              `Escola "${escola.nome}" removida da seleção!`
+            );
+          }
+          reloadEditPontos();
+        });
+      });
+      reloadEditPontos();
+    }
+
+    function reloadEditPontos() {
+      editPontoMarkers.forEach((m) => m.setMap(null));
+      editPontoMarkers = [];
+
+      const zoneSet = new Set();
+      editEscolasSelecionadas.forEach((eId) => {
+        const esc = editRotasEscolasData.find((e) => e.id == eId);
+        if (esc && esc.zoneamentos) {
+          esc.zoneamentos.forEach((z) => {
+            zoneSet.add(z.id);
+          });
+        }
+      });
+
+      editRotasPontosData.forEach((p) => {
+        // Corrigir caso zoneamentos seja undefined
+        const ptZoneamentos = p.zoneamentos || [];
+        const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
+        if (hasZone) {
+          const lat = parseFloat(p.latitude);
+          const lng = parseFloat(p.longitude);
           if (isNaN(lat) || isNaN(lng)) return;
 
           const marker = new google.maps.Marker({
             position: { lat, lng },
             map: mapEdit,
-            icon: iconEscola,
-            title: escola.nome,
+            icon: iconPonto,
+            title: p.nome_ponto,
           });
-          editEscolaMarkers.push(marker);
+          editPontoMarkers.push(marker);
 
           marker.addListener("click", () => {
-            if (!editEscolasSelecionadas.includes(escola.id)) {
-              editEscolasSelecionadas.push(escola.id);
-              showNotification("info", `Escola "${escola.nome}" selecionada!`);
-            } else {
-              editEscolasSelecionadas = editEscolasSelecionadas.filter(
-                (id) => id !== escola.id
+            if (!editPontosParadaSelecionados.includes(p.id)) {
+              editPontosParadaSelecionados.push(p.id);
+              showNotification(
+                "info",
+                `Ponto "${p.nome_ponto}" adicionado à rota!`
               );
+            } else {
+              editPontosParadaSelecionados =
+                editPontosParadaSelecionados.filter((id) => id !== p.id);
               showNotification(
                 "warning",
-                `Escola "${escola.nome}" removida da seleção!`
+                `Ponto "${p.nome_ponto}" removido da rota!`
               );
             }
-            reloadEditPontos();
           });
-        });
-        reloadEditPontos();
-      }
-
-      function reloadEditPontos() {
-        editPontoMarkers.forEach((m) => m.setMap(null));
-        editPontoMarkers = [];
-
-        const zoneSet = new Set();
-        editEscolasSelecionadas.forEach((eId) => {
-          const esc = editRotasEscolasData.find((e) => e.id == eId);
-          if (esc && esc.zoneamentos) {
-            esc.zoneamentos.forEach((z) => {
-              zoneSet.add(z.id);
-            });
-          }
-        });
-
-        editRotasPontosData.forEach((p) => {
-          // Corrigir caso zoneamentos seja undefined
-          const ptZoneamentos = p.zoneamentos || [];
-          const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
-          if (hasZone) {
-            const lat = parseFloat(p.latitude);
-            const lng = parseFloat(p.longitude);
-            if (isNaN(lat) || isNaN(lng)) return;
-
-            const marker = new google.maps.Marker({
-              position: { lat, lng },
-              map: mapEdit,
-              icon: iconPonto,
-              title: p.nome_ponto,
-            });
-            editPontoMarkers.push(marker);
-
-            marker.addListener("click", () => {
-              if (!editPontosParadaSelecionados.includes(p.id)) {
-                editPontosParadaSelecionados.push(p.id);
-                showNotification(
-                  "info",
-                  `Ponto "${p.nome_ponto}" adicionado à rota!`
-                );
-              } else {
-                editPontosParadaSelecionados =
-                  editPontosParadaSelecionados.filter((id) => id !== p.id);
-                showNotification(
-                  "warning",
-                  `Ponto "${p.nome_ponto}" removido da rota!`
-                );
-              }
-            });
-          }
-        });
-      }
-
-      $("#editStartMarkerBtn").click(function () {
-        isPlacingEditStart = true;
-        showNotification(
-          "info",
-          "Clique no mapa para redefinir o Ponto de Partida/Chegada."
-        );
-      });
-
-      $("#formEditarRota").on("submit", function (e) {
-        e.preventDefault();
-        const rotaId = $("#editRotaId").val().trim();
-        const identificador = $("#editIdentificador").val().trim();
-        const descricao = $("#editDescricao").val().trim();
-        const editLat = $("#editPartidaLat").val().trim();
-        const editLng = $("#editPartidaLng").val().trim();
-        const areaZona = $("#editAreaZona").val().trim();
-
-        if (
-          !rotaId ||
-          !identificador ||
-          !descricao ||
-          !editLat ||
-          !editLng ||
-          !areaZona
-        ) {
-          showNotification(
-            "warning",
-            "Preencha todos os campos e defina o ponto de partida!"
-          );
-          return;
         }
-
-        const rotaUpdate = {
-          identificador: identificador,
-          descricao: descricao,
-          partidaLat: parseFloat(editLat),
-          partidaLng: parseFloat(editLng),
-          chegadaLat: parseFloat(editLat),
-          chegadaLng: parseFloat(editLng),
-          pontosParada: editPontosParadaSelecionados,
-          escolas: editEscolasSelecionadas,
-          fornecedores: editFornecedoresSelecionados,
-          areaZona: areaZona,
-        };
-
-        fetch(`/api/rotas-simples/${rotaId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(rotaUpdate),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) {
-              showNotification("success", "Rota atualizada com sucesso!");
-              $("#modalEditarRota").modal("hide");
-              loadRotas();
-            } else {
-              showNotification(
-                "danger",
-                "Erro ao atualizar rota: " + data.message
-              );
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro interno ao atualizar rota.");
-          });
       });
-    </script>
-  </body>
+    }
+
+    $("#editStartMarkerBtn").click(function () {
+      isPlacingEditStart = true;
+      showNotification(
+        "info",
+        "Clique no mapa para redefinir o Ponto de Partida/Chegada."
+      );
+    });
+
+    $("#formEditarRota").on("submit", function (e) {
+      e.preventDefault();
+      const rotaId = $("#editRotaId").val().trim();
+      const identificador = $("#editIdentificador").val().trim();
+      const descricao = $("#editDescricao").val().trim();
+      const editLat = $("#editPartidaLat").val().trim();
+      const editLng = $("#editPartidaLng").val().trim();
+      const areaZona = $("#editAreaZona").val().trim();
+
+      if (
+        !rotaId ||
+        !identificador ||
+        !descricao ||
+        !editLat ||
+        !editLng ||
+        !areaZona
+      ) {
+        showNotification(
+          "warning",
+          "Preencha todos os campos e defina o ponto de partida!"
+        );
+        return;
+      }
+
+      const rotaUpdate = {
+        identificador: identificador,
+        descricao: descricao,
+        partidaLat: parseFloat(editLat),
+        partidaLng: parseFloat(editLng),
+        chegadaLat: parseFloat(editLat),
+        chegadaLng: parseFloat(editLng),
+        pontosParada: editPontosParadaSelecionados,
+        escolas: editEscolasSelecionadas,
+        fornecedores: editFornecedoresSelecionados,
+        areaZona: areaZona,
+      };
+
+      fetch(`/api/rotas-simples/${rotaId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rotaUpdate),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            showNotification("success", "Rota atualizada com sucesso!");
+            $("#modalEditarRota").modal("hide");
+            loadRotas();
+          } else {
+            showNotification(
+              "danger",
+              "Erro ao atualizar rota: " + data.message
+            );
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          showNotification("danger", "Erro interno ao atualizar rota.");
+        });
+    });
+  </script>
+</body>
+
 </html>
