@@ -6310,7 +6310,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc
       .fontSize(10)
       .font("Helvetica")
-      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 80, {
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 60, {
         width: doc.page.width - 100,
         align: "center",
       })
