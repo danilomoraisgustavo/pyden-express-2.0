@@ -6591,7 +6591,8 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
     });
   }
 });
-app.get("/api/termo-autorizacao-outros-responsaveis-estadual/:id/gerar-pdf", async (req, res) => {
+
+app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
     const queryAluno = `
@@ -6611,30 +6612,33 @@ app.get("/api/termo-autorizacao-outros-responsaveis-estadual/:id/gerar-pdf", asy
       return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
     const aluno = result.rows[0];
+
     const solQuery = `
-      SELECT id, responsaveis_extras
+      SELECT id
       FROM solicitacoes_transporte
       WHERE aluno_id = $1
       ORDER BY id DESC
       LIMIT 1
     `;
     const solResult = await pool.query(solQuery, [id]);
-    let listaResponsaveis = [];
-    let solicitacaoId = null;
+    let solicitacaoId = "000";
     if (solResult.rows.length > 0) {
       solicitacaoId = solResult.rows[0].id;
-      listaResponsaveis = solResult.rows[0].responsaveis_extras || [];
     }
+
     const doc = new PDFDocument({ size: "A4", margin: 50 });
-    res.setHeader("Content-Disposition", `inline; filename=termo_outros_responsaveis_estadual_${id}.pdf`);
+    res.setHeader("Content-Disposition", `inline; filename=termo_outros_responsaveis_${id}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
+
     const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
     const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
     const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
+
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
@@ -6646,20 +6650,23 @@ app.get("/api/termo-autorizacao-outros-responsaveis-estadual/:id/gerar-pdf", asy
         20,
         { width: 300, align: "right" }
       );
+
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
       doc.image(separadorPath, separadorX, separadorY, { width: 510 });
     }
+
     doc.y = 130;
     doc.x = 50;
     doc
       .fontSize(12)
       .font("Helvetica-Bold")
-      .text(`TERMO DE AUTORIZAÇÃO Nº ${solicitacaoId || "000"} - OUTROS RESPONSÁVEIS (ESTADUAL)`, {
+      .text(`TERMO DE AUTORIZAÇÃO Nº ${solicitacaoId} - OUTROS RESPONSÁVEIS`, {
         align: "justify",
       })
       .moveDown(1);
+
     doc
       .fontSize(12)
       .font("Helvetica")
@@ -6669,30 +6676,31 @@ app.get("/api/termo-autorizacao-outros-responsaveis-estadual/:id/gerar-pdf", asy
       .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
       .moveDown()
       .text(
-        `Eu, ${aluno.responsavel || "______________________"}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar (Rede Estadual).`,
+        `Eu, ${aluno.responsavel || "______________________"}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar.`,
         { align: "justify" }
       )
       .moveDown();
-    listaResponsaveis.forEach((resp, idx) => {
-      doc
-        .font("Helvetica-Bold")
-        .text(`Responsável ${idx + 1}:`, { align: "left" })
-        .font("Helvetica")
-        .text(`Nome: ${resp.nome || ""}`, { indent: 20 })
-        .text(`RG: ${resp.rg || ""}`, { indent: 20 })
-        .text(`CPF: ${resp.cpf || ""}`, { indent: 20 })
-        .moveDown();
-    });
+
+    doc
+      .text("Nome: _______________, cpf:____________, rg:____________", { indent: 20 })
+      .moveDown(0.5)
+      .text("Nome: _______________, cpf:____________, rg:____________", { indent: 20 })
+      .moveDown(0.5)
+      .text("Nome: _______________, cpf:____________, rg:____________", { indent: 20 })
+      .moveDown(1);
+
     doc
       .text(
         "Declaro que todos os responsáveis indicados possuem mais de 18 anos e que responderei por quaisquer informações inverídicas.",
         { align: "justify" }
       )
       .moveDown();
+
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
+
     const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
@@ -6703,6 +6711,7 @@ app.get("/api/termo-autorizacao-outros-responsaveis-estadual/:id/gerar-pdf", asy
       .moveDown(2)
       .text("_____________________________________", { align: "center" })
       .text("Assinatura do Responsável", { align: "center" });
+
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -6713,6 +6722,7 @@ app.get("/api/termo-autorizacao-outros-responsaveis-estadual/:id/gerar-pdf", asy
       const logo2Y = doc.page.height - 150;
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
+
     doc
       .fontSize(10)
       .font("Helvetica")
@@ -6724,15 +6734,18 @@ app.get("/api/termo-autorizacao-outros-responsaveis-estadual/:id/gerar-pdf", asy
         align: "center",
       })
       .text("Telefone: (94) 99293-4500", { align: "center" });
+
     doc.end();
   } catch (error) {
-    console.error("Erro ao gerar termo de outros responsáveis (Estadual):", error);
+    console.error("Erro ao gerar termo de outros responsáveis:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro ao gerar termo de outros responsáveis (Estadual).",
+      message: "Erro ao gerar termo de outros responsáveis.",
     });
   }
 });
+
+
 // Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
 app.post("/api/solicitacoes-transporte", async (req, res) => {
   try {
