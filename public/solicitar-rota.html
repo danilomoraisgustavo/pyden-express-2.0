@@ -63,6 +63,11 @@
     #modalOutrosResponsaveis10a12 .modal-dialog {
       max-width: 600px;
     }
+
+    /* Modal para escolha de quem assina */
+    #modalEscolherAssinatura .modal-dialog {
+      max-width: 500px;
+    }
   </style>
 </head>
 
@@ -73,7 +78,6 @@
         <h3 class="fw-bold mb-12 text-center">Cadastro de Alunos</h3>
       </div>
 
-      <!-- ETAPA DE SELEÇÃO DO FLUXO -->
       <div class="card wizard-step active" id="etapaSelecaoFluxo">
         <div class="card-header">
           <div class="card-title">Selecione o tipo de cadastro</div>
@@ -92,9 +96,7 @@
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA DE SELEÇÃO DO FLUXO -->
 
-      <!-- ETAPA 1 MUNICIPAL -->
       <div class="card wizard-step" id="etapa1Municipal">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Municipal): Dados do Aluno</div>
@@ -217,9 +219,7 @@
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA 1 MUNICIPAL -->
 
-      <!-- ETAPA 1 ESTADUAL -->
       <div class="card wizard-step" id="etapa1Estadual">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Estadual): Dados do Aluno</div>
@@ -336,14 +336,12 @@
                   <button class="btn btn-info" id="btnConverterCepEstadual">Converter CEP</button>
                   <button class="btn btn-primary ms-2" id="btnProximoEstadual">Próximo</button>
                 </div>
-              </div><!-- fim dadosAlunoContainerEstadual -->
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA 1 ESTADUAL -->
 
-      <!-- ETAPA 2: MAPA E CRITÉRIOS -->
       <div class="card wizard-step" id="etapa2">
         <div class="card-header">
           <div class="card-title">Etapa 2: Verificar Critérios (Mapa)</div>
@@ -394,9 +392,7 @@
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA 2 -->
 
-      <!-- ETAPA 3: RESULTADO FINAL -->
       <div class="card wizard-step" id="etapa3">
         <div class="card-header">
           <div class="card-title">Etapa 3: Resultado</div>
@@ -409,7 +405,6 @@
           </div>
         </div>
       </div>
-      <!-- FIM ETAPA 3 -->
     </div>
   </div>
 
@@ -477,7 +472,7 @@
     </div>
   </div>
 
-  <!-- MODAL PARA ALUNOS ENTRE 10 E 12 ANOS QUE NAO PODEM DESEMBARCAR SOZINHOS -->
+  <!-- MODAL PARA OUTROS RESPONSAVEIS 10 A 12 -->
   <div class="modal fade" id="modalOutrosResponsaveis10a12" tabindex="-1"
     aria-labelledby="modalOutrosResponsaveis10a12Label" aria-hidden="true">
     <div class="modal-dialog">
@@ -506,6 +501,41 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
           <button type="button" class="btn btn-success" id="btnConfirmarOutrosResponsaveis10a12">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PARA ESCOLHER QUEM ASSINA O TERMO DE CONFIRMAÇÃO -->
+  <div class="modal fade" id="modalEscolherAssinatura" tabindex="-1" aria-labelledby="modalEscolherAssinaturaLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEscolherAssinaturaLabel">Selecione quem assina</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Escolha se quem irá assinar o termo é a Filiação 1, Filiação 2, ou o Responsável.</p>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaFiliacao1"
+              value="filiacao1" checked>
+            <label class="form-check-label" for="radioAssinaturaFiliacao1">Filiação 1</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaFiliacao2"
+              value="filiacao2">
+            <label class="form-check-label" for="radioAssinaturaFiliacao2">Filiação 2</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaResponsavel"
+              value="responsavel">
+            <label class="form-check-label" for="radioAssinaturaResponsavel">Responsável</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          <button type="button" class="btn btn-primary" id="btnConfirmarAssinatura">Confirmar</button>
         </div>
       </div>
     </div>
@@ -541,6 +571,7 @@
     let desembarqueSozinho10a12 = false;
     let resultadoFinal = null;
     let outrosResponsaveis10a12 = [];
+    let signerChoice = null; // 'filiacao1', 'filiacao2', 'responsavel'
 
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
@@ -638,6 +669,12 @@
     const listaOutrosResponsaveis10a12 = document.getElementById("listaOutrosResponsaveis10a12");
     const btnConfirmarOutrosResponsaveis10a12 = document.getElementById("btnConfirmarOutrosResponsaveis10a12");
 
+    const modalEscolherAssinatura = new bootstrap.Modal(document.getElementById("modalEscolherAssinatura"), { backdrop: 'static', keyboard: false });
+    const btnConfirmarAssinatura = document.getElementById("btnConfirmarAssinatura");
+    const radioAssinaturaFiliacao1 = document.getElementById("radioAssinaturaFiliacao1");
+    const radioAssinaturaFiliacao2 = document.getElementById("radioAssinaturaFiliacao2");
+    const radioAssinaturaResponsavel = document.getElementById("radioAssinaturaResponsavel");
+
     btnContinuarFluxo.addEventListener("click", async () => {
       if (fluxoMunicipal.checked) {
         tipoFluxoSelecionado = "municipal";
@@ -687,6 +724,7 @@
         }
         originalData = data;
         alunoIdMunicipal = data.id || null;
+
         campoIdMatriculaMunicipal.value = data.id_matricula || "";
         campoNomeAlunoMunicipal.value = data.pessoa_nome || "";
         campoEscolaMunicipal.value = data.escola_nome || "";
@@ -826,12 +864,29 @@
       }
     }
 
+    // Ao clicar em "Imprimir Confirmação"
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado para gerar termo.");
         return;
       }
-      window.open(`/api/termo-cadastro/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+      signerChoice = null;
+      modalEscolherAssinatura.show();
+    });
+
+    // Confirma o modal de escolha de assinatura
+    btnConfirmarAssinatura.addEventListener("click", () => {
+      if (radioAssinaturaFiliacao1.checked) {
+        signerChoice = "filiacao1";
+      } else if (radioAssinaturaFiliacao2.checked) {
+        signerChoice = "filiacao2";
+      } else {
+        signerChoice = "responsavel";
+      }
+      modalEscolherAssinatura.hide();
+      if (alunoIdMunicipal) {
+        window.open(`/api/termo-cadastro/${alunoIdMunicipal}/gerar-pdf?signer=${signerChoice}`, "_blank");
+      }
       btnProximoMunicipal.disabled = false;
     });
 
@@ -863,6 +918,7 @@
         }
         originalData = data;
         alunoIdEstadual = data.id || null;
+
         campoIdMatriculaEstadual.value = data.id_matricula || "";
         campoNomeAlunoEstadual.value = data.pessoa_nome || "";
         campoEscolaEstadual.value = "";
@@ -1151,7 +1207,6 @@
       responsaveisExtras.forEach((resp, idx) => {
         const div = document.createElement("div");
         div.classList.add("mb-2", "p-2", "border", "rounded");
-
         const htmlResponsavel = `
           <label class="form-label fw-semibold">Nome</label>
           <input type="text" class="form-control mb-2" data-rindex="${idx}" data-field="nome" placeholder="Nome" value="${resp.nome || ""}">
@@ -1281,7 +1336,6 @@
 
     btnConfirmarOutrosResponsaveis10a12.addEventListener("click", () => {
       if (radioOutrosRespSim.checked) {
-        // Não iremos enviar a lista, mas sim abrir o termo com campos em branco
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
           window.open(`/api/termo-autorizacao-outros-responsaveis/${alunoIdMunicipal}/gerar-pdf`, "_blank");
         } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {

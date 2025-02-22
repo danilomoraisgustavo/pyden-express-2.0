@@ -6136,6 +6136,7 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
 
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
+  const signer = req.query.signer || "filiacao1"; // 'filiacao1', 'filiacao2' ou 'responsavel'
   try {
     const query = `
       SELECT
@@ -6149,7 +6150,10 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
         a.bairro,
         a.numero_pessoa_endereco,
         a.latitude,
-        a.longitude
+        a.longitude,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.id = $1
@@ -6162,6 +6166,15 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     }
     const aluno = result.rows[0];
 
+    let signerName = "";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Disposition", `inline; filename=termo_cadastro_${id}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
@@ -6171,7 +6184,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
     const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
 
-    // Cabeçalho
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
@@ -6205,15 +6217,12 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
       });
     doc.moveDown(1);
 
-    // Aumenta levemente o espaçamento entre linhas
     doc.lineGap(4);
-
-    // Corpo
     doc
       .fontSize(12)
       .font("Helvetica")
       .text(
-        "Eu, ____________________________________________________________, inscrito(a) no CPF nº ______.______.____-__, ",
+        `Eu, ${signerName}, `,
         { align: "justify", continued: true }
       )
       .text(
@@ -6249,7 +6258,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
 
     doc.moveDown(1);
 
-    // Critérios de elegibilidade
     doc.font("Helvetica-Bold").text("CRITÉRIOS DE ELEGIBILIDADE:", { align: "left" });
     doc.font("Helvetica");
 
@@ -6260,14 +6268,12 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     ];
 
     doc.moveDown(0.5).list(criterios, { align: "justify" });
-
     doc.moveDown(1);
     doc.font("Helvetica").text(
       "Declaro ciência e concordância com os critérios acima descritos para a utilização do Transporte Escolar no Município de Canaã dos Carajás. Estou ciente de que somente após a verificação desses critérios e a efetivação do cadastro o(a) aluno(a) estará habilitado(a) para o uso do transporte escolar, caso necessário. "
     );
 
     doc.moveDown(1);
-    // Parágrafo adicional - Autorização de uso de imagem
     doc.font("Helvetica").text(
       "Por meio deste, autorizo o uso da imagem do(a) aluno(a) para fins de reconhecimento facial no sistema de embarque e desembarque do Transporte Escolar, ciente de que tal procedimento visa exclusivamente à segurança e identificação do(a) aluno(a)."
     );
@@ -6277,7 +6283,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(2);
 
-    // Rodapé
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -6311,6 +6316,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
+
 
 app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
