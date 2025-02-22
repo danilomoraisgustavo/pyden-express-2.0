@@ -7026,9 +7026,12 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
 });
 
 // PUT /api/alunos-recadastro/:id
+// Exemplo de ajuste para evitar erro de array malformado quando o valor for "NADA INFORMADO":
+// Dentro do PUT /api/alunos-recadastro/:id
+
 app.put("/api/alunos-recadastro/:id", async (req, res) => {
   try {
-    const alunoId = req.params.id;
+    const { id } = req.params;
     const {
       cep,
       bairro,
@@ -7040,18 +7043,20 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
       rua
     } = req.body;
 
-    if (!alunoId) {
-      return res.status(400).json({ message: "ID do aluno não informado." });
-    }
-
-    let deficienciaStr = null;
+    // Se a deficiencia for "NADA INFORMADO" ou vazia, seta como null
+    let defArray = null;
     if (Array.isArray(deficiencia)) {
-      deficienciaStr = deficiencia.join(",");
+      defArray = deficiencia.map(item => item === "NADA INFORMADO" ? null : item).filter(Boolean);
+      if (defArray.length === 0) defArray = null;
     } else if (typeof deficiencia === "string") {
-      deficienciaStr = deficiencia;
+      if (deficiencia.trim() && deficiencia.trim() !== "NADA INFORMADO") {
+        defArray = [deficiencia.trim()];
+      } else {
+        defArray = null;
+      }
     }
 
-    const sql = `
+    const query = `
       UPDATE alunos_ativos
       SET
         cep = $1,
@@ -7061,43 +7066,36 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
         deficiencia = $5,
         latitude = $6,
         longitude = $7,
-        rua = $8,
-        transporte_escolar_poder_publico = 'Municipal'
+        rua = $8
       WHERE id = $9
       RETURNING id
     `;
 
+    // deficiencia em $5 deve receber defArray ou null
     const values = [
       cep || null,
       bairro || null,
       numero_pessoa_endereco || null,
       numero_telefone || null,
-      deficienciaStr,
+      defArray, // text[] ou null
       latitude || null,
       longitude || null,
       rua || null,
-      alunoId
+      id
     ];
 
-    const result = await pool.query(sql, values);
+    const result = await pool.query(query, values);
     if (result.rowCount === 0) {
-      return res.status(404).json({
-        message: "Aluno não encontrado ou não foi possível atualizar.",
-      });
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
 
-    return res.json({
-      success: true,
-      message: "Dados do aluno atualizados com sucesso.",
-      updatedId: result.rows[0].id,
-    });
+    return res.json({ success: true, message: "Dados atualizados com sucesso." });
   } catch (error) {
-    console.error("Erro no PUT /api/alunos-recadastro/:id:", error);
-    return res.status(500).json({
-      message: "Erro interno ao atualizar o aluno.",
-    });
+    console.error("Erro ao atualizar aluno:", error);
+    return res.status(500).json({ success: false, message: "Erro ao atualizar aluno." });
   }
 });
+
 
 /***************************************************************
  * POST /api/alunos-ativos-estadual
