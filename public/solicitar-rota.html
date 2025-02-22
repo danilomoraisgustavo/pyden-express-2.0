@@ -397,6 +397,7 @@
     </div>
   </div>
 
+  <!-- Modal Menores de 10 anos -->
   <div class="modal fade" id="modalMenores10" tabindex="-1" aria-labelledby="modalMenores10Label" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -431,6 +432,7 @@
     </div>
   </div>
 
+  <!-- Modal Desembarque 10 a 12 anos -->
   <div class="modal fade" id="modalDesembarque10a12" tabindex="-1" aria-labelledby="modalDesembarque10a12Label"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -459,6 +461,7 @@
     </div>
   </div>
 
+  <!-- Modal Responsáveis não parentes (10 a 12 anos) -->
   <div class="modal fade" id="modalOutrosResponsaveis10a12" tabindex="-1"
     aria-labelledby="modalOutrosResponsaveis10a12Label" aria-hidden="true">
     <div class="modal-dialog">
@@ -492,6 +495,7 @@
     </div>
   </div>
 
+  <!-- Modal Escolher Assinatura -->
   <div class="modal fade" id="modalEscolherAssinatura" tabindex="-1" aria-labelledby="modalEscolherAssinaturaLabel"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -558,7 +562,7 @@
     let desembarqueSozinho10a12 = false;
     let resultadoFinal = null;
     let outrosResponsaveis10a12 = [];
-    let signerChoice = null;
+    let signerChoice = null; // para guardar quem assina (filiacao1, filiacao2 ou responsavel)
 
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
@@ -1251,12 +1255,13 @@
     btnConfirmar10a12.addEventListener("click", () => {
       if (modal10a12_radioSim.checked) {
         desembarqueSozinho10a12 = true;
+        // IMPORTANTE: aqui adicionamos o signerChoice na URL:
         if (tipoFluxoSelecionado === "municipal") {
           if (!alunoIdMunicipal) return;
-          window.open(`/api/termo-desembarque/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+          window.open(`/api/termo-desembarque/${alunoIdMunicipal}/gerar-pdf?signer=${signerChoice || 'responsavel'}`, "_blank");
         } else {
           if (!alunoIdEstadual) return;
-          window.open(`/api/termo-desembarque-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+          window.open(`/api/termo-desembarque-estadual/${alunoIdEstadual}/gerar-pdf?signer=${signerChoice || 'responsavel'}`, "_blank");
         }
         modalDesembarque10a12.hide();
         btnAprovado.click();

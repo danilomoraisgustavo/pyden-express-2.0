@@ -6328,6 +6328,8 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
 
 app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
+  // Capturamos o 'signer' da query string. Se não vier nada, definimos como 'responsavel'.
+  const { signer = "responsavel" } = req.query;
   try {
     const query = `
       SELECT
@@ -6356,6 +6358,16 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
         .json({ success: false, message: "Aluno não encontrado." });
     }
     const aluno = result.rows[0];
+
+    // Definimos o nome que será usado para "Eu, XXX, responsável..."
+    let signerName = "_______________________________";
+    if (signer === "filiacao1") {
+      signerName = aluno.filiacao_1 || "_______________________________";
+    } else if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "_______________________________";
+    } else {
+      signerName = aluno.responsavel || "_______________________________";
+    }
 
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Disposition", `inline; filename=termo_desembarque_${id}.pdf`);
@@ -6404,15 +6416,16 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
       .fontSize(12)
       .font("Helvetica")
       .text(
-        `Eu, ${aluno.responsavel || "_______________________________"}, responsável legal pelo(a) aluno(a) `,
+        `Eu, ${signerName}, responsável legal pelo(a) aluno(a) `,
         { align: "justify", continued: true }
       )
       .font("Helvetica-Bold")
       .text(`${aluno.aluno_nome || ""}`, { continued: true })
       .font("Helvetica")
       .text(
-        `, CPF: ${aluno.cpf || "___"}, matriculado(a) na escola ${aluno.escola_nome || "___"}, turma ${aluno.turma ||
-        "___"}, autorizo, por meio deste documento, o desembarque desacompanhado do(a) estudante no trajeto de transporte escolar.`
+        `, CPF: ${aluno.cpf || "___"}, matriculado(a) na escola ${aluno.escola_nome || "___"
+        }, turma ${aluno.turma || "___"
+        }, autorizo, por meio deste documento, o desembarque desacompanhado do(a) estudante no trajeto de transporte escolar.`
       );
 
     doc.moveDown(1);
@@ -6465,7 +6478,6 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
-
 
 // ============================================================================
 // TERMO DE AUTORIZAÇÃO DE OUTROS RESPONSÁVEIS (MUNICIPAL)
