@@ -5658,6 +5658,27 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     }
     const aluno = result.rows[0];
 
+    // Busca última solicitação de transporte para esse aluno
+    const solQuery = `
+      SELECT
+        menor10_acompanhado,
+        responsaveis_extras,
+        desembarque_sozinho_10a12
+      FROM solicitacoes_transporte
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const solResult = await pool.query(solQuery, [alunoId]);
+    let menor10Acompanhado = false;
+    let desembarqueSozinho = false;
+    let responsaveisExtras = [];
+    if (solResult.rows.length > 0) {
+      menor10Acompanhado = solResult.rows[0].menor10_acompanhado;
+      desembarqueSozinho = solResult.rows[0].desembarque_sozinho_10a12;
+      responsaveisExtras = solResult.rows[0].responsaveis_extras || [];
+    }
+
     // Gera PDF estilo "memorando"
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Disposition", `inline; filename=aprovado_${alunoId}.pdf`);
@@ -5708,9 +5729,64 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
       .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
       .moveDown()
-      .text("Informamos que o(a) aluno(a) acima mencionado ATENDE aos critérios estabelecidos para uso do Transporte Escolar, estando devidamente autorizado a usufruir do serviço no ano letivo corrente, conforme as normas vigentes.", { align: "justify" })
-      .moveDown()
-      .text("Em caso de dúvidas ou alterações nos dados cadastrais, favor dirigir-se à Secretaria Municipal de Educação ou entrar em contato pelos canais oficiais.", { align: "justify" })
+      .text(
+        "Informamos que o(a) aluno(a) acima mencionado ATENDE aos critérios estabelecidos para uso do Transporte Escolar, estando devidamente autorizado(a) a usufruir do serviço no ano letivo corrente, conforme as normas vigentes.",
+        { align: "justify" }
+      )
+      .moveDown();
+
+    // Caso seja menor de 10 anos e tenha marcado acompanhamento
+    if (menor10Acompanhado) {
+      doc
+        .font("Helvetica-Bold")
+        .text("ACOMPANHAMENTO PARA ALUNOS MENORES DE 10 ANOS:", { align: "left" })
+        .font("Helvetica")
+        .text(
+          "O responsável indicou que o(a) aluno(a) será acompanhado para embarque e desembarque. Além de pais ou responsáveis legais, foram cadastrados os seguintes responsáveis extras:",
+          { align: "justify" }
+        )
+        .moveDown();
+      if (responsaveisExtras && responsaveisExtras.length > 0) {
+        responsaveisExtras.forEach((r, index) => {
+          doc.text(`   • ${r.nome} - RG: ${r.rg} - Nascimento: ${r.dataNascimento}`, { indent: 20 });
+        });
+      } else {
+        doc.text("   • Nenhum responsável extra foi cadastrado.", { indent: 20 });
+      }
+      doc.moveDown();
+    } else if (menor10Acompanhado === false && responsaveisExtras.length === 0) {
+      // Caso seja menor de 10 mas NÃO indicou extras => somente pais/avós/irmãos
+      doc
+        .font("Helvetica-Bold")
+        .text("ACOMPANHAMENTO PARA ALUNOS MENORES DE 10 ANOS:", { align: "left" })
+        .font("Helvetica")
+        .text(
+          "Foi informado que apenas os pais, avós ou irmãos maiores de idade poderão buscar o(a) aluno(a) no ponto de embarque e desembarque.",
+          { align: "justify" }
+        )
+        .moveDown();
+    }
+
+    // Se o aluno tem entre 10 e 12 anos
+    if (desembarqueSozinho) {
+      doc
+        .font("Helvetica-Bold")
+        .text("AUTORIZAÇÃO DE DESEMBARQUE:", { align: "left" })
+        .font("Helvetica")
+        .text(
+          "O responsável autorizou o desembarque do(a) aluno(a) desacompanhado(a) ao chegar no ponto de parada.",
+          { align: "justify" }
+        )
+        .moveDown();
+    } else {
+      // Se NÃO autorizou ou a faixa etária não se aplica, não mostrar nada.
+    }
+
+    doc
+      .text(
+        "Em caso de dúvidas ou alterações nos dados cadastrais, favor dirigir-se à Secretaria Municipal de Educação ou entrar em contato pelos canais oficiais.",
+        { align: "justify" }
+      )
       .moveDown();
 
     // Assinatura
@@ -6115,41 +6191,42 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
 // Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
 app.post("/api/solicitacoes-transporte", async (req, res) => {
   try {
-    const { aluno_id, status, motivo } = req.body;
-    if (!aluno_id || !status) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Dados insuficientes." });
-    }
-
-    // Gera número de protocolo simples (exemplo)
-    const protocolo =
-      "PROTO-" + Date.now().toString() + "-" + Math.floor(Math.random() * 1000);
-
-    const sql = `
-      INSERT INTO solicitacoes_transporte (aluno_id, protocolo, status, motivo)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, protocolo, status
+    const {
+      aluno_id,
+      status,
+      motivo,
+      tipo_fluxo,
+      menor10_acompanhado,
+      responsaveis_extras,
+      desembarque_sozinho_10a12,
+    } = req.body;
+    const insertQuery = `
+      INSERT INTO solicitacoes_transporte (
+        aluno_id,
+        status,
+        motivo,
+        tipo_fluxo,
+        menor10_acompanhado,
+        responsaveis_extras,
+        desembarque_sozinho_10a12
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
     `;
-    const values = [aluno_id, protocolo, status, motivo || null];
-
-    const result = await pool.query(sql, values);
-
-    return res.json({
-      success: true,
-      message: "Solicitação registrada com sucesso.",
-      data: {
-        id: result.rows[0].id,
-        protocolo: result.rows[0].protocolo,
-        status: result.rows[0].status,
-      },
-    });
-  } catch (error) {
-    console.error("Erro ao salvar solicitação:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno ao salvar solicitação.",
-    });
+    const values = [
+      aluno_id,
+      status,
+      motivo || null,
+      tipo_fluxo,
+      menor10_acompanhado,
+      JSON.stringify(responsaveis_extras || []),
+      desembarque_sozinho_10a12,
+    ];
+    const result = await pool.query(insertQuery, values);
+    return res.json({ success: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error("Erro ao criar solicitação de transporte", err);
+    return res.status(500).json({ success: false, message: "Erro interno ao criar solicitação" });
   }
 });
 
