@@ -47,7 +47,6 @@
       display: block;
     }
 
-    /* Badge de idade */
     .badge-idade {
       padding: 0.45rem 0.6rem;
       font-size: 0.875rem;
@@ -62,7 +61,6 @@
         <h3 class="fw-bold mb-12 text-center">Cadastro de Alunos - Wizard</h3>
       </div>
 
-      <!-- SELEÇÃO DE FLUXO (ETAPA 0) -->
       <div class="card wizard-step active" id="etapaSelecaoFluxo">
         <div class="card-header">
           <div class="card-title">Selecione o tipo de cadastro</div>
@@ -82,7 +80,6 @@
         </div>
       </div>
 
-      <!-- FLUXO MUNICIPAL (ETAPA 1) -->
       <div class="card wizard-step" id="etapa1Municipal">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Municipal): Dados do Aluno</div>
@@ -110,8 +107,6 @@
                     <input type="text" class="form-control" id="campoNomeAlunoMunicipal" readonly />
                   </div>
                 </div>
-
-                <!-- Data Nascimento e Idade (MUNICIPAL) -->
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Data de Nascimento</label>
@@ -124,7 +119,6 @@
                     </span>
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Escola</label>
@@ -135,7 +129,6 @@
                     <input type="text" class="form-control" id="campoTurmaMunicipal" readonly />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">CPF</label>
@@ -149,7 +142,6 @@
                     <button class="btn btn-info w-100" id="btnConverterCepMunicipal">Converter CEP</button>
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Rua</label>
@@ -160,7 +152,6 @@
                     <input type="text" class="form-control" id="campoBairroMunicipal" />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Número Endereço</label>
@@ -171,7 +162,6 @@
                     <input type="text" class="form-control" id="campoTelefoneMunicipal" />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Filiação 1</label>
@@ -182,13 +172,11 @@
                     <input type="text" class="form-control" id="campoFiliacao2Municipal" readonly />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Responsável</label>
                     <input type="text" class="form-control" id="campoResponsavelMunicipal" readonly />
                   </div>
-                  <!-- SELECT para Deficiência -->
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
                     <select class="form-control" id="campoDeficienciaMunicipal">
@@ -199,37 +187,28 @@
                     </select>
                   </div>
                 </div>
-
-                <!-- BOTÕES -->
                 <div class="d-flex justify-content-between mt-3">
                   <div>
-                    <!-- Novo botão: Salvar Alterações (desativado inicialmente) -->
                     <button class="btn btn-success me-2" id="btnSalvarAlteracoesMunicipal" disabled>Salvar
                       Alterações</button>
-
-                    <!-- Botão Imprimir Confirmação (desativado inicialmente) -->
                     <button class="btn btn-info" id="btnImprimirConfirmacaoMunicipal" disabled>Imprimir
                       Confirmação</button>
                   </div>
                   <div>
-                    <!-- Botão Próximo (desativado inicialmente) -->
                     <button class="btn btn-primary" id="btnProximoMunicipal" disabled>Próximo</button>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- FLUXO ESTADUAL (ETAPA 1) -->
       <div class="card wizard-step" id="etapa1Estadual">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Estadual): Dados do Aluno</div>
         </div>
         <div class="card-body">
-          <!-- Busca por CPF ou Matrícula (para preencher automaticamente) -->
           <div class="row">
             <div class="col-md-6 mb-2">
               <label class="form-label fw-semibold">CPF ou ID Matrícula</label>
@@ -241,7 +220,6 @@
             </div>
           </div>
           <hr />
-
           <div class="row justify-content-center mt-2">
             <div class="col-md-10">
               <div id="dadosAlunoContainerEstadual">
@@ -255,7 +233,6 @@
                     <input type="text" class="form-control" id="campoNomeAlunoEstadual" />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Data Nascimento</label>
@@ -268,7 +245,6 @@
                     </span>
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Escola</label>
@@ -281,7 +257,6 @@
                     <input type="text" class="form-control" id="campoTurmaEstadual" />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Turno</label>
@@ -292,7 +267,6 @@
                     <input type="text" class="form-control" id="campoCpfEstadual" />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-4 mb-2">
                     <label class="form-label fw-semibold">CEP</label>
@@ -307,7 +281,6 @@
                     <input type="text" class="form-control" id="campoBairroEstadual" />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-2">
                     <label class="form-label fw-semibold">Número Endereço</label>
@@ -318,7 +291,6 @@
                     <input type="text" class="form-control" id="campoTelefoneEstadual" />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-4 mb-2">
                     <label class="form-label fw-semibold">Filiação 1</label>
@@ -333,7 +305,6 @@
                     <input type="text" class="form-control" id="campoResponsavelEstadual" />
                   </div>
                 </div>
-
                 <div class="row">
                   <div class="col-md-12 mb-2">
                     <label class="form-label fw-semibold">Deficiência</label>
@@ -345,7 +316,6 @@
                     </select>
                   </div>
                 </div>
-
                 <div class="d-flex justify-content-end mt-3">
                   <button class="btn btn-info" id="btnConverterCepEstadual">Converter CEP</button>
                   <button class="btn btn-primary ms-2" id="btnProximoEstadual">Próximo</button>
@@ -356,7 +326,6 @@
         </div>
       </div>
 
-      <!-- ABA 2 (COMUM AOS DOIS FLUXOS) -->
       <div class="card wizard-step" id="etapa2">
         <div class="card-header">
           <div class="card-title">Etapa 2: Verificar Critérios (Mapa)</div>
@@ -389,17 +358,25 @@
               <input type="text" class="form-control" id="campoLongitude" readonly />
             </div>
           </div>
+          <div class="d-flex align-items-center mt-2">
+            <label class="form-label me-2 fw-bold">Nível de Ensino:</label>
+            <select id="selectNivelEnsino" class="form-select" style="max-width: 200px;">
+              <option value="">Selecione...</option>
+              <option value="infantil">Infantil</option>
+              <option value="fundamental">Fundamental</option>
+            </select>
+            <button class="btn btn-warning ms-3" id="btnVerificarCriterios">Verificar Critérios</button>
+          </div>
           <div class="d-flex justify-content-between mt-4">
             <button class="btn btn-secondary" id="btnVoltarEtapa1">Voltar</button>
             <div>
-              <button class="btn btn-danger" id="btnNaoAprovado">Não Aprovado</button>
-              <button class="btn btn-success" id="btnAprovado">Aprovado</button>
+              <button class="btn btn-danger d-none" id="btnNaoAprovado">Não Aprovado</button>
+              <button class="btn btn-success d-none" id="btnAprovado">Aprovado</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ABA 3 (COMUM AOS DOIS FLUXOS) -->
       <div class="card wizard-step" id="etapa3">
         <div class="card-header">
           <div class="card-title">Etapa 3: Resultado</div>
@@ -412,7 +389,6 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -449,14 +425,13 @@
     const fluxoEstadual = document.getElementById("fluxoEstadual");
     const btnContinuarFluxo = document.getElementById("btnContinuarFluxo");
 
-    // MUNICIPAL
     const btnBuscar = document.getElementById("btnBuscar");
     const inputBusca = document.getElementById("inputBusca");
     const dadosAlunoContainerMunicipal = document.getElementById("dadosAlunoContainerMunicipal");
     const btnConverterCepMunicipal = document.getElementById("btnConverterCepMunicipal");
     const btnProximoMunicipal = document.getElementById("btnProximoMunicipal");
     const btnImprimirConfirmacaoMunicipal = document.getElementById("btnImprimirConfirmacaoMunicipal");
-    const btnSalvarAlteracoesMunicipal = document.getElementById("btnSalvarAlteracoesMunicipal"); // NOVO BOTÃO
+    const btnSalvarAlteracoesMunicipal = document.getElementById("btnSalvarAlteracoesMunicipal");
 
     const campoIdMatriculaMunicipal = document.getElementById("campoIdMatriculaMunicipal");
     const campoNomeAlunoMunicipal = document.getElementById("campoNomeAlunoMunicipal");
@@ -475,7 +450,6 @@
     const campoResponsavelMunicipal = document.getElementById("campoResponsavelMunicipal");
     const campoDeficienciaMunicipal = document.getElementById("campoDeficienciaMunicipal");
 
-    // ESTADUAL
     const btnBuscarEstadual = document.getElementById("btnBuscarEstadual");
     const inputBuscaEstadual = document.getElementById("inputBuscaEstadual");
     const btnConverterCepEstadual = document.getElementById("btnConverterCepEstadual");
@@ -499,7 +473,6 @@
     const campoResponsavelEstadual = document.getElementById("campoResponsavelEstadual");
     const campoDeficienciaEstadual = document.getElementById("campoDeficienciaEstadual");
 
-    // ETAPA 2 E 3
     const btnVoltarEtapa1 = document.getElementById("btnVoltarEtapa1");
     const btnAprovado = document.getElementById("btnAprovado");
     const btnNaoAprovado = document.getElementById("btnNaoAprovado");
@@ -514,6 +487,9 @@
     const campoLongitude = document.getElementById("campoLongitude");
     const resultadoTitulo = document.getElementById("resultadoTitulo");
     const resultadoDescricao = document.getElementById("resultadoDescricao");
+
+    const selectNivelEnsino = document.getElementById("selectNivelEnsino");
+    const btnVerificarCriterios = document.getElementById("btnVerificarCriterios");
 
     btnContinuarFluxo.addEventListener("click", async () => {
       if (fluxoMunicipal.checked) {
@@ -548,7 +524,6 @@
       }
     }
 
-    // MUNICIPAL - BUSCAR
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -566,7 +541,6 @@
         originalData = data;
         alunoIdMunicipal = data.id || null;
 
-        // Preenche campos
         campoIdMatriculaMunicipal.value = data.id_matricula || "";
         campoNomeAlunoMunicipal.value = data.pessoa_nome || "";
         campoEscolaMunicipal.value = data.escola_nome || "";
@@ -582,7 +556,7 @@
         campoResponsavelMunicipal.value = data.responsavel || "";
 
         if (data.data_nascimento) {
-          const dt = data.data_nascimento.split("T")[0]; // "yyyy-mm-dd"
+          const dt = data.data_nascimento.split("T")[0];
           campoDataNascimentoMunicipal.value = dt;
           calcularIdadeMunicipal(new Date(dt));
         } else {
@@ -607,16 +581,20 @@
       }
     });
 
-    // MUNICIPAL - Calcular idade
     function calcularIdadeMunicipal(dataNasc) {
       const hoje = new Date();
       let anos = hoje.getFullYear() - dataNasc.getFullYear();
       let meses = hoje.getMonth() - dataNasc.getMonth();
+      let dias = hoje.getDate() - dataNasc.getDate();
+      if (dias < 0) {
+        meses--;
+        dias += 30;
+      }
       if (meses < 0) {
         anos--;
         meses += 12;
       }
-      campoIdadeMunicipal.textContent = `${anos} anos e ${meses} meses`;
+      campoIdadeMunicipal.textContent = `${anos} anos, ${meses} meses e ${dias} dias`;
 
       const anoAtual = hoje.getFullYear();
       const dataCorte = new Date(anoAtual, 2, 31);
@@ -631,7 +609,6 @@
       }
     }
 
-    // MUNICIPAL - CONVERTER CEP
     btnConverterCepMunicipal.addEventListener("click", async () => {
       const cepLimpo = campoCepMunicipal.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -648,7 +625,6 @@
           } else {
             alert("CEP não encontrado.");
           }
-          // Habilita botão de Salvar Alterações depois de converter CEP
           btnSalvarAlteracoesMunicipal.disabled = false;
         } else {
           alert("Erro ao consultar ViaCEP.");
@@ -658,29 +634,23 @@
       }
     });
 
-    // BOTÃO SALVAR ALTERAÇÕES (MUNICIPAL)
     btnSalvarAlteracoesMunicipal.addEventListener("click", async () => {
       const ok = await salvarAlteracoesMunicipal();
       if (ok) {
-        // Se salvou com sucesso, habilita o botão de Imprimir Confirmação
         btnImprimirConfirmacaoMunicipal.disabled = false;
         alert("Alterações salvas com sucesso (Municipal)!");
       }
     });
 
-    // IMPRIMIR CONFIRMAÇÃO (MUNICIPAL)
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado para gerar termo.");
         return;
       }
       window.open(`/api/termo-cadastro/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-
-      // Após imprimir, habilita "Próximo"
       btnProximoMunicipal.disabled = false;
     });
 
-    // MUNICIPAL - PRÓXIMO
     btnProximoMunicipal.addEventListener("click", () => {
       if (!originalData) {
         alert("Nenhum aluno carregado.");
@@ -693,7 +663,6 @@
       }, 300);
     });
 
-    // ESTADUAL - BUSCAR
     btnBuscarEstadual.addEventListener("click", async () => {
       const valorBusca = inputBuscaEstadual.value.trim();
       if (!valorBusca) {
@@ -744,14 +713,12 @@
         } else {
           campoDeficienciaEstadual.value = "";
         }
-
       } catch (err) {
         console.error(err);
         alert("Erro ao buscar aluno (Estadual).");
       }
     });
 
-    // ESTADUAL - listener para data de nascimento
     campoDataNascimentoEstadual.addEventListener("change", () => {
       if (campoDataNascimentoEstadual.value) {
         calcularIdadeEstadual(new Date(campoDataNascimentoEstadual.value));
@@ -762,11 +729,16 @@
       const hoje = new Date();
       let anos = hoje.getFullYear() - dataNasc.getFullYear();
       let meses = hoje.getMonth() - dataNasc.getMonth();
+      let dias = hoje.getDate() - dataNasc.getDate();
+      if (dias < 0) {
+        meses--;
+        dias += 30;
+      }
       if (meses < 0) {
         anos--;
         meses += 12;
       }
-      campoIdadeEstadual.textContent = `${anos} anos e ${meses} meses`;
+      campoIdadeEstadual.textContent = `${anos} anos, ${meses} meses e ${dias} dias`;
 
       const anoAtual = hoje.getFullYear();
       const dataCorte = new Date(anoAtual, 2, 31);
@@ -781,7 +753,6 @@
       }
     }
 
-    // ESTADUAL - CONVERTER CEP
     btnConverterCepEstadual.addEventListener("click", async () => {
       const cepLimpo = campoCepEstadual.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -806,7 +777,6 @@
       }
     });
 
-    // ESTADUAL - PRÓXIMO
     btnProximoEstadual.addEventListener("click", async () => {
       const defValue = campoDeficienciaEstadual.value;
       const defArray = defValue ? [defValue] : null;
@@ -854,7 +824,6 @@
       }
     });
 
-    // BOTÃO VOLTAR (AMBOS)
     btnVoltarEtapa1.addEventListener("click", () => {
       etapa2.classList.remove("active");
       if (tipoFluxoSelecionado === "municipal") {
@@ -864,7 +833,84 @@
       }
     });
 
-    // BOTÃO APROVADO
+    btnMeasure.addEventListener("click", () => {
+      measureActive = !measureActive;
+      if (measureActive) {
+        btnMeasure.textContent = "Desativar Medição";
+        measureInfoDiv.classList.remove("d-none");
+        startMeasureMode();
+      } else {
+        btnMeasure.textContent = "Medir Distância Manual";
+        measureInfoDiv.classList.add("d-none");
+        endMeasureMode();
+      }
+    });
+
+    btnMeasureReset.addEventListener("click", () => {
+      measurePoints = [];
+      measureDistanceSpan.textContent = "0";
+      if (measurePolyline) {
+        measurePolyline.setMap(null);
+        measurePolyline = null;
+      }
+    });
+
+    btnVerificarCriterios.addEventListener("click", () => {
+      const nivel = selectNivelEnsino.value;
+      if (!nivel) {
+        alert("Selecione o nível de ensino (Infantil ou Fundamental).");
+        return;
+      }
+      const distKm = parseFloat(distanciaRota.textContent) || 0;
+      let idadeMinimaOk = false;
+      let distanciaMinimaOk = false;
+
+      let anos = 0;
+      let meses = 0;
+      let dias = 0;
+      if (tipoFluxoSelecionado === "municipal") {
+        const idadeTexto = campoIdadeMunicipal.textContent;
+        const match = idadeTexto.match(/(\d+)\s*anos,\s*(\d+)\s*meses\s*e\s*(\d+)\s*dias/);
+        if (match) {
+          anos = parseInt(match[1]);
+          meses = parseInt(match[2]);
+          dias = parseInt(match[3]);
+        }
+      } else {
+        const idadeTexto = campoIdadeEstadual.textContent;
+        const match = idadeTexto.match(/(\d+)\s*anos,\s*(\d+)\s*meses\s*e\s*(\d+)\s*dias/);
+        if (match) {
+          anos = parseInt(match[1]);
+          meses = parseInt(match[2]);
+          dias = parseInt(match[3]);
+        }
+      }
+
+      const totalDiasIdade = anos * 365 + meses * 30 + dias;
+      // 3 anos, 9 meses e 1 dia = 3*365 + 9*30 + 1 = 1096 + 270 + 1 = 1367
+      if (totalDiasIdade >= 1367) {
+        idadeMinimaOk = true;
+      }
+
+      if (nivel === "infantil") {
+        // + de 1.5 km
+        if (distKm > 1.5) {
+          distanciaMinimaOk = true;
+        }
+      } else {
+        // fundamental, + de 2 km
+        if (distKm > 2.0) {
+          distanciaMinimaOk = true;
+        }
+      }
+
+      if (!idadeMinimaOk || !distanciaMinimaOk) {
+        btnNaoAprovado.click();
+      } else {
+        btnAprovado.click();
+      }
+    });
+
     btnAprovado.addEventListener("click", async () => {
       if (tipoFluxoSelecionado === "municipal") {
         if (!alunoIdMunicipal) {
@@ -885,7 +931,6 @@
         await criarSolicitacaoTransporte(alunoIdEstadual, "APROVADO", null, "estadual");
         window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
       }
-
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
       resultadoTitulo.innerText = "Aluno Aprovado!";
@@ -893,7 +938,6 @@
       resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
 
-    // BOTÃO NÃO APROVADO
     btnNaoAprovado.addEventListener("click", async () => {
       if (tipoFluxoSelecionado === "municipal") {
         if (!alunoIdMunicipal) {
@@ -918,13 +962,11 @@
       resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
     });
 
-    // BOTÃO FINALIZAR
     btnFinalizar.addEventListener("click", () => {
       alert("Atendimento finalizado!");
       location.reload();
     });
 
-    // SALVAR MUNICIPAL
     async function salvarAlteracoesMunicipal() {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado (Municipal).");
@@ -932,7 +974,6 @@
       }
       const defValue = campoDeficienciaMunicipal.value;
       const defArray = defValue ? [defValue] : null;
-
       const mergeBody = {
         cep: campoCepMunicipal.value.trim(),
         bairro: campoBairroMunicipal.value.trim(),
@@ -943,7 +984,6 @@
         longitude: parseFloat(campoLongitude.value) || null,
         rua: campoRuaMunicipal.value.trim()
       };
-
       try {
         const resp = await fetch(`/api/alunos-recadastro/${alunoIdMunicipal}`, {
           method: "PUT",
@@ -963,7 +1003,6 @@
       }
     }
 
-    // SALVAR ESTADUAL
     async function salvarAlteracoesEstadual(idEstadual) {
       if (!idEstadual) {
         alert("Nenhum aluno estadual para atualizar.");
@@ -971,7 +1010,6 @@
       }
       const defValue = campoDeficienciaEstadual.value;
       const defArray = defValue ? [defValue] : null;
-
       const mergeBody = {
         id_matricula: campoIdMatriculaEstadual.value.trim(),
         pessoa_nome: campoNomeAlunoEstadual.value.trim(),
@@ -992,7 +1030,6 @@
         longitude: parseFloat(campoLongitude.value) || null,
         rua: campoRuaEstadual.value.trim()
       };
-
       try {
         const resp = await fetch(`/api/alunos-ativos-estadual/${idEstadual}`, {
           method: "PUT",
@@ -1035,7 +1072,6 @@
       }
     }
 
-    // MAPA
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
@@ -1054,9 +1090,7 @@
           }
         });
       }
-
       distanciaRota.textContent = "--";
-
       let endAluno = "";
       let latAluno = null;
       let lngAluno = null;
@@ -1086,7 +1120,6 @@
       }
 
       infoEndereco.innerText = endAluno;
-
       try {
         const escolaResp = await fetch(`/api/escola-coordenadas?nome_escola=${encodeURIComponent(escolaNome)}`);
         const escolaJson = await escolaResp.json();
@@ -1099,13 +1132,11 @@
       } catch (err) {
         console.error("Erro ao buscar coordenadas da escola:", err);
       }
-
       if (latEscola && lngEscola) {
         escolaPos = new google.maps.LatLng(latEscola, lngEscola);
       } else {
         escolaPos = new google.maps.LatLng(-6.530066, -49.85163);
       }
-
       if (latAluno && lngAluno) {
         alunoPos = new google.maps.LatLng(parseFloat(latAluno), parseFloat(lngAluno));
         createOrMoveMarkers();
@@ -1123,7 +1154,6 @@
           }
         });
       }
-
       google.maps.event.addListener(map, "click", (e) => {
         if (!markerAluno) {
           markerAluno = new google.maps.Marker({
@@ -1170,7 +1200,6 @@
       } else if (markerAluno && alunoPos) {
         markerAluno.setPosition(alunoPos);
       }
-
       if (!markerEscola) {
         markerEscola = new google.maps.Marker({
           position: escolaPos,
@@ -1180,7 +1209,6 @@
       } else {
         markerEscola.setPosition(escolaPos);
       }
-
       if (alunoPos) {
         map.setCenter(alunoPos);
         calcularRota(alunoPos, escolaPos);
@@ -1207,7 +1235,6 @@
       });
     }
 
-    // Medição manual
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
