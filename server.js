@@ -5658,25 +5658,20 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     }
     const aluno = result.rows[0];
 
-    // Busca última solicitação de transporte para esse aluno
+    // Busca a última solicitação de transporte para gerar o número do protocolo
+    // Caso deseje que o "número" seja o ID da solicitação, basta buscar a solicitação associada ao aluno
     const solQuery = `
       SELECT
-        menor10_acompanhado,
-        responsaveis_extras,
-        desembarque_sozinho_10a12
+        id AS solicitacao_id
       FROM solicitacoes_transporte
       WHERE aluno_id = $1
       ORDER BY id DESC
       LIMIT 1
     `;
     const solResult = await pool.query(solQuery, [alunoId]);
-    let menor10Acompanhado = false;
-    let desembarqueSozinho = false;
-    let responsaveisExtras = [];
+    let numeroProtocolo = "000"; // Se não achar, define algo padrão
     if (solResult.rows.length > 0) {
-      menor10Acompanhado = solResult.rows[0].menor10_acompanhado;
-      desembarqueSozinho = solResult.rows[0].desembarque_sozinho_10a12;
-      responsaveisExtras = solResult.rows[0].responsaveis_extras || [];
+      numeroProtocolo = solResult.rows[0].solicitacao_id; // Ex: usar ID da solicitação
     }
 
     // Gera PDF estilo "memorando"
@@ -5704,23 +5699,25 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
         20,
         { width: 300, align: "right" }
       );
+
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
       doc.image(separadorPath, separadorX, separadorY, { width: 510 });
     }
 
+    // Título e identificação
     doc.y = 130;
     doc.x = 50;
     doc
       .fontSize(12)
       .font("Helvetica-Bold")
-      .text("COMPROVANTE DE APROVAÇÃO Nº 2025", {
+      .text(`COMPROVANTE DE APROVAÇÃO Nº ${numeroProtocolo}`, {
         align: "justify",
       })
-      .moveDown();
+      .moveDown(1);
 
-    // Corpo do documento
+    // Corpo do documento - Dados do aluno
     doc
       .fontSize(12)
       .font("Helvetica")
@@ -5730,66 +5727,17 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
       .moveDown()
       .text(
-        "Informamos que o(a) aluno(a) acima mencionado ATENDE aos critérios estabelecidos para uso do Transporte Escolar, estando devidamente autorizado(a) a usufruir do serviço no ano letivo corrente, conforme as normas vigentes.",
+        "Informamos que o(a) aluno(a) acima mencionado(a) ATENDE aos critérios estabelecidos para uso do Transporte Escolar, estando devidamente autorizado(a) a usufruir do serviço durante o ano letivo em vigor, conforme as normas vigentes e após verificação de todos os requisitos necessários.",
         { align: "justify" }
       )
-      .moveDown();
-
-    // Caso seja menor de 10 anos e tenha marcado acompanhamento
-    if (menor10Acompanhado) {
-      doc
-        .font("Helvetica-Bold")
-        .text("ACOMPANHAMENTO PARA ALUNOS MENORES DE 10 ANOS:", { align: "left" })
-        .font("Helvetica")
-        .text(
-          "O responsável indicou que o(a) aluno(a) será acompanhado para embarque e desembarque. Além de pais ou responsáveis legais, foram cadastrados os seguintes responsáveis extras:",
-          { align: "justify" }
-        )
-        .moveDown();
-      if (responsaveisExtras && responsaveisExtras.length > 0) {
-        responsaveisExtras.forEach((r, index) => {
-          doc.text(`   • ${r.nome} - RG: ${r.rg} - Nascimento: ${r.dataNascimento}`, { indent: 20 });
-        });
-      } else {
-        doc.text("   • Nenhum responsável extra foi cadastrado.", { indent: 20 });
-      }
-      doc.moveDown();
-    } else if (menor10Acompanhado === false && responsaveisExtras.length === 0) {
-      // Caso seja menor de 10 mas NÃO indicou extras => somente pais/avós/irmãos
-      doc
-        .font("Helvetica-Bold")
-        .text("ACOMPANHAMENTO PARA ALUNOS MENORES DE 10 ANOS:", { align: "left" })
-        .font("Helvetica")
-        .text(
-          "Foi informado que apenas os pais, avós ou irmãos maiores de idade poderão buscar o(a) aluno(a) no ponto de embarque e desembarque.",
-          { align: "justify" }
-        )
-        .moveDown();
-    }
-
-    // Se o aluno tem entre 10 e 12 anos
-    if (desembarqueSozinho) {
-      doc
-        .font("Helvetica-Bold")
-        .text("AUTORIZAÇÃO DE DESEMBARQUE:", { align: "left" })
-        .font("Helvetica")
-        .text(
-          "O responsável autorizou o desembarque do(a) aluno(a) desacompanhado(a) ao chegar no ponto de parada.",
-          { align: "justify" }
-        )
-        .moveDown();
-    } else {
-      // Se NÃO autorizou ou a faixa etária não se aplica, não mostrar nada.
-    }
-
-    doc
+      .moveDown()
       .text(
-        "Em caso de dúvidas ou alterações nos dados cadastrais, favor dirigir-se à Secretaria Municipal de Educação ou entrar em contato pelos canais oficiais.",
+        "Este comprovante atesta a regularidade do cadastro, mas não substitui eventuais documentos complementares que possam ser exigidos pelos órgãos competentes. Em caso de dúvidas ou atualizações cadastrais, solicitamos que o(a) responsável dirija-se à Secretaria Municipal de Educação ou entre em contato pelos canais oficiais.",
         { align: "justify" }
       )
       .moveDown();
 
-    // Assinatura
+    // Assinatura do Gestor
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -5817,6 +5765,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       const logo2Y = doc.page.height - 150;
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
+
     doc
       .fontSize(10)
       .font("Helvetica")
@@ -5824,10 +5773,9 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
         width: doc.page.width - 100,
         align: "center",
       })
-      .text(
-        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-        { align: "center" }
-      )
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center",
+      })
       .text("Telefone: (94) 99293-4500", { align: "center" });
 
     doc.end();
@@ -5839,6 +5787,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     });
   }
 });
+
 
 app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
