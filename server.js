@@ -6290,7 +6290,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
       "Por meio deste, autorizo o uso da imagem do(a) aluno(a) para fins de reconhecimento facial no sistema de embarque e desembarque do Transporte Escolar, ciente de que tal procedimento visa exclusivamente à segurança e identificação do(a) aluno(a)."
     );
 
-    doc.moveDown(3);
+    doc.moveDown(2);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(2);
