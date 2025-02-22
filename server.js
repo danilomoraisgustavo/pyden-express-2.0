@@ -5503,9 +5503,15 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
   }
 });
 
-// Exemplo de endpoint para gerar PDF de "Não Aprovado"
+// EXEMPLO COMPLETO DAS APIS ATUALIZADAS SEM EXPLICAÇÕES ADICIONAIS
+
+// ============================================================================
+// COMPROVANTE NÃO APROVADO - MUNICIPAL
+// ============================================================================
 app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
+  // Recebe quem assina pelo query param (opcional)
+  const signer = req.query.signer || "filiacao1";
   try {
     // Consulta do aluno
     const query = `
@@ -5514,7 +5520,10 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
         a.pessoa_nome AS aluno_nome,
         a.cpf,
         e.nome AS escola_nome,
-        a.turma
+        a.turma,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.id = $1
@@ -5525,7 +5534,16 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
     }
     const aluno = result.rows[0];
 
-    // Gera PDF estilo "memorando"
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    // Gera PDF
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Disposition", `inline; filename=nao_aprovado_${alunoId}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
@@ -5535,7 +5553,6 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
     const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
     const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
 
-    // Cabeçalho
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
@@ -5550,6 +5567,7 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
         20,
         { width: 300, align: "right" }
       );
+
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
@@ -5566,7 +5584,6 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
       })
       .moveDown();
 
-    // Corpo do documento
     doc
       .fontSize(12)
       .font("Helvetica")
@@ -5575,17 +5592,20 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
       .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
       .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
       .moveDown()
-      .text("Informamos que o(a) aluno(a) acima mencionado não atende aos critérios estabelecidos para uso do Transporte Escolar. Portanto, não foi possível aprovar seu cadastro para o ano letivo vigente.", { align: "justify" })
+      .text("Informamos que o(a) aluno(a) acima mencionado não atende aos critérios estabelecidos para uso do Transporte Escolar. Portanto, não foi possível aprovar seu cadastro.", { align: "justify" })
       .moveDown()
       .text("Motivo da Não Aprovação:", { align: "justify", underline: true })
       .moveDown()
-      .text("• Distância insuficiente entre residência e escola;", { align: "justify" })
-      .text("• Falta de documentação ou critérios não atendidos;", { align: "justify" })
+      .text("• Distância insuficiente ou outros critérios não cumpridos;", { align: "justify" })
       .moveDown()
-      .text("Em caso de dúvidas ou para regularizar a situação, favor dirigir-se à Secretaria Municipal de Educação ou entrar em contato pelos canais oficiais.", { align: "justify" })
+      .text("Em caso de dúvidas, favor dirigir-se à SEMED.", { align: "justify" })
+      .moveDown()
+      .text(
+        `Eu, ${signerName}, declaro ciência do resultado e estou ciente de que, caso haja nova documentação ou mudança de endereço, devo procurar a Secretaria de Educação para nova avaliação.`,
+        { align: "justify" }
+      )
       .moveDown();
 
-    // Assinatura
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -5602,7 +5622,6 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
 
-    // Rodapé
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -5620,15 +5639,14 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
         width: doc.page.width - 100,
         align: "center",
       })
-      .text(
-        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-        { align: "center" }
-      )
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center",
+      })
       .text("Telefone: (94) 99293-4500", { align: "center" });
 
     doc.end();
   } catch (error) {
-    console.error("Erro ao gerar PDF:", error);
+    console.error("Erro ao gerar PDF (Não Aprovado Municipal):", error);
     return res.status(500).json({
       success: false,
       message: "Erro ao gerar comprovante de não aprovação.",
@@ -5636,18 +5654,24 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
   }
 });
 
-// Exemplo de endpoint para gerar PDF de "Aprovado"
+
+// ============================================================================
+// COMPROVANTE APROVADO - MUNICIPAL
+// ============================================================================
 app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
+  const signer = req.query.signer || "filiacao1";
   try {
-    // Consulta do aluno
     const query = `
       SELECT
         a.id,
         a.pessoa_nome AS aluno_nome,
         a.cpf,
         e.nome AS escola_nome,
-        a.turma
+        a.turma,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.id = $1
@@ -5658,8 +5682,15 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     }
     const aluno = result.rows[0];
 
-    // Busca a última solicitação de transporte para gerar o número do protocolo
-    // Caso deseje que o "número" seja o ID da solicitação, basta buscar a solicitação associada ao aluno
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
     const solQuery = `
       SELECT
         id AS solicitacao_id
@@ -5669,12 +5700,11 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       LIMIT 1
     `;
     const solResult = await pool.query(solQuery, [alunoId]);
-    let numeroProtocolo = "000"; // Se não achar, define algo padrão
+    let numeroProtocolo = "000";
     if (solResult.rows.length > 0) {
-      numeroProtocolo = solResult.rows[0].solicitacao_id; // Ex: usar ID da solicitação
+      numeroProtocolo = solResult.rows[0].solicitacao_id;
     }
 
-    // Gera PDF estilo "memorando"
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Disposition", `inline; filename=aprovado_${alunoId}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
@@ -5684,7 +5714,6 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
     const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
 
-    // Cabeçalho
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
@@ -5706,7 +5735,6 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       doc.image(separadorPath, separadorX, separadorY, { width: 510 });
     }
 
-    // Título e identificação
     doc.y = 130;
     doc.x = 50;
     doc
@@ -5717,7 +5745,6 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       })
       .moveDown(1);
 
-    // Corpo do documento - Dados do aluno
     doc
       .fontSize(12)
       .font("Helvetica")
@@ -5727,17 +5754,16 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
       .moveDown()
       .text(
-        "Informamos que o(a) aluno(a) acima mencionado(a) ATENDE aos critérios estabelecidos para uso do Transporte Escolar, estando devidamente autorizado(a) a usufruir do serviço durante o ano letivo em vigor, conforme as normas vigentes e após verificação de todos os requisitos necessários.",
+        "O(a) aluno(a) acima mencionado(a) atende aos critérios estabelecidos e está devidamente autorizado(a) a usufruir do Transporte Escolar, conforme verificação e aprovação da Secretaria Municipal de Educação.",
         { align: "justify" }
       )
       .moveDown()
       .text(
-        "Este comprovante atesta a regularidade do cadastro, mas não substitui eventuais documentos complementares que possam ser exigidos pelos órgãos competentes. Em caso de dúvidas ou atualizações cadastrais, solicitamos que o(a) responsável dirija-se à Secretaria Municipal de Educação ou entre em contato pelos canais oficiais.",
+        `Eu, ${signerName}, declaro estar ciente das regras de utilização do transporte escolar, bem como da necessidade de manter os dados atualizados junto à SEMED.`,
         { align: "justify" }
       )
       .moveDown();
 
-    // Assinatura do Gestor
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -5754,7 +5780,6 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
 
-    // Rodapé
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -5789,10 +5814,13 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
 });
 
 
+// ============================================================================
+// COMPROVANTE APROVADO - ESTADUAL
+// ============================================================================
 app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
+  const signer = req.query.signer || "filiacao1";
   try {
-    // Consulta do aluno na tabela estadual
     const query = `
       SELECT
         a.id,
@@ -5800,7 +5828,10 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
         a.cpf,
         e.nome AS escola_nome,
         a.turma,
-        a.turno
+        a.turno,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
       FROM alunos_ativos_estadual a
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.id = $1
@@ -5812,10 +5843,30 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
         message: "Aluno estadual não encontrado."
       });
     }
-
     const aluno = result.rows[0];
 
-    // Inicia o PDF
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    const solQuery = `
+      SELECT id
+      FROM solicitacoes_transporte
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const solResult = await pool.query(solQuery, [alunoId]);
+    let numeroProtocolo = "000";
+    if (solResult.rows.length > 0) {
+      numeroProtocolo = solResult.rows[0].id;
+    }
+
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader(
       "Content-Disposition",
@@ -5824,30 +5875,10 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
-    // Caminhos dos arquivos de imagem (ajuste conforme seu diretório)
-    const logoPath = path.join(
-      __dirname,
-      "public",
-      "assets",
-      "img",
-      "logo_memorando1.png"
-    );
-    const separadorPath = path.join(
-      __dirname,
-      "public",
-      "assets",
-      "img",
-      "memorando_separador.png"
-    );
-    const logo2Path = path.join(
-      __dirname,
-      "public",
-      "assets",
-      "img",
-      "memorando_logo2.png"
-    );
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
 
-    // Cabeçalho (Logo + Texto)
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
@@ -5863,25 +5894,22 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
         { width: 300, align: "right" }
       );
 
-    // Separador
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
       doc.image(separadorPath, separadorX, separadorY, { width: 510 });
     }
 
-    // Título
     doc.y = 130;
     doc.x = 50;
     doc
       .fontSize(12)
       .font("Helvetica-Bold")
-      .text("DECLARAÇÃO DE USO DO TRANSPORTE ESCOLAR Nº 2025", {
+      .text(`DECLARAÇÃO DE USO DO TRANSPORTE ESCOLAR Nº ${numeroProtocolo}`, {
         align: "justify",
       })
       .moveDown();
 
-    // Corpo
     doc
       .fontSize(12)
       .font("Helvetica")
@@ -5892,17 +5920,16 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
       .moveDown()
       .text(
-        "Declaramos, para os devidos fins, que o(a) aluno(a) acima mencionado(a) encontra-se apto(a) e está autorizado(a) a utilizar o transporte escolar disponibilizado pela rede estadual. Esta declaração é válida durante o ano letivo corrente, desde que mantidas as condições de matrícula e frequência.",
+        "Declaramos que o(a) aluno(a) acima mencionado(a) encontra-se APTO(a) para o transporte escolar oferecido pela rede estadual, tendo cumprido os critérios necessários.",
         { align: "justify" }
       )
       .moveDown()
       .text(
-        "O aluno deverá portar esta declaração para embarque, juntamente com um documento de identificação, a fim de garantir o devido acesso ao transporte escolar oferecido.",
+        `Eu, ${signerName}, responsável, declaro ciência das normas e da obrigatoriedade de manter os dados atualizados junto à SEDUC.`,
         { align: "justify" }
       )
       .moveDown();
 
-    // Assinatura
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -5918,7 +5945,6 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
       .text("Estado do Pará", { align: "center" });
 
-    // Rodapé
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -5957,10 +5983,14 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
   }
 });
 
+
+// ============================================================================
+// COMPROVANTE NÃO APROVADO - ESTADUAL
+// ============================================================================
 app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
+  const signer = req.query.signer || "filiacao1";
   try {
-    // Consulta do aluno na tabela estadual
     const query = `
       SELECT
         a.id,
@@ -5968,7 +5998,10 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
         a.cpf,
         e.nome AS escola_nome,
         a.turma,
-        a.turno
+        a.turno,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
       FROM alunos_ativos_estadual a
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.id = $1
@@ -5980,10 +6013,17 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
         message: "Aluno estadual não encontrado."
       });
     }
-
     const aluno = result.rows[0];
 
-    // Inicia o PDF
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader(
       "Content-Disposition",
@@ -5992,30 +6032,10 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
-    // Caminhos dos arquivos de imagem (ajuste conforme seu diretório)
-    const logoPath = path.join(
-      __dirname,
-      "public",
-      "assets",
-      "img",
-      "logo_memorando1.png"
-    );
-    const separadorPath = path.join(
-      __dirname,
-      "public",
-      "assets",
-      "img",
-      "memorando_separador.png"
-    );
-    const logo2Path = path.join(
-      __dirname,
-      "public",
-      "assets",
-      "img",
-      "memorando_logo2.png"
-    );
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
 
-    // Cabeçalho (Logo + Texto)
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
@@ -6031,14 +6051,12 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
         { width: 300, align: "right" }
       );
 
-    // Separador
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
       doc.image(separadorPath, separadorX, separadorY, { width: 510 });
     }
 
-    // Título
     doc.y = 130;
     doc.x = 50;
     doc
@@ -6049,7 +6067,6 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
       })
       .moveDown();
 
-    // Corpo
     doc
       .fontSize(12)
       .font("Helvetica")
@@ -6060,26 +6077,16 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
       .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
       .moveDown()
       .text(
-        "Informamos que o(a) aluno(a) acima mencionado(a) não foi aprovado(a) para uso do Transporte Escolar na rede estadual, em virtude de não atendimento aos critérios estabelecidos para o ano letivo vigente.",
+        `Eu, ${signerName}, responsável legal pelo(a) aluno(a) acima, estou ciente de que a solicitação de transporte escolar não foi aprovada por não atendimento aos critérios estabelecidos.`,
         { align: "justify" }
       )
       .moveDown()
-      .text("Motivo(s):", { align: "justify", underline: true })
-      .moveDown()
-      .text("• Distância mínima entre residência e escola não atingida;", {
-        align: "justify"
-      })
-      .text("• Falta de documentação ou demais critérios não atendidos;", {
-        align: "justify"
-      })
-      .moveDown()
       .text(
-        "Para maiores informações ou para regularizar a situação, solicitamos que entre em contato com a Secretaria de Estado de Educação (SEDUC) ou dirija-se à Coordenação de Transporte Escolar.",
+        "Para maiores informações, favor dirigir-se à Coordenação de Transporte Escolar da SEDUC.",
         { align: "justify" }
       )
       .moveDown();
 
-    // Assinatura
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -6095,7 +6102,6 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
       .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
       .text("Estado do Pará", { align: "center" });
 
-    // Rodapé
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -6134,9 +6140,13 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
   }
 });
 
+
+// ============================================================================
+// TERMO DE CADASTRO (MUNICIPAL) COM ESCOLHA DE FILIAÇÃO
+// ============================================================================
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
-  const signer = req.query.signer || "filiacao1"; // 'filiacao1', 'filiacao2' ou 'responsavel'
+  const signer = req.query.signer || "filiacao1";
   try {
     const query = `
       SELECT
@@ -6166,7 +6176,7 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     }
     const aluno = result.rows[0];
 
-    let signerName = "";
+    let signerName = "______________________";
     if (signer === "filiacao2") {
       signerName = aluno.filiacao_2 || "______________________";
     } else if (signer === "responsavel") {
@@ -6221,14 +6231,8 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
     doc
       .fontSize(12)
       .font("Helvetica")
-      .text(
-        `Eu, ${signerName}, `,
-        { align: "justify", continued: true }
-      )
-      .text(
-        "confirmo que sou o(a) responsável pelo(a) aluno(a) ",
-        { continued: true }
-      )
+      .text(`Eu, ${signerName}, `, { align: "justify", continued: true })
+      .text("confirmo que sou o(a) responsável pelo(a) aluno(a) ", { continued: true })
       .font("Helvetica-Bold")
       .text(`${aluno.aluno_nome || ""}`, { continued: true })
       .font("Helvetica")
@@ -6318,6 +6322,10 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
 });
 
 
+// ============================================================================
+// TERMO DE DESEMBARQUE (MUNICIPAL) - MANTÉM COMO ESTAVA
+// ============================================================================
+
 app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
@@ -6334,7 +6342,9 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
         a.numero_pessoa_endereco,
         a.latitude,
         a.longitude,
-        a.responsavel
+        a.responsavel,
+        a.filiacao_1,
+        a.filiacao_2
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.id = $1
@@ -6455,149 +6465,11 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
-app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const queryAluno = `
-      SELECT
-        a.id,
-        a.pessoa_nome AS aluno_nome,
-        a.cpf,
-        a.responsavel,
-        e.nome AS escola_nome,
-        a.turma
-      FROM alunos_ativos a
-      LEFT JOIN escolas e ON e.id = a.escola_id
-      WHERE a.id = $1
-    `;
-    const result = await pool.query(queryAluno, [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
-    }
-    const aluno = result.rows[0];
-    const solQuery = `
-      SELECT id, responsaveis_extras
-      FROM solicitacoes_transporte
-      WHERE aluno_id = $1
-      ORDER BY id DESC
-      LIMIT 1
-    `;
-    const solResult = await pool.query(solQuery, [id]);
-    let listaResponsaveis = [];
-    let solicitacaoId = null;
-    if (solResult.rows.length > 0) {
-      solicitacaoId = solResult.rows[0].id;
-      listaResponsaveis = solResult.rows[0].responsaveis_extras || [];
-    }
-    const doc = new PDFDocument({ size: "A4", margin: 50 });
-    res.setHeader("Content-Disposition", `inline; filename=termo_outros_responsaveis_${id}.pdf`);
-    res.setHeader("Content-Type", "application/pdf");
-    doc.pipe(res);
-    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 50, 20, { width: 60 });
-    }
-    doc
-      .fontSize(11)
-      .font("Helvetica-Bold")
-      .text(
-        "ESTADO DO PARÁ\n" +
-        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
-        250,
-        20,
-        { width: 300, align: "right" }
-      );
-    if (fs.existsSync(separadorPath)) {
-      const separadorX = (doc.page.width - 510) / 2;
-      const separadorY = 90;
-      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-    }
-    doc.y = 130;
-    doc.x = 50;
-    doc
-      .fontSize(12)
-      .font("Helvetica-Bold")
-      .text(`TERMO DE AUTORIZAÇÃO Nº ${solicitacaoId || "000"} - OUTROS RESPONSÁVEIS`, {
-        align: "justify",
-      })
-      .moveDown(1);
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
-      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
-      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
-      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
-      .moveDown()
-      .text(
-        `Eu, ${aluno.responsavel || "______________________"}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar.`,
-        { align: "justify" }
-      )
-      .moveDown();
-    listaResponsaveis.forEach((resp, idx) => {
-      doc
-        .font("Helvetica-Bold")
-        .text(`Responsável ${idx + 1}:`, { align: "left" })
-        .font("Helvetica")
-        .text(`Nome: ${resp.nome || ""}`, { indent: 20 })
-        .text(`RG: ${resp.rg || ""}`, { indent: 20 })
-        .text(`CPF: ${resp.cpf || ""}`, { indent: 20 })
-        .moveDown();
-    });
-    doc
-      .text(
-        "Declaro que todos os responsáveis indicados possuem mais de 18 anos e que responderei por quaisquer informações inverídicas.",
-        { align: "justify" }
-      )
-      .moveDown();
-    const spaceNeededForSignature = 100;
-    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-      doc.addPage();
-    }
-    const signatureY = doc.page.height - 270;
-    doc.y = signatureY;
-    doc.x = 50;
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
-      .text("_____________________________________", { align: "center" })
-      .text("Assinatura do Responsável", { align: "center" });
-    if (fs.existsSync(separadorPath)) {
-      const footerSepX = (doc.page.width - 510) / 2;
-      const footerSepY = doc.page.height - 160;
-      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-    }
-    if (fs.existsSync(logo2Path)) {
-      const logo2X = (doc.page.width - 160) / 2;
-      const logo2Y = doc.page.height - 150;
-      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-    }
-    doc
-      .fontSize(10)
-      .font("Helvetica")
-      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
-        width: doc.page.width - 100,
-        align: "center",
-      })
-      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
-        align: "center",
-      })
-      .text("Telefone: (94) 99293-4500", { align: "center" });
-    doc.end();
-  } catch (error) {
-    console.error("Erro ao gerar termo de outros responsáveis:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao gerar termo de outros responsáveis.",
-    });
-  }
-});
 
+
+// ============================================================================
+// TERMO DE AUTORIZAÇÃO DE OUTROS RESPONSÁVEIS (MUNICIPAL)
+// ============================================================================
 app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
@@ -6747,6 +6619,142 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
     return res.status(500).json({
       success: false,
       message: "Erro ao gerar termo de outros responsáveis.",
+    });
+  }
+});
+
+
+// ============================================================================
+// TERMO DE DESEMBARQUE - ESTADUAL (se desejar ter outro endpoint para estadual)
+// ============================================================================
+app.get("/api/termo-desembarque-estadual/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.turno,
+        a.responsavel
+      FROM alunos_ativos_estadual a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno Estadual não encontrado." });
+    }
+    const aluno = result.rows[0];
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_desembarque_estadual_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
+        "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("TERMO DE RESPONSABILIDADE PARA DESEMBARQUE DESACOMPANHADO (Estadual)", {
+        align: "center",
+        underline: false,
+      });
+    doc.moveDown(1);
+
+    doc.lineGap(4);
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(
+        `Eu, ${aluno.responsavel || "_______________________________"}, responsável legal pelo(a) aluno(a) `,
+        { align: "justify", continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.aluno_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `, CPF: ${aluno.cpf || "___"}, matriculado(a) na escola (Estadual) ${aluno.escola_nome || "___"}, turma ${aluno.turma || "___"
+        }, turno ${aluno.turno || "___"}, autorizo, por meio deste documento, o desembarque desacompanhado do(a) estudante no trajeto de transporte escolar fornecido pela SEDUC.`
+      );
+
+    doc.moveDown(1);
+    doc
+      .font("Helvetica")
+      .text(
+        "Declaro estar ciente de que esta autorização exime os responsáveis pelo transporte escolar, bem como a Secretaria de Estado de Educação, de quaisquer responsabilidades relativas à segurança e acompanhamento do(a) aluno(a) após o desembarque."
+      );
+    doc.moveDown(1);
+    doc
+      .text(
+        "Reafirmo minha plena ciência de que tal autorização se aplica exclusivamente ao momento de desembarque, devendo ser respeitadas todas as demais regras e orientações estabelecidas pelo serviço de transporte escolar estadual."
+      );
+
+    doc.moveDown(2);
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(2);
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC", 50, doc.page.height - 100, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA", {
+        align: "center",
+      })
+      .text("Telefone: (94) 99999-9999", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF do termo de desembarque (Estadual):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF do termo de desembarque (estadual).",
     });
   }
 });
