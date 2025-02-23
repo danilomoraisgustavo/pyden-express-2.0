@@ -6484,7 +6484,6 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
 // ============================================================================
 app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
-  // Pegamos o 'signer' via query string (filiacao1, filiacao2 ou responsavel). Default filiacao1
   const signer = req.query.signer || "filiacao1";
 
   try {
@@ -6508,7 +6507,6 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
     }
     const aluno = result.rows[0];
 
-    // Definimos o nome do assinante com base no query param
     let signerName = "______________________";
     if (signer === "filiacao2") {
       signerName = aluno.filiacao_2 || "______________________";
@@ -6531,7 +6529,6 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
       solicitacaoId = solResult.rows[0].id;
     }
 
-    // Buscar na tabela 'outros_responsaveis'
     const respOutros = await pool.query(
       "SELECT nome, rg, cpf FROM outros_responsaveis WHERE aluno_id = $1 ORDER BY id ASC",
       [id]
@@ -6593,14 +6590,20 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
       )
       .moveDown();
 
-    doc.text("Pessoas Autorizadas:", { align: "justify" }).moveDown(0.5);
+    doc
+      .text("Pessoas Autorizadas:", { align: "justify" })
+      .moveDown(0.5);
 
     if (listaOutros.length === 0) {
-      doc.text("Nenhum responsável cadastrado.", { indent: 20 }).moveDown(1);
+      doc
+        .text("Nenhum responsável cadastrado.", { indent: 20 })
+        .moveDown(1);
     } else {
       listaOutros.forEach((r) => {
         doc
-          .text(`Nome: ${r.nome || "___"}, CPF: ${r.cpf || "___"}, RG: ${r.rg || "___"}`, { indent: 20 })
+          .text(`Nome: ${r.nome || "___"}, CPF: ${r.cpf || "___"}, RG: ${r.rg || "___"}`, {
+            indent: 20,
+          })
           .moveDown(0.5);
       });
       doc.moveDown(1);
@@ -6612,6 +6615,13 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
         { align: "justify" }
       )
       .moveDown();
+
+    doc
+      .text(
+        "Para receber o(a) aluno(a), cada responsável indicado deverá apresentar um documento de identificação oficial com foto, comprovando ser a pessoa autorizada. Caso não haja ninguém aguardando ou apresentando identificação idônea no momento do desembarque, o(a) aluno(a) será levado(a) de volta à escola, onde será realizado contato com a família. Na impossibilidade de localizar os familiares ou outro responsável, poderão ser acionados os órgãos competentes de proteção à criança e ao adolescente.",
+        { align: "justify" }
+      )
+      .moveDown(2);
 
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
