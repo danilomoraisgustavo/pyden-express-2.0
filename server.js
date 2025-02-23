@@ -6626,7 +6626,7 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
 
     doc
       .text(
-        "Caso essa situação de falta de recepção no ponto ocorra mais de duas vezes, o direito de uso do transporte escolar pelo(a) aluno(a) ficará suspenso por tempo indeterminado, como forma de penalidade pela reincidência e falta de compromisso.",
+        "Caso essa situação de falta de recepção no ponto ocorra mais de uma vez, o direito de uso do transporte escolar pelo(a) aluno(a) ficará suspenso por tempo indeterminado, como forma de penalidade pela reincidência e falta de compromisso.",
         { align: "justify" }
       )
       .moveDown(2);
