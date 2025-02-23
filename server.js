@@ -6484,12 +6484,17 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
 // ============================================================================
 app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
+  // Pegamos o 'signer' via query string (filiacao1, filiacao2 ou responsavel). Default filiacao1
+  const signer = req.query.signer || "filiacao1";
+
   try {
     const queryAluno = `
       SELECT
         a.id,
         a.pessoa_nome AS aluno_nome,
         a.cpf,
+        a.filiacao_1,
+        a.filiacao_2,
         a.responsavel,
         e.nome AS escola_nome,
         a.turma
@@ -6502,6 +6507,16 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
       return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
     const aluno = result.rows[0];
+
+    // Definimos o nome do assinante com base no query param
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
 
     const solQuery = `
       SELECT id
@@ -6573,7 +6588,7 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
       .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
       .moveDown()
       .text(
-        `Eu, ${aluno.responsavel || "______________________"}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar.`,
+        `Eu, ${signerName}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar.`,
         { align: "justify" }
       )
       .moveDown();
@@ -6646,7 +6661,6 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
     });
   }
 });
-
 
 app.post("/api/outros-responsaveis", async (req, res) => {
   const { aluno_id, responsaveis } = req.body;
