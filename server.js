@@ -6507,6 +6507,7 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
     }
     const aluno = result.rows[0];
 
+    // Define quem assina (filiacao1, filiacao2, ou responsavel)
     let signerName = "______________________";
     if (signer === "filiacao2") {
       signerName = aluno.filiacao_2 || "______________________";
@@ -6619,6 +6620,13 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
     doc
       .text(
         "Para receber o(a) aluno(a), cada responsável indicado deverá apresentar um documento de identificação oficial com foto, comprovando ser a pessoa autorizada. Caso não haja ninguém aguardando ou apresentando identificação idônea no momento do desembarque, o(a) aluno(a) será levado(a) de volta à escola, onde será realizado contato com a família. Na impossibilidade de localizar os familiares ou outro responsável, poderão ser acionados os órgãos competentes de proteção à criança e ao adolescente.",
+        { align: "justify" }
+      )
+      .moveDown(1);
+
+    doc
+      .text(
+        "Caso essa situação de falta de recepção no ponto ocorra mais de duas vezes, o direito de uso do transporte escolar pelo(a) aluno(a) ficará suspenso por tempo indeterminado, como forma de penalidade pela reincidência e falta de compromisso.",
         { align: "justify" }
       )
       .moveDown(2);
