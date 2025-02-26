@@ -163,6 +163,23 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
+const storageRelatoriosRotas = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, "uploads", "relatorios-rotas");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, "rotas-" + uniqueSuffix + ext);
+  },
+});
+const uploadRelatoriosRotas = multer({
+  storage: storageRelatoriosRotas,
+});
 
 const upload = multer({ dest: "uploads/" });
 const uploadFrota = multer({ storage: storage });
@@ -206,7 +223,246 @@ async function convertToGeoJSON(filePath, originalname) {
   }
   throw new Error("Formato de arquivo não suportado.");
 }
+app.get("/api/relatorios-rotas", (req, res) => {
+  pool
+    .query(
+      "SELECT id, rota, empresa_responsavel, corpo_relatorio, data_criacao FROM relatorios_rotas ORDER BY id DESC"
+    )
+    .then((result) => {
+      res.json(result.rows);
+    })
+    .catch(() => {
+      res.status(500).json({ error: "Erro ao carregar relatórios de rotas" });
+    });
+});
 
+app.post(
+  "/api/relatorios-rotas/cadastrar",
+  uploadRelatoriosRotas.fields([
+    { name: "imagens", maxCount: 10 },
+    { name: "videos", maxCount: 10 },
+  ]),
+  (req, res) => {
+    const { rota, empresa_responsavel, corpo_relatorio } = req.body;
+    pool
+      .query(
+        "INSERT INTO relatorios_rotas (rota, empresa_responsavel, corpo_relatorio) VALUES ($1, $2, $3) RETURNING id",
+        [rota, empresa_responsavel, corpo_relatorio]
+      )
+      .then((insertResult) => {
+        const relatorioId = insertResult.rows[0].id;
+        const imagens = req.files["imagens"] || [];
+        const videos = req.files["videos"] || [];
+        const promises = [];
+
+        imagens.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [relatorioId, "imagem", file.path]
+            )
+          );
+        });
+        videos.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [relatorioId, "video", file.path]
+            )
+          );
+        });
+
+        Promise.all(promises)
+          .then(() => {
+            res.json({ success: true, id: relatorioId });
+          })
+          .catch(() => {
+            res.status(500).json({
+              success: false,
+              message: "Erro ao salvar mídias do relatório",
+            });
+          });
+      })
+      .catch(() => {
+        res.status(500).json({
+          success: false,
+          message: "Erro ao cadastrar relatório de rotas",
+        });
+      });
+  }
+);
+
+app.get("/api/relatorios-rotas/:id/pdf", (req, res) => {
+  const { id } = req.params;
+  pool
+    .query(
+      "SELECT id, rota, empresa_responsavel, corpo_relatorio, data_criacao FROM relatorios_rotas WHERE id = $1",
+      [id]
+    )
+    .then((result) => {
+      if (result.rows.length === 0) {
+        return res.status(404).send("Relatório não encontrado");
+      }
+      const relatorio = result.rows[0];
+      const doc = new PDFDocument({ bufferPages: true });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=relatorio_rota_${id}.pdf`
+      );
+      doc.fontSize(18).text("Relatório de Rotas", { align: "center" });
+      doc.moveDown();
+      doc.fontSize(12).text(`ID: ${relatorio.id}`);
+      doc.text(`Rota: ${relatorio.rota}`);
+      doc.text(`Empresa Responsável: ${relatorio.empresa_responsavel}`);
+      doc.text(`Data de Criação: ${moment(relatorio.data_criacao).format("DD/MM/YYYY HH:mm")}`);
+      doc.moveDown();
+      doc.text("Detalhes do Relatório:");
+      doc.moveDown();
+      doc.text(relatorio.corpo_relatorio);
+      doc.end();
+      doc.pipe(res);
+    })
+    .catch(() => {
+      res.status(500).json({ error: "Erro ao gerar PDF" });
+    });
+});
+
+app.get("/api/relatorios-rotas/:id/docx", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT id, rota, empresa_responsavel, corpo_relatorio, data_criacao FROM relatorios_rotas WHERE id = $1",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).send("Relatório não encontrado");
+    }
+    const relatorio = result.rows[0];
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              text: "Relatório de Rotas",
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({
+              text: `ID: ${relatorio.id}`,
+            }),
+            new Paragraph({
+              text: `Rota: ${relatorio.rota}`,
+            }),
+            new Paragraph({
+              text: `Empresa Responsável: ${relatorio.empresa_responsavel}`,
+            }),
+            new Paragraph({
+              text: `Data de Criação: ${moment(relatorio.data_criacao).format("DD/MM/YYYY HH:mm")}`,
+            }),
+            new Paragraph({
+              text: "",
+            }),
+            new Paragraph({
+              text: "Detalhes do Relatório:",
+              heading: HeadingLevel.HEADING_2,
+            }),
+            new Paragraph({
+              text: relatorio.corpo_relatorio,
+            }),
+          ],
+        },
+      ],
+    });
+    const b64string = await Packer.toBase64String(doc);
+    const filename = `relatorio_rota_${id}.docx`;
+    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+    res.send(Buffer.from(b64string, "base64"));
+  } catch (error) {
+    return res.status(500).send("Erro ao gerar .docx");
+  }
+});
+
+app.put(
+  "/api/relatorios-rotas/:id",
+  uploadRelatoriosRotas.fields([
+    { name: "editar_imagens", maxCount: 10 },
+    { name: "editar_videos", maxCount: 10 },
+  ]),
+  (req, res) => {
+    const { id } = req.params;
+    const { editar_rota, editar_empresa_responsavel, editar_corpo_relatorio } =
+      req.body;
+    pool
+      .query(
+        "UPDATE relatorios_rotas SET rota = $1, empresa_responsavel = $2, corpo_relatorio = $3 WHERE id = $4",
+        [editar_rota, editar_empresa_responsavel, editar_corpo_relatorio, id]
+      )
+      .then((updateResult) => {
+        if (updateResult.rowCount === 0) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Relatório não encontrado" });
+        }
+        const imagens = req.files["editar_imagens"] || [];
+        const videos = req.files["editar_videos"] || [];
+        const promises = [];
+        imagens.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [id, "imagem", file.path]
+            )
+          );
+        });
+        videos.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [id, "video", file.path]
+            )
+          );
+        });
+        Promise.all(promises)
+          .then(() => {
+            res.json({ success: true });
+          })
+          .catch(() => {
+            res.status(500).json({
+              success: false,
+              message: "Erro ao salvar mídias durante edição",
+            });
+          });
+      })
+      .catch(() => {
+        res.status(500).json({
+          success: false,
+          message: "Erro ao editar relatório de rotas",
+        });
+      });
+  }
+);
+
+app.delete("/api/relatorios-rotas/:id", (req, res) => {
+  const { id } = req.params;
+  pool
+    .query("DELETE FROM relatorios_rotas WHERE id = $1", [id])
+    .then((deleteResult) => {
+      if (deleteResult.rowCount === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Relatório não encontrado" });
+      }
+      res.json({ success: true });
+    })
+    .catch(() => {
+      res.status(500).json({
+        success: false,
+        message: "Erro ao excluir relatório de rotas",
+      });
+    });
+});
 // --------------------------------------------------------------------------------
 // ROTA: CADASTRAR USUÁRIO
 // --------------------------------------------------------------------------------
