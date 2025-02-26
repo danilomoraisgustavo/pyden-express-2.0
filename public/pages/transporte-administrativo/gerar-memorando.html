@@ -31,9 +31,6 @@
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
 
-  <!-- Estilos do Summernote (Editor de Texto) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote.min.css" />
-
   <style>
     .required-label::after {
       content: " *";
@@ -42,15 +39,6 @@
 
     .modal-lg {
       max-width: 90% !important;
-    }
-
-    /* Ajustes de z-index para modal de pré-visualização e notificações */
-    .modal {
-      z-index: 9999 !important;
-    }
-
-    .modal-backdrop {
-      z-index: 9998 !important;
     }
   </style>
 </head>
@@ -893,18 +881,12 @@
                     <div class="row mb-3">
                       <div class="col-md-12">
                         <label for="corpo" class="form-label required-label">Corpo da Solicitação</label>
-                        <!-- Textarea transformada em editor de texto (Summernote) -->
                         <textarea id="corpo" name="corpo" class="form-control" rows="4" required></textarea>
                       </div>
                     </div>
 
-                    <div class="mt-4 d-flex">
-                      <button type="button" class="btn btn-secondary me-2" id="previewButtonNovo">
-                        Pré-visualizar
-                      </button>
-                      <button type="submit" class="btn btn-success">
-                        Gerar Documento
-                      </button>
+                    <div class="mt-4">
+                      <button type="submit" class="btn btn-success">Gerar Documento</button>
                     </div>
                   </form>
                 </div>
@@ -1040,19 +1022,13 @@
                     <div class="row mb-3">
                       <div class="col-md-12">
                         <label for="editar_corpo" class="form-label required-label">Corpo da Solicitação</label>
-                        <!-- Textarea com editor de texto Summernote -->
                         <textarea id="editar_corpo" name="editar_corpo" class="form-control" rows="4"
                           required></textarea>
                       </div>
                     </div>
 
-                    <div class="mt-4 d-flex">
-                      <button type="button" class="btn btn-secondary me-2" id="previewButtonEditar">
-                        Pré-visualizar
-                      </button>
-                      <button type="submit" class="btn btn-success">
-                        Salvar Alterações
-                      </button>
+                    <div class="mt-4">
+                      <button type="submit" class="btn btn-success">Salvar Alterações</button>
                     </div>
                   </form>
                 </div>
@@ -1060,24 +1036,6 @@
             </div>
           </div>
           <!-- Fim Modal Editar -->
-
-          <!-- Modal de Pré-visualização (apenas 1 para Novo/Editar) -->
-          <div class="modal fade" id="modalPreviewMemorando" tabindex="-1" aria-labelledby="modalPreviewMemorandoLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="modalPreviewMemorandoLabel">Pré-visualização</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                  <div id="previewContent"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Fim Modal de Pré-visualização -->
-
         </div>
       </div>
 
@@ -1121,9 +1079,6 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
   <script src="../../assets/js/setting-demo2.js"></script>
 
-  <!-- Script do Summernote (Editor de Texto) -->
-  <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote.min.js"></script>
-
   <script>
     let memorandos = [];
 
@@ -1144,7 +1099,7 @@
         },
         offset: 20,
         spacing: 10,
-        z_index: 99999,
+        z_index: 1031,
         delay: 3000,
         timer: 1000,
         animate: {
@@ -1321,13 +1276,15 @@
 
       document.getElementById('editar_memorando_id').value = memo.id;
       document.getElementById('editar_destinatario').value = memo.destinatario;
-      $('#editar_corpo').summernote('code', memo.corpo);
+      document.getElementById('editar_corpo').value = memo.corpo;
 
+      // Tipo de documento
       const radioDocType = document.getElementsByName('editar_tipo_documento');
       for (let i = 0; i < radioDocType.length; i++) {
         radioDocType[i].checked = (radioDocType[i].value === memo.document_type);
       }
 
+      // Tipo de memorando (solicitação)
       const radioSolicitacao = document.getElementsByName('editar_tipo_memorando');
       for (let i = 0; i < radioSolicitacao.length; i++) {
         radioSolicitacao[i].checked = (radioSolicitacao[i].value === memo.tipo_memorando);
@@ -1360,26 +1317,13 @@
         });
     }
 
-    function previewContent(contentId) {
-      const content = $(contentId).summernote('code');
-      $('#previewContent').html(content);
-      $('#modalPreviewMemorando').modal('show');
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
       loadMemorandos();
 
-      $('#corpo').summernote({
-        height: 200
-      });
-      $('#editar_corpo').summernote({
-        height: 200
-      });
-
+      // Cadastro de documento
       document.getElementById('memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);
-        formData.set('corpo', $('#corpo').summernote('code'));
 
         fetch('/api/memorandos/cadastrar', {
           method: 'POST',
@@ -1395,7 +1339,6 @@
             if (data.success) {
               showNotification('success', 'Documento criado com sucesso!');
               document.getElementById('memorando-form').reset();
-              $('#corpo').summernote('reset');
               $('#modalNovoMemorando').modal('hide');
               loadMemorandos();
             } else {
@@ -1408,6 +1351,7 @@
           });
       });
 
+      // Edição de documento
       document.getElementById('editar-memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
 
@@ -1415,13 +1359,13 @@
         const docTypeRadio = document.querySelector('input[name="editar_tipo_documento"]:checked');
         const tipoMemorando = document.querySelector('input[name="editar_tipo_memorando"]:checked');
         const destinatario = document.getElementById('editar_destinatario').value;
-        const corpoEditado = $('#editar_corpo').summernote('code');
+        const corpo = document.getElementById('editar_corpo').value;
 
         const payload = {
           document_type: docTypeRadio ? docTypeRadio.value : 'MEMORANDO',
           tipo_memorando: tipoMemorando ? tipoMemorando.value : '',
           destinatario: destinatario,
-          corpo: corpoEditado
+          corpo: corpo
         };
 
         fetch(`/api/memorandos/${memorandoId}`, {
@@ -1450,13 +1394,6 @@
             console.error(err);
             showNotification('danger', 'Erro ao atualizar documento. Tente novamente.');
           });
-      });
-
-      $('#previewButtonNovo').on('click', function () {
-        previewContent('#corpo');
-      });
-      $('#previewButtonEditar').on('click', function () {
-        previewContent('#editar_corpo');
       });
     });
   </script>
