@@ -167,6 +167,7 @@ const storage = multer.diskStorage({
 const upload = multer({ dest: "uploads/" });
 const uploadFrota = multer({ storage: storage });
 const uploadMonitores = multer({ storage: storage });
+const memorandoUploadImages = multer({ storage: memorandoStorage });
 
 // --------------------------------------------------------------------------------
 // FUNÇÕES UTILITÁRIAS PARA CONVERSÃO DE ARQUIVOS (KMZ -> KML, etc.)
