@@ -4919,14 +4919,14 @@ app.delete("/api/cocessao-rota/:id", async (req, res) => {
 });
 
 // ====================================================================================
-// MEMORANDOS
+// ROTAS MEMORANDOS
 // ====================================================================================
 
-// app.get("/api/memorandos", ...) ...
+// LISTAR
 app.get("/api/memorandos", async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM memorandos ORDER BY data_criacao DESC"
+      "SELECT * FROM memorandos ORDER BY created_at DESC"
     );
     return res.json(result.rows);
   } catch (error) {
@@ -4938,37 +4938,85 @@ app.get("/api/memorandos", async (req, res) => {
   }
 });
 
-// app.post("/api/memorandos/cadastrar", ...) ...
+// CADASTRAR
 app.post(
   "/api/memorandos/cadastrar",
-  memorandoUpload.none(),
+  memorandoUploadImages.any(), // se vierem imagens, use "any()" ou "fields" conforme necessidade
   async (req, res) => {
-    const { document_type, tipo_memorando, destinatario, corpo } = req.body;
+    const {
+      tipo_memorando,
+      data_emissao,
+      assunto,
+      setor_origem,
+      destino_transporte,
+      data_transporte,
+      quantidade_pessoas,
+      funcionario_responsavel,
+      valor_diaria,
+      motivo_diaria,
+      placa_veiculo,
+      descricao_problema,
+      tipo_combustivel,
+      quantidade_litros,
+    } = req.body;
 
-    if (!document_type || !tipo_memorando || !destinatario || !corpo) {
+    if (!tipo_memorando || !data_emissao || !assunto || !setor_origem) {
       return res.status(400).json({
         success: false,
-        message:
-          "Campos obrigatórios não fornecidos (document_type, tipo_memorando, destinatario, corpo).",
+        message: "Campos obrigatórios não fornecidos.",
       });
     }
 
     const userId = req.session?.userId || null;
-    const data_criacao = moment().format("YYYY-MM-DD");
+    const created_at = moment().format("YYYY-MM-DD HH:mm:ss");
+
+    // Se precisar salvar paths das imagens, por exemplo:
+    // const imagens = (req.files || []).map((file) => file.path);
 
     try {
       const insertQuery = `
-        INSERT INTO memorandos
-        (document_type, tipo_memorando, destinatario, corpo, data_criacao)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO memorandos (
+          tipo_memorando,
+          data_emissao,
+          assunto,
+          setor_origem,
+          destino_transporte,
+          data_transporte,
+          quantidade_pessoas,
+          funcionario_responsavel,
+          valor_diaria,
+          motivo_diaria,
+          placa_veiculo,
+          descricao_problema,
+          tipo_combustivel,
+          quantidade_litros,
+          created_at
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
         RETURNING id;
       `;
-      const values = [document_type, tipo_memorando, destinatario, corpo, data_criacao];
-      const result = await pool.query(insertQuery, values);
+      const values = [
+        tipo_memorando,
+        data_emissao,
+        assunto,
+        setor_origem,
+        destino_transporte || null,
+        data_transporte || null,
+        quantidade_pessoas || null,
+        funcionario_responsavel || null,
+        valor_diaria || null,
+        motivo_diaria || null,
+        placa_veiculo || null,
+        descricao_problema || null,
+        tipo_combustivel || null,
+        quantidade_litros || null,
+        created_at,
+      ];
 
+      const result = await pool.query(insertQuery, values);
       if (result.rows.length > 0) {
         const newId = result.rows[0].id;
-        const mensagem = `Documento criado: ${document_type} - ${tipo_memorando}, destinatário: ${destinatario}`;
+        const mensagem = `Memorando criado: ${tipo_memorando} - Assunto: ${assunto}`;
         await pool.query(
           `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
            VALUES ($1, 'CREATE', 'memorandos', $2, $3)`,
@@ -4979,65 +5027,189 @@ app.post(
           success: true,
           memorando: {
             id: newId,
-            document_type,
             tipo_memorando,
-            destinatario,
-            corpo,
-            data_criacao,
+            data_emissao,
+            assunto,
+            setor_origem,
+            destino_transporte,
+            data_transporte,
+            quantidade_pessoas,
+            funcionario_responsavel,
+            valor_diaria,
+            motivo_diaria,
+            placa_veiculo,
+            descricao_problema,
+            tipo_combustivel,
+            quantidade_litros,
+            created_at,
+            // imagens // se quiser retornar os paths
           },
         });
       } else {
         return res.status(500).json({
           success: false,
-          message: "Erro ao cadastrar documento (retorno inesperado).",
+          message: "Erro ao cadastrar memorando (retorno inesperado).",
         });
       }
     } catch (error) {
-      console.error("Erro ao cadastrar documento:", error);
+      console.error("Erro ao cadastrar memorando:", error);
       return res.status(500).json({
         success: false,
-        message: "Erro ao cadastrar documento.",
+        message: "Erro ao cadastrar memorando.",
       });
     }
   }
 );
 
-// app.put("/api/memorandos/:id", ...) ...
-app.put('/api/memorandos/:id', async (req, res) => {
+// ATUALIZAR
+app.put("/api/memorandos/:id", memorandoUploadImages.any(), async (req, res) => {
   const { id } = req.params;
-  const { document_type, tipo_memorando, destinatario, corpo } = req.body;
+  const {
+    tipo_memorando,
+    data_emissao,
+    assunto,
+    setor_origem,
+    destino_transporte,
+    data_transporte,
+    quantidade_pessoas,
+    funcionario_responsavel,
+    valor_diaria,
+    motivo_diaria,
+    placa_veiculo,
+    descricao_problema,
+    tipo_combustivel,
+    quantidade_litros,
+  } = req.body;
 
   try {
     const queryText = `
       UPDATE memorandos
-      SET document_type = $1, tipo_memorando = $2, destinatario = $3, corpo = $4
-      WHERE id = $5
+      SET
+        tipo_memorando = $1,
+        data_emissao = $2,
+        assunto = $3,
+        setor_origem = $4,
+        destino_transporte = $5,
+        data_transporte = $6,
+        quantidade_pessoas = $7,
+        funcionario_responsavel = $8,
+        valor_diaria = $9,
+        motivo_diaria = $10,
+        placa_veiculo = $11,
+        descricao_problema = $12,
+        tipo_combustivel = $13,
+        quantidade_litros = $14
+      WHERE id = $15
       RETURNING *;
     `;
 
-    const result = await pool.query(queryText, [
-      document_type,
+    const values = [
       tipo_memorando,
-      destinatario,
-      corpo,
-      id
-    ]);
+      data_emissao,
+      assunto,
+      setor_origem,
+      destino_transporte || null,
+      data_transporte || null,
+      quantidade_pessoas || null,
+      funcionario_responsavel || null,
+      valor_diaria || null,
+      motivo_diaria || null,
+      placa_veiculo || null,
+      descricao_problema || null,
+      tipo_combustivel || null,
+      quantidade_litros || null,
+      id,
+    ];
 
+    const result = await pool.query(queryText, values);
     if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: 'Documento não encontrado.' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Memorando não encontrado." });
     }
 
     return res.json({ success: true, memorando: result.rows[0] });
   } catch (error) {
-    console.error('Erro ao atualizar documento:', error);
+    console.error("Erro ao atualizar memorando:", error);
     return res.status(500).json({
       success: false,
-      message: 'Erro interno ao atualizar documento.'
+      message: "Erro interno ao atualizar memorando.",
     });
   }
 });
 
-// app.get("/api/memorandos/:id/gerar-docx", ...) ...
+// VISUALIZAR POR ID
+app.get("/api/memorandos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [
+      id,
+    ]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Memorando não encontrado." });
+    }
+    return res.json({
+      success: true,
+      memorando: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Erro ao buscar memorando:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor.",
+    });
+  }
+});
+
+// EXCLUIR
+app.delete("/api/memorandos/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const userId = req.session?.userId || null;
+    const buscaMem = await pool.query("SELECT tipo_memorando, assunto FROM memorandos WHERE id = $1", [id]);
+    if (buscaMem.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Memorando não encontrado.",
+      });
+    }
+    const tipo = buscaMem.rows[0].tipo_memorando;
+    const ass = buscaMem.rows[0].assunto;
+
+    const result = await pool.query(
+      "DELETE FROM memorandos WHERE id = $1 RETURNING *",
+      [id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Memorando não encontrado.",
+      });
+    }
+
+    const mensagem = `Memorando excluído: ${tipo} - Assunto: ${ass}`;
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+       VALUES ($1, 'DELETE', 'memorandos', $2, $3)`,
+      [userId, id, mensagem]
+    );
+
+    return res.json({
+      success: true,
+      message: "Memorando excluído com sucesso.",
+    });
+  } catch (error) {
+    console.error("Erro ao excluir memorando:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao excluir memorando.",
+    });
+  }
+});
+
+// GERAR DOCX
 app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
   const { id } = req.params;
   try {
@@ -5045,7 +5217,7 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
     if (result.rows.length === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "Documento não encontrado." });
+        .json({ success: false, message: "Memorando não encontrado." });
     }
     const memorando = result.rows[0];
 
@@ -5160,10 +5332,11 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
       })
     );
 
-    const { Document, Packer, Paragraph, TextRun, Header, Footer, AlignmentType, HeadingLevel, ImageRun } = require("docx");
     const docBody = [];
-
-    const docTitle = memorando.document_type === "OFICIO" ? "OFÍCIO" : "MEMORANDO";
+    const docTitle =
+      memorando.tipo_memorando && memorando.tipo_memorando.toUpperCase() === "OFICIO"
+        ? "OFÍCIO"
+        : "MEMORANDO";
 
     docBody.push(
       new Paragraph({
@@ -5183,16 +5356,8 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
         children: [
-          new TextRun({ text: `A: ${memorando.destinatario}`, size: 24 }),
-        ],
-      })
-    );
-    docBody.push(
-      new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        children: [
           new TextRun({
-            text: `Assunto: ${memorando.tipo_memorando}`,
+            text: `Assunto: ${memorando.assunto || ""}`,
             size: 24,
           }),
         ],
@@ -5202,16 +5367,147 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
     docBody.push(
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        children: [new TextRun({ text: "Prezados(as),", size: 24 })],
+        children: [
+          new TextRun({
+            text: `Setor Origem: ${memorando.setor_origem || ""}`,
+            size: 24,
+          }),
+        ],
       })
     );
-    docBody.push(new Paragraph({ text: "" }));
-    docBody.push(
-      new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
-        children: [new TextRun({ text: memorando.corpo || "", size: 24 })],
-      })
-    );
+    if (memorando.destino_transporte) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Destino Transporte: ${memorando.destino_transporte}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.data_transporte) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Data Transporte: ${moment(memorando.data_transporte).format(
+                "DD/MM/YYYY"
+              )}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.quantidade_pessoas) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Quantidade de Pessoas: ${memorando.quantidade_pessoas}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.funcionario_responsavel) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Funcionário Responsável: ${memorando.funcionario_responsavel}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.valor_diaria) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Valor Diária: ${memorando.valor_diaria}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.motivo_diaria) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Motivo Diária: ${memorando.motivo_diaria}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.placa_veiculo) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Placa Veículo: ${memorando.placa_veiculo}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.descricao_problema) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Descrição do Problema: ${memorando.descricao_problema}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.tipo_combustivel) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Tipo Combustível: ${memorando.tipo_combustivel}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+    if (memorando.quantidade_litros) {
+      docBody.push(
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          children: [
+            new TextRun({
+              text: `Quantidade de Litros: ${memorando.quantidade_litros}`,
+              size: 24,
+            }),
+          ],
+        })
+      );
+    }
+
     docBody.push(new Paragraph({ text: "" }));
     docBody.push(
       new Paragraph({
@@ -5256,11 +5552,7 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
     });
 
     const buffer = await Packer.toBuffer(doc);
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=documento_${id}.docx`
-    );
+    res.setHeader("Content-Disposition", `attachment; filename=documento_${id}.docx`);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -5270,107 +5562,29 @@ app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
     console.error("Erro ao gerar DOCX:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro ao gerar .docx do documento.",
+      message: "Erro ao gerar .docx do memorando.",
     });
   }
 });
 
-// app.get("/api/memorandos/:id", ...) ...
-app.get("/api/memorandos/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [
-      id,
-    ]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Documento não encontrado.",
-      });
-    }
-    return res.json({
-      success: true,
-      memorando: result.rows[0],
-    });
-  } catch (error) {
-    console.error("Erro ao buscar documento:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor.",
-    });
-  }
-});
-
-// app.delete("/api/memorandos/:id", ...) ...
-app.delete("/api/memorandos/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const userId = req.session?.userId || null;
-    const buscaMem = await pool.query(
-      "SELECT tipo_memorando, document_type FROM memorandos WHERE id = $1",
-      [id]
-    );
-    if (buscaMem.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Documento não encontrado.",
-      });
-    }
-    const tipo = buscaMem.rows[0].tipo_memorando;
-    const docType = buscaMem.rows[0].document_type;
-
-    const result = await pool.query(
-      "DELETE FROM memorandos WHERE id = $1 RETURNING *",
-      [id]
-    );
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Documento não encontrado.",
-      });
-    }
-
-    const mensagem = `Documento excluído: ${docType} - ${tipo}`;
-    await pool.query(
-      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-       VALUES ($1, 'DELETE', 'memorandos', $2, $3)`,
-      [userId, id, mensagem]
-    );
-
-    return res.json({
-      success: true,
-      message: "Documento excluído com sucesso.",
-    });
-  } catch (error) {
-    console.error("Erro ao excluir documento:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao excluir documento.",
-    });
-  }
-});
-
-// app.get("/api/memorandos/:id/gerar-pdf", ...) ...
+// GERAR PDF
 app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [
-      id,
-    ]);
+    const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [id]);
     if (result.rows.length === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "Documento não encontrado." });
+        .json({ success: false, message: "Memorando não encontrado." });
     }
     const memorando = result.rows[0];
+    const docTitle =
+      memorando.tipo_memorando && memorando.tipo_memorando.toUpperCase() === "OFICIO"
+        ? "OFÍCIO"
+        : "MEMORANDO";
 
-    const docTitle = memorando.document_type === "OFICIO" ? "OFÍCIO" : "MEMORANDO";
     const doc = new PDFDocument({ size: "A4", margin: 50 });
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename=documento_${id}.pdf`
-    );
+    res.setHeader("Content-Disposition", `inline; filename=documento_${id}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
@@ -5418,26 +5632,69 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       .font("Helvetica-Bold")
       .text(
         `${docTitle} N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
-        {
-          align: "justify",
-        }
+        { align: "justify" }
       )
       .moveDown();
 
-    const corpoAjustado = memorando.corpo
-      .replace(/\r\n/g, "\n")
-      .replace(/\r/g, "");
     doc
       .fontSize(12)
       .font("Helvetica")
-      .text(`A: ${memorando.destinatario}`, { align: "justify" })
-      .text(`Assunto: ${memorando.tipo_memorando}`, { align: "justify" })
-      .moveDown()
-      .text("Prezados(as),", { align: "justify" })
-      .moveDown()
-      .text(corpoAjustado, { align: "justify" })
+      .text(`Assunto: ${memorando.assunto || ""}`, { align: "justify" })
+      .text(`Setor Origem: ${memorando.setor_origem || ""}`, { align: "justify" })
       .moveDown();
 
+    if (memorando.destino_transporte) {
+      doc.text(
+        `Destino Transporte: ${memorando.destino_transporte}`,
+        { align: "justify" }
+      );
+    }
+    if (memorando.data_transporte) {
+      doc.text(
+        `Data Transporte: ${moment(memorando.data_transporte).format(
+          "DD/MM/YYYY"
+        )}`,
+        { align: "justify" }
+      );
+    }
+    if (memorando.quantidade_pessoas) {
+      doc.text(
+        `Quantidade de Pessoas: ${memorando.quantidade_pessoas}`,
+        { align: "justify" }
+      );
+    }
+    if (memorando.funcionario_responsavel) {
+      doc.text(
+        `Funcionário Responsável: ${memorando.funcionario_responsavel}`,
+        { align: "justify" }
+      );
+    }
+    if (memorando.valor_diaria) {
+      doc.text(`Valor Diária: ${memorando.valor_diaria}`, { align: "justify" });
+    }
+    if (memorando.motivo_diaria) {
+      doc.text(`Motivo Diária: ${memorando.motivo_diaria}`, { align: "justify" });
+    }
+    if (memorando.placa_veiculo) {
+      doc.text(`Placa Veículo: ${memorando.placa_veiculo}`, { align: "justify" });
+    }
+    if (memorando.descricao_problema) {
+      doc.text(`Descrição do Problema: ${memorando.descricao_problema}`, {
+        align: "justify",
+      });
+    }
+    if (memorando.tipo_combustivel) {
+      doc.text(`Tipo Combustível: ${memorando.tipo_combustivel}`, {
+        align: "justify",
+      });
+    }
+    if (memorando.quantidade_litros) {
+      doc.text(`Quantidade de Litros: ${memorando.quantidade_litros}`, {
+        align: "justify",
+      });
+    }
+
+    doc.moveDown();
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -5487,9 +5744,7 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       )
       .text(
         "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-        {
-          align: "center",
-        }
+        { align: "center" }
       )
       .text("Telefone: (94) 99293-4500", { align: "center" });
 
@@ -5502,8 +5757,6 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
-
-// EXEMPLO COMPLETO DAS APIS ATUALIZADAS SEM EXPLICAÇÕES ADICIONAIS
 
 // ============================================================================
 // COMPROVANTE NÃO APROVADO - MUNICIPAL
