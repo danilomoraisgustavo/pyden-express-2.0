@@ -43,6 +43,15 @@
     .modal-lg {
       max-width: 90% !important;
     }
+
+    /* Ajustes de z-index para modal de pré-visualização e notificações */
+    .modal {
+      z-index: 9999 !important;
+    }
+
+    .modal-backdrop {
+      z-index: 9998 !important;
+    }
   </style>
 </head>
 
@@ -1135,7 +1144,7 @@
         },
         offset: 20,
         spacing: 10,
-        z_index: 1031,
+        z_index: 99999,
         delay: 3000,
         timer: 1000,
         animate: {
@@ -1312,16 +1321,13 @@
 
       document.getElementById('editar_memorando_id').value = memo.id;
       document.getElementById('editar_destinatario').value = memo.destinatario;
-      // Carrega o conteúdo no editor Summernote (editar_corpo)
       $('#editar_corpo').summernote('code', memo.corpo);
 
-      // Tipo de documento
       const radioDocType = document.getElementsByName('editar_tipo_documento');
       for (let i = 0; i < radioDocType.length; i++) {
         radioDocType[i].checked = (radioDocType[i].value === memo.document_type);
       }
 
-      // Tipo de memorando (solicitação)
       const radioSolicitacao = document.getElementsByName('editar_tipo_memorando');
       for (let i = 0; i < radioSolicitacao.length; i++) {
         radioSolicitacao[i].checked = (radioSolicitacao[i].value === memo.tipo_memorando);
@@ -1354,9 +1360,7 @@
         });
     }
 
-    // Função para pré-visualizar conteúdo do Summernote
     function previewContent(contentId) {
-      // contentId é o ID do textarea (ex: '#corpo' ou '#editar_corpo')
       const content = $(contentId).summernote('code');
       $('#previewContent').html(content);
       $('#modalPreviewMemorando').modal('show');
@@ -1365,7 +1369,6 @@
     document.addEventListener('DOMContentLoaded', function () {
       loadMemorandos();
 
-      // Inicializa os editores de texto Summernote
       $('#corpo').summernote({
         height: 200
       });
@@ -1373,11 +1376,9 @@
         height: 200
       });
 
-      // Cadastro de documento
       document.getElementById('memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);
-        // Pega o código HTML do editor Summernote e substitui no form
         formData.set('corpo', $('#corpo').summernote('code'));
 
         fetch('/api/memorandos/cadastrar', {
@@ -1394,7 +1395,6 @@
             if (data.success) {
               showNotification('success', 'Documento criado com sucesso!');
               document.getElementById('memorando-form').reset();
-              // Reseta o editor
               $('#corpo').summernote('reset');
               $('#modalNovoMemorando').modal('hide');
               loadMemorandos();
@@ -1408,7 +1408,6 @@
           });
       });
 
-      // Edição de documento
       document.getElementById('editar-memorando-form').addEventListener('submit', function (e) {
         e.preventDefault();
 
@@ -1416,7 +1415,6 @@
         const docTypeRadio = document.querySelector('input[name="editar_tipo_documento"]:checked');
         const tipoMemorando = document.querySelector('input[name="editar_tipo_memorando"]:checked');
         const destinatario = document.getElementById('editar_destinatario').value;
-        // Pega o conteúdo do editor Summernote
         const corpoEditado = $('#editar_corpo').summernote('code');
 
         const payload = {
@@ -1454,7 +1452,6 @@
           });
       });
 
-      // Botões de pré-visualização
       $('#previewButtonNovo').on('click', function () {
         previewContent('#corpo');
       });
