@@ -156,14 +156,18 @@ const memorandoUpload = multer();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    // Defina a pasta onde os arquivos serão salvos
+    cb(null, path.join(__dirname, "public", "uploads"));
   },
   filename: (req, file, cb) => {
+    // Define como será o nome final do arquivo
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
   },
 });
-const upload = multer({ dest: "uploads/" });
+
+const upload = multer({ storage });
 const uploadFrota = multer({ storage: storage });
 const uploadMonitores = multer({ storage: storage });
 
