@@ -766,7 +766,7 @@
                                             <thead>
                                                 <tr>
                                                     <th>ID</th>
-                                                    <th>Rota</th>
+                                                    <th>Título</th>
                                                     <th>Empresa Responsável</th>
                                                     <th>Data</th>
                                                     <th>Ações</th>
@@ -775,7 +775,7 @@
                                             <tfoot>
                                                 <tr>
                                                     <th>ID</th>
-                                                    <th>Rota</th>
+                                                    <th>Título</th>
                                                     <th>Empresa Responsável</th>
                                                     <th>Data</th>
                                                     <th>Ações</th>
@@ -803,8 +803,8 @@
                                     <form id="relatorio-rotas-form" enctype="multipart/form-data">
                                         <div class="row mb-3">
                                             <div class="col-md-6">
-                                                <label for="rota" class="form-label required-label">Rota</label>
-                                                <input type="text" id="rota" name="rota" class="form-control"
+                                                <label for="titulo" class="form-label required-label">Título</label>
+                                                <input type="text" id="titulo" name="titulo" class="form-control"
                                                     required />
                                             </div>
                                             <div class="col-md-6">
@@ -853,8 +853,9 @@
                                             value="" />
                                         <div class="row mb-3">
                                             <div class="col-md-6">
-                                                <label for="editar_rota" class="form-label required-label">Rota</label>
-                                                <input type="text" id="editar_rota" name="editar_rota"
+                                                <label for="editar_titulo"
+                                                    class="form-label required-label">Título</label>
+                                                <input type="text" id="editar_titulo" name="editar_titulo"
                                                     class="form-control" required />
                                             </div>
                                             <div class="col-md-6">
@@ -998,10 +999,11 @@
 
             relatoriosRotas.forEach(r => {
                 const dataFormatada = formatDate(r.data_criacao);
+                // Ajustando para r.titulo em vez de r.rota
                 const row = `
           <tr>
             <td>${r.id}</td>
-            <td>${r.rota}</td>
+            <td>${r.titulo}</td>
             <td>${r.empresa_responsavel}</td>
             <td>${dataFormatada}</td>
             <td>
@@ -1084,7 +1086,7 @@
                     const url = window.URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = `relatorio_rota_${id}.pdf`;
+                    link.download = `relatorio_${id}.pdf`;
                     document.body.appendChild(link);
                     link.click();
                     link.remove();
@@ -1108,7 +1110,7 @@
                     const url = window.URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = `relatorio_rota_${id}.docx`;
+                    link.download = `relatorio_${id}.docx`;
                     document.body.appendChild(link);
                     link.click();
                     link.remove();
@@ -1127,8 +1129,9 @@
                 return;
             }
 
+            // Ajustar campos para titulo
             document.getElementById('editar_relatorio_id').value = relatorio.id;
-            document.getElementById('editar_rota').value = relatorio.rota;
+            document.getElementById('editar_titulo').value = relatorio.titulo;
             document.getElementById('editar_empresa_responsavel').value = relatorio.empresa_responsavel;
             document.getElementById('editar_corpo_relatorio').value = relatorio.corpo_relatorio || '';
 
