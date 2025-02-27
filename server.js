@@ -221,6 +221,7 @@ async function convertToGeoJSON(filePath, originalname) {
   }
   throw new Error("Formato de arquivo não suportado.");
 }
+// BACKEND COMPLETO (ATUALIZADO)
 app.get("/api/relatorios-rotas", (req, res) => {
   pool
     .query(
@@ -488,6 +489,7 @@ app.delete("/api/relatorios-rotas/:id", (req, res) => {
       });
     });
 });
+
 // --------------------------------------------------------------------------------
 // ROTA: CADASTRAR USUÁRIO
 // --------------------------------------------------------------------------------
