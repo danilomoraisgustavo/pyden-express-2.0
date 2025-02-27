@@ -68,6 +68,48 @@ app.use(
     },
   })
 );
+function requirePermission(permissionName) {
+  return async (req, res, next) => {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ success: false, message: "Não logado." });
+    }
+    try {
+      const result = await pool.query(
+        "SELECT id, permissoes FROM usuarios WHERE id = $1 LIMIT 1",
+        [req.session.userId]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ success: false, message: "Usuário inexistente." });
+      }
+      const user = result.rows[0];
+      if (hasPermission(user, permissionName)) {
+        return next();
+      } else {
+        return res.status(403).json({ success: false, message: "Acesso negado: falta permissão." });
+      }
+    } catch (err) {
+      console.error("Erro ao checar permissão:", err);
+      return res.status(500).json({ success: false, message: "Erro interno." });
+    }
+  };
+}
+
+function hasPermission(user, permissionName) {
+  // Se user.id for 1 ou user.permissoes incluir "Master", já tem todas as permissões
+  if (user.id === 1) return true;
+  if (user.permissoes && user.permissoes.includes("Master")) return true;
+
+  // Checa se user.permissoes (string) contém a permissão exata
+  // Por exemplo, se user.permissoes = "GerenciarFornecedores,Financeiro"
+  // e permissionName = "GerenciarFornecedores",
+  // podemos fazer:
+  if (!user.permissoes) return false;
+
+  // Para evitar problemas com substring (ex: "Fornecedor" vs "Fornecedores"), pode-se
+  // converter para array:
+  const permsArray = user.permissoes.split(",").map(p => p.trim());
+  return permsArray.includes(permissionName);
+}
 
 function isAdmin(req, res, next) {
   if (!req.session || !req.session.userId) {
