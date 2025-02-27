@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Admin Dashboard</title>
+</head>
+
+<body>
+
+    <h1>Admin Dashboard</h1>
+
+    <button id="btnListarUsuarios">Listar Usuários</button>
+    <div id="listaUsuarios"></div>
+
+    <script>
+        document.getElementById("btnListarUsuarios").addEventListener("click", () => {
+            fetch("/api/admin/users")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const container = document.getElementById("listaUsuarios");
+                        container.innerHTML = "";
+                        data.data.forEach(u => {
+                            const div = document.createElement("div");
+                            div.innerHTML = `
+                <p>
+                  <strong>ID:</strong> ${u.id} 
+                  | <strong>Nome:</strong> ${u.nome_completo} 
+                  | <strong>init:</strong> ${u.init}
+                  | <strong>Permissões:</strong> ${u.permissoes || ""}
+                  <button onclick="toggleInit(${u.id}, ${u.init})">Mudar init</button>
+                  <button onclick="makeMaster(${u.id})">Dar Master</button>
+                  <button onclick="excluirUsuario(${u.id})">Excluir</button>
+                </p>
+              `;
+                            container.appendChild(div);
+                        });
+                    } else {
+                        alert("Erro: " + data.message);
+                    }
+                })
+                .catch(err => console.error(err));
+        });
+
+        function toggleInit(userId, currentInit) {
+            // Se currentInit for true, queremos false, e vice-versa
+            const novoInit = !currentInit;
+            fetch(`/api/admin/users/${userId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ init: novoInit })
+            })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.success) {
+                        alert("Atualizado com sucesso");
+                    } else {
+                        alert("Erro: " + resp.message);
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function makeMaster(userId) {
+            fetch(`/api/admin/users/${userId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ permissoes: "Master" })
+            })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.success) {
+                        alert("Permissão Master atribuída!");
+                    } else {
+                        alert("Erro: " + resp.message);
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function excluirUsuario(userId) {
+            if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+            fetch(`/api/admin/users/${userId}`, {
+                method: "DELETE"
+            })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.success) {
+                        alert("Usuário excluído!");
+                    } else {
+                        alert("Erro: " + resp.message);
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+    </script>
+
+</body>
+
+</html>

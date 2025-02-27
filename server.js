@@ -69,6 +69,36 @@ app.use(
   })
 );
 
+function isAdmin(req, res, next) {
+  if (!req.session || !req.session.userId) {
+    return res.redirect("/"); // ou retornar 401, conforme sua necessidade
+  }
+
+  pool
+    .query("SELECT id, permissoes FROM usuarios WHERE id = $1", [req.session.userId])
+    .then((result) => {
+      if (result.rows.length === 0) {
+        return res.redirect("/");
+      }
+      const user = result.rows[0];
+
+      // Se for ID 1, já consideramos admin
+      if (user.id === 1) {
+        return next();
+      }
+
+      if (user.permissoes && user.permissoes.includes("Master")) {
+        return next();
+      }
+
+      // Caso não atenda
+      return res.status(403).send("Acesso negado: usuário não é administrador.");
+    })
+    .catch((error) => {
+      console.error("Erro ao verificar permissões de admin:", error);
+      return res.status(500).send("Erro interno do servidor.");
+    });
+}
 
 // MIDDLEWARE: isAuthenticated (protege rotas e páginas)
 
@@ -112,6 +142,10 @@ app.use(
 
 
 // ROTAS PRINCIPAIS
+// Rota para carregar a página HTML do painel admin
+app.get("/admin", isAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin-dashboard.html"));
+});
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/login-cadastro.html"));
@@ -205,6 +239,159 @@ async function convertToGeoJSON(filePath, originalname) {
   }
   throw new Error("Formato de arquivo não suportado.");
 }
+
+app.get("/api/admin/users", isAdmin, async (req, res) => {
+  try {
+    // Buscamos tudo da tabela usuarios (exceto senha, se quiser omitir)
+    const query = `
+      SELECT
+        id,
+        nome_completo,
+        cpf,
+        cnpj,
+        telefone,
+        email,
+        init,
+        permissoes
+      FROM usuarios
+      ORDER BY id ASC
+    `;
+    const result = await pool.query(query);
+    return res.json({
+      success: true,
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error("Erro ao listar usuários:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao listar usuários.",
+    });
+  }
+});
+app.put("/api/admin/users/:id", isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { init, permissoes } = req.body; // init = true/false, permissoes = string (ex: "Master,Financeiro")
+
+    // Garante que ID não seja o seu próprio, se quiser evitar auto-editar. (Opcional)
+    // if (parseInt(id, 10) === req.session.userId) {
+    //   return res.status(400).json({ success: false, message: "Não é possível alterar a si mesmo via esta rota." });
+    // }
+
+    // Monta a query dinamicamente
+    const fieldsToUpdate = [];
+    const values = [];
+    let idx = 1;
+
+    if (init !== undefined) {
+      fieldsToUpdate.push(`init = $${idx++}`);
+      values.push(init); // boolean
+    }
+    if (permissoes !== undefined) {
+      fieldsToUpdate.push(`permissoes = $${idx++}`);
+      values.push(permissoes); // string
+    }
+
+    if (fieldsToUpdate.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Nenhum campo para atualizar." });
+    }
+
+    const updateQuery = `
+      UPDATE usuarios
+      SET ${fieldsToUpdate.join(", ")}
+      WHERE id = $${idx}
+      RETURNING id, nome_completo, init, permissoes
+    `;
+    values.push(id);
+
+    const result = await pool.query(updateQuery, values);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Usuário não encontrado." });
+    }
+
+    return res.json({
+      success: true,
+      message: "Usuário atualizado com sucesso!",
+      user: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar usuário (admin):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao atualizar usuário.",
+    });
+  }
+});
+app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Opcional: impedir excluir o ID 1 (master fixo), se quiser
+    if (parseInt(id, 10) === 1) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Não é possível excluir o usuário master (ID=1)." });
+    }
+
+    // Mesma lógica para não excluir a si mesmo:
+    // if (parseInt(id, 10) === req.session.userId) {
+    //   return res.status(403).json({ success: false, message: "Você não pode excluir a si mesmo." });
+    // }
+
+    const del = await pool.query("DELETE FROM usuarios WHERE id = $1", [id]);
+    if (del.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Usuário não encontrado." });
+    }
+
+    return res.json({ success: true, message: "Usuário excluído com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao excluir usuário (admin):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao excluir usuário.",
+    });
+  }
+});
+
+// Página de login especial do Admin
+app.get("/admin-login", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin-login.html"));
+});
+
+// Processa login admin
+app.post("/admin-login", async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    const userQuery = `SELECT id, senha, permissoes FROM usuarios WHERE email = $1 LIMIT 1`;
+    const result = await pool.query(userQuery, [email]);
+    if (result.rows.length === 0) {
+      return res.status(401).json({ success: false, message: "Usuário não encontrado." });
+    }
+    const usuario = result.rows[0];
+
+    const match = await bcrypt.compare(senha, usuario.senha);
+    if (!match) {
+      return res.status(401).json({ success: false, message: "Senha incorreta." });
+    }
+
+    // Checa se tem permissão Master ou é ID 1
+    if (usuario.id !== 1 && !(usuario.permissoes || "").includes("Master")) {
+      return res.status(403).json({ success: false, message: "Você não é admin." });
+    }
+
+    // Ok, pode logar
+    req.session.userId = usuario.id;
+    res.json({ success: true, message: "Login admin OK", redirect: "/admin" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: "Erro interno." });
+  }
+});
+
+
 // ROTA: CADASTRAR USUÁRIO
 
 app.get("/api/usuarios/perfil", isAuthenticated, async (req, res) => {
