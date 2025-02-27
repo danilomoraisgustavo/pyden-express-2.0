@@ -156,18 +156,15 @@ const memorandoUpload = multer();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Defina a pasta onde os arquivos serão salvos
-    cb(null, path.join(__dirname, "public", "uploads"));
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Define como será o nome final do arquivo
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({ dest: "uploads/" });
 const uploadFrota = multer({ storage: storage });
 const uploadMonitores = multer({ storage: storage });
 
@@ -209,7 +206,246 @@ async function convertToGeoJSON(filePath, originalname) {
   }
   throw new Error("Formato de arquivo não suportado.");
 }
+app.get("/api/relatorios-rotas", (req, res) => {
+  pool
+    .query(
+      "SELECT id, rota, empresa_responsavel, corpo_relatorio, data_criacao FROM relatorios_rotas ORDER BY id DESC"
+    )
+    .then((result) => {
+      res.json(result.rows);
+    })
+    .catch(() => {
+      res.status(500).json({ error: "Erro ao carregar relatórios de rotas" });
+    });
+});
 
+app.post(
+  "/api/relatorios-rotas/cadastrar",
+  uploadRelatoriosRotas.fields([
+    { name: "imagens", maxCount: 10 },
+    { name: "videos", maxCount: 10 },
+  ]),
+  (req, res) => {
+    const { rota, empresa_responsavel, corpo_relatorio } = req.body;
+    pool
+      .query(
+        "INSERT INTO relatorios_rotas (rota, empresa_responsavel, corpo_relatorio) VALUES ($1, $2, $3) RETURNING id",
+        [rota, empresa_responsavel, corpo_relatorio]
+      )
+      .then((insertResult) => {
+        const relatorioId = insertResult.rows[0].id;
+        const imagens = req.files["imagens"] || [];
+        const videos = req.files["videos"] || [];
+        const promises = [];
+
+        imagens.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [relatorioId, "imagem", file.path]
+            )
+          );
+        });
+        videos.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [relatorioId, "video", file.path]
+            )
+          );
+        });
+
+        Promise.all(promises)
+          .then(() => {
+            res.json({ success: true, id: relatorioId });
+          })
+          .catch(() => {
+            res.status(500).json({
+              success: false,
+              message: "Erro ao salvar mídias do relatório",
+            });
+          });
+      })
+      .catch(() => {
+        res.status(500).json({
+          success: false,
+          message: "Erro ao cadastrar relatório de rotas",
+        });
+      });
+  }
+);
+
+app.get("/api/relatorios-rotas/:id/pdf", (req, res) => {
+  const { id } = req.params;
+  pool
+    .query(
+      "SELECT id, rota, empresa_responsavel, corpo_relatorio, data_criacao FROM relatorios_rotas WHERE id = $1",
+      [id]
+    )
+    .then((result) => {
+      if (result.rows.length === 0) {
+        return res.status(404).send("Relatório não encontrado");
+      }
+      const relatorio = result.rows[0];
+      const doc = new PDFDocument({ bufferPages: true });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=relatorio_rota_${id}.pdf`
+      );
+      doc.fontSize(18).text("Relatório de Rotas", { align: "center" });
+      doc.moveDown();
+      doc.fontSize(12).text(`ID: ${relatorio.id}`);
+      doc.text(`Rota: ${relatorio.rota}`);
+      doc.text(`Empresa Responsável: ${relatorio.empresa_responsavel}`);
+      doc.text(`Data de Criação: ${moment(relatorio.data_criacao).format("DD/MM/YYYY HH:mm")}`);
+      doc.moveDown();
+      doc.text("Detalhes do Relatório:");
+      doc.moveDown();
+      doc.text(relatorio.corpo_relatorio);
+      doc.end();
+      doc.pipe(res);
+    })
+    .catch(() => {
+      res.status(500).json({ error: "Erro ao gerar PDF" });
+    });
+});
+
+app.get("/api/relatorios-rotas/:id/docx", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      "SELECT id, rota, empresa_responsavel, corpo_relatorio, data_criacao FROM relatorios_rotas WHERE id = $1",
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).send("Relatório não encontrado");
+    }
+    const relatorio = result.rows[0];
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              text: "Relatório de Rotas",
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({
+              text: `ID: ${relatorio.id}`,
+            }),
+            new Paragraph({
+              text: `Rota: ${relatorio.rota}`,
+            }),
+            new Paragraph({
+              text: `Empresa Responsável: ${relatorio.empresa_responsavel}`,
+            }),
+            new Paragraph({
+              text: `Data de Criação: ${moment(relatorio.data_criacao).format("DD/MM/YYYY HH:mm")}`,
+            }),
+            new Paragraph({
+              text: "",
+            }),
+            new Paragraph({
+              text: "Detalhes do Relatório:",
+              heading: HeadingLevel.HEADING_2,
+            }),
+            new Paragraph({
+              text: relatorio.corpo_relatorio,
+            }),
+          ],
+        },
+      ],
+    });
+    const b64string = await Packer.toBase64String(doc);
+    const filename = `relatorio_rota_${id}.docx`;
+    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+    res.send(Buffer.from(b64string, "base64"));
+  } catch (error) {
+    return res.status(500).send("Erro ao gerar .docx");
+  }
+});
+
+app.put(
+  "/api/relatorios-rotas/:id",
+  uploadRelatoriosRotas.fields([
+    { name: "editar_imagens", maxCount: 10 },
+    { name: "editar_videos", maxCount: 10 },
+  ]),
+  (req, res) => {
+    const { id } = req.params;
+    const { editar_rota, editar_empresa_responsavel, editar_corpo_relatorio } =
+      req.body;
+    pool
+      .query(
+        "UPDATE relatorios_rotas SET rota = $1, empresa_responsavel = $2, corpo_relatorio = $3 WHERE id = $4",
+        [editar_rota, editar_empresa_responsavel, editar_corpo_relatorio, id]
+      )
+      .then((updateResult) => {
+        if (updateResult.rowCount === 0) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Relatório não encontrado" });
+        }
+        const imagens = req.files["editar_imagens"] || [];
+        const videos = req.files["editar_videos"] || [];
+        const promises = [];
+        imagens.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [id, "imagem", file.path]
+            )
+          );
+        });
+        videos.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [id, "video", file.path]
+            )
+          );
+        });
+        Promise.all(promises)
+          .then(() => {
+            res.json({ success: true });
+          })
+          .catch(() => {
+            res.status(500).json({
+              success: false,
+              message: "Erro ao salvar mídias durante edição",
+            });
+          });
+      })
+      .catch(() => {
+        res.status(500).json({
+          success: false,
+          message: "Erro ao editar relatório de rotas",
+        });
+      });
+  }
+);
+
+app.delete("/api/relatorios-rotas/:id", (req, res) => {
+  const { id } = req.params;
+  pool
+    .query("DELETE FROM relatorios_rotas WHERE id = $1", [id])
+    .then((deleteResult) => {
+      if (deleteResult.rowCount === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Relatório não encontrado" });
+      }
+      res.json({ success: true });
+    })
+    .catch(() => {
+      res.status(500).json({
+        success: false,
+        message: "Erro ao excluir relatório de rotas",
+      });
+    });
+});
 // --------------------------------------------------------------------------------
 // ROTA: CADASTRAR USUÁRIO
 // --------------------------------------------------------------------------------
@@ -7563,288 +7799,6 @@ function toRad(value) {
   return value * Math.PI / 180;
 }
 
-
-// ========== 1) LISTAR TODOS OS RELATÓRIOS ==========
-app.get("/api/relatorios-rotas", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM relatorios ORDER BY id DESC");
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Erro ao listar relatórios:", error);
-    res.status(500).json({ success: false, message: "Erro ao listar relatórios" });
-  }
-});
-
-// ========== 2) CRIAR NOVO RELATÓRIO ==========
-// Campo "arquivos" (múltiplos uploads)
-app.post("/api/relatorios-rotas/cadastrar", upload.array("arquivos"), async (req, res) => {
-  const { titulo, empresa_responsavel, corpo_relatorio } = req.body;
-
-  if (!titulo || !empresa_responsavel || !corpo_relatorio) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Dados obrigatórios faltando." });
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    const insertQuery = `
-      INSERT INTO relatorios (titulo, empresa_responsavel, corpo_relatorio)
-      VALUES ($1, $2, $3)
-      RETURNING id
-    `;
-    const insertResult = await client.query(insertQuery, [
-      titulo,
-      empresa_responsavel,
-      corpo_relatorio,
-    ]);
-    const relatorioId = insertResult.rows[0].id;
-
-    // Se tiver arquivos no campo "arquivos", salvar no banco
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const insertAnexoQuery = `
-          INSERT INTO relatorios_anexos
-            (relatorio_id, original_name, file_path, mime_type)
-          VALUES ($1, $2, $3, $4)
-        `;
-        await client.query(insertAnexoQuery, [
-          relatorioId,
-          file.originalname,
-          file.filename,
-          file.mimetype,
-        ]);
-      }
-    }
-
-    await client.query("COMMIT");
-    res.json({ success: true, message: "Relatório criado com sucesso!", id: relatorioId });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Erro ao cadastrar relatório:", error);
-    res.status(500).json({ success: false, message: "Erro ao cadastrar relatório." });
-  } finally {
-    client.release();
-  }
-});
-
-// ========== 3) EDITAR RELATÓRIO ==========
-// Aqui, supomos que no frontend o campo é "editar_arquivos".
-app.put("/api/relatorios-rotas/:id", upload.array("editar_arquivos"), async (req, res) => {
-  const { id } = req.params;
-  const { editar_titulo, editar_empresa_responsavel, editar_corpo_relatorio } = req.body;
-
-  if (!editar_titulo || !editar_empresa_responsavel || !editar_corpo_relatorio) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Dados obrigatórios faltando." });
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    const updateQuery = `
-      UPDATE relatorios
-      SET titulo = $1,
-          empresa_responsavel = $2,
-          corpo_relatorio = $3
-      WHERE id = $4
-      RETURNING id
-    `;
-    const result = await client.query(updateQuery, [
-      editar_titulo,
-      editar_empresa_responsavel,
-      editar_corpo_relatorio,
-      id,
-    ]);
-
-    if (result.rowCount === 0) {
-      throw new Error("Relatório não encontrado para atualização");
-    }
-
-    // Se houver novos arquivos no campo "editar_arquivos", salvar no banco
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
-        const insertAnexoQuery = `
-          INSERT INTO relatorios_anexos
-            (relatorio_id, original_name, file_path, mime_type)
-          VALUES ($1, $2, $3, $4)
-        `;
-        await client.query(insertAnexoQuery, [
-          id,
-          file.originalname,
-          file.filename,
-          file.mimetype,
-        ]);
-      }
-    }
-
-    await client.query("COMMIT");
-    res.json({ success: true, message: "Relatório atualizado com sucesso!" });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Erro ao editar relatório:", error);
-    res.status(500).json({ success: false, message: "Erro ao editar relatório." });
-  } finally {
-    client.release();
-  }
-});
-
-// ========== 4) EXCLUIR RELATÓRIO ==========
-app.delete("/api/relatorios-rotas/:id", async (req, res) => {
-  const { id } = req.params;
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    // Apaga da tabela relatorios (e via ON DELETE CASCADE, apaga anexos)
-    const deleteQuery = "DELETE FROM relatorios WHERE id = $1 RETURNING id";
-    const result = await client.query(deleteQuery, [id]);
-    if (result.rowCount === 0) {
-      throw new Error("Relatório não encontrado para exclusão");
-    }
-
-    await client.query("COMMIT");
-    res.json({ success: true, message: "Relatório excluído com sucesso!" });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Erro ao excluir relatório:", error);
-    res.status(500).json({ success: false, message: "Erro ao excluir relatório." });
-  } finally {
-    client.release();
-  }
-});
-
-// ========== 5) GERAR PDF (CAPA + ANEXOS) ==========
-//   GET /api/relatorios-rotas/:id/pdf
-//   Este endpoint gera um PDF usando pdfkit. As imagens são inseridas como páginas.
-//   PDFs e vídeos são apenas referenciados (por não serem exibíveis no PDFKit).
-app.get("/api/relatorios-rotas/:id/pdf", async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    // Buscar o relatório no banco
-    const relatorioResult = await pool.query("SELECT * FROM relatorios WHERE id = $1", [id]);
-    if (relatorioResult.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
-    }
-    const relatorio = relatorioResult.rows[0];
-
-    // Buscar anexos
-    const anexosResult = await pool.query(
-      "SELECT * FROM relatorios_anexos WHERE relatorio_id = $1",
-      [id]
-    );
-    const anexos = anexosResult.rows;
-
-    // Criar PDF
-    const doc = new PDFDocument({ size: "A4", margin: 50 });
-    res.setHeader("Content-Disposition", `inline; filename=relatorio_${id}.pdf`);
-    res.setHeader("Content-Type", "application/pdf");
-    doc.pipe(res);
-
-    // Cabeçalho/Capa
-    doc
-      .fontSize(14)
-      .font("Helvetica-Bold")
-      .text(`Relatório Nº ${relatorio.id}`, { align: "center" });
-    doc.moveDown(1);
-
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text(`Título: ${relatorio.titulo}`, { align: "left" });
-    doc.text(`Empresa Responsável: ${relatorio.empresa_responsavel}`, { align: "left" });
-    doc.moveDown();
-
-    // Corpo do relatório
-    doc.text("Corpo do Relatório:", { underline: true }).moveDown(0.5);
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text(relatorio.corpo_relatorio, { align: "justify" });
-    doc.moveDown(2);
-
-    // Data de criação
-    doc.text(
-      `Data de Criação: ${new Date(relatorio.data_criacao).toLocaleString("pt-BR")}`,
-      { align: "left" }
-    );
-
-    // Se existirem anexos, adicionar nova página ou seções para eles
-    if (anexos.length > 0) {
-      doc.addPage();
-      doc.fontSize(14).font("Helvetica-Bold").text("Anexos:", { align: "left" });
-      doc.moveDown();
-
-      anexos.forEach((anexo, index) => {
-        const filePath = path.join(__dirname, "public", "uploads", anexo.file_path);
-        const mime = anexo.mime_type.toLowerCase();
-
-        // Se for imagem, inserimos na página
-        if (mime.startsWith("image/") && fs.existsSync(filePath)) {
-          doc
-            .fontSize(12)
-            .font("Helvetica-Bold")
-            .text(`Imagem ${index + 1}: ${anexo.original_name}`);
-          doc.moveDown(0.5);
-          doc.image(filePath, {
-            fit: [500, 400],
-            align: "center",
-            valign: "center",
-          });
-          doc.moveDown(2);
-        }
-        // Se for PDF, apenas uma menção (não é renderizado dentro do PDFKit)
-        else if (mime === "application/pdf") {
-          doc
-            .fontSize(12)
-            .font("Helvetica-Bold")
-            .text(`PDF Anexo ${index + 1}: ${anexo.original_name}`);
-          doc
-            .fontSize(12)
-            .font("Helvetica")
-            .text("Este arquivo PDF está salvo no sistema, mas não pode ser incorporado diretamente.");
-          doc.moveDown(2);
-        }
-        // Se for vídeo, só referência. PDF não exibe vídeos.
-        else if (mime.startsWith("video/")) {
-          doc
-            .fontSize(12)
-            .font("Helvetica-Bold")
-            .text(`Vídeo ${index + 1}: ${anexo.original_name}`);
-          doc
-            .fontSize(12)
-            .font("Helvetica")
-            .text("Não é possível reproduzir vídeos diretamente em PDF.");
-          doc.moveDown(2);
-        }
-        // Outros formatos
-        else {
-          doc
-            .fontSize(12)
-            .font("Helvetica-Bold")
-            .text(`Anexo ${index + 1}: ${anexo.original_name}`);
-          doc
-            .fontSize(12)
-            .font("Helvetica")
-            .text("Formato não suportado para visualização dentro do PDF.");
-          doc.moveDown(2);
-        }
-      });
-    }
-
-    doc.end();
-  } catch (error) {
-    console.error("Erro ao gerar PDF:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Erro ao gerar PDF." });
-  }
-});
 
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
