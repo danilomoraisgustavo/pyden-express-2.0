@@ -7564,7 +7564,7 @@ function toRad(value) {
 }
 
 
-// ============== 1) LISTAR TODOS OS RELATÓRIOS ===============
+// ========== 1) LISTAR TODOS OS RELATÓRIOS ==========
 app.get("/api/relatorios-rotas", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM relatorios ORDER BY id DESC");
@@ -7575,8 +7575,8 @@ app.get("/api/relatorios-rotas", async (req, res) => {
   }
 });
 
-// ============== 2) CRIAR NOVO RELATÓRIO ===============
-// Recebe: titulo, empresa_responsavel, corpo_relatorio, e anexos (arquivos)
+// ========== 2) CRIAR NOVO RELATÓRIO ==========
+// Campo "arquivos" (múltiplos uploads)
 app.post("/api/relatorios-rotas/cadastrar", upload.array("arquivos"), async (req, res) => {
   const { titulo, empresa_responsavel, corpo_relatorio } = req.body;
 
@@ -7602,7 +7602,7 @@ app.post("/api/relatorios-rotas/cadastrar", upload.array("arquivos"), async (req
     ]);
     const relatorioId = insertResult.rows[0].id;
 
-    // Se tiver arquivos, salvar no banco
+    // Se tiver arquivos no campo "arquivos", salvar no banco
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const insertAnexoQuery = `
@@ -7613,7 +7613,7 @@ app.post("/api/relatorios-rotas/cadastrar", upload.array("arquivos"), async (req
         await client.query(insertAnexoQuery, [
           relatorioId,
           file.originalname,
-          file.filename, // nome do arquivo salvo
+          file.filename,
           file.mimetype,
         ]);
       }
@@ -7630,7 +7630,8 @@ app.post("/api/relatorios-rotas/cadastrar", upload.array("arquivos"), async (req
   }
 });
 
-// ============== 3) EDITAR RELATÓRIO ===============
+// ========== 3) EDITAR RELATÓRIO ==========
+// Aqui, supomos que no frontend o campo é "editar_arquivos".
 app.put("/api/relatorios-rotas/:id", upload.array("editar_arquivos"), async (req, res) => {
   const { id } = req.params;
   const { editar_titulo, editar_empresa_responsavel, editar_corpo_relatorio } = req.body;
@@ -7664,7 +7665,7 @@ app.put("/api/relatorios-rotas/:id", upload.array("editar_arquivos"), async (req
       throw new Error("Relatório não encontrado para atualização");
     }
 
-    // Se houver novos arquivos, insira-os também
+    // Se houver novos arquivos no campo "editar_arquivos", salvar no banco
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const insertAnexoQuery = `
@@ -7692,14 +7693,14 @@ app.put("/api/relatorios-rotas/:id", upload.array("editar_arquivos"), async (req
   }
 });
 
-// ============== 4) EXCLUIR RELATÓRIO ===============
+// ========== 4) EXCLUIR RELATÓRIO ==========
 app.delete("/api/relatorios-rotas/:id", async (req, res) => {
   const { id } = req.params;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    // Excluir registros da tabela relatorios
+    // Apaga da tabela relatorios (e via ON DELETE CASCADE, apaga anexos)
     const deleteQuery = "DELETE FROM relatorios WHERE id = $1 RETURNING id";
     const result = await client.query(deleteQuery, [id]);
     if (result.rowCount === 0) {
@@ -7717,52 +7718,63 @@ app.delete("/api/relatorios-rotas/:id", async (req, res) => {
   }
 });
 
-// ============== 5) GERAR PDF (CAPA + ANEXOS) ===============
-// Aqui você gera o PDF com a capa e adiciona imagens como páginas extras.
-// PDFs e vídeos, por não serem diretamente renderizáveis, podem ser listados como links ou anexados como "file attachments".
+// ========== 5) GERAR PDF (CAPA + ANEXOS) ==========
+//   GET /api/relatorios-rotas/:id/pdf
+//   Este endpoint gera um PDF usando pdfkit. As imagens são inseridas como páginas.
+//   PDFs e vídeos são apenas referenciados (por não serem exibíveis no PDFKit).
 app.get("/api/relatorios-rotas/:id/pdf", async (req, res) => {
   const { id } = req.params;
 
   try {
+    // Buscar o relatório no banco
     const relatorioResult = await pool.query("SELECT * FROM relatorios WHERE id = $1", [id]);
     if (relatorioResult.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Relatório não encontrado." });
     }
     const relatorio = relatorioResult.rows[0];
 
+    // Buscar anexos
     const anexosResult = await pool.query(
       "SELECT * FROM relatorios_anexos WHERE relatorio_id = $1",
       [id]
     );
     const anexos = anexosResult.rows;
 
-    // Inicia geração do PDF
+    // Criar PDF
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     res.setHeader("Content-Disposition", `inline; filename=relatorio_${id}.pdf`);
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
-    // Título "capa" do relatório
-    doc.fontSize(14).font("Helvetica-Bold").text(`Relatório Nº ${relatorio.id}`, {
-      align: "center",
-    });
+    // Cabeçalho/Capa
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text(`Relatório Nº ${relatorio.id}`, { align: "center" });
     doc.moveDown(1);
-    doc.fontSize(12).font("Helvetica").text(`Título: ${relatorio.titulo}`, { align: "left" });
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Título: ${relatorio.titulo}`, { align: "left" });
     doc.text(`Empresa Responsável: ${relatorio.empresa_responsavel}`, { align: "left" });
     doc.moveDown();
 
     // Corpo do relatório
     doc.text("Corpo do Relatório:", { underline: true }).moveDown(0.5);
-    doc.fontSize(12).font("Helvetica").text(relatorio.corpo_relatorio, {
-      align: "justify",
-    });
-
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(relatorio.corpo_relatorio, { align: "justify" });
     doc.moveDown(2);
-    doc.text(`Data de Criação: ${new Date(relatorio.data_criacao).toLocaleString("pt-BR")}`, {
-      align: "left",
-    });
 
-    // Se existirem anexos, adicionar uma nova página ou seções específicas
+    // Data de criação
+    doc.text(
+      `Data de Criação: ${new Date(relatorio.data_criacao).toLocaleString("pt-BR")}`,
+      { align: "left" }
+    );
+
+    // Se existirem anexos, adicionar nova página ou seções para eles
     if (anexos.length > 0) {
       doc.addPage();
       doc.fontSize(14).font("Helvetica-Bold").text("Anexos:", { align: "left" });
@@ -7774,39 +7786,53 @@ app.get("/api/relatorios-rotas/:id/pdf", async (req, res) => {
 
         // Se for imagem, inserimos na página
         if (mime.startsWith("image/") && fs.existsSync(filePath)) {
-          doc.fontSize(12).font("Helvetica-Bold").text(`Imagem ${index + 1}:`);
+          doc
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text(`Imagem ${index + 1}: ${anexo.original_name}`);
           doc.moveDown(0.5);
           doc.image(filePath, {
             fit: [500, 400],
             align: "center",
             valign: "center",
           });
-          doc.moveDown(1);
+          doc.moveDown(2);
         }
-        // Se for PDF, faremos apenas um texto e anexo (opcionalmente, poderia usar `doc.file(...)`, mas pdfkit não tem nativamente)
+        // Se for PDF, apenas uma menção (não é renderizado dentro do PDFKit)
         else if (mime === "application/pdf") {
-          doc.fontSize(12).font("Helvetica-Bold").text(`PDF Anexo ${index + 1}:`);
-          doc.fontSize(12).font("Helvetica").text(
-            `Arquivo: ${anexo.original_name} (não é renderizado dentro deste PDF, mas está salvo no sistema).`
-          );
-          doc.moveDown(1);
-          // Se quiser inserir como "file attachment" no PDF (técnica avançada), teria que usar bibliotecas adicionais ou hacks.  
+          doc
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text(`PDF Anexo ${index + 1}: ${anexo.original_name}`);
+          doc
+            .fontSize(12)
+            .font("Helvetica")
+            .text("Este arquivo PDF está salvo no sistema, mas não pode ser incorporado diretamente.");
+          doc.moveDown(2);
         }
-        // Se for vídeo, não temos como incorporar no PDF, então apenas um link/nome
+        // Se for vídeo, só referência. PDF não exibe vídeos.
         else if (mime.startsWith("video/")) {
-          doc.fontSize(12).font("Helvetica-Bold").text(`Vídeo ${index + 1}:`);
-          doc.fontSize(12).font("Helvetica").text(
-            `Arquivo: ${anexo.original_name} (não pode ser reproduzido no PDF).`
-          );
-          doc.moveDown(1);
+          doc
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text(`Vídeo ${index + 1}: ${anexo.original_name}`);
+          doc
+            .fontSize(12)
+            .font("Helvetica")
+            .text("Não é possível reproduzir vídeos diretamente em PDF.");
+          doc.moveDown(2);
         }
-        // Se for outro formato, apenas avisar
+        // Outros formatos
         else {
-          doc.fontSize(12).font("Helvetica-Bold").text(`Anexo ${index + 1}:`);
-          doc.fontSize(12).font("Helvetica").text(
-            `Arquivo: ${anexo.original_name} (formato não diretamente suportado).`
-          );
-          doc.moveDown(1);
+          doc
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text(`Anexo ${index + 1}: ${anexo.original_name}`);
+          doc
+            .fontSize(12)
+            .font("Helvetica")
+            .text("Formato não suportado para visualização dentro do PDF.");
+          doc.moveDown(2);
         }
       });
     }
@@ -7814,10 +7840,9 @@ app.get("/api/relatorios-rotas/:id/pdf", async (req, res) => {
     doc.end();
   } catch (error) {
     console.error("Erro ao gerar PDF:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao gerar PDF.",
-    });
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao gerar PDF." });
   }
 });
 
