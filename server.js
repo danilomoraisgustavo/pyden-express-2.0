@@ -7560,6 +7560,263 @@ function toRad(value) {
 }
 
 
+// ============== 1) LISTAR TODOS OS RELATÓRIOS ===============
+app.get("/api/relatorios-rotas", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM relatorios ORDER BY id DESC");
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Erro ao listar relatórios:", error);
+    res.status(500).json({ success: false, message: "Erro ao listar relatórios" });
+  }
+});
+
+// ============== 2) CRIAR NOVO RELATÓRIO ===============
+// Recebe: titulo, empresa_responsavel, corpo_relatorio, e anexos (arquivos)
+app.post("/api/relatorios-rotas/cadastrar", upload.array("arquivos"), async (req, res) => {
+  const { titulo, empresa_responsavel, corpo_relatorio } = req.body;
+
+  if (!titulo || !empresa_responsavel || !corpo_relatorio) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Dados obrigatórios faltando." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const insertQuery = `
+      INSERT INTO relatorios (titulo, empresa_responsavel, corpo_relatorio)
+      VALUES ($1, $2, $3)
+      RETURNING id
+    `;
+    const insertResult = await client.query(insertQuery, [
+      titulo,
+      empresa_responsavel,
+      corpo_relatorio,
+    ]);
+    const relatorioId = insertResult.rows[0].id;
+
+    // Se tiver arquivos, salvar no banco
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const insertAnexoQuery = `
+          INSERT INTO relatorios_anexos
+            (relatorio_id, original_name, file_path, mime_type)
+          VALUES ($1, $2, $3, $4)
+        `;
+        await client.query(insertAnexoQuery, [
+          relatorioId,
+          file.originalname,
+          file.filename, // nome do arquivo salvo
+          file.mimetype,
+        ]);
+      }
+    }
+
+    await client.query("COMMIT");
+    res.json({ success: true, message: "Relatório criado com sucesso!", id: relatorioId });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Erro ao cadastrar relatório:", error);
+    res.status(500).json({ success: false, message: "Erro ao cadastrar relatório." });
+  } finally {
+    client.release();
+  }
+});
+
+// ============== 3) EDITAR RELATÓRIO ===============
+app.put("/api/relatorios-rotas/:id", upload.array("editar_arquivos"), async (req, res) => {
+  const { id } = req.params;
+  const { editar_titulo, editar_empresa_responsavel, editar_corpo_relatorio } = req.body;
+
+  if (!editar_titulo || !editar_empresa_responsavel || !editar_corpo_relatorio) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Dados obrigatórios faltando." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const updateQuery = `
+      UPDATE relatorios
+      SET titulo = $1,
+          empresa_responsavel = $2,
+          corpo_relatorio = $3
+      WHERE id = $4
+      RETURNING id
+    `;
+    const result = await client.query(updateQuery, [
+      editar_titulo,
+      editar_empresa_responsavel,
+      editar_corpo_relatorio,
+      id,
+    ]);
+
+    if (result.rowCount === 0) {
+      throw new Error("Relatório não encontrado para atualização");
+    }
+
+    // Se houver novos arquivos, insira-os também
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const insertAnexoQuery = `
+          INSERT INTO relatorios_anexos
+            (relatorio_id, original_name, file_path, mime_type)
+          VALUES ($1, $2, $3, $4)
+        `;
+        await client.query(insertAnexoQuery, [
+          id,
+          file.originalname,
+          file.filename,
+          file.mimetype,
+        ]);
+      }
+    }
+
+    await client.query("COMMIT");
+    res.json({ success: true, message: "Relatório atualizado com sucesso!" });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Erro ao editar relatório:", error);
+    res.status(500).json({ success: false, message: "Erro ao editar relatório." });
+  } finally {
+    client.release();
+  }
+});
+
+// ============== 4) EXCLUIR RELATÓRIO ===============
+app.delete("/api/relatorios-rotas/:id", async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Excluir registros da tabela relatorios
+    const deleteQuery = "DELETE FROM relatorios WHERE id = $1 RETURNING id";
+    const result = await client.query(deleteQuery, [id]);
+    if (result.rowCount === 0) {
+      throw new Error("Relatório não encontrado para exclusão");
+    }
+
+    await client.query("COMMIT");
+    res.json({ success: true, message: "Relatório excluído com sucesso!" });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Erro ao excluir relatório:", error);
+    res.status(500).json({ success: false, message: "Erro ao excluir relatório." });
+  } finally {
+    client.release();
+  }
+});
+
+// ============== 5) GERAR PDF (CAPA + ANEXOS) ===============
+// Aqui você gera o PDF com a capa e adiciona imagens como páginas extras.
+// PDFs e vídeos, por não serem diretamente renderizáveis, podem ser listados como links ou anexados como "file attachments".
+app.get("/api/relatorios-rotas/:id/pdf", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const relatorioResult = await pool.query("SELECT * FROM relatorios WHERE id = $1", [id]);
+    if (relatorioResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
+    }
+    const relatorio = relatorioResult.rows[0];
+
+    const anexosResult = await pool.query(
+      "SELECT * FROM relatorios_anexos WHERE relatorio_id = $1",
+      [id]
+    );
+    const anexos = anexosResult.rows;
+
+    // Inicia geração do PDF
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=relatorio_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    // Título "capa" do relatório
+    doc.fontSize(14).font("Helvetica-Bold").text(`Relatório Nº ${relatorio.id}`, {
+      align: "center",
+    });
+    doc.moveDown(1);
+    doc.fontSize(12).font("Helvetica").text(`Título: ${relatorio.titulo}`, { align: "left" });
+    doc.text(`Empresa Responsável: ${relatorio.empresa_responsavel}`, { align: "left" });
+    doc.moveDown();
+
+    // Corpo do relatório
+    doc.text("Corpo do Relatório:", { underline: true }).moveDown(0.5);
+    doc.fontSize(12).font("Helvetica").text(relatorio.corpo_relatorio, {
+      align: "justify",
+    });
+
+    doc.moveDown(2);
+    doc.text(`Data de Criação: ${new Date(relatorio.data_criacao).toLocaleString("pt-BR")}`, {
+      align: "left",
+    });
+
+    // Se existirem anexos, adicionar uma nova página ou seções específicas
+    if (anexos.length > 0) {
+      doc.addPage();
+      doc.fontSize(14).font("Helvetica-Bold").text("Anexos:", { align: "left" });
+      doc.moveDown();
+
+      anexos.forEach((anexo, index) => {
+        const filePath = path.join(__dirname, "public", "uploads", anexo.file_path);
+        const mime = anexo.mime_type.toLowerCase();
+
+        // Se for imagem, inserimos na página
+        if (mime.startsWith("image/") && fs.existsSync(filePath)) {
+          doc.fontSize(12).font("Helvetica-Bold").text(`Imagem ${index + 1}:`);
+          doc.moveDown(0.5);
+          doc.image(filePath, {
+            fit: [500, 400],
+            align: "center",
+            valign: "center",
+          });
+          doc.moveDown(1);
+        }
+        // Se for PDF, faremos apenas um texto e anexo (opcionalmente, poderia usar `doc.file(...)`, mas pdfkit não tem nativamente)
+        else if (mime === "application/pdf") {
+          doc.fontSize(12).font("Helvetica-Bold").text(`PDF Anexo ${index + 1}:`);
+          doc.fontSize(12).font("Helvetica").text(
+            `Arquivo: ${anexo.original_name} (não é renderizado dentro deste PDF, mas está salvo no sistema).`
+          );
+          doc.moveDown(1);
+          // Se quiser inserir como "file attachment" no PDF (técnica avançada), teria que usar bibliotecas adicionais ou hacks.  
+        }
+        // Se for vídeo, não temos como incorporar no PDF, então apenas um link/nome
+        else if (mime.startsWith("video/")) {
+          doc.fontSize(12).font("Helvetica-Bold").text(`Vídeo ${index + 1}:`);
+          doc.fontSize(12).font("Helvetica").text(
+            `Arquivo: ${anexo.original_name} (não pode ser reproduzido no PDF).`
+          );
+          doc.moveDown(1);
+        }
+        // Se for outro formato, apenas avisar
+        else {
+          doc.fontSize(12).font("Helvetica-Bold").text(`Anexo ${index + 1}:`);
+          doc.fontSize(12).font("Helvetica").text(
+            `Arquivo: ${anexo.original_name} (formato não diretamente suportado).`
+          );
+          doc.moveDown(1);
+        }
+      });
+    }
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF.",
+    });
+  }
+});
+
 // --------------------------------------------------------------------------------
 // LISTEN (FINAL)
 // --------------------------------------------------------------------------------
