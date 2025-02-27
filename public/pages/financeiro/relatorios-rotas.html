@@ -187,18 +187,13 @@
                             <div class="collapse" id="teRelatorios">
                                 <ul class="nav nav-collapse">
                                     <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-mensais.html">
-                                            <span class="sub-item">Mensais</span>
+                                        <a href="../../pages/financeiro/gerar-memorando.html">
+                                            <span class="sub-item">Memorandos</span>
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-rotas.html">
+                                        <a href="../../pages/financeiro/relatorios-rotas.html">
                                             <span class="sub-item">Por Rota</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-comparativos.html">
-                                            <span class="sub-item">Comparativos</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -512,18 +507,13 @@
                             <div class="collapse" id="finOutrosRelatorios">
                                 <ul class="nav nav-collapse">
                                     <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-mensais.html">
-                                            <span class="sub-item">Mensais</span>
+                                        <a href="../../pages/financeiro/gerar-memorando.html">
+                                            <span class="sub-item">Memorandos</span>
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-rotas.html">
+                                        <a href="../../pages/financeiro/relatorios-rotas.html">
                                             <span class="sub-item">Por Rota</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-comparativos.html">
-                                            <span class="sub-item">Comparativos</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -534,7 +524,6 @@
             </div>
         </div>
         <!-- END SIDEBAR -->
-
 
         <div class="main-panel">
             <div class="main-header" style="top: 0;">
@@ -560,10 +549,7 @@
 
                 <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
                     <div class="container-fluid">
-                        <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
                         <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-
-                            <!-- ÍCONE MENSAGENS -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -602,7 +588,6 @@
                                 </ul>
                             </li>
 
-                            <!-- ÍCONE NOTIFICAÇÕES -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -630,7 +615,6 @@
                                 </ul>
                             </li>
 
-                            <!-- ÍCONE AÇÕES RÁPIDAS -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -686,7 +670,6 @@
                                 </div>
                             </li>
 
-                            <!-- DROPDOWN USUÁRIO -->
                             <li class="nav-item topbar-user dropdown hidden-caret">
                                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
                                     aria-expanded="false">
@@ -851,6 +834,14 @@
                                             </div>
                                         </div>
 
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <label for="pdfs" class="form-label">PDFs (opcional)</label>
+                                                <input type="file" id="pdfs" name="pdfs[]" class="form-control" multiple
+                                                    accept="application/pdf" />
+                                            </div>
+                                        </div>
+
                                         <div class="mt-4">
                                             <button type="submit" class="btn btn-success">Gerar Relatório</button>
                                         </div>
@@ -862,7 +853,7 @@
                     <!-- Fim Modal Novo Relatório -->
 
                     <!-- Modal Editar Relatório -->
-                    <div class="modal fade" id="modalEditarRelatorio" tabindex="-1"
+                    <div class="modal fade" id="modalEditarRelatório" tabindex="-1"
                         aria-labelledby="modalEditarRelatorioLabel" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
                             <div class="modal-content">
@@ -911,6 +902,15 @@
                                                     (opcional)</label>
                                                 <input type="file" id="editar_videos" name="editar_videos[]"
                                                     class="form-control" multiple accept="video/*" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-3">
+                                            <div class="col-md-12">
+                                                <label for="editar_pdfs" class="form-label">Adicionar/Alterar PDFs
+                                                    (opcional)</label>
+                                                <input type="file" id="editar_pdfs" name="editar_pdfs[]"
+                                                    class="form-control" multiple accept="application/pdf" />
                                             </div>
                                         </div>
 
@@ -1007,7 +1007,6 @@
             return `${day}-${month}-${year} ${hours}:${minutes}`;
         }
 
-        // Carrega relatórios de rotas do servidor
         function loadRelatoriosRotas() {
             fetch('/api/relatorios-rotas')
                 .then(res => {
@@ -1026,7 +1025,6 @@
                 });
         }
 
-        // Popula a tabela de relatórios
         function populateTable() {
             const tableBody = $('#relatorios-rotas-table tbody');
             tableBody.empty();
@@ -1105,12 +1103,10 @@
             });
         }
 
-        // Visualizar relatório PDF
         function visualizarRelatorioPdf(id) {
             window.open(`/api/relatorios-rotas/${id}/pdf`, '_blank');
         }
 
-        // Gerar PDF
         function gerarPdf(id) {
             fetch(`/api/relatorios-rotas/${id}/pdf`)
                 .then(res => {
@@ -1133,7 +1129,6 @@
                 });
         }
 
-        // Gerar Docx
         function gerarDocx(id) {
             fetch(`/api/relatorios-rotas/${id}/docx`)
                 .then(res => {
@@ -1158,7 +1153,6 @@
                 });
         }
 
-        // Abrir modal de edição
         function abrirModalEditarRelatorio(id) {
             const relatorio = relatoriosRotas.find(item => item.id == id);
             if (!relatorio) {
@@ -1171,10 +1165,9 @@
             document.getElementById('editar_empresa_responsavel').value = relatorio.empresa_responsavel;
             document.getElementById('editar_corpo_relatorio').value = relatorio.corpo_relatorio || '';
 
-            $('#modalEditarRelatorio').modal('show');
+            $('#modalEditarRelatório').modal('show');
         }
 
-        // Excluir relatório
         function excluirRelatorio(id) {
             fetch(`/api/relatorios-rotas/${id}`, {
                 method: 'DELETE'
@@ -1199,11 +1192,9 @@
                 });
         }
 
-        // Ao carregar a página
         document.addEventListener('DOMContentLoaded', function () {
             loadRelatoriosRotas();
 
-            // Cadastro de novo relatório
             document.getElementById('relatorio-rotas-form').addEventListener('submit', function (e) {
                 e.preventDefault();
                 const formData = new FormData(this);
@@ -1234,10 +1225,8 @@
                     });
             });
 
-            // Edição de relatório
             document.getElementById('editar-relatorio-rotas-form').addEventListener('submit', function (e) {
                 e.preventDefault();
-
                 const relatorioId = document.getElementById('editar_relatorio_id').value;
                 const formData = new FormData(this);
 
@@ -1254,7 +1243,7 @@
                     .then(data => {
                         if (data.success) {
                             showNotification('success', 'Relatório atualizado com sucesso!');
-                            $('#modalEditarRelatorio').modal('hide');
+                            $('#modalEditarRelatório').modal('hide');
                             loadRelatoriosRotas();
                         } else {
                             showNotification('danger', 'Erro ao atualizar relatório: ' + data.message);

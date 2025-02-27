@@ -177,9 +177,7 @@ const storageRelatoriosRotas = multer.diskStorage({
     cb(null, "rotas-" + uniqueSuffix + ext);
   },
 });
-const uploadRelatoriosRotas = multer({
-  storage: storageRelatoriosRotas,
-});
+const uploadRelatoriosRotas = multer({ storage: storageRelatoriosRotas });
 
 const upload = multer({ dest: "uploads/" });
 const uploadFrota = multer({ storage: storage });
@@ -241,6 +239,7 @@ app.post(
   uploadRelatoriosRotas.fields([
     { name: "imagens", maxCount: 10 },
     { name: "videos", maxCount: 10 },
+    { name: "pdfs", maxCount: 10 },
   ]),
   (req, res) => {
     const { rota, empresa_responsavel, corpo_relatorio } = req.body;
@@ -253,6 +252,7 @@ app.post(
         const relatorioId = insertResult.rows[0].id;
         const imagens = req.files["imagens"] || [];
         const videos = req.files["videos"] || [];
+        const pdfs = req.files["pdfs"] || [];
         const promises = [];
 
         imagens.forEach((file) => {
@@ -268,6 +268,14 @@ app.post(
             pool.query(
               "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
               [relatorioId, "video", file.path]
+            )
+          );
+        });
+        pdfs.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [relatorioId, "pdf", file.path]
             )
           );
         });
@@ -315,7 +323,9 @@ app.get("/api/relatorios-rotas/:id/pdf", (req, res) => {
       doc.fontSize(12).text(`ID: ${relatorio.id}`);
       doc.text(`Rota: ${relatorio.rota}`);
       doc.text(`Empresa Responsável: ${relatorio.empresa_responsavel}`);
-      doc.text(`Data de Criação: ${moment(relatorio.data_criacao).format("DD/MM/YYYY HH:mm")}`);
+      doc.text(
+        `Data de Criação: ${moment(relatorio.data_criacao).format("DD/MM/YYYY HH:mm")}`
+      );
       doc.moveDown();
       doc.text("Detalhes do Relatório:");
       doc.moveDown();
@@ -359,7 +369,9 @@ app.get("/api/relatorios-rotas/:id/docx", async (req, res) => {
               text: `Empresa Responsável: ${relatorio.empresa_responsavel}`,
             }),
             new Paragraph({
-              text: `Data de Criação: ${moment(relatorio.data_criacao).format("DD/MM/YYYY HH:mm")}`,
+              text: `Data de Criação: ${moment(relatorio.data_criacao).format(
+                "DD/MM/YYYY HH:mm"
+              )}`,
             }),
             new Paragraph({
               text: "",
@@ -379,7 +391,7 @@ app.get("/api/relatorios-rotas/:id/docx", async (req, res) => {
     const filename = `relatorio_rota_${id}.docx`;
     res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
     res.send(Buffer.from(b64string, "base64"));
-  } catch (error) {
+  } catch {
     return res.status(500).send("Erro ao gerar .docx");
   }
 });
@@ -389,11 +401,15 @@ app.put(
   uploadRelatoriosRotas.fields([
     { name: "editar_imagens", maxCount: 10 },
     { name: "editar_videos", maxCount: 10 },
+    { name: "editar_pdfs", maxCount: 10 },
   ]),
   (req, res) => {
     const { id } = req.params;
-    const { editar_rota, editar_empresa_responsavel, editar_corpo_relatorio } =
-      req.body;
+    const {
+      editar_rota,
+      editar_empresa_responsavel,
+      editar_corpo_relatorio,
+    } = req.body;
     pool
       .query(
         "UPDATE relatorios_rotas SET rota = $1, empresa_responsavel = $2, corpo_relatorio = $3 WHERE id = $4",
@@ -407,6 +423,7 @@ app.put(
         }
         const imagens = req.files["editar_imagens"] || [];
         const videos = req.files["editar_videos"] || [];
+        const pdfs = req.files["editar_pdfs"] || [];
         const promises = [];
         imagens.forEach((file) => {
           promises.push(
@@ -421,6 +438,14 @@ app.put(
             pool.query(
               "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
               [id, "video", file.path]
+            )
+          );
+        });
+        pdfs.forEach((file) => {
+          promises.push(
+            pool.query(
+              "INSERT INTO relatorios_rotas_midias (relatorio_id, tipo, caminho) VALUES ($1, $2, $3)",
+              [id, "pdf", file.path]
             )
           );
         });
