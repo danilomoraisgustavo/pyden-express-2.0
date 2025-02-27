@@ -1,4 +1,4 @@
-require("dotenv").config(); // Importante: deve ser chamado antes de usar as variáveis
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -33,17 +33,17 @@ const {
 
 const PDFDocument = require("pdfkit");
 
-// --------------------------------------------------------------------------------
+
 // CONFIGURAÇÃO DO EXPRESS
-// --------------------------------------------------------------------------------
+
 const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors({ origin: "*" }));
 
-// --------------------------------------------------------------------------------
+
 // CONFIGURAÇÃO DO BANCO DE DADOS (PostgreSQL) usando .env
-// --------------------------------------------------------------------------------
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -51,9 +51,8 @@ const pool = new Pool({
   },
 });
 
-// --------------------------------------------------------------------------------
 // CONFIGURAÇÃO DE SESSÃO (express-session + connect-pg-simple)
-// --------------------------------------------------------------------------------
+
 app.use(
   session({
     store: new pgSession({
@@ -70,9 +69,9 @@ app.use(
   })
 );
 
-// --------------------------------------------------------------------------------
+
 // MIDDLEWARE: isAuthenticated (protege rotas e páginas)
-// --------------------------------------------------------------------------------
+
 function isAuthenticated(req, res, next) {
   if (!req.session || !req.session.userId) {
     return res.redirect("/");
@@ -101,9 +100,9 @@ function isAuthenticated(req, res, next) {
     });
 }
 
-// --------------------------------------------------------------------------------
+
 // ARQUIVOS ESTÁTICOS
-// --------------------------------------------------------------------------------
+
 app.use("/assets", express.static(path.join(__dirname, "public", "assets")));
 app.use(
   "/pages",
@@ -111,9 +110,9 @@ app.use(
   express.static(path.join(__dirname, "public", "pages"))
 );
 
-// --------------------------------------------------------------------------------
+
 // ROTAS PRINCIPAIS
-// --------------------------------------------------------------------------------
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/login-cadastro.html"));
 });
@@ -128,9 +127,9 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// --------------------------------------------------------------------------------
+
 // CONFIGURAÇÃO DE UPLOAD
-// --------------------------------------------------------------------------------
+
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
@@ -168,9 +167,9 @@ const upload = multer({ dest: "uploads/" });
 const uploadFrota = multer({ storage: storage });
 const uploadMonitores = multer({ storage: storage });
 
-// --------------------------------------------------------------------------------
+
 // FUNÇÕES UTILITÁRIAS PARA CONVERSÃO DE ARQUIVOS (KMZ -> KML, etc.)
-// --------------------------------------------------------------------------------
+
 async function kmzToKml(filePath) {
   const data = fs.readFileSync(filePath);
   const zip = await JSZip.loadAsync(data);
@@ -446,9 +445,9 @@ app.delete("/api/relatorios-rotas/:id", (req, res) => {
       });
     });
 });
-// --------------------------------------------------------------------------------
+
 // ROTA: CADASTRAR USUÁRIO
-// --------------------------------------------------------------------------------
+
 app.get("/api/usuarios/perfil", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -886,9 +885,9 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
   }
 });
 
-// --------------------------------------------------------------------------------
+
 // ROTA: LOGIN
-// --------------------------------------------------------------------------------
+
 app.post("/api/login", async (req, res) => {
   try {
     const { email, senha } = req.body;
@@ -1610,49 +1609,6 @@ app.post("/api/fornecedores/cadastrar", async (req, res) => {
       success: true,
       message: "Fornecedor cadastrado com sucesso!",
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor.",
-    });
-  }
-});
-
-app.get("/api/fornecedores", async (req, res) => {
-  try {
-    const query = `
-            SELECT
-                id,
-                nome_fornecedor,
-                tipo_contrato,
-                cnpj,
-                contato,
-                latitude,
-                longitude,
-                logradouro,
-                numero,
-                complemento,
-                bairro,
-                cep
-            FROM fornecedores
-            ORDER BY id;
-        `;
-    const result = await pool.query(query);
-    const fornecedores = result.rows.map((row) => ({
-      id: row.id,
-      nome_fornecedor: row.nome_fornecedor,
-      tipo_contrato: row.tipo_contrato,
-      cnpj: row.cnpj,
-      contato: row.contato,
-      latitude: row.latitude,
-      longitude: row.longitude,
-      logradouro: row.logradouro,
-      numero: row.numero,
-      complemento: row.complemento,
-      bairro: row.bairro,
-      cep: row.cep,
-    }));
-    res.json(fornecedores);
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -7800,9 +7756,9 @@ function toRad(value) {
 }
 
 
-// --------------------------------------------------------------------------------
+
 // LISTEN (FINAL)
-// --------------------------------------------------------------------------------
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
