@@ -16,13 +16,13 @@
                     "Font Awesome 5 Solid",
                     "Font Awesome 5 Regular",
                     "Font Awesome 5 Brands",
-                    "simple-line-icons",
+                    "simple-line-icons"
                 ],
-                urls: ["../../assets/css/fonts.min.css"],
+                urls: ["../../assets/css/fonts.min.css"]
             },
             active: function () {
                 sessionStorage.fonts = true;
-            },
+            }
         });
     </script>
 
@@ -45,7 +45,6 @@
 
 <body>
     <div class="wrapper">
-        <!-- SIDEBAR -->
         <div class="sidebar" data-background-color="dark">
             <div class="sidebar-logo">
                 <div class="logo-header" data-background-color="dark">
@@ -502,7 +501,6 @@
                             </div>
                         </li>
 
-                        <!-- Novo item de Relatórios dentro de Financeiro -->
                         <li class="nav-item">
                             <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
                                 <i class="fas fa-chart-line"></i>
@@ -533,7 +531,6 @@
                 </div>
             </div>
         </div>
-        <!-- END SIDEBAR -->
 
 
         <div class="main-panel">
@@ -560,10 +557,7 @@
 
                 <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
                     <div class="container-fluid">
-                        <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
                         <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-
-                            <!-- ÍCONE MENSAGENS -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -601,8 +595,6 @@
                                     </li>
                                 </ul>
                             </li>
-
-                            <!-- ÍCONE NOTIFICAÇÕES -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -629,8 +621,6 @@
                                     </li>
                                 </ul>
                             </li>
-
-                            <!-- ÍCONE AÇÕES RÁPIDAS -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -685,8 +675,6 @@
                                     </div>
                                 </div>
                             </li>
-
-                            <!-- DROPDOWN USUÁRIO -->
                             <li class="nav-item topbar-user dropdown hidden-caret">
                                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
                                     aria-expanded="false">
@@ -761,7 +749,6 @@
                         </ul>
                     </div>
 
-                    <!-- Tabela de Relatórios de Rotas -->
                     <div class="row mt-4">
                         <div class="col-md-12">
                             <div class="card">
@@ -803,7 +790,6 @@
                         </div>
                     </div>
 
-                    <!-- Modal Novo Relatório -->
                     <div class="modal fade" id="modalNovoRelatorio" tabindex="-1"
                         aria-labelledby="modalNovoRelatorioLabel" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -828,7 +814,6 @@
                                                     class="form-control" required />
                                             </div>
                                         </div>
-
                                         <div class="row mb-3">
                                             <div class="col-md-12">
                                                 <label for="corpo_relatorio" class="form-label required-label">Corpo do
@@ -837,20 +822,13 @@
                                                     class="form-control" rows="4" required></textarea>
                                             </div>
                                         </div>
-
                                         <div class="row mb-3">
-                                            <div class="col-md-6">
-                                                <label for="imagens" class="form-label">Imagens (opcional)</label>
-                                                <input type="file" id="imagens" name="imagens[]" class="form-control"
-                                                    multiple accept="image/*" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="videos" class="form-label">Vídeos (opcional)</label>
-                                                <input type="file" id="videos" name="videos[]" class="form-control"
-                                                    multiple accept="video/*" />
+                                            <div class="col-md-12">
+                                                <label for="arquivos" class="form-label">Anexos (opcional)</label>
+                                                <input type="file" id="arquivos" name="arquivos[]" class="form-control"
+                                                    multiple accept="image/*,video/*,application/pdf" />
                                             </div>
                                         </div>
-
                                         <div class="mt-4">
                                             <button type="submit" class="btn btn-success">Gerar Relatório</button>
                                         </div>
@@ -859,9 +837,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Fim Modal Novo Relatório -->
 
-                    <!-- Modal Editar Relatório -->
                     <div class="modal fade" id="modalEditarRelatorio" tabindex="-1"
                         aria-labelledby="modalEditarRelatorioLabel" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -875,7 +851,6 @@
                                     <form id="editar-relatorio-rotas-form" enctype="multipart/form-data">
                                         <input type="hidden" id="editar_relatorio_id" name="editar_relatorio_id"
                                             value="" />
-
                                         <div class="row mb-3">
                                             <div class="col-md-6">
                                                 <label for="editar_rota" class="form-label required-label">Rota</label>
@@ -889,7 +864,6 @@
                                                     name="editar_empresa_responsavel" class="form-control" required />
                                             </div>
                                         </div>
-
                                         <div class="row mb-3">
                                             <div class="col-md-12">
                                                 <label for="editar_corpo_relatorio"
@@ -898,22 +872,15 @@
                                                     class="form-control" rows="4" required></textarea>
                                             </div>
                                         </div>
-
                                         <div class="row mb-3">
-                                            <div class="col-md-6">
-                                                <label for="editar_imagens" class="form-label">Adicionar/Alterar Imagens
-                                                    (opcional)</label>
-                                                <input type="file" id="editar_imagens" name="editar_imagens[]"
-                                                    class="form-control" multiple accept="image/*" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="editar_videos" class="form-label">Adicionar/Alterar Vídeos
-                                                    (opcional)</label>
-                                                <input type="file" id="editar_videos" name="editar_videos[]"
-                                                    class="form-control" multiple accept="video/*" />
+                                            <div class="col-md-12">
+                                                <label for="editar_arquivos" class="form-label">Adicionar/Alterar
+                                                    Arquivos (opcional)</label>
+                                                <input type="file" id="editar_arquivos" name="editar_arquivos[]"
+                                                    class="form-control" multiple
+                                                    accept="image/*,video/*,application/pdf" />
                                             </div>
                                         </div>
-
                                         <div class="mt-4">
                                             <button type="submit" class="btn btn-success">Salvar Alterações</button>
                                         </div>
@@ -922,9 +889,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Fim Modal Editar Relatório -->
                 </div>
             </div>
+
 
             <footer class="footer">
                 <div class="container-fluid d-flex justify-content-between">
@@ -1007,7 +974,6 @@
             return `${day}-${month}-${year} ${hours}:${minutes}`;
         }
 
-        // Carrega relatórios de rotas do servidor
         function loadRelatoriosRotas() {
             fetch('/api/relatorios-rotas')
                 .then(res => {
@@ -1026,7 +992,6 @@
                 });
         }
 
-        // Popula a tabela de relatórios
         function populateTable() {
             const tableBody = $('#relatorios-rotas-table tbody');
             tableBody.empty();
@@ -1105,12 +1070,10 @@
             });
         }
 
-        // Visualizar relatório PDF
         function visualizarRelatorioPdf(id) {
             window.open(`/api/relatorios-rotas/${id}/pdf`, '_blank');
         }
 
-        // Gerar PDF
         function gerarPdf(id) {
             fetch(`/api/relatorios-rotas/${id}/pdf`)
                 .then(res => {
@@ -1133,7 +1096,6 @@
                 });
         }
 
-        // Gerar Docx
         function gerarDocx(id) {
             fetch(`/api/relatorios-rotas/${id}/docx`)
                 .then(res => {
@@ -1158,7 +1120,6 @@
                 });
         }
 
-        // Abrir modal de edição
         function abrirModalEditarRelatorio(id) {
             const relatorio = relatoriosRotas.find(item => item.id == id);
             if (!relatorio) {
@@ -1174,7 +1135,6 @@
             $('#modalEditarRelatorio').modal('show');
         }
 
-        // Excluir relatório
         function excluirRelatorio(id) {
             fetch(`/api/relatorios-rotas/${id}`, {
                 method: 'DELETE'
@@ -1199,11 +1159,9 @@
                 });
         }
 
-        // Ao carregar a página
         document.addEventListener('DOMContentLoaded', function () {
             loadRelatoriosRotas();
 
-            // Cadastro de novo relatório
             document.getElementById('relatorio-rotas-form').addEventListener('submit', function (e) {
                 e.preventDefault();
                 const formData = new FormData(this);
@@ -1234,7 +1192,6 @@
                     });
             });
 
-            // Edição de relatório
             document.getElementById('editar-relatorio-rotas-form').addEventListener('submit', function (e) {
                 e.preventDefault();
 
