@@ -3006,30 +3006,50 @@ app.delete("/api/fornecedor/motoristas/:id", async (req, res) => {
 });
 
 // ====> API: Listar rotas do fornecedor
+// /api/fornecedor/rotas
 app.get("/api/fornecedor/rotas", async (req, res) => {
   try {
-    const userId = req.session.userId;
-    const relForn = await pool.query(
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Usuário não está logado.",
+      });
+    }
+
+    // Tabela 'usuario_fornecedor' relaciona user -> fornecedor
+    const rel = await pool.query(
       "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
       [userId]
     );
-    if (relForn.rows.length === 0) {
+    if (rel.rows.length === 0) {
+      // Se não existir vínculo, devolve array vazio ou erro
       return res.json([]);
+      // ou: return res.status(403).json({ success: false, message: "Usuário sem fornecedor." })
     }
-    const fornecedorId = relForn.rows[0].fornecedor_id;
 
-    const query = `
-      SELECT id, identificador, descricao
-      FROM rotas
-      WHERE fornecedor_id = $1
-      ORDER BY id ASC
-    `;
-    const result = await pool.query(query, [fornecedorId]);
-    return res.json(result.rows);
-  } catch (error) {
-    return res.status(500).json({ success: false, message: "Erro ao listar rotas do fornecedor." });
+    const fornecedorId = rel.rows[0].fornecedor_id;
+
+    // Agora busca na tabela 'rotas' as rotas que tenham 'fornecedor_id'
+    // Ajuste conforme seu schema. Exemplo:
+    const rotasResult = await pool.query(
+      `SELECT id, identificador, descricao
+       FROM rotas
+       WHERE fornecedor_id = $1
+       ORDER BY id ASC`,
+      [fornecedorId]
+    );
+
+    return res.json(rotasResult.rows); // Retorna array de rotas
+  } catch (err) {
+    console.error("Erro ao listar rotas do fornecedor:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao listar rotas do fornecedor.",
+    });
   }
 });
+
 
 // ====> API: Atribuir rota ao motorista
 app.post("/api/fornecedor/motoristas/atribuir-rota", async (req, res) => {
