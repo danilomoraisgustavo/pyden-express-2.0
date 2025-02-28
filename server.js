@@ -242,6 +242,75 @@ async function convertToGeoJSON(filePath, originalname) {
   }
   throw new Error("Formato de arquivo não suportado.");
 }
+// ====> ROTA /api/admin/users (GET)
+// Retorna lista de usuários para o DataTable
+app.get("/api/admin/users", async (req, res) => {
+  try {
+    const query = `
+      SELECT id, nome_completo, telefone, email, permissoes, init
+      FROM usuarios
+      ORDER BY id ASC
+    `;
+    const result = await pool.query(query);
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Erro ao buscar usuários:", error);
+    return res.status(500).json({ error: "Erro interno ao buscar usuários." });
+  }
+});
+
+// ====> ROTA /api/admin/update-user (PUT)
+// Atualiza permissões do usuário
+app.put("/api/admin/update-user", async (req, res) => {
+  try {
+    const { id, permissoes } = req.body;
+    const updateQuery = `
+      UPDATE usuarios
+      SET permissoes = $1
+      WHERE id = $2
+    `;
+    await pool.query(updateQuery, [permissoes, id]);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Erro ao atualizar usuário:", error);
+    return res.status(500).json({ error: "Erro interno ao atualizar usuário." });
+  }
+});
+
+// ====> ROTA /api/admin/toggle-init (PUT)
+// Atualiza o campo init (permitir/restringir acesso)
+app.put("/api/admin/toggle-init", async (req, res) => {
+  try {
+    const { id, init } = req.body;
+    const updateQuery = `
+      UPDATE usuarios
+      SET init = $1
+      WHERE id = $2
+    `;
+    await pool.query(updateQuery, [init, id]);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Erro ao atualizar init do usuário:", error);
+    return res.status(500).json({ error: "Erro interno ao atualizar init do usuário." });
+  }
+});
+
+// ====> ROTA /api/admin/delete-user/:id (DELETE)
+// Exclui o usuário pelo ID
+app.delete("/api/admin/delete-user/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleteQuery = `
+      DELETE FROM usuarios
+      WHERE id = $1
+    `;
+    await pool.query(deleteQuery, [id]);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Erro ao excluir usuário:", error);
+    return res.status(500).json({ error: "Erro interno ao excluir usuário." });
+  }
+});
 
 // ROTA: CADASTRAR USUÁRIO
 

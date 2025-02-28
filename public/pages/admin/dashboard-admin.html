@@ -1,0 +1,378 @@
+<!-- ====> public/pages/admin/dashboard-admin.html <==== -->
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>PyDen_Express Admin</title>
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+
+    <!-- Fonts and icons -->
+    <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+    <script>
+        WebFont.load({
+            google: { families: ["Public Sans:300,400,500,600,700"] },
+            custom: {
+                families: [
+                    "Font Awesome 5 Solid",
+                    "Font Awesome 5 Regular",
+                    "Font Awesome 5 Brands",
+                    "simple-line-icons",
+                ],
+                urls: ["../../assets/css/fonts.min.css"],
+            },
+            active: function () {
+                sessionStorage.fonts = true;
+            },
+        });
+    </script>
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+    <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+    <link rel="stylesheet" href="../../assets/css/demo.css" />
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="../../assets/js/plugin/datatables/datatables.min.css" />
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- SIDEBAR (SIMPLIFICADO PARA ADMIN) -->
+        <div class="sidebar" data-background-color="dark">
+            <div class="sidebar-logo">
+                <div class="logo-header" data-background-color="dark">
+                    <a href="dashboard-admin.html" class="logo">
+                        <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                            height="20" />
+                    </a>
+                    <div class="nav-toggle">
+                        <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+                        <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+                    </div>
+                    <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+                </div>
+            </div>
+            <div class="sidebar-wrapper scrollbar scrollbar-inner">
+                <div class="sidebar-content">
+                    <ul class="nav nav-primary">
+                        <li class="nav-item active">
+                            <a href="dashboard-admin.html">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <p>Dashboard Admin</p>
+                            </a>
+                        </li>
+
+                        <!-- Link para Gerenciamento de Usuários -->
+                        <li class="nav-item">
+                            <a href="#adminUsers" data-bs-toggle="collapse" aria-expanded="false">
+                                <i class="fas fa-users-cog"></i>
+                                <p>Gerenciar Usuários</p>
+                                <span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="adminUsers">
+                                <ul class="nav nav-collapse">
+                                    <li>
+                                        <a href="#secUsers" class="scroll-link">
+                                            <span class="sub-item">Listar / Editar Usuários</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- END SIDEBAR -->
+
+        <div class="main-panel">
+            <div class="main-header" style="top: 0;">
+                <div class="main-header-logo">
+                    <div class="logo-header" data-background-color="dark">
+                        <a href="dashboard-admin.html" class="logo">
+                            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand"
+                                class="navbar-brand" height="20" />
+                        </a>
+                        <div class="nav-toggle">
+                            <button class="btn btn-toggle toggle-sidebar">
+                                <i class="gg-menu-right"></i>
+                            </button>
+                            <button class="btn btn-toggle sidenav-toggler">
+                                <i class="gg-menu-left"></i>
+                            </button>
+                        </div>
+                        <button class="topbar-toggler more">
+                            <i class="gg-more-vertical-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+                    <div class="container-fluid">
+                        <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+                            <li class="nav-item topbar-user dropdown hidden-caret">
+                                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
+                                    aria-expanded="false">
+                                    <div class="avatar-sm">
+                                        <img src="../../assets/img/profile.jpg" alt="..."
+                                            class="avatar-img rounded-circle" />
+                                    </div>
+                                    <span class="profile-username">
+                                        <span class="op-7">Olá,</span>
+                                        <span class="fw-bold" id="dropdownUserName">Admin</span>
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                                    <div class="dropdown-user-scroll scrollbar-outer">
+                                        <li>
+                                            <div class="user-box">
+                                                <div class="avatar-lg">
+                                                    <img src="../../assets/img/profile.jpg" alt="image profile"
+                                                        class="avatar-img rounded" />
+                                                </div>
+                                                <div class="u-text">
+                                                    <h4 id="dropdownUserBoxName">Admin</h4>
+                                                    <p class="text-muted" id="dropdownUserEmail">admin@pydenexpress.com
+                                                    </p>
+                                                    <a href="#" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#">Meu Perfil</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
+                                        </li>
+                                    </div>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="container">
+                <div class="page-inner">
+                    <!-- Cabeçalho do Dashboard Admin -->
+                    <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+                        <div>
+                            <h3 class="fw-bold mb-3">Painel Administrativo</h3>
+                            <h6 class="op-7 mb-2">Gerencie configurações e usuários do sistema</h6>
+                        </div>
+                    </div>
+
+                    <!-- Seção de Estatísticas ou Resumo se desejar -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card-round">
+                                <div class="card-header">
+                                    <div class="card-head-row">
+                                        <div class="card-title">Estatísticas / Resumo</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p>Aqui podem vir estatísticas administrativas. Exemplo: Quantidade de usuários,
+                                        etc.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção de Gerenciamento de Usuários -->
+                    <div class="row mt-4" id="secUsers">
+                        <div class="col-md-12">
+                            <div class="card card-round">
+                                <div class="card-header">
+                                    <div class="card-head-row">
+                                        <div class="card-title">Gerenciamento de Usuários</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Tabela DataTables -->
+                                    <table id="tableUsers" class="table table-striped table-bordered"
+                                        style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Nome Completo</th>
+                                                <th>Telefone</th>
+                                                <th>Email</th>
+                                                <th>Permissões</th>
+                                                <th>Init</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Conteúdo via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="container-fluid d-flex justify-content-between">
+                    <nav class="pull-left">
+                        <ul class="nav">
+                            <li class="nav-item"><a class="nav-link" href="http://www.themekita.com">ThemeKita</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#">Help</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#">Licenses</a></li>
+                        </ul>
+                    </nav>
+                    <div class="copyright">
+                        2024, made with <i class="fa fa-heart heart text-danger"></i> by
+                        <a href="http://www.themekita.com">ThemeKita</a>
+                    </div>
+                    <div>
+                        Distributed by <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!--   Core JS Files   -->
+    <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+    <script src="../../assets/js/core/popper.min.js"></script>
+    <script src="../../assets/js/core/bootstrap.min.js"></script>
+
+    <!-- jQuery Scrollbar -->
+    <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+
+    <!-- Datatables -->
+    <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+
+    <!-- pydenadmin JS -->
+    <script src="../../assets/js/pydenadmin.min.js"></script>
+
+    <script>
+        const permissoesDisponiveis = [
+            "gestor", "admin", "locan", "talisma", "roma", "ctl", "diamond"
+        ];
+
+        $(document).ready(function () {
+            const table = $("#tableUsers").DataTable({
+                ajax: {
+                    url: "/api/admin/users",
+                    dataSrc: ""
+                },
+                columns: [
+                    { data: "id" },
+                    { data: "nome_completo" },
+                    { data: "telefone" },
+                    { data: "email" },
+                    {
+                        data: "permissoes",
+                        render: function (data, type, row, meta) {
+                            // Renderiza as permissões como um SELECT múltiplo
+                            const userPerms = data ? data.split(",") : [];
+                            let selectHtml = `<select class="form-select form-select-sm permissoes-select" multiple data-user-id="${row.id}">`;
+                            permissoesDisponiveis.forEach((perm) => {
+                                const selected = userPerms.includes(perm) ? "selected" : "";
+                                selectHtml += `<option value="${perm}" ${selected}>${perm}</option>`;
+                            });
+                            selectHtml += `</select>`;
+                            return selectHtml;
+                        }
+                    },
+                    {
+                        data: "init",
+                        render: function (data, type, row, meta) {
+                            return data ? "Ativo" : "Inativo";
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            let btnInit = "";
+                            if (row.init) {
+                                btnInit = `<button class="btn btn-warning btn-sm toggle-init" data-user-id="${row.id}" data-init="false">Restringir</button>`;
+                            } else {
+                                btnInit = `<button class="btn btn-success btn-sm toggle-init" data-user-id="${row.id}" data-init="true">Permitir</button>`;
+                            }
+                            const btnDelete = `<button class="btn btn-danger btn-sm delete-user" data-user-id="${row.id}">Excluir</button>`;
+                            return `${btnInit} ${btnDelete}`;
+                        }
+                    }
+                ]
+            });
+
+            // Evento para alterar permissões
+            $("#tableUsers").on("change", ".permissoes-select", function () {
+                const userId = $(this).data("user-id");
+                const selectedOptions = $(this).val() || [];
+                const newPerms = selectedOptions.join(",");
+
+                $.ajax({
+                    url: "/api/admin/update-user",
+                    method: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({ id: userId, permissoes: newPerms }),
+                    success: function (res) {
+                        table.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao atualizar permissões do usuário.");
+                    }
+                });
+            });
+
+            // Evento para toggle init
+            $("#tableUsers").on("click", ".toggle-init", function () {
+                const userId = $(this).data("user-id");
+                const newInit = $(this).data("init") === true;
+
+                $.ajax({
+                    url: "/api/admin/toggle-init",
+                    method: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({ id: userId, init: newInit }),
+                    success: function (res) {
+                        table.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao atualizar status do usuário.");
+                    }
+                });
+            });
+
+            // Evento para excluir usuário
+            $("#tableUsers").on("click", ".delete-user", function () {
+                const userId = $(this).data("user-id");
+                if (!confirm("Tem certeza que deseja excluir este usuário?")) {
+                    return;
+                }
+                $.ajax({
+                    url: `/api/admin/delete-user/${userId}`,
+                    method: "DELETE",
+                    success: function (res) {
+                        table.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao excluir usuário.");
+                    }
+                });
+            });
+
+            // Rolagem suave para a seção de usuários
+            $(".scroll-link").on("click", function (e) {
+                e.preventDefault();
+                const target = $(this).attr("href");
+                $("html, body").animate({ scrollTop: $(target).offset().top - 70 }, 800);
+            });
+        });
+    </script>
+</body>
+
+</html>
