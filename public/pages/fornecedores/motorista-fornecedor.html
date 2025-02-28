@@ -1,0 +1,674 @@
+<!-- ====> public/pages/fornecedores/motorista-fornecedor.html <==== -->
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Listar Motoristas (Fornecedor)</title>
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+
+    <!-- Webfont -->
+    <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+    <script>
+        WebFont.load({
+            google: { families: ["Public Sans:300,400,500,600,700"] },
+            custom: {
+                families: [
+                    "Font Awesome 5 Solid",
+                    "Font Awesome 5 Regular",
+                    "Font Awesome 5 Brands",
+                    "simple-line-icons",
+                ],
+                urls: ["../../assets/css/fonts.min.css"],
+            },
+            active: function () {
+                sessionStorage.fonts = true;
+            },
+        });
+    </script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+    <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+    <link rel="stylesheet" href="../../assets/css/demo.css" />
+
+    <style>
+        .required-label::after {
+            content: " *";
+            color: red;
+        }
+
+        .modal-lg {
+            max-width: 90% !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- SIDEBAR -->
+        <div class="sidebar" data-background-color="dark">
+            <div class="sidebar-logo">
+                <div class="logo-header" data-background-color="dark">
+                    <a href="dashboard-fornecedor.html" class="logo">
+                        <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                            height="20" />
+                    </a>
+                    <div class="nav-toggle">
+                        <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+                        <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+                    </div>
+                    <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+                </div>
+            </div>
+            <div class="sidebar-wrapper scrollbar scrollbar-inner">
+                <div class="sidebar-content">
+                    <ul class="nav nav-secondary">
+                        <li class="nav-item">
+                            <a href="dashboard-fornecedor.html">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <p>Dashboard Fornecedor</p>
+                            </a>
+                        </li>
+                        <li class="nav-item active">
+                            <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="true">
+                                <i class="fas fa-id-card"></i>
+                                <p>Motoristas</p>
+                                <span class="caret"></span>
+                            </a>
+                            <div class="collapse show" id="teMotoristas">
+                                <ul class="nav nav-collapse">
+                                    <li class="active">
+                                        <a href="motorista-fornecedor.html">
+                                            <span class="sub-item">Listar Motoristas</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <span class="sub-item">Licenças e Certificações</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="false">
+                                <i class="fas fa-user-check"></i>
+                                <p>Monitores</p>
+                                <span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="teMonitores">
+                                <ul class="nav nav-collapse">
+                                    <li>
+                                        <a href="monitor-fornecedor.html">
+                                            <span class="sub-item">Listar Monitores</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
+                                <i class="fas fa-bus"></i>
+                                <p>Veículos</p>
+                                <span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="teVeiculos">
+                                <ul class="nav nav-collapse">
+                                    <li>
+                                        <a href="frota-fornecedor.html">
+                                            <span class="sub-item">Listar Veículos</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <span class="sub-item">Manutenção</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <span class="sub-item">Documentação e Seguros</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- END SIDEBAR -->
+
+        <div class="main-panel">
+            <div class="main-header" style="top: 0;">
+                <div class="main-header-logo">
+                    <div class="logo-header" data-background-color="dark">
+                        <a href="dashboard-fornecedor.html" class="logo">
+                            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand"
+                                class="navbar-brand" height="20" />
+                        </a>
+                        <div class="nav-toggle">
+                            <button class="btn btn-toggle toggle-sidebar">
+                                <i class="gg-menu-right"></i>
+                            </button>
+                            <button class="btn btn-toggle sidenav-toggler">
+                                <i class="gg-menu-left"></i>
+                            </button>
+                        </div>
+                        <button class="topbar-toggler more">
+                            <i class="gg-more-vertical-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+                    <div class="container-fluid">
+                        <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+                            <li class="nav-item topbar-user dropdown hidden-caret">
+                                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
+                                    aria-expanded="false">
+                                    <div class="avatar-sm">
+                                        <img src="../../assets/img/profile.jpg" alt="..."
+                                            class="avatar-img rounded-circle" />
+                                    </div>
+                                    <span class="profile-username">
+                                        <span class="op-7">Olá,</span>
+                                        <span class="fw-bold" id="dropdownUserName">Fornecedor</span>
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                                    <div class="dropdown-user-scroll scrollbar-outer">
+                                        <li>
+                                            <div class="user-box">
+                                                <div class="avatar-lg">
+                                                    <img src="../../assets/img/profile.jpg" alt="image profile"
+                                                        class="avatar-img rounded" />
+                                                </div>
+                                                <div class="u-text">
+                                                    <h4 id="dropdownUserBoxName">Fornecedor</h4>
+                                                    <p class="text-muted" id="dropdownUserEmail">
+                                                        fornecedor@pydenexpress.com</p>
+                                                    <a href="#" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#">Meu Perfil</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
+                                        </li>
+                                    </div>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+
+
+            <div class="container">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h3 class="fw-bold mb-3">Listar Motoristas (Fornecedor)</h3>
+                        <ul class="breadcrumbs mb-3">
+                            <li class="nav-home">
+                                <a href="dashboard-fornecedor.html">
+                                    <i class="icon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="icon-arrow-right"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">Motoristas</a>
+                            </li>
+                            <li class="separator">
+                                <i class="icon-arrow-right"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">Listar Motoristas</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between">
+                                    <h4 class="card-title">Lista de Motoristas</h4>
+                                    <button class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#modalCadastroMotorista">
+                                        <i class="fa fa-plus"></i> Cadastrar Novo Motorista
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table id="motoristas-table" class="display table table-striped table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Nome do Motorista</th>
+                                                    <th>CPF</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tfoot>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Nome do Motorista</th>
+                                                    <th>CPF</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </tfoot>
+                                            <tbody>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="modalCadastroMotorista" tabindex="-1"
+                        aria-labelledby="modalCadastroMotoristaLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalCadastroMotoristaLabel">Cadastrar Novo Motorista
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="motorista-form" enctype="multipart/form-data">
+                                        <h5>Dados Pessoais</h5>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="nome_motorista" class="form-label required-label">Nome do
+                                                    Motorista</label>
+                                                <input type="text" id="nome_motorista" name="nome_motorista"
+                                                    class="form-control" required>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="cpf" class="form-label required-label">CPF</label>
+                                                <input type="text" id="cpf" name="cpf" class="form-control" required>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="rg" class="form-label">RG</label>
+                                                <input type="text" id="rg" name="rg" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label for="data_nascimento" class="form-label">Data de
+                                                    Nascimento</label>
+                                                <input type="date" id="data_nascimento" name="data_nascimento"
+                                                    class="form-control">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="telefone" class="form-label">Telefone</label>
+                                                <input type="text" id="telefone" name="telefone" class="form-control">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="email" class="form-label">E-mail</label>
+                                                <input type="email" id="email" name="email" class="form-control">
+                                            </div>
+                                            <!-- Fornecedor ID não aparece, pois já é do login -->
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="endereco" class="form-label">Endereço</label>
+                                                <input type="text" id="endereco" name="endereco" class="form-control">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="cidade" class="form-label">Cidade</label>
+                                                <input type="text" id="cidade" name="cidade" class="form-control">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="estado" class="form-label">Estado</label>
+                                                <input type="text" id="estado" name="estado" class="form-control">
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label for="cep" class="form-label">CEP</label>
+                                                <input type="text" id="cep" name="cep" class="form-control">
+                                            </div>
+                                        </div>
+
+                                        <h5>Dados da CNH</h5>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="numero_cnh" class="form-label required-label">Número da
+                                                    CNH</label>
+                                                <input type="text" id="numero_cnh" name="numero_cnh"
+                                                    class="form-control" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="categoria_cnh" class="form-label required-label">Categoria
+                                                    da CNH</label>
+                                                <select id="categoria_cnh" name="categoria_cnh" class="form-control"
+                                                    required>
+                                                    <option value="">Selecione</option>
+                                                    <option value="B">B</option>
+                                                    <option value="C">C</option>
+                                                    <option value="D">D</option>
+                                                    <option value="E">E</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="validade_cnh" class="form-label required-label">Validade da
+                                                    CNH</label>
+                                                <input type="date" id="validade_cnh" name="validade_cnh"
+                                                    class="form-control" required>
+                                            </div>
+                                        </div>
+
+                                        <h5>Documentos</h5>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="cnh_pdf" class="form-label required-label">CNH (PDF)</label>
+                                                <input type="file" id="cnh_pdf" name="cnh_pdf" accept=".pdf"
+                                                    class="form-control" required>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="cert_transporte_escolar" class="form-label">Cert. Transporte
+                                                    Escolar (PDF)</label>
+                                                <input type="file" id="cert_transporte_escolar"
+                                                    name="cert_transporte_escolar" accept=".pdf" class="form-control">
+                                                <label for="data_validade_transporte_escolar"
+                                                    class="form-label">Validade Curso Escolar</label>
+                                                <input type="date" id="data_validade_transporte_escolar"
+                                                    name="data_validade_transporte_escolar" class="form-control">
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="cert_transporte_passageiros" class="form-label">Cert.
+                                                    Transporte Passageiros
+                                                    (PDF)</label>
+                                                <input type="file" id="cert_transporte_passageiros"
+                                                    name="cert_transporte_passageiros" accept=".pdf"
+                                                    class="form-control">
+                                                <label for="data_validade_transporte_passageiros"
+                                                    class="form-label">Validade Curso Passageiros</label>
+                                                <input type="date" id="data_validade_transporte_passageiros"
+                                                    name="data_validade_transporte_passageiros" class="form-control">
+                                            </div>
+                                        </div>
+                                        <small>(Se o fornecedor do usuário logado NÃO for "FUNDO MUNICIPAL DE EDUCAÇÃO
+                                            DE CANAA DOS CARAJAS",
+                                            os certificados de cursos são obrigatórios.)</small>
+
+                                        <div class="mt-4">
+                                            <button type="submit" class="btn btn-success">Cadastrar Motorista</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Atribuir Rota -->
+                    <div class="modal fade" id="modalAtribuirRota" tabindex="-1"
+                        aria-labelledby="modalAtribuirRotaLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalAtribuirRotaLabel">Atribuir Rota ao Motorista</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="atribuir-rota-form">
+                                        <div class="mb-3">
+                                            <label for="rota_id" class="form-label">Selecione a Rota</label>
+                                            <select id="rota_id" name="rota_id" class="form-control" required></select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Atribuir Rota</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Fim Modal Atribuir Rota -->
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="container-fluid d-flex justify-content-between">
+                    <nav class="pull-left">
+                        <ul class="nav">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">
+                                    ThemeKita
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">Help</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">Licenses</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="copyright">
+                        2024, made with <i class="fa fa-heart heart text-danger"></i> by
+                        <a href="http://www.themekita.com">ThemeKita</a>
+                    </div>
+                    <div>
+                        Distributed by
+                        <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+    <script src="../../assets/js/core/popper.min.js"></script>
+    <script src="../../assets/js/core/bootstrap.min.js"></script>
+    <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+    <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+    <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+    <script src="../../assets/js/pydenadmin.min.js"></script>
+
+    <script>
+        let motoristas = [];
+        let rotas = [];
+        let motoristaSelecionado = null;
+
+        function showNotification(type, message, title = "") {
+            $.notify({
+                title: title ? title + ' ' : '',
+                message: message,
+                icon: type === 'success' ? 'fa fa-check-circle'
+                    : type === 'danger' ? 'fa fa-exclamation-circle'
+                        : type === 'warning' ? 'fa fa-exclamation-triangle'
+                            : type === 'info' ? 'fa fa-info-circle' : ''
+            }, {
+                type: type,
+                placement: { from: "top", align: "right" },
+                offset: 20,
+                spacing: 10,
+                z_index: 1031,
+                delay: 3000,
+                timer: 1000,
+                animate: { enter: 'animated fadeInDown', exit: 'animated fadeOutUp' }
+            });
+        }
+
+        function loadMotoristas() {
+            fetch('/api/fornecedor/motoristas')
+                .then(res => {
+                    if (!res.ok) throw new Error('Erro ao carregar motoristas');
+                    return res.json();
+                })
+                .then(data => {
+                    motoristas = data;
+                    populateTable();
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Não foi possível carregar os motoristas.');
+                });
+        }
+
+        function populateTable() {
+            const tableBody = $('#motoristas-table tbody');
+            tableBody.empty();
+
+            motoristas.forEach(m => {
+                const row = `
+          <tr>
+            <td>${m.id}</td>
+            <td>${m.nome_motorista}</td>
+            <td>${m.cpf}</td>
+            <td>
+              <div class="form-button-action">
+                <button type="button" class="btn btn-link btn-info btn-lg" onclick="openAssignRotaModal(${m.id})"
+                  data-bs-toggle="tooltip" title="Atribuir Rota">
+                  <i class="fa fa-route"></i>
+                </button>
+                <button type="button" class="btn btn-link btn-danger btn-lg" onclick="deleteMotorista(${m.id})"
+                  data-bs-toggle="tooltip" title="Excluir Motorista">
+                  <i class="fa fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+                tableBody.append(row);
+            });
+
+            if ($.fn.DataTable.isDataTable('#motoristas-table')) {
+                $('#motoristas-table').DataTable().clear().destroy();
+            }
+
+            $('#motoristas-table').DataTable({
+                pageLength: 10,
+                language: {
+                    decimal: ",",
+                    thousands: ".",
+                    info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+                    infoEmpty: "Mostrando 0 até 0 de 0 registros",
+                    infoFiltered: "(filtrado de _MAX_ registros no total)",
+                    lengthMenu: "Mostrar _MENU_ registros",
+                    loadingRecords: "Carregando...",
+                    processing: "Processando...",
+                    search: "Pesquisar:",
+                    zeroRecords: "Nenhum registro encontrado",
+                    paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
+                    emptyTable: "Nenhum dado disponível na tabela"
+                }
+            });
+        }
+
+        function deleteMotorista(id) {
+            fetch('/api/fornecedor/motoristas/' + id, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', 'Motorista excluído com sucesso!');
+                        loadMotoristas();
+                    } else {
+                        showNotification('danger', 'Erro ao excluir motorista: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Erro ao excluir motorista. Tente novamente.');
+                });
+        }
+
+        function openAssignRotaModal(motoristaId) {
+            motoristaSelecionado = motoristaId;
+            const rotaSelect = document.getElementById('rota_id');
+            rotaSelect.innerHTML = '';
+
+            fetch('/api/fornecedor/rotas')
+                .then(res => res.json())
+                .then(data => {
+                    rotas = data;
+                    rotas.forEach(r => {
+                        const option = document.createElement('option');
+                        option.value = r.id;
+                        option.textContent = r.identificador + ' - ' + (r.descricao || '');
+                        rotaSelect.appendChild(option);
+                    });
+                    $('#modalAtribuirRota').modal('show');
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Não foi possível carregar as rotas.');
+                });
+        }
+
+        function assignRota() {
+            const form = document.getElementById('atribuir-rota-form');
+            const formData = new FormData(form);
+            const rota_id = formData.get('rota_id');
+            if (!rota_id) {
+                showNotification('danger', 'Selecione uma rota.', 'Erro');
+                return;
+            }
+
+            fetch('/api/fornecedor/motoristas/atribuir-rota', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motorista_id: motoristaSelecionado, rota_id: rota_id })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', data.message || 'Rota atribuída com sucesso!');
+                        $('#modalAtribuirRota').modal('hide');
+                    } else {
+                        showNotification('danger', data.message || 'Erro ao atribuir rota.');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Falha na requisição.');
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadMotoristas();
+
+            document.getElementById('motorista-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                fetch('/api/fornecedor/motoristas/cadastrar', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('success', 'Motorista cadastrado com sucesso!');
+                            document.getElementById('motorista-form').reset();
+                            $('#modalCadastroMotorista').modal('hide');
+                            loadMotoristas();
+                        } else {
+                            showNotification('danger', 'Erro ao cadastrar motorista: ' + data.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showNotification('danger', 'Erro ao cadastrar motorista. Tente novamente.');
+                    });
+            });
+
+            document.getElementById('atribuir-rota-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                assignRota();
+            });
+        });
+    </script>
+</body>
+
+</html>

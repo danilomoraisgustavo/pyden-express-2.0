@@ -2521,6 +2521,267 @@ app.get("/api/motoristas/download/:type/:id", async (req, res) => {
     });
   }
 });
+// ====> API: Listar motoristas somente do fornecedor do usuário logado
+app.get("/api/fornecedor/motoristas", async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.json([]);
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const query = `
+      SELECT m.id,
+             m.nome_motorista,
+             m.cpf
+      FROM motoristas m
+      WHERE m.fornecedor_id = $1
+      ORDER BY m.id ASC;
+    `;
+    const result = await pool.query(query, [fornecedorId]);
+    return res.json(result.rows);
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro interno ao listar motoristas do fornecedor." });
+  }
+});
+
+// ====> API: Cadastrar motorista para o fornecedor do usuário logado
+// Sem 'fornecedor_id' no body - é definido pelo userId
+app.post(
+  "/api/fornecedor/motoristas/cadastrar",
+  uploadFrota.fields([
+    { name: "cnh_pdf", maxCount: 1 },
+    { name: "cert_transporte_escolar", maxCount: 1 },
+    { name: "cert_transporte_passageiros", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const userId = req.session.userId || null;
+      const relForn = await pool.query(
+        "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+        [userId]
+      );
+      if (relForn.rows.length === 0) {
+        return res.status(403).json({ success: false, message: "Usuário não vinculado a nenhum fornecedor." });
+      }
+      const fornecedorId = relForn.rows[0].fornecedor_id;
+
+      const {
+        nome_motorista,
+        cpf,
+        rg,
+        data_nascimento,
+        telefone,
+        email,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        numero_cnh,
+        categoria_cnh,
+        validade_cnh,
+        data_validade_transporte_escolar,
+        data_validade_transporte_passageiros,
+      } = req.body;
+
+      if (!nome_motorista || !cpf || !numero_cnh || !categoria_cnh || !validade_cnh) {
+        return res.status(400).json({
+          success: false,
+          message: "Campos obrigatórios não fornecidos.",
+        });
+      }
+
+      let cnhPdfPath = null;
+      let certTransporteEscolarPath = null;
+      let certTransportePassageirosPath = null;
+
+      if (req.files["cnh_pdf"] && req.files["cnh_pdf"].length > 0) {
+        cnhPdfPath = "uploads/" + req.files["cnh_pdf"][0].filename;
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "CNH (PDF) é obrigatória.",
+        });
+      }
+      if (req.files["cert_transporte_escolar"] && req.files["cert_transporte_escolar"].length > 0) {
+        certTransporteEscolarPath = "uploads/" + req.files["cert_transporte_escolar"][0].filename;
+      }
+      if (req.files["cert_transporte_passageiros"] && req.files["cert_transporte_passageiros"].length > 0) {
+        certTransportePassageirosPath = "uploads/" + req.files["cert_transporte_passageiros"][0].filename;
+      }
+
+      const fornecedorResult = await pool.query("SELECT nome_fornecedor FROM fornecedores WHERE id = $1", [fornecedorId]);
+      const fornecedorNome = fornecedorResult.rows.length > 0 ? fornecedorResult.rows[0].nome_fornecedor : null;
+
+      if (fornecedorNome && fornecedorNome !== "FUNDO MUNICIPAL DE EDUCAÇÃO DE CANAA DOS CARAJAS") {
+        if (!certTransporteEscolarPath) {
+          return res.status(400).json({
+            success: false,
+            message: "Certificado de transporte escolar é obrigatório para este fornecedor.",
+          });
+        }
+        if (!certTransportePassageirosPath) {
+          return res.status(400).json({
+            success: false,
+            message: "Certificado de transporte de passageiros é obrigatório para este fornecedor.",
+          });
+        }
+      }
+
+      const insertQuery = `
+        INSERT INTO motoristas (
+          nome_motorista, cpf, rg, data_nascimento, telefone, email, endereco,
+          cidade, estado, cep, numero_cnh, categoria_cnh, validade_cnh, fornecedor_id,
+          cnh_pdf, cert_transporte_escolar, cert_transporte_passageiros,
+          data_validade_transporte_escolar, data_validade_transporte_passageiros
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10, $11, $12, $13, $14,
+          $15, $16, $17, $18, $19
+        )
+        RETURNING id;
+      `;
+      const values = [
+        nome_motorista,
+        cpf,
+        rg || null,
+        data_nascimento || null,
+        telefone || null,
+        email || null,
+        endereco || null,
+        cidade || null,
+        estado || null,
+        cep || null,
+        numero_cnh,
+        categoria_cnh,
+        validade_cnh,
+        fornecedorId,
+        cnhPdfPath,
+        certTransporteEscolarPath,
+        certTransportePassageirosPath,
+        data_validade_transporte_escolar || null,
+        data_validade_transporte_passageiros || null,
+      ];
+      const result = await pool.query(insertQuery, values);
+      if (result.rows.length === 0) {
+        return res.status(500).json({ success: false, message: "Erro ao cadastrar motorista." });
+      }
+      const novoMotoristaId = result.rows[0].id;
+
+      const mensagem = `Motorista cadastrado: ${nome_motorista}`;
+      await pool.query(
+        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+         VALUES ($1, 'CREATE', 'motoristas', $2, $3)`,
+        [userId, novoMotoristaId, mensagem]
+      );
+
+      return res.json({ success: true, message: "Motorista cadastrado com sucesso!" });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+    }
+  }
+);
+
+// ====> API: Deletar motorista (somente se pertence ao fornecedor do user)
+app.delete("/api/fornecedor/motoristas/:id", async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.status(403).json({ success: false, message: "Usuário não vinculado a fornecedor." });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+    const motoristaId = req.params.id;
+
+    const checkQuery = `SELECT id FROM motoristas WHERE id = $1 AND fornecedor_id = $2`;
+    const checkResult = await pool.query(checkQuery, [motoristaId, fornecedorId]);
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Motorista não encontrado ou não pertence a este fornecedor." });
+    }
+
+    await pool.query("DELETE FROM motoristas WHERE id = $1", [motoristaId]);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro interno ao excluir motorista." });
+  }
+});
+
+// ====> API: Listar rotas do fornecedor
+app.get("/api/fornecedor/rotas", async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.json([]);
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const query = `
+      SELECT id, identificador, descricao
+      FROM rotas
+      WHERE fornecedor_id = $1
+      ORDER BY id ASC
+    `;
+    const result = await pool.query(query, [fornecedorId]);
+    return res.json(result.rows);
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro ao listar rotas do fornecedor." });
+  }
+});
+
+// ====> API: Atribuir rota ao motorista
+app.post("/api/fornecedor/motoristas/atribuir-rota", async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { motorista_id, rota_id } = req.body;
+
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.status(403).json({ success: false, message: "Usuário não vinculado a fornecedor." });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const checkMotorista = await pool.query(
+      "SELECT id FROM motoristas WHERE id = $1 AND fornecedor_id = $2",
+      [motorista_id, fornecedorId]
+    );
+    if (checkMotorista.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Motorista não encontrado ou não pertence a este fornecedor." });
+    }
+
+    const checkRota = await pool.query(
+      "SELECT id FROM rotas WHERE id = $1 AND fornecedor_id = $2",
+      [rota_id, fornecedorId]
+    );
+    if (checkRota.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Rota não encontrada ou não pertence a este fornecedor." });
+    }
+
+    // Exemplo: Tabela de relacionamento rota_motorista
+    await pool.query(`
+      INSERT INTO rota_motorista (rota_id, motorista_id)
+      VALUES ($1, $2)
+      ON CONFLICT (rota_id, motorista_id) DO NOTHING
+    `, [rota_id, motorista_id]);
+
+    return res.json({ success: true, message: "Rota atribuída ao motorista com sucesso!" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro ao atribuir rota ao motorista." });
+  }
+});
 
 app.get("/api/motoristas/:id", async (req, res) => {
   try {
