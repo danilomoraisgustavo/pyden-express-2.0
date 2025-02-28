@@ -3382,7 +3382,36 @@ app.get("/api/rotas_simples/:id", async (req, res) => {
     });
   }
 });
-
+app.get("/api/fornecedores-admin", async (req, res) => {
+  try {
+    const query = `SELECT id, nome_fornecedor FROM fornecedores ORDER BY nome_fornecedor ASC`;
+    const result = await pool.query(query);
+    return res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Erro ao buscar fornecedores:", error);
+    return res.status(500).json({ error: "Erro interno ao buscar fornecedores." });
+  }
+});
+// ====> ROTA PARA RELACIONAR USUÁRIO E FORNECEDOR
+// Insere ou atualiza (simples) a relação
+app.post("/api/admin/relate-user-fornecedor", async (req, res) => {
+  try {
+    const { userId, fornecedorId } = req.body;
+    // Exemplo de upsert: se já existe vínculo para userId, atualiza; se não, insere
+    const upsertQuery = `
+      INSERT INTO usuario_fornecedor (usuario_id, fornecedor_id)
+      VALUES ($1, $2)
+      ON CONFLICT (usuario_id)
+      DO UPDATE SET fornecedor_id = EXCLUDED.fornecedor_id
+      RETURNING *;
+    `;
+    const result = await pool.query(upsertQuery, [userId, fornecedorId]);
+    return res.status(200).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error("Erro ao relacionar usuário e fornecedor:", error);
+    return res.status(500).json({ error: "Erro interno ao relacionar usuário e fornecedor." });
+  }
+});
 app.get("/api/fornecedores", async (req, res) => {
   try {
     const query = `

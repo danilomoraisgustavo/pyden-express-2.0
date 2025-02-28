@@ -239,6 +239,34 @@
         </div>
     </div>
 
+    <!-- Modal para vincular Usuário a Fornecedor -->
+    <div class="modal fade" id="modalRelateFornecedor" tabindex="-1" aria-labelledby="modalRelateFornecedorLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRelateFornecedorLabel">Vincular Usuário a Fornecedor</h5>
+                    <button type="button" class="close btn btn-link" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="relateUserId" />
+                    <div class="form-group">
+                        <label for="fornecedorSelect">Selecione o Fornecedor:</label>
+                        <select id="fornecedorSelect" class="form-control">
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-info" id="btnVincular">Vincular</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!--   Core JS Files   -->
     <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="../../assets/js/core/popper.min.js"></script>
@@ -258,8 +286,11 @@
             "gestor", "admin", "locan", "talisma", "roma", "ctl", "diamond"
         ];
 
+        let table;
+
         $(document).ready(function () {
-            const table = $("#tableUsers").DataTable({
+            // Inicializa DataTable
+            table = $("#tableUsers").DataTable({
                 ajax: {
                     url: "/api/admin/users",
                     dataSrc: ""
@@ -272,7 +303,6 @@
                     {
                         data: "permissoes",
                         render: function (data, type, row, meta) {
-                            // Renderiza as permissões como um SELECT múltiplo
                             const userPerms = data ? data.split(",") : [];
                             let selectHtml = `<select class="form-select form-select-sm permissoes-select" multiple data-user-id="${row.id}">`;
                             permissoesDisponiveis.forEach((perm) => {
@@ -299,7 +329,9 @@
                                 btnInit = `<button class="btn btn-success btn-sm toggle-init" data-user-id="${row.id}" data-init="true">Permitir</button>`;
                             }
                             const btnDelete = `<button class="btn btn-danger btn-sm delete-user" data-user-id="${row.id}">Excluir</button>`;
-                            return `${btnInit} ${btnDelete}`;
+                            // Novo botão para relacionar usuário a fornecedor
+                            const btnFornecedor = `<button class="btn btn-info btn-sm relate-fornecedor" data-user-id="${row.id}"><i class="fas fa-link"></i></button>`;
+                            return `${btnInit} ${btnDelete} ${btnFornecedor}`;
                         }
                     }
                 ]
@@ -361,6 +393,44 @@
                     error: function (err) {
                         console.error(err);
                         alert("Erro ao excluir usuário.");
+                    }
+                });
+            });
+
+            // Evento para abrir modal de Relacionar Fornecedor
+            $("#tableUsers").on("click", ".relate-fornecedor", function () {
+                const userId = $(this).data("user-id");
+                $("#relateUserId").val(userId);
+
+                // Carrega fornecedores e popula o select
+                $.getJSON("/api/fornecedores-admin", function (data) {
+                    $("#fornecedorSelect").empty();
+                    data.forEach((forn) => {
+                        $("#fornecedorSelect").append(`
+                            <option value="${forn.id}">${forn.nome_fornecedor}</option>
+                        `);
+                    });
+                    $("#modalRelateFornecedor").modal("show");
+                });
+            });
+
+            // Vincular usuário a fornecedor (botão do modal)
+            $("#btnVincular").on("click", function () {
+                const userId = $("#relateUserId").val();
+                const fornecedorId = $("#fornecedorSelect").val();
+
+                $.ajax({
+                    url: "/api/admin/relate-user-fornecedor",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ userId, fornecedorId }),
+                    success: function (res) {
+                        alert("Usuário vinculado ao fornecedor com sucesso!");
+                        $("#modalRelateFornecedor").modal("hide");
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao vincular usuário ao fornecedor.");
                     }
                 });
             });
