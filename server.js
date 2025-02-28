@@ -732,16 +732,15 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// GET /api/usuario-logado
 app.get("/api/usuario-logado", async (req, res) => {
   try {
     if (!req.session || !req.session.userId) {
       return res.json({
         success: false,
-        message: "Usuário não está logado.",
+        message: "Usuário não está logado."
       });
     }
-
-    // Traga todos os campos que você quer (SEM a senha).
     const userQuery = `
         SELECT
           id,
@@ -750,7 +749,6 @@ app.get("/api/usuario-logado", async (req, res) => {
           cnpj,
           telefone,
           email,
-          rg,
           endereco,
           cidade,
           estado,
@@ -769,23 +767,18 @@ app.get("/api/usuario-logado", async (req, res) => {
     if (result.rows.length === 0) {
       return res.json({
         success: false,
-        message: "Usuário não encontrado no banco.",
+        message: "Usuário não encontrado no banco."
       });
     }
-
     const usuario = result.rows[0];
-
-    // Retornando campos soltos, como antes (nome_completo, email etc.),
-    // mas agora também incluindo outros. Ajuste conforme necessidade:
     return res.json({
       success: true,
       id: usuario.id,
-      nome_completo: usuario.nome_completo, // mesmo nome de antes
-      email: usuario.email, // mesmo nome de antes
+      nome_completo: usuario.nome_completo,
+      email: usuario.email,
       cpf: usuario.cpf,
       cnpj: usuario.cnpj,
       telefone: usuario.telefone,
-      rg: usuario.rg,
       endereco: usuario.endereco,
       cidade: usuario.cidade,
       estado: usuario.estado,
@@ -795,35 +788,32 @@ app.get("/api/usuario-logado", async (req, res) => {
       autenticacao_dois_fatores: usuario.autenticacao_dois_fatores,
       tema_preferido: usuario.tema_preferido,
       notificacoes_email: usuario.notificacoes_email,
-      linguagem_preferida: usuario.linguagem_preferida,
+      linguagem_preferida: usuario.linguagem_preferida
     });
   } catch (error) {
     console.error("Erro ao buscar /api/usuario-logado:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro interno do servidor.",
+      message: "Erro interno do servidor."
     });
   }
 });
 
+// POST /api/atualizar-usuario
 app.post("/api/atualizar-usuario", async (req, res) => {
   try {
-    // Verifica se o usuário está logado via sessão
     if (!req.session || !req.session.userId) {
       return res.json({
         success: false,
-        message: "Usuário não está logado.",
+        message: "Usuário não está logado."
       });
     }
-
-    // Extraia os dados enviados pelo formulário
     const {
       nome_completo,
       email,
       cpf,
       cnpj,
       telefone,
-      rg,
       endereco,
       cidade,
       estado,
@@ -833,9 +823,8 @@ app.post("/api/atualizar-usuario", async (req, res) => {
       autenticacao_dois_fatores,
       tema_preferido,
       notificacoes_email,
-      linguagem_preferida,
+      linguagem_preferida
     } = req.body;
-
     const updateQuery = `
       UPDATE usuarios SET
         nome_completo = $1,
@@ -843,18 +832,17 @@ app.post("/api/atualizar-usuario", async (req, res) => {
         cpf = $3,
         cnpj = $4,
         telefone = $5,
-        rg = $6,
-        endereco = $7,
-        cidade = $8,
-        estado = $9,
-        cep = $10,
-        foto_perfil = $11,
-        pergunta_seguranca = $12,
-        autenticacao_dois_fatores = $13,
-        tema_preferido = $14,
-        notificacoes_email = $15,
-        linguagem_preferida = $16
-      WHERE id = $17
+        endereco = $6,
+        cidade = $7,
+        estado = $8,
+        cep = $9,
+        foto_perfil = $10,
+        pergunta_seguranca = $11,
+        autenticacao_dois_fatores = $12,
+        tema_preferido = $13,
+        notificacoes_email = $14,
+        linguagem_preferida = $15
+      WHERE id = $16
       RETURNING *;
     `;
     const values = [
@@ -863,7 +851,6 @@ app.post("/api/atualizar-usuario", async (req, res) => {
       cpf,
       cnpj,
       telefone,
-      rg,
       endereco,
       cidade,
       estado,
@@ -874,31 +861,29 @@ app.post("/api/atualizar-usuario", async (req, res) => {
       tema_preferido,
       notificacoes_email,
       linguagem_preferida,
-      req.session.userId,
+      req.session.userId
     ];
-
     const result = await pool.query(updateQuery, values);
-
     if (result.rowCount === 0) {
       return res.json({
         success: false,
-        message: "Usuário não encontrado ou sem alterações.",
+        message: "Usuário não encontrado ou sem alterações."
       });
     }
-
     return res.json({
       success: true,
       message: "Dados atualizados com sucesso!",
-      usuario: result.rows[0],
+      usuario: result.rows[0]
     });
   } catch (error) {
     console.error("Erro ao atualizar usuário:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro interno do servidor.",
+      message: "Erro interno do servidor."
     });
   }
 });
+
 
 // ====================================================================================
 // ZONEAMENTOS
