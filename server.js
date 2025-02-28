@@ -294,6 +294,32 @@ app.put("/api/admin/toggle-init", async (req, res) => {
     return res.status(500).json({ error: "Erro interno ao atualizar init do usuário." });
   }
 });
+app.get("/api/fornecedor/meu", async (req, res) => {
+  try {
+    // exemplo de obtenção do userId da sessão
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Usuário não está logado." });
+    }
+
+    // Buscando o fornecedor_id na tabela usuario_fornecedor
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+
+    if (relForn.rows.length === 0) {
+      // Não encontrou vínculo: retorna null ou erro
+      return res.json({ fornecedor_id: null });
+    }
+
+    // Se encontrou, retorna
+    return res.json({ fornecedor_id: relForn.rows[0].fornecedor_id });
+  } catch (error) {
+    console.error("Erro ao buscar fornecedor do usuário:", error);
+    return res.status(500).json({ error: "Erro interno ao buscar fornecedor do usuário." });
+  }
+});
 
 // Exemplo de rota no backend (Express) para contadores do fornecedor
 // Ajustar conforme seu sistema
