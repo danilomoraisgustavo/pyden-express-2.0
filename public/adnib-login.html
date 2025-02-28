@@ -1,0 +1,125 @@
+<!-- ====> admin-login.html <==== -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Admin Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Estilos (se quiser, use o mesmo CSS do login normal ou crie um admin-login.css separado) -->
+    <link rel="stylesheet" href="/assets/css/login.css" />
+
+    <!-- Ícones e fontes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+
+    <!-- Toastify (para notificações) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+</head>
+
+<body>
+    <div class="container">
+        <div class="forms-container">
+            <div class="signin-signup">
+                <!-- Formulário de login administrativo -->
+                <form id="adminLoginForm" class="sign-in-form">
+                    <img src="/assets/img/pydenadmin/logo_light.png" alt="logo" class="form-logo" />
+                    <h2 class="title">Admin Login</h2>
+                    <div class="input-field">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" autocomplete="email" placeholder="E-mail Admin" required />
+                    </div>
+                    <div class="input-field">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="senha" autocomplete="current-password" placeholder="Senha Admin"
+                            id="id_password" required />
+                        <i class="far fa-eye" id="togglePassword" style="cursor: pointer;"></i>
+                    </div>
+                    <input type="submit" value="Entrar" class="btn solid" />
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toastify e JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Função de notificação via Toastify
+        function showToast(type, message) {
+            let bgColor = "linear-gradient(to right, #00b09b, #96c93d)";
+            if (type === "danger" || type === "error") {
+                bgColor = "linear-gradient(to right, #de1f1f, #c40606)";
+            } else if (type === "warning") {
+                bgColor = "linear-gradient(to right, #FFA900, #FF7700)";
+            } else if (type === "info") {
+                bgColor = "linear-gradient(to right, #0080ff, #00c6ff)";
+            }
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                style: { background: bgColor },
+            }).showToast();
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const togglePassword = document.getElementById("togglePassword");
+            const passwordElem = document.getElementById("id_password");
+
+            if (togglePassword && passwordElem) {
+                togglePassword.addEventListener("click", function () {
+                    const type =
+                        passwordElem.getAttribute("type") === "password"
+                            ? "text"
+                            : "password";
+                    passwordElem.setAttribute("type", type);
+                    this.classList.toggle("fa-eye");
+                    this.classList.toggle("fa-eye-slash");
+                });
+            }
+
+            // Submissão do formulário Admin
+            const adminLoginForm = document.getElementById("adminLoginForm");
+            if (adminLoginForm) {
+                adminLoginForm.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const formData = new FormData(adminLoginForm);
+                    const data = {
+                        email: formData.get("email"),
+                        senha: formData.get("senha"),
+                    };
+
+                    fetch("/api/admin-login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data),
+                    })
+                        .then((response) => response.json())
+                        .then((res) => {
+                            if (res.success) {
+                                showToast("success", res.message || "Login de Admin bem-sucedido!");
+                                // Redireciona para o dashboard de admin
+                                window.location.href = res.redirectUrl || "/pages/admin/dashboard-admin.html";
+                            } else {
+                                showToast("danger", res.message || "Falha no login administrativo.");
+                            }
+                        })
+                        .catch((err) => {
+                            console.error("Erro ao efetuar login admin:", err);
+                            showToast("danger", "Erro interno ao efetuar login de admin.");
+                        });
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

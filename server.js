@@ -153,6 +153,9 @@ app.get("/", (req, res) => {
 app.get("/solicitar-rota.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/solicitar-rota.html"));
 });
+app.get("/admin-login.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/admin-login.html"));
+});
 
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
@@ -744,6 +747,75 @@ app.post("/api/login", async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Erro interno ao efetuar login.",
+    });
+  }
+});
+// ====> api/admin-login (Node/Express) <====
+// A rota que valida se o usuário pode acessar a área administrativa
+app.post("/api/admin-login", async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    const userQuery = `
+      SELECT id, senha, init, permissoes
+      FROM usuarios
+      WHERE email = $1
+      LIMIT 1
+    `;
+    const result = await pool.query(userQuery, [email]);
+
+    // Verifica se o usuário existe
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: "Usuário admin não encontrado.",
+      });
+    }
+
+    const usuario = result.rows[0];
+
+    // Verifica se está liberado (init = true)
+    if (!usuario.init) {
+      return res.status(403).json({
+        success: false,
+        message: "Usuário ainda não está inicializado para acesso.",
+      });
+    }
+
+    // Verifica senha
+    const match = await bcrypt.compare(senha, usuario.senha);
+    if (!match) {
+      return res.status(401).json({
+        success: false,
+        message: "Senha incorreta.",
+      });
+    }
+
+    // Verifica se é admin (id = 1) ou se tem permissão master
+    const temPermissaoAdmin = (
+      usuario.id === 1 ||
+      (usuario.permissoes && usuario.permissoes.includes("master"))
+    );
+
+    if (!temPermissaoAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Acesso administrativo negado.",
+      });
+    }
+
+    // Se chegou até aqui, usuário pode logar na área administrativa
+    req.session.userId = usuario.id; // se estiver usando express-session
+
+    return res.status(200).json({
+      success: true,
+      message: "Login de admin bem-sucedido!",
+      redirectUrl: "/pages/admin/dashboard-admin.html",
+    });
+  } catch (error) {
+    console.error("Erro ao efetuar login admin:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao efetuar login de admin.",
     });
   }
 });
