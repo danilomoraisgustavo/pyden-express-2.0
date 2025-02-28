@@ -799,8 +799,8 @@ app.post("/api/login", async (req, res) => {
       // Caso seja string, pode verificar com includes ou regex
       // Exemplo simples:
       if (
-        usuario.permissoes.includes("Fornecedor: Locan") ||
-        usuario.permissoes.includes("Talismã")
+        usuario.permissoes.includes("locan") ||
+        usuario.permissoes.includes("talismã")
       ) {
         redirectUrl = "/pages/fornecedores/dashboard-fornecedor.html";
       }
