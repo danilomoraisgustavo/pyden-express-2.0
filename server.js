@@ -686,13 +686,13 @@ app.post("/api/login", async (req, res) => {
   try {
     const { email, senha } = req.body;
     const userQuery = `
-            SELECT id, senha, init
-            FROM usuarios
-            WHERE email = $1
-            LIMIT 1
-        `;
-    const result = await pool.query(userQuery, [email]);
+      SELECT id, senha, init, permissoes
+      FROM usuarios
+      WHERE email = $1
+      LIMIT 1
+    `;
 
+    const result = await pool.query(userQuery, [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({
         success: false,
@@ -718,10 +718,26 @@ app.post("/api/login", async (req, res) => {
 
     req.session.userId = usuario.id;
 
+    let redirectUrl = "/pages/transporte-escolar/dashboard-escolar.html";
+
+    // Verificação adicional de permissões
+    // Assumindo que "permissoes" é uma string ou array que contém algo como "Fornecedor: Locan", "Talismã", etc.
+    // Ajuste conforme sua estrutura real de dados.
+    if (usuario.permissoes) {
+      // Caso seja string, pode verificar com includes ou regex
+      // Exemplo simples:
+      if (
+        usuario.permissoes.includes("Fornecedor: Locan") ||
+        usuario.permissoes.includes("Talismã")
+      ) {
+        redirectUrl = "/pages/fornecedores/dashboard-fornecedor.html";
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: "Login bem sucedido!",
-      redirectUrl: "/pages/transporte-escolar/dashboard-escolar.html",
+      redirectUrl,
     });
   } catch (error) {
     console.error("Erro ao efetuar login:", error);
@@ -731,6 +747,7 @@ app.post("/api/login", async (req, res) => {
     });
   }
 });
+
 
 // GET /api/usuario-logado
 app.get("/api/usuario-logado", async (req, res) => {

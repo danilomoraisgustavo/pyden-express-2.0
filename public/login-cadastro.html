@@ -1,3 +1,4 @@
+<!-- ====> PÁGINA DE LOGIN/CADASTRO (HTML) <==== -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -30,9 +31,7 @@
         <div class="forms-container">
             <div class="signin-signup">
 
-                <!-- =====================
-             FORMULÁRIO DE LOGIN
-        ====================== -->
+                <!-- FORMULÁRIO DE LOGIN -->
                 <form id="loginForm" class="sign-in-form">
                     <img src="/assets/img/pydenadmin/logo_light.png" alt="logo" class="form-logo" />
                     <h2 class="title">Login</h2>
@@ -53,9 +52,7 @@
                     <input type="submit" value="Entrar" class="btn solid" />
                 </form>
 
-                <!-- =====================
-             FORMULÁRIO DE CADASTRO
-        ====================== -->
+                <!-- FORMULÁRIO DE CADASTRO -->
                 <form id="signUpForm" class="sign-up-form">
                     <img src="/assets/img/pydenadmin/logo_light.png" alt="logo" class="form-logo" />
                     <h2 class="title">Cadastre-se</h2>
@@ -115,9 +112,6 @@
     <script src="https://unpkg.com/vanilla-masker/build/vanilla-masker.min.js"></script>
 
     <script>
-        /******************************************
-         * Função de notificação via Toastify
-         *****************************************/
         function showToast(type, message) {
             let bgColor = "linear-gradient(to right, #00b09b, #96c93d)";
             if (type === "danger" || type === "error") {
@@ -137,9 +131,6 @@
             }).showToast();
         }
 
-        /******************************************
-         * Aplicar máscara CPF/CNPJ
-         *****************************************/
         function aplicarMascaraCpfCnpj(valor) {
             const soNumeros = valor.replace(/\D/g, '');
             if (soNumeros.length <= 11) {
@@ -150,11 +141,6 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("DOM loaded: scripts init...");
-
-            /******************************************
-             * Botões para trocar formulário (login/cadastro)
-             *****************************************/
             const sign_in_btn = document.querySelector("#sign-in-btn");
             const sign_up_btn = document.querySelector("#sign-up-btn");
             const container = document.querySelector(".container");
@@ -170,9 +156,6 @@
                 });
             }
 
-            /******************************************
-             * Toggle senhas (olhinho)
-             *****************************************/
             const togglePasswords = document.querySelectorAll("#togglePassword, #togglePassword2");
             const passwordElem1 = document.getElementById("id_password");
             const passwordElem2 = document.getElementById("id_password2");
@@ -195,9 +178,6 @@
                 });
             });
 
-            /******************************************
-             * Máscara CPF/CNPJ
-             *****************************************/
             const docInput = document.getElementById("docInput");
             if (docInput) {
                 docInput.addEventListener("input", function () {
@@ -205,9 +185,6 @@
                 });
             }
 
-            /******************************************
-             * Máscara TELEFONE
-             *****************************************/
             const telInput = document.getElementById("telInput");
             if (telInput) {
                 telInput.addEventListener("input", function () {
@@ -216,14 +193,10 @@
                 });
             }
 
-            /******************************************
-             * FORMULÁRIO DE CADASTRO
-             *****************************************/
             const signUpForm = document.getElementById("signUpForm");
             if (signUpForm) {
                 signUpForm.addEventListener("submit", function (e) {
                     e.preventDefault();
-                    console.log("Cadastro -> submit...");
                     const formData = new FormData(signUpForm);
                     const data = {
                         nome_completo: formData.get("nome_completo"),
@@ -232,23 +205,18 @@
                         email: formData.get("email"),
                         senha: formData.get("senha"),
                     };
-                    console.log("Cadastro -> dados:", data);
 
                     fetch("/api/cadastrar-usuario", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(data),
                     })
-                        .then(response => {
-                            console.log("Cadastro -> status:", response.status);
-                            return response.json();
-                        })
+                        .then(response => response.json())
                         .then(res => {
-                            console.log("Cadastro -> resposta JSON:", res);
                             if (res.success) {
                                 showToast("success", res.message || "Cadastro realizado com sucesso!");
                                 signUpForm.reset();
-                                container.classList.remove("sign-up-mode"); // Volta para tela de login
+                                container.classList.remove("sign-up-mode");
                             } else {
                                 showToast("danger", res.message || "Erro ao cadastrar.");
                             }
@@ -260,35 +228,25 @@
                 });
             }
 
-            /******************************************
-             * FORMULÁRIO DE LOGIN
-             *****************************************/
             const loginForm = document.getElementById("loginForm");
             if (loginForm) {
                 loginForm.addEventListener("submit", function (e) {
                     e.preventDefault();
-                    console.log("Login -> submit...");
                     const formData = new FormData(loginForm);
                     const data = {
                         email: formData.get("email"),
                         senha: formData.get("senha"),
                     };
-                    console.log("Login -> dados:", data);
 
                     fetch("/api/login", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(data),
                     })
-                        .then(response => {
-                            console.log("Login -> status:", response.status);
-                            return response.json();
-                        })
+                        .then(response => response.json())
                         .then(res => {
-                            console.log("Login -> resposta JSON:", res);
                             if (res.success) {
                                 showToast("success", res.message || "Login bem-sucedido!");
-                                // Redireciona para a página principal
                                 window.location.href = res.redirectUrl || "/pages/transporte-escolar/dashboard-escolar.html";
                             } else {
                                 showToast("danger", res.message || "Falha no login.");
@@ -300,8 +258,6 @@
                         });
                 });
             }
-
-            console.log("DOM loaded: scripts final...");
         });
     </script>
 </body>
