@@ -89,7 +89,6 @@
         <h1>Admin Dashboard</h1>
         <p>Bem-vindo(a), Administrador!</p>
     </header>
-
     <nav>
         <button class="tab-btn active" data-tab="tab-users">Usuários</button>
         <button class="tab-btn" data-tab="tab-fornecedores">Fornecedores</button>
@@ -97,7 +96,6 @@
         <button class="tab-btn" data-tab="tab-frota">Frota</button>
         <button class="tab-btn" data-tab="tab-logout" onclick="logout()">Sair</button>
     </nav>
-
     <main>
         <!-- Aba de Usuários -->
         <div id="tab-users" class="tab-content active">
@@ -105,55 +103,55 @@
             <button onclick="carregarUsuarios()">Carregar Lista de Usuários</button>
             <div id="listaUsuarios"></div>
         </div>
-
         <!-- Aba de Fornecedores -->
         <div id="tab-fornecedores" class="tab-content">
             <h2>Fornecedores</h2>
             <button onclick="carregarFornecedores()">Carregar Fornecedores</button>
             <div id="listaFornecedores"></div>
         </div>
-
         <!-- Aba de Permissões -->
         <div id="tab-permissoes" class="tab-content">
             <h2>Permissões do Sistema</h2>
-            <p>Aqui você pode configurar permissões adicionais, como "GerenciarFornecedores", "GerenciarFrota",
-                "Financeiro", etc.
-                E atribuir a cada usuário.</p>
-            <!-- Exemplo: podemos listar permissões fixas e associar a um user -->
+            <p>
+                Aqui você pode configurar permissões adicionais, como
+                "GerenciarFornecedores", "GerenciarFrota", "Financeiro", "Relatorios", etc.
+                e atribuir a cada usuário.
+            </p>
             <div>
-                <label>Permissão Nova: <input type="text" id="novaPermissaoTxt" /></label>
+                <label>Permissão Nova:
+                    <input type="text" id="novaPermissaoTxt" />
+                </label>
                 <button onclick="adicionarPermissao()">Adicionar Permissão</button>
             </div>
             <div id="listaPermissoesGlobais"></div>
-            <hr>
+            <hr />
             <h4>Atribuir permissão a um usuário</h4>
-            <label>ID User: <input type="number" id="permUserId" /></label>
-            <label>Permissão: <input type="text" id="permPermissionName" /></label>
+            <label>ID User:
+                <input type="number" id="permUserId" />
+            </label>
+            <label>Permissão:
+                <input type="text" id="permPermissionName" />
+            </label>
             <button onclick="atribuirPermissao()">Atribuir</button>
             <p id="atribuirMsg"></p>
         </div>
-
         <!-- Aba de Frota -->
         <div id="tab-frota" class="tab-content">
             <h2>Frota</h2>
             <button onclick="carregarFrota()">Carregar Frota</button>
             <div id="listaFrota"></div>
         </div>
-
     </main>
-
     <script>
-        // ----------- Troca de Abas -----------
+        // Troca de Abas
         const tabs = document.querySelectorAll(".tab-btn");
         const contents = document.querySelectorAll(".tab-content");
-
-        tabs.forEach(btn => {
+        tabs.forEach((btn) => {
             btn.addEventListener("click", () => {
-                tabs.forEach(b => b.classList.remove("active"));
+                tabs.forEach((b) => b.classList.remove("active"));
                 btn.classList.add("active");
-
                 const tabId = btn.dataset.tab;
-                contents.forEach(ct => {
+                contents.forEach((ct) => {
                     if (ct.id === tabId) {
                         ct.classList.add("active");
                     } else {
@@ -162,12 +160,11 @@
                 });
             });
         });
-
-        // ----------- USUÁRIOS -----------
+        // USUÁRIOS
         function carregarUsuarios() {
             fetch("/api/admin/users")
-                .then(res => res.json())
-                .then(data => {
+                .then((res) => res.json())
+                .then((data) => {
                     if (!data.success) {
                         alert("Erro: " + data.message);
                         return;
@@ -178,8 +175,9 @@
                         container.innerHTML += "<p>Nenhum usuário encontrado.</p>";
                         return;
                     }
-                    let html = "<table><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Init</th><th>Permissões</th><th>Ações</th></tr>";
-                    data.data.forEach(u => {
+                    let html =
+                        "<table><tr><th>ID</th><th>Nome</th><th>E-mail</th><th>Init</th><th>Permissões</th><th>Ações</th></tr>";
+                    data.data.forEach((u) => {
                         html += `
               <tr>
                 <td>${u.id}</td>
@@ -198,18 +196,17 @@
                     html += "</table>";
                     container.innerHTML += html;
                 })
-                .catch(err => console.error("Erro fetch users:", err));
+                .catch((err) => console.error("Erro fetch users:", err));
         }
-
         function toggleInit(userId, currentInit) {
             const novoInit = !currentInit;
             fetch(`/api/admin/users/${userId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ init: novoInit })
+                body: JSON.stringify({ init: novoInit }),
             })
-                .then(r => r.json())
-                .then(resp => {
+                .then((r) => r.json())
+                .then((resp) => {
                     if (resp.success) {
                         alert("Usuário atualizado com sucesso!");
                         carregarUsuarios();
@@ -217,18 +214,16 @@
                         alert("Erro: " + resp.message);
                     }
                 })
-                .catch(err => console.error(err));
+                .catch((err) => console.error(err));
         }
-
         function darMaster(userId) {
-            // Exemplo: define permissoes como "Master"
             fetch(`/api/admin/users/${userId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ permissoes: "Master" })
+                body: JSON.stringify({ permissoes: "Master" }),
             })
-                .then(r => r.json())
-                .then(resp => {
+                .then((r) => r.json())
+                .then((resp) => {
                     if (resp.success) {
                         alert("Permissão MASTER atribuída!");
                         carregarUsuarios();
@@ -236,14 +231,13 @@
                         alert("Erro: " + resp.message);
                     }
                 })
-                .catch(err => console.error(err));
+                .catch((err) => console.error(err));
         }
-
         function excluirUsuario(userId) {
             if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
             fetch(`/api/admin/users/${userId}`, { method: "DELETE" })
-                .then(r => r.json())
-                .then(resp => {
+                .then((r) => r.json())
+                .then((resp) => {
                     if (resp.success) {
                         alert("Usuário excluído.");
                         carregarUsuarios();
@@ -251,22 +245,22 @@
                         alert("Erro: " + resp.message);
                     }
                 })
-                .catch(err => console.error(err));
+                .catch((err) => console.error(err));
         }
-
-        // ----------- FORNECEDORES -----------
+        // FORNECEDORES
         function carregarFornecedores() {
             fetch("/api/fornecedores")
-                .then(res => res.json())
-                .then(data => {
+                .then((res) => res.json())
+                .then((data) => {
                     const container = document.getElementById("listaFornecedores");
                     container.innerHTML = "<h3>Fornecedores</h3>";
                     if (!data || !data.length) {
                         container.innerHTML += "<p>Nenhum fornecedor encontrado.</p>";
                         return;
                     }
-                    let html = "<table><tr><th>ID</th><th>Nome</th><th>Tipo Contrato</th><th>CNPJ</th><th>Contato</th></tr>";
-                    data.forEach(f => {
+                    let html =
+                        "<table><tr><th>ID</th><th>Nome</th><th>Tipo Contrato</th><th>CNPJ</th><th>Contato</th></tr>";
+                    data.forEach((f) => {
                         html += `
               <tr>
                 <td>${f.id}</td>
@@ -280,16 +274,28 @@
                     html += "</table>";
                     container.innerHTML += html;
                 })
-                .catch(err => console.error("Erro fetch fornecedores:", err));
+                .catch((err) => console.error("Erro fetch fornecedores:", err));
         }
-
-        // ----------- PERMISSÕES -----------
-        // (Exemplo fictício de gerenciar uma lista estática de permissões "globais")
-        let permissaoGlobalLista = ["GerenciarFornecedores", "GerenciarFrota", "Financeiro", "Relatorios"];
-
+        // PERMISSÕES
+        let permissaoGlobalLista = [
+            "GerenciarFornecedores",
+            "GerenciarFrota",
+            "Financeiro",
+            "Relatorios",
+            "GerenciarUsuarios",
+            "GerarPdfTermos",
+            "CriarSolicitacoesTransporte",
+            "ImportarAlunosAtivos",
+            "VisualizarAlunosAtivos",
+            "ExcluirAlunosAtivos",
+            "AtualizarAlunosRecadastro",
+            "CriarAlunosAtivosEstadual",
+            "AtualizarAlunosAtivosEstadual",
+            "AtualizarAlunosAtivos"
+        ];
         function renderizarPermissoesGlobais() {
             const div = document.getElementById("listaPermissoesGlobais");
-            let html = "<h4>Lista de Permissões Globais (fictício)</h4><ul>";
+            let html = "<h4>Lista de Permissões Globais</h4><ul>";
             permissaoGlobalLista.forEach((p, idx) => {
                 html += `<li>${p} <button onclick="removerPermissaoGlobal(${idx})">X</button></li>`;
             });
@@ -310,8 +316,6 @@
             permissaoGlobalLista.splice(idx, 1);
             renderizarPermissoesGlobais();
         }
-
-        // Exemplo de atribuir permissão a user => define "permissoes" no backend
         function atribuirPermissao() {
             const userId = document.getElementById("permUserId").value;
             const perm = document.getElementById("permPermissionName").value;
@@ -320,79 +324,62 @@
                 msg.innerText = "Preencha ID do usuário e permissão.";
                 return;
             }
-            // Precisamos buscar as permissões atuais do user, concatenar, e mandar PUT
-            fetch(`/api/admin/users/${userId}`)
-                .then(r => r.json())
-                .then(info => {
-                    if (!info.success) {
-                        msg.innerText = "Usuário não encontrado (ou sem sucesso).";
+            fetch(`/api/admin/users`)
+                .then((r) => r.json())
+                .then((full) => {
+                    if (!full.success) {
+                        msg.innerText = "Erro ao listar usuários.";
                         return;
                     }
-                    // A rota GET /api/admin/users/:id não existe no seu server, mas podemos criar,
-                    // ou então precisamos buscar a lista de todos e filtrar localmente.
-                    // Exemplo: filtrar localmente:
-                    fetch("/api/admin/users")
-                        .then(r2 => r2.json())
-                        .then(full => {
-                            if (!full.success) {
-                                msg.innerText = "Erro ao listar para buscar user.";
-                                return;
+                    const found = full.data.find((u) => u.id == userId);
+                    if (!found) {
+                        msg.innerText = "Usuário não encontrado.";
+                        return;
+                    }
+                    let atual = found.permissoes || "";
+                    let arr = atual.split(",").map((x) => x.trim()).filter((x) => x);
+                    if (!arr.includes(perm)) {
+                        arr.push(perm);
+                    }
+                    const novo = arr.join(",");
+                    fetch(`/api/admin/users/${userId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ permissoes: novo }),
+                    })
+                        .then((r3) => r3.json())
+                        .then((resp3) => {
+                            if (resp3.success) {
+                                msg.innerText = `Permissão "${perm}" atribuída ao usuário ${userId}. Novo: ${resp3.user.permissoes}`;
+                                carregarUsuarios();
+                            } else {
+                                msg.innerText = "Erro: " + resp3.message;
                             }
-                            const found = full.data.find(u => u.id == userId);
-                            if (!found) {
-                                msg.innerText = "Usuário ID não achado.";
-                                return;
-                            }
-                            let atual = found.permissoes || "";
-                            // se for CSV, vamos separar:
-                            let arr = atual.split(",").map(x => x.trim()).filter(x => x);
-                            if (!arr.includes(perm)) {
-                                arr.push(perm);
-                            }
-                            const novo = arr.join(",");
-                            // Agora PUT
-                            fetch(`/api/admin/users/${userId}`, {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ permissoes: novo })
-                            })
-                                .then(r3 => r3.json())
-                                .then(resp3 => {
-                                    if (resp3.success) {
-                                        msg.innerText = `Permissão "${perm}" atribuída ao user ${userId}. Novo: ${resp3.user.permissoes}`;
-                                    } else {
-                                        msg.innerText = "Erro: " + resp3.message;
-                                    }
-                                })
-                                .catch(err => {
-                                    console.error(err);
-                                    msg.innerText = "Erro fetch: " + err;
-                                });
                         })
-                        .catch(err => {
+                        .catch((err) => {
                             console.error(err);
-                            msg.innerText = "Erro fetch full users: " + err;
+                            msg.innerText = "Erro ao atualizar usuário.";
                         });
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.error(err);
-                    msg.innerText = "Erro fetch user detail: " + err;
+                    msg.innerText = "Erro ao obter lista de usuários.";
                 });
         }
-
-        // ----------- FROTA -----------
+        // FROTA
         function carregarFrota() {
             fetch("/api/frota")
-                .then(res => res.json())
-                .then(data => {
+                .then((res) => res.json())
+                .then((data) => {
                     const container = document.getElementById("listaFrota");
                     container.innerHTML = "<h3>Frota Cadastrada</h3>";
                     if (!data || !data.length) {
                         container.innerHTML += "<p>Nenhum veículo encontrado.</p>";
                         return;
                     }
-                    let html = "<table><tr><th>ID</th><th>Nome</th><th>Placa</th><th>Fornecedor</th></tr>";
-                    data.forEach(f => {
+                    let html =
+                        "<table><tr><th>ID</th><th>Nome</th><th>Placa</th><th>Fornecedor</th></tr>";
+                    data.forEach((f) => {
                         html += `
               <tr>
                 <td>${f.id}</td>
@@ -405,17 +392,14 @@
                     html += "</table>";
                     container.innerHTML += html;
                 })
-                .catch(err => console.error("Erro fetch frota:", err));
+                .catch((err) => console.error("Erro fetch frota:", err));
         }
-
-        // ----------- LOGOUT -----------
+        // LOGOUT
         function logout() {
             window.location.href = "/logout";
         }
-
-        // Ao carregar a página:
+        // Inicialização
         document.addEventListener("DOMContentLoaded", () => {
-            // Renderiza listaPermissoesGlobais
             renderizarPermissoesGlobais();
         });
     </script>
