@@ -806,6 +806,100 @@ app.get("/api/usuario-logado", async (req, res) => {
   }
 });
 
+app.post("/api/atualizar-usuario", async (req, res) => {
+  try {
+    // Verifica se o usuário está logado via sessão
+    if (!req.session || !req.session.userId) {
+      return res.json({
+        success: false,
+        message: "Usuário não está logado.",
+      });
+    }
+
+    // Extraia os dados enviados pelo formulário
+    const {
+      nome_completo,
+      email,
+      cpf,
+      cnpj,
+      telefone,
+      rg,
+      endereco,
+      cidade,
+      estado,
+      cep,
+      foto_perfil,
+      pergunta_seguranca,
+      autenticacao_dois_fatores,
+      tema_preferido,
+      notificacoes_email,
+      linguagem_preferida,
+    } = req.body;
+
+    const updateQuery = `
+      UPDATE usuarios SET
+        nome_completo = $1,
+        email = $2,
+        cpf = $3,
+        cnpj = $4,
+        telefone = $5,
+        rg = $6,
+        endereco = $7,
+        cidade = $8,
+        estado = $9,
+        cep = $10,
+        foto_perfil = $11,
+        pergunta_seguranca = $12,
+        autenticacao_dois_fatores = $13,
+        tema_preferido = $14,
+        notificacoes_email = $15,
+        linguagem_preferida = $16
+      WHERE id = $17
+      RETURNING *;
+    `;
+    const values = [
+      nome_completo,
+      email,
+      cpf,
+      cnpj,
+      telefone,
+      rg,
+      endereco,
+      cidade,
+      estado,
+      cep,
+      foto_perfil,
+      pergunta_seguranca,
+      autenticacao_dois_fatores,
+      tema_preferido,
+      notificacoes_email,
+      linguagem_preferida,
+      req.session.userId,
+    ];
+
+    const result = await pool.query(updateQuery, values);
+
+    if (result.rowCount === 0) {
+      return res.json({
+        success: false,
+        message: "Usuário não encontrado ou sem alterações.",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Dados atualizados com sucesso!",
+      usuario: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar usuário:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor.",
+    });
+  }
+});
+
 // ====================================================================================
 // ZONEAMENTOS
 // ====================================================================================

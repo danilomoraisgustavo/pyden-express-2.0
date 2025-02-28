@@ -1,24 +1,9 @@
-<!-- TABELA NO BANCO DE DADOS -->
-<!--
-CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    nome_completo VARCHAR(255) NOT NULL,
-    cpf VARCHAR(14),       -- Aceita até 14 dígitos
-    cnpj VARCHAR(18),      -- Aceita até 18 dígitos
-    telefone VARCHAR(20) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    init BOOLEAN DEFAULT FALSE,
-    permissoes TEXT
-);
--->
-
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Meu Perfil - pydenadmin Bootstrap 5 Admin Dashboard</title>
+    <title>Meu Perfil </title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
     <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
@@ -1079,12 +1064,11 @@ CREATE TABLE IF NOT EXISTS usuarios (
                         </ul>
                     </nav>
                     <div class="copyright">
-                        2024, made with <i class="fa fa-heart heart text-danger"></i> by
-                        <a href="http://www.themekita.com">ThemeKita</a>
+                        2024, made with <i class="fa fa-heart heart text-danger"></i> by <a
+                            href="http://www.themekita.com">ThemeKita</a>
                     </div>
                     <div>
-                        Distributed by
-                        <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+                        Distributed by <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
                     </div>
                 </div>
             </footer>
@@ -1101,6 +1085,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     <script src="../../assets/js/setting-demo2.js"></script>
 
     <script>
+        let userData = {};
+
         function showNotification(type, message, title = "") {
             $.notify({
                 title: title ? title + ' ' : '',
@@ -1133,13 +1119,13 @@ CREATE TABLE IF NOT EXISTS usuarios (
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
+                        userData = data;
                         document.getElementById('nome_completo').value = data.nome_completo || '';
                         document.getElementById('email').value = data.email || '';
                         document.getElementById('cpf').value = data.cpf || '';
                         document.getElementById('cnpj').value = data.cnpj || '';
                         document.getElementById('telefone').value = data.telefone || '';
                         document.getElementById('endereco').value = data.endereco || '';
-                        // ...
                         if (data.fotoPerfil) {
                             document.getElementById('profileImage').src = data.fotoPerfil;
                         }
@@ -1173,34 +1159,142 @@ CREATE TABLE IF NOT EXISTS usuarios (
                 }
             });
 
-            document.getElementById('form-dados-pessoais').addEventListener('submit', function (e) {
+            document.getElementById('form-dados-pessoais').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                showNotification('success', 'Dados Pessoais atualizados!');
+                userData.nome_completo = document.getElementById('nome_completo').value;
+                userData.email = document.getElementById('email').value;
+                userData.cpf = document.getElementById('cpf').value;
+                userData.cnpj = document.getElementById('cnpj').value;
+                try {
+                    const response = await fetch('/api/atualizar-usuario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('success', result.message);
+                    } else {
+                        showNotification('danger', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('danger', 'Erro ao atualizar os dados.');
+                }
             });
 
-            document.getElementById('form-endereco-contato').addEventListener('submit', function (e) {
+            document.getElementById('form-endereco-contato').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                showNotification('success', 'Endereço e Contato atualizados!');
+                userData.telefone = document.getElementById('telefone').value;
+                userData.endereco = document.getElementById('endereco').value;
+                userData.cidade = document.getElementById('cidade').value;
+                userData.estado = document.getElementById('estado').value;
+                userData.cep = document.getElementById('cep').value;
+                try {
+                    const response = await fetch('/api/atualizar-usuario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('success', result.message);
+                    } else {
+                        showNotification('danger', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('danger', 'Erro ao atualizar os dados.');
+                }
             });
 
-            document.getElementById('form-documentos-contratos').addEventListener('submit', function (e) {
+            document.getElementById('form-documentos-contratos').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                showNotification('success', 'Documentos/Contratos atualizados!');
+                userData.rg = document.getElementById('rg').value;
+                try {
+                    const response = await fetch('/api/atualizar-usuario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('success', result.message);
+                    } else {
+                        showNotification('danger', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('danger', 'Erro ao atualizar os dados.');
+                }
             });
 
-            document.getElementById('form-permissoes-acessos').addEventListener('submit', function (e) {
+            document.getElementById('form-permissoes-acessos').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                showNotification('success', 'Permissões salvas!');
+                const select = document.getElementById('permissoesSelect');
+                const selected = Array.from(select.selectedOptions).map(option => option.value);
+                userData.permissoes = selected.join(',');
+                try {
+                    const response = await fetch('/api/atualizar-usuario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('success', result.message);
+                    } else {
+                        showNotification('danger', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('danger', 'Erro ao atualizar os dados.');
+                }
             });
 
-            document.getElementById('form-seguranca').addEventListener('submit', function (e) {
+            document.getElementById('form-seguranca').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                showNotification('success', 'Configurações de Segurança salvas!');
+                userData.autenticacao_dois_fatores = document.getElementById('autenticacaoDoisFatores').value;
+                userData.pergunta_seguranca = document.getElementById('perguntaSeguranca').value;
+                try {
+                    const response = await fetch('/api/atualizar-usuario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('success', result.message);
+                    } else {
+                        showNotification('danger', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('danger', 'Erro ao atualizar os dados.');
+                }
             });
 
-            document.getElementById('form-preferencias').addEventListener('submit', function (e) {
+            document.getElementById('form-preferencias').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                showNotification('success', 'Preferências salvas!');
+                userData.tema_preferido = document.querySelector('input[name="tema"]:checked').value;
+                userData.notificacoes_email = document.getElementById('notificacoesEmail').value;
+                userData.linguagem_preferida = document.getElementById('linguagem').value;
+                try {
+                    const response = await fetch('/api/atualizar-usuario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('success', result.message);
+                    } else {
+                        showNotification('danger', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('danger', 'Erro ao atualizar os dados.');
+                }
             });
         });
     </script>
