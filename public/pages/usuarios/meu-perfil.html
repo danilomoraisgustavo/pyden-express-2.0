@@ -798,6 +798,20 @@
                                             </button>
                                         </li>
                                         <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="documentosContratos-tab" data-bs-toggle="tab"
+                                                data-bs-target="#documentosContratos" type="button" role="tab"
+                                                aria-controls="documentosContratos" aria-selected="false">
+                                                Documentos/Contratos
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="permissoesAcessos-tab" data-bs-toggle="tab"
+                                                data-bs-target="#permissoesAcessos" type="button" role="tab"
+                                                aria-controls="permissoesAcessos" aria-selected="false">
+                                                Permissões e Acessos
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
                                             <button class="nav-link" id="seguranca-tab" data-bs-toggle="tab"
                                                 data-bs-target="#seguranca" type="button" role="tab"
                                                 aria-controls="seguranca" aria-selected="false">
@@ -879,6 +893,49 @@
                                                 <div class="mb-3">
                                                     <button type="submit" class="btn btn-primary">Salvar
                                                         Endereço/Contato</button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                        <div class="tab-pane fade" id="documentosContratos" role="tabpanel"
+                                            aria-labelledby="documentosContratos-tab">
+                                            <form id="form-documentos-contratos" enctype="multipart/form-data">
+                                                <div class="mb-3">
+                                                    <label for="rg" class="form-label">RG / Documento Oficial</label>
+                                                    <input type="text" id="rg" name="rg" class="form-control"
+                                                        placeholder="Ex: 12345678-9" />
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="contratoFile" class="form-label">Upload de
+                                                        Contrato</label>
+                                                    <input type="file" id="contratoFile" name="contratoFile"
+                                                        class="form-control" />
+                                                </div>
+                                                <div class="mb-3">
+                                                    <button type="submit" class="btn btn-primary">Salvar
+                                                        Documentos/Contratos</button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                        <div class="tab-pane fade" id="permissoesAcessos" role="tabpanel"
+                                            aria-labelledby="permissoesAcessos-tab">
+                                            <form id="form-permissoes-acessos">
+                                                <div class="mb-3">
+                                                    <label for="permissoesSelect" class="form-label">Selecione
+                                                        Permissões</label>
+                                                    <select class="form-select" id="permissoesSelect" name="permissoes"
+                                                        multiple>
+                                                        <option value="admin">Administrador</option>
+                                                        <option value="editor">Editor</option>
+                                                        <option value="visualizador">Visualizador</option>
+                                                        <option value="financeiro">Financeiro</option>
+                                                        <option value="operacional">Operacional</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <button type="submit" class="btn btn-primary">Salvar
+                                                        Permissões</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -1007,11 +1064,12 @@
                         </ul>
                     </nav>
                     <div class="copyright">
-                        2024, made with <i class="fa fa-heart heart text-danger"></i> by <a
-                            href="http://www.themekita.com">ThemeKita</a>
+                        2024, made with <i class="fa fa-heart heart text-danger"></i> by
+                        <a href="http://www.themekita.com">ThemeKita</a>
                     </div>
                     <div>
-                        Distributed by <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+                        Distributed by
+                        <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
                     </div>
                 </div>
             </footer>
@@ -1069,11 +1127,8 @@
                         document.getElementById('cnpj').value = data.cnpj || '';
                         document.getElementById('telefone').value = data.telefone || '';
                         document.getElementById('endereco').value = data.endereco || '';
-                        document.getElementById('cidade').value = data.cidade || '';
-                        document.getElementById('estado').value = data.estado || '';
-                        document.getElementById('cep').value = data.cep || '';
-                        if (data.foto_perfil) {
-                            document.getElementById('profileImage').src = data.foto_perfil;
+                        if (data.fotoPerfil) {
+                            document.getElementById('profileImage').src = data.fotoPerfil;
                         }
                         document.getElementById('dropdownUserName').innerText = data.nome_completo || 'Usuário';
                         document.getElementById('dropdownUserBoxName').innerText = data.nome_completo || 'Usuário';
@@ -1136,6 +1191,50 @@
                 userData.cidade = document.getElementById('cidade').value;
                 userData.estado = document.getElementById('estado').value;
                 userData.cep = document.getElementById('cep').value;
+                try {
+                    const response = await fetch('/api/atualizar-usuario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('success', result.message);
+                    } else {
+                        showNotification('danger', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('danger', 'Erro ao atualizar os dados.');
+                }
+            });
+
+            document.getElementById('form-documentos-contratos').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                userData.rg = document.getElementById('rg').value;
+                try {
+                    const response = await fetch('/api/atualizar-usuario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('success', result.message);
+                    } else {
+                        showNotification('danger', result.message);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('danger', 'Erro ao atualizar os dados.');
+                }
+            });
+
+            document.getElementById('form-permissoes-acessos').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const select = document.getElementById('permissoesSelect');
+                const selected = Array.from(select.selectedOptions).map(option => option.value);
+                userData.permissoes = selected.join(',');
                 try {
                     const response = await fetch('/api/atualizar-usuario', {
                         method: 'POST',
