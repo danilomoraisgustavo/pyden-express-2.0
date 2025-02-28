@@ -2227,6 +2227,272 @@ app.delete("/api/monitores/:id", async (req, res) => {
   }
 });
 
+// ====> ROTA: Listar monitores do fornecedor do usuário logado
+app.get("/api/fornecedor/monitores", async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.json([]);
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const query = `
+      SELECT m.id, m.nome_monitor, m.cpf
+      FROM monitores m
+      WHERE m.fornecedor_id = $1
+      ORDER BY m.id ASC;
+    `;
+    const result = await pool.query(query, [fornecedorId]);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Erro ao listar monitores do fornecedor:", error);
+    return res.status(500).json({ success: false, message: "Erro interno ao listar monitores do fornecedor." });
+  }
+});
+
+// ====> ROTA: Cadastrar monitor para o fornecedor do usuário
+app.post(
+  "/api/fornecedor/monitores/cadastrar",
+  uploadFrota.fields([
+    { name: "documento_pessoal", maxCount: 1 },
+    { name: "certificado_curso", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const relForn = await pool.query(
+        "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+        [userId]
+      );
+      if (relForn.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: "Usuário não vinculado a nenhum fornecedor.",
+        });
+      }
+      const fornecedorId = relForn.rows[0].fornecedor_id;
+
+      const {
+        nome_monitor,
+        cpf,
+        telefone,
+        email,
+        endereco,
+        data_admissao,
+      } = req.body;
+
+      if (!nome_monitor || !cpf) {
+        return res.status(400).json({
+          success: false,
+          message: "Campos obrigatórios não fornecidos.",
+        });
+      }
+
+      let docPessoalPath = null;
+      let certCursoPath = null;
+
+      if (req.files["documento_pessoal"] && req.files["documento_pessoal"].length > 0) {
+        docPessoalPath = "uploads/" + req.files["documento_pessoal"][0].filename;
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "Documento pessoal é obrigatório (PDF).",
+        });
+      }
+
+      // Verifica se o fornecedor exige certificado
+      const fQuery = "SELECT nome_fornecedor FROM fornecedores WHERE id = $1";
+      const fResult = await pool.query(fQuery, [fornecedorId]);
+      const fornecedorNome =
+        fResult.rows.length > 0 ? fResult.rows[0].nome_fornecedor : null;
+
+      if (
+        fornecedorNome &&
+        fornecedorNome !== "FUNDO MUNICIPAL DE EDUCAÇÃO DE CANAA DOS CARAJAS"
+      ) {
+        if (
+          !req.files["certificado_curso"] ||
+          req.files["certificado_curso"].length === 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Certificado do curso é obrigatório para monitores de outros fornecedores.",
+          });
+        }
+      }
+
+      if (
+        req.files["certificado_curso"] &&
+        req.files["certificado_curso"].length > 0
+      ) {
+        certCursoPath = "uploads/" + req.files["certificado_curso"][0].filename;
+      }
+
+      const insertQuery = `
+        INSERT INTO monitores (
+          nome_monitor,
+          cpf,
+          fornecedor_id,
+          telefone,
+          email,
+          endereco,
+          data_admissao,
+          documento_pessoal,
+          certificado_curso
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9
+        )
+        RETURNING id;
+      `;
+      const values = [
+        nome_monitor,
+        cpf,
+        fornecedorId,
+        telefone || null,
+        email || null,
+        endereco || null,
+        data_admissao || null,
+        docPessoalPath,
+        certCursoPath,
+      ];
+      const result = await pool.query(insertQuery, values);
+
+      if (result.rows.length === 0) {
+        return res.status(500).json({
+          success: false,
+          message: "Erro ao cadastrar monitor.",
+        });
+      }
+
+      const novoMonitorId = result.rows[0].id;
+      await pool.query(
+        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+         VALUES ($1, 'CREATE', 'monitores', $2, $3)`,
+        [userId, novoMonitorId, `Monitor cadastrado: ${nome_monitor}`]
+      );
+
+      return res.json({
+        success: true,
+        message: "Monitor cadastrado com sucesso!",
+      });
+    } catch (error) {
+      console.error("Erro ao cadastrar monitor:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor.",
+      });
+    }
+  }
+);
+
+// ====> ROTA: Excluir monitor do fornecedor
+app.delete("/api/fornecedor/monitores/:id", async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Usuário não vinculado a nenhum fornecedor.",
+      });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+    const monitorId = req.params.id;
+
+    const checkQuery = `
+      SELECT id FROM monitores
+      WHERE id = $1
+        AND fornecedor_id = $2
+      LIMIT 1
+    `;
+    const checkResult = await pool.query(checkQuery, [monitorId, fornecedorId]);
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Monitor não encontrado ou não pertence a este fornecedor.",
+      });
+    }
+
+    await pool.query("DELETE FROM monitores WHERE id = $1", [monitorId]);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao excluir monitor:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro interno ao excluir monitor." });
+  }
+});
+
+// ====> ROTA: Atribuir rota a monitor
+app.post("/api/fornecedor/monitores/atribuir-rota", async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { monitor_id, rota_id } = req.body;
+
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Usuário não vinculado a fornecedor." });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const checkMonitor = await pool.query(
+      "SELECT id FROM monitores WHERE id = $1 AND fornecedor_id = $2",
+      [monitor_id, fornecedorId]
+    );
+    if (checkMonitor.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Monitor não encontrado ou não pertence a este fornecedor.",
+      });
+    }
+
+    const checkRota = await pool.query(
+      "SELECT id FROM rotas WHERE id = $1 AND fornecedor_id = $2",
+      [rota_id, fornecedorId]
+    );
+    if (checkRota.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Rota não encontrada ou não pertence a este fornecedor.",
+      });
+    }
+
+    // Exemplo: Tabela de relacionamento rota_monitor
+    await pool.query(
+      `
+        INSERT INTO rota_monitor (rota_id, monitor_id)
+        VALUES ($1, $2)
+        ON CONFLICT (rota_id, monitor_id) DO NOTHING
+      `,
+      [rota_id, monitor_id]
+    );
+
+    return res.json({
+      success: true,
+      message: "Rota atribuída ao monitor com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao atribuir rota ao monitor:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao atribuir rota ao monitor." });
+  }
+});
+
+
 // ====================================================================================
 // MOTORISTAS
 // ====================================================================================

@@ -1,0 +1,653 @@
+<!-- ====> public/pages/fornecedores/monitor-fornecedor.html <==== -->
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Listar Monitores (Fornecedor)</title>
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+
+    <!-- Webfont -->
+    <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+    <script>
+        WebFont.load({
+            google: { families: ["Public Sans:300,400,500,600,700"] },
+            custom: {
+                families: [
+                    "Font Awesome 5 Solid",
+                    "Font Awesome 5 Regular",
+                    "Font Awesome 5 Brands",
+                    "simple-line-icons",
+                ],
+                urls: ["../../assets/css/fonts.min.css"],
+            },
+            active: function () {
+                sessionStorage.fonts = true;
+            },
+        });
+    </script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+    <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+    <link rel="stylesheet" href="../../assets/css/demo.css" />
+
+    <style>
+        .required-label::after {
+            content: " *";
+            color: red;
+        }
+
+        .modal-lg {
+            max-width: 90% !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- SIDEBAR -->
+        <div class="sidebar" data-background-color="dark">
+            <div class="sidebar-logo">
+                <div class="logo-header" data-background-color="dark">
+                    <a href="dashboard-fornecedor.html" class="logo">
+                        <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                            height="20" />
+                    </a>
+                    <div class="nav-toggle">
+                        <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+                        <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+                    </div>
+                    <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+                </div>
+            </div>
+            <div class="sidebar-wrapper scrollbar scrollbar-inner">
+                <div class="sidebar-content">
+                    <ul class="nav nav-secondary">
+                        <li class="nav-item">
+                            <a href="dashboard-fornecedor.html">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <p>Dashboard Fornecedor</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
+                                <i class="fas fa-id-card"></i>
+                                <p>Motoristas</p>
+                                <span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="teMotoristas">
+                                <ul class="nav nav-collapse">
+                                    <li>
+                                        <a href="motorista-fornecedor.html">
+                                            <span class="sub-item">Listar Motoristas</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <span class="sub-item">Licenças e Certificações</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="nav-item active">
+                            <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="true">
+                                <i class="fas fa-user-check"></i>
+                                <p>Monitores</p>
+                                <span class="caret"></span>
+                            </a>
+                            <div class="collapse show" id="teMonitores">
+                                <ul class="nav nav-collapse">
+                                    <li class="active">
+                                        <a href="monitor-fornecedor.html">
+                                            <span class="sub-item">Listar Monitores</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
+                                <i class="fas fa-bus"></i>
+                                <p>Veículos</p>
+                                <span class="caret"></span>
+                            </a>
+                            <div class="collapse" id="teVeiculos">
+                                <ul class="nav nav-collapse">
+                                    <li>
+                                        <a href="frota-fornecedor.html">
+                                            <span class="sub-item">Listar Veículos</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <span class="sub-item">Manutenção</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#">
+                                            <span class="sub-item">Documentação e Seguros</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- END SIDEBAR -->
+
+        <div class="main-panel">
+            <div class="main-header" style="top: 0;">
+                <div class="main-header-logo">
+                    <div class="logo-header" data-background-color="dark">
+                        <a href="dashboard-fornecedor.html" class="logo">
+                            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand"
+                                class="navbar-brand" height="20" />
+                        </a>
+                        <div class="nav-toggle">
+                            <button class="btn btn-toggle toggle-sidebar">
+                                <i class="gg-menu-right"></i>
+                            </button>
+                            <button class="btn btn-toggle sidenav-toggler">
+                                <i class="gg-menu-left"></i>
+                            </button>
+                        </div>
+                        <button class="topbar-toggler more">
+                            <i class="gg-more-vertical-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+                    <div class="container-fluid">
+                        <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+                            <li class="nav-item topbar-user dropdown hidden-caret">
+                                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
+                                    aria-expanded="false">
+                                    <div class="avatar-sm">
+                                        <img src="../../assets/img/profile.jpg" alt="..."
+                                            class="avatar-img rounded-circle" />
+                                    </div>
+                                    <span class="profile-username">
+                                        <span class="op-7">Olá,</span>
+                                        <span class="fw-bold" id="dropdownUserName">Fornecedor</span>
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                                    <div class="dropdown-user-scroll scrollbar-outer">
+                                        <li>
+                                            <div class="user-box">
+                                                <div class="avatar-lg">
+                                                    <img src="../../assets/img/profile.jpg" alt="image profile"
+                                                        class="avatar-img rounded" />
+                                                </div>
+                                                <div class="u-text">
+                                                    <h4 id="dropdownUserBoxName">Fornecedor</h4>
+                                                    <p class="text-muted" id="dropdownUserEmail">
+                                                        fornecedor@pydenexpress.com</p>
+                                                    <a href="#" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#">Meu Perfil</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
+                                        </li>
+                                    </div>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="container">
+                <div class="page-inner">
+                    <div class="page-header">
+                        <h3 class="fw-bold mb-3">Listar Monitores (Fornecedor)</h3>
+                        <ul class="breadcrumbs mb-3">
+                            <li class="nav-home">
+                                <a href="dashboard-fornecedor.html">
+                                    <i class="icon-home"></i>
+                                </a>
+                            </li>
+                            <li class="separator">
+                                <i class="icon-arrow-right"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">Monitores</a>
+                            </li>
+                            <li class="separator">
+                                <i class="icon-arrow-right"></i>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#">Listar Monitores</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Tabela de Monitores -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between">
+                                    <h4 class="card-title">Lista de Monitores</h4>
+                                    <button class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#modalCadastroMonitor">
+                                        <i class="fa fa-plus"></i> Cadastrar Novo Monitor
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table id="monitores-table" class="display table table-striped table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Nome do Monitor</th>
+                                                    <th>CPF</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tfoot>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Nome do Monitor</th>
+                                                    <th>CPF</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </tfoot>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Cadastro Monitor -->
+                    <div class="modal fade" id="modalCadastroMonitor" tabindex="-1"
+                        aria-labelledby="modalCadastroMonitorLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalCadastroMonitorLabel">Cadastrar Novo Monitor</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="monitor-form" enctype="multipart/form-data">
+                                        <!-- Campo oculto para 'fornecedor_id' -->
+                                        <input type="hidden" id="fornecedor_id" name="fornecedor_id" />
+
+                                        <h5>Dados Pessoais</h5>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="nome_monitor" class="form-label required-label">Nome do
+                                                    Monitor</label>
+                                                <input type="text" id="nome_monitor" name="nome_monitor"
+                                                    class="form-control" required />
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="cpf" class="form-label required-label">CPF</label>
+                                                <input type="text" id="cpf" name="cpf" class="form-control" required />
+                                            </div>
+                                            <!-- fornecedor_id será setado automaticamente, então não terá select aqui -->
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label for="telefone" class="form-label">Telefone</label>
+                                                <input type="text" id="telefone" name="telefone" class="form-control" />
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="email" class="form-label">E-mail</label>
+                                                <input type="email" id="email" name="email" class="form-control" />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="endereco" class="form-label">Endereço</label>
+                                                <input type="text" id="endereco" name="endereco" class="form-control" />
+                                            </div>
+                                            <div class="col-md-2 mb-3">
+                                                <label for="data_admissao" class="form-label">Data de Admissão</label>
+                                                <input type="date" id="data_admissao" name="data_admissao"
+                                                    class="form-control" />
+                                            </div>
+                                        </div>
+
+                                        <h5>Documentos</h5>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="documento_pessoal"
+                                                    class="form-label required-label">Documento Pessoal (PDF)</label>
+                                                <input type="file" id="documento_pessoal" name="documento_pessoal"
+                                                    accept=".pdf" class="form-control" required />
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="certificado_curso" class="form-label">
+                                                    Certificado do Curso de Monitor (PDF)
+                                                </label>
+                                                <input type="file" id="certificado_curso" name="certificado_curso"
+                                                    accept=".pdf" class="form-control" />
+                                                <small class="text-muted">
+                                                    (Se o fornecedor NÃO for "FUNDO MUNICIPAL DE EDUCAÇÃO DE CANAA DOS
+                                                    CARAJAS", o certificado é obrigatório)
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4">
+                                            <button type="submit" class="btn btn-success">Cadastrar Monitor</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Fim Modal Cadastro Monitor -->
+
+                    <!-- Modal Atribuir Rota -->
+                    <div class="modal fade" id="modalAtribuirRota" tabindex="-1"
+                        aria-labelledby="modalAtribuirRotaLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalAtribuirRotaLabel">Atribuir Rota ao Monitor</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="atribuir-rota-form">
+                                        <div class="mb-3">
+                                            <label for="rota_id" class="form-label">Selecione a Rota</label>
+                                            <select id="rota_id" name="rota_id" class="form-control" required></select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Atribuir Rota</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Fim Modal Atribuir Rota -->
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="container-fluid d-flex justify-content-between">
+                    <nav class="pull-left">
+                        <ul class="nav">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">ThemeKita</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">Help</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">Licenses</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="copyright">
+                        2024, made with <i class="fa fa-heart heart text-danger"></i> by
+                        <a href="http://www.themekita.com">ThemeKita</a>.
+                        Distributed by <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+    <script src="../../assets/js/core/popper.min.js"></script>
+    <script src="../../assets/js/core/bootstrap.min.js"></script>
+    <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+    <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+    <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+    <script src="../../assets/js/pydenadmin.min.js"></script>
+
+    <script>
+        let monitores = [];
+        let rotas = [];
+        let monitorSelecionado = null;
+        let fornecedor_id_glob = null;
+
+        function showNotification(type, message, title = "") {
+            $.notify({
+                title: title ? title + ' ' : '',
+                message: message,
+                icon: type === 'success' ? 'fa fa-check-circle'
+                    : type === 'danger' ? 'fa fa-exclamation-circle'
+                        : type === 'warning' ? 'fa fa-exclamation-triangle'
+                            : type === 'info' ? 'fa fa-info-circle' : ''
+            }, {
+                type: type,
+                placement: { from: "top", align: "right" },
+                offset: 20,
+                spacing: 10,
+                z_index: 1031,
+                delay: 3000,
+                timer: 1000,
+                animate: { enter: 'animated fadeInDown', exit: 'animated fadeOutUp' }
+            });
+        }
+
+        // Carrega o fornecedor_id vinculado ao usuário
+        function loadFornecedorId() {
+            return fetch('/api/fornecedor/meu')
+                .then(res => {
+                    if (!res.ok) throw new Error('Erro ao buscar fornecedor do usuário');
+                    return res.json();
+                })
+                .then(data => {
+                    fornecedor_id_glob = data.fornecedor_id;
+                    if (!fornecedor_id_glob) {
+                        showNotification('danger', 'Você não está vinculado a um fornecedor.', 'Erro');
+                    }
+                    // Define o hidden input
+                    document.getElementById('fornecedor_id').value = fornecedor_id_glob;
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Erro ao buscar fornecedor do usuário.');
+                });
+        }
+
+        // Carrega lista de monitores do fornecedor
+        function loadMonitores() {
+            fetch('/api/fornecedor/monitores')
+                .then(res => {
+                    if (!res.ok) throw new Error('Erro ao carregar monitores');
+                    return res.json();
+                })
+                .then(data => {
+                    monitores = data;
+                    populateTable();
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Não foi possível carregar os monitores.');
+                });
+        }
+
+        // Popula DataTable
+        function populateTable() {
+            const tableBody = $('#monitores-table tbody');
+            tableBody.empty();
+
+            monitores.forEach(m => {
+                const row = `
+          <tr>
+            <td>${m.id}</td>
+            <td>${m.nome_monitor}</td>
+            <td>${m.cpf}</td>
+            <td>
+              <div class="form-button-action">
+                <button type="button" class="btn btn-link btn-info btn-lg" onclick="openAssignRotaModal(${m.id})"
+                  data-bs-toggle="tooltip" title="Atribuir Rota">
+                  <i class="fa fa-route"></i>
+                </button>
+                <button type="button" class="btn btn-link btn-danger btn-lg" onclick="deleteMonitor(${m.id})"
+                  data-bs-toggle="tooltip" title="Excluir Monitor">
+                  <i class="fa fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+                tableBody.append(row);
+            });
+
+            if ($.fn.DataTable.isDataTable('#monitores-table')) {
+                $('#monitores-table').DataTable().clear().destroy();
+            }
+
+            $('#monitores-table').DataTable({
+                pageLength: 10,
+                language: {
+                    decimal: ",",
+                    thousands: ".",
+                    info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+                    infoEmpty: "Mostrando 0 até 0 de 0 registros",
+                    infoFiltered: "(filtrado de _MAX_ registros no total)",
+                    lengthMenu: "Mostrar _MENU_ registros",
+                    loadingRecords: "Carregando...",
+                    processing: "Processando...",
+                    search: "Pesquisar:",
+                    zeroRecords: "Nenhum registro encontrado",
+                    paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
+                    emptyTable: "Nenhum dado disponível na tabela"
+                }
+            });
+        }
+
+        // Excluir monitor
+        function deleteMonitor(id) {
+            fetch('/api/fornecedor/monitores/' + id, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', 'Monitor excluído com sucesso!');
+                        loadMonitores();
+                    } else {
+                        showNotification('danger', 'Erro ao excluir monitor: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Erro ao excluir monitor. Tente novamente.');
+                });
+        }
+
+        // Abrir modal de atribuir rota
+        function openAssignRotaModal(monitorId) {
+            monitorSelecionado = monitorId;
+            const rotaSelect = document.getElementById('rota_id');
+            rotaSelect.innerHTML = '';
+
+            // Busca rotas do mesmo fornecedor
+            fetch('/api/fornecedor/rotas')
+                .then(res => res.json())
+                .then(data => {
+                    rotas = data;
+                    rotas.forEach(r => {
+                        const option = document.createElement('option');
+                        option.value = r.id;
+                        option.textContent = r.identificador + ' - ' + (r.descricao || '');
+                        rotaSelect.appendChild(option);
+                    });
+                    $('#modalAtribuirRota').modal('show');
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Não foi possível carregar as rotas.');
+                });
+        }
+
+        // Atribuir rota ao monitor
+        function assignRota() {
+            const form = document.getElementById('atribuir-rota-form');
+            const formData = new FormData(form);
+            const rota_id = formData.get('rota_id');
+
+            if (!rota_id) {
+                showNotification('danger', 'Selecione uma rota.', 'Erro');
+                return;
+            }
+
+            fetch('/api/fornecedor/monitores/atribuir-rota', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ monitor_id: monitorSelecionado, rota_id: rota_id })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('success', data.message || 'Rota atribuída com sucesso!');
+                        $('#modalAtribuirRota').modal('hide');
+                    } else {
+                        showNotification('danger', data.message || 'Erro ao atribuir rota.');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Falha na requisição.');
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Primeiro, carrega o fornecedor do usuário
+            loadFornecedorId()
+                .then(() => {
+                    // Depois carrega lista de monitores do fornecedor
+                    loadMonitores();
+                });
+
+            // Submete cadastro de monitor
+            document.getElementById('monitor-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                // Garante que estamos passando o fornecedor_id do usuário logado
+                if (!fornecedor_id_glob) {
+                    showNotification('danger', 'Você não está vinculado a um fornecedor. Não é possível cadastrar.');
+                    return;
+                }
+                formData.set('fornecedor_id', fornecedor_id_glob);
+
+                fetch('/api/fornecedor/monitores/cadastrar', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('success', 'Monitor cadastrado com sucesso!');
+                            document.getElementById('monitor-form').reset();
+                            $('#modalCadastroMonitor').modal('hide');
+                            loadMonitores();
+                        } else {
+                            showNotification('danger', 'Erro ao cadastrar monitor: ' + data.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showNotification('danger', 'Erro ao cadastrar monitor. Tente novamente.');
+                    });
+            });
+
+            // Atribuir rota ao monitor
+            document.getElementById('atribuir-rota-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                assignRota();
+            });
+        });
+    </script>
+</body>
+
+</html>
