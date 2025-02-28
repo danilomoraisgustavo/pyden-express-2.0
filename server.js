@@ -295,6 +295,48 @@ app.put("/api/admin/toggle-init", async (req, res) => {
   }
 });
 
+// Exemplo de rota no backend (Express) para contadores do fornecedor
+// Ajustar conforme seu sistema
+app.get("/api/fornecedor/dashboard", async (req, res) => {
+  try {
+    // Exemplo: obter o fornecedor_id pelo usuário logado, se estiver em session
+    const userId = req.session.userId;
+    // Se tiver tabela de relacionamento 'usuario_fornecedor' para saber qual o fornecedor do user:
+    const relQuery = `SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1`;
+    const relResult = await pool.query(relQuery, [userId]);
+    if (relResult.rows.length === 0) {
+      return res.json({ monitores: 0, motoristas: 0, veiculos: 0 });
+    }
+    const fornecedorId = relResult.rows[0].fornecedor_id;
+
+    // Contar monitores
+    const countMonitores = await pool.query(
+      `SELECT COUNT(*) AS total FROM monitores WHERE fornecedor_id = $1`,
+      [fornecedorId]
+    );
+    // Contar motoristas
+    const countMotoristas = await pool.query(
+      `SELECT COUNT(*) AS total FROM motoristas WHERE fornecedor_id = $1`,
+      [fornecedorId]
+    );
+    // Contar frota
+    const countFrota = await pool.query(
+      `SELECT COUNT(*) AS total FROM frota WHERE fornecedor_id = $1`,
+      [fornecedorId]
+    );
+
+    return res.json({
+      monitores: countMonitores.rows[0].total,
+      motoristas: countMotoristas.rows[0].total,
+      veiculos: countFrota.rows[0].total
+    });
+  } catch (error) {
+    console.error("Erro ao carregar dados do fornecedor:", error);
+    return res.status(500).json({ error: "Erro interno ao carregar dados do fornecedor." });
+  }
+});
+
+
 // ====> ROTA /api/admin/delete-user/:id (DELETE)
 // Exclui o usuário pelo ID
 app.delete("/api/admin/delete-user/:id", async (req, res) => {
