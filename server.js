@@ -68,69 +68,6 @@ app.use(
     },
   })
 );
-function requirePermission(permissionName) {
-  return async (req, res, next) => {
-    if (!req.session || !req.session.userId) {
-      return res.status(401).json({ success: false, message: "Não logado." });
-    }
-    try {
-      const result = await pool.query(
-        "SELECT id, permissoes FROM usuarios WHERE id = $1 LIMIT 1",
-        [req.session.userId]
-      );
-      if (result.rows.length === 0) {
-        return res.status(404).json({ success: false, message: "Usuário inexistente." });
-      }
-      const user = result.rows[0];
-      if (hasPermission(user, permissionName)) {
-        return next();
-      } else {
-        return res.status(403).json({ success: false, message: "Acesso negado: falta permissão." });
-      }
-    } catch (err) {
-      console.error("Erro ao checar permissão:", err);
-      return res.status(500).json({ success: false, message: "Erro interno." });
-    }
-  };
-}
-
-function hasPermission(user, permission) {
-  if (user.id === 1) {
-    return true;
-  }
-  if (!user.permissoes) {
-    return false;
-  }
-  const permsArray = user.permissoes.split(",").map(p => p.trim());
-  if (permsArray.includes("Master")) {
-    return true;
-  }
-  return permsArray.includes(permission);
-}
-
-function checkPermission(permission) {
-  return async function (req, res, next) {
-    if (!req.session || !req.session.userId) {
-      return res.status(401).json({ success: false, message: "Não autenticado." });
-    }
-    try {
-      const result = await pool.query("SELECT id, permissoes FROM usuarios WHERE id = $1", [req.session.userId]);
-      if (result.rows.length === 0) {
-        return res.status(401).json({ success: false, message: "Usuário não encontrado." });
-      }
-      const user = result.rows[0];
-      if (hasPermission(user, permission)) {
-        return next();
-      } else {
-        return res.status(403).json({ success: false, message: "Acesso negado." });
-      }
-    } catch (err) {
-      console.error("Erro ao verificar permissões:", err);
-      return res.status(500).json({ success: false, message: "Erro interno do servidor." });
-    }
-  };
-}
-
 
 function isAdmin(req, res, next) {
   if (!req.session || !req.session.userId) {
@@ -303,129 +240,7 @@ async function convertToGeoJSON(filePath, originalname) {
   throw new Error("Formato de arquivo não suportado.");
 }
 
-app.get("/api/admin/users", checkPermission("GerenciarUsuarios"), async (req, res) => {
-  try {
-    const query = `
-      SELECT
-        id,
-        nome_completo,
-        cpf,
-        cnpj,
-        telefone,
-        email,
-        init,
-        permissoes
-      FROM usuarios
-      ORDER BY id ASC
-    `;
-    const result = await pool.query(query);
-    return res.json({
-      success: true,
-      data: result.rows,
-    });
-  } catch (error) {
-    console.error("Erro ao listar usuários:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno ao listar usuários.",
-    });
-  }
-});
-
-app.put("/api/admin/users/:id", checkPermission("GerenciarUsuarios"), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { init, permissoes } = req.body;
-    const fieldsToUpdate = [];
-    const values = [];
-    let idx = 1;
-
-    if (init !== undefined) {
-      fieldsToUpdate.push(`init = $${idx++}`);
-      values.push(init);
-    }
-    if (permissoes !== undefined) {
-      fieldsToUpdate.push(`permissoes = $${idx++}`);
-      values.push(permissoes);
-    }
-    if (fieldsToUpdate.length === 0) {
-      return res.status(400).json({ success: false, message: "Nenhum campo para atualizar." });
-    }
-    const updateQuery = `
-      UPDATE usuarios
-      SET ${fieldsToUpdate.join(", ")}
-      WHERE id = $${idx}
-      RETURNING id, nome_completo, init, permissoes
-    `;
-    values.push(id);
-
-    const result = await pool.query(updateQuery, values);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: "Usuário não encontrado." });
-    }
-    return res.json({
-      success: true,
-      message: "Usuário atualizado com sucesso!",
-      user: result.rows[0],
-    });
-  } catch (error) {
-    console.error("Erro ao atualizar usuário (admin):", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno ao atualizar usuário.",
-    });
-  }
-});
-
-app.delete("/api/admin/users/:id", checkPermission("GerenciarUsuarios"), async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (parseInt(id, 10) === 1) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Não é possível excluir o usuário master (ID=1)." });
-    }
-    const del = await pool.query("DELETE FROM usuarios WHERE id = $1", [id]);
-    if (del.rowCount === 0) {
-      return res.status(404).json({ success: false, message: "Usuário não encontrado." });
-    }
-    return res.json({ success: true, message: "Usuário excluído com sucesso!" });
-  } catch (error) {
-    console.error("Erro ao excluir usuário (admin):", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno ao excluir usuário.",
-    });
-  }
-});
-
-app.get("/admin-login", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin-login.html"));
-});
-
-app.post("/admin-login", async (req, res) => {
-  try {
-    const { email, senha } = req.body;
-    const userQuery = `SELECT id, senha, permissoes FROM usuarios WHERE email = $1 LIMIT 1`;
-    const result = await pool.query(userQuery, [email]);
-    if (result.rows.length === 0) {
-      return res.status(401).json({ success: false, message: "Usuário não encontrado." });
-    }
-    const usuario = result.rows[0];
-    const match = await bcrypt.compare(senha, usuario.senha);
-    if (!match) {
-      return res.status(401).json({ success: false, message: "Senha incorreta." });
-    }
-    if (usuario.id !== 1 && !(usuario.permissoes || "").includes("Master")) {
-      return res.status(403).json({ success: false, message: "Você não é admin." });
-    }
-    req.session.userId = usuario.id;
-    res.json({ success: true, message: "Login admin OK", redirect: "/admin" });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: "Erro interno." });
-  }
-});
+// ROTA: CADASTRAR USUÁRIO
 
 app.get("/api/usuarios/perfil", isAuthenticated, async (req, res) => {
   try {
@@ -539,6 +354,10 @@ app.put("/api/usuarios/perfil", isAuthenticated, async (req, res) => {
         message: "Usuário não encontrado para atualizar.",
       });
     }
+
+    // Você pode inserir notificação aqui, se desejar:
+    // ...
+
     return res.json({
       success: true,
       message: "Perfil atualizado com sucesso!",
@@ -579,6 +398,7 @@ app.put("/api/usuarios/preferencias", isAuthenticated, async (req, res) => {
         message: "Usuário não encontrado para atualizar preferências.",
       });
     }
+
     return res.json({
       success: true,
       message: "Preferências do usuário atualizadas com sucesso!",
@@ -619,6 +439,11 @@ app.put(
         docContratoPath =
           "uploads/usuarios/" + req.files["docContrato"][0].filename;
       }
+
+      // Se desejar, pesquise os valores antigos do usuário
+      // para excluir arquivos anteriores, se isso fizer sentido.
+
+      // Montar o fragmento de UPDATE só para os campos enviados:
       const fieldsToSet = [];
       const values = [];
       let idx = 1;
@@ -641,6 +466,7 @@ app.put(
           message: "Nenhum arquivo enviado.",
         });
       }
+
       const query = `
           UPDATE usuarios
           SET ${fieldsToSet.join(",")}
@@ -656,6 +482,7 @@ app.put(
           message: "Usuário não encontrado para atualizar documentos.",
         });
       }
+
       return res.json({
         success: true,
         message: "Documentos/Foto atualizados com sucesso!",
@@ -670,6 +497,7 @@ app.put(
   }
 );
 
+// Exemplo de rota para atualização de segurança do usuário com bcrypt:
 app.put("/api/usuarios/seguranca", isAuthenticated, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -679,6 +507,7 @@ app.put("/api/usuarios/seguranca", isAuthenticated, async (req, res) => {
     const values = [];
     let index = 1;
 
+    // Se o usuário forneceu nova senha, vamos criptografá-la com bcrypt
     if (nova_senha) {
       const bcrypt = require("bcrypt");
       const saltRounds = 10;
@@ -687,28 +516,35 @@ app.put("/api/usuarios/seguranca", isAuthenticated, async (req, res) => {
       updateFields += ` senha = $${index++},`;
       values.push(hashedPassword);
     }
+
     if (auth_dois_fatores !== undefined) {
       updateFields += ` auth_dois_fatores = $${index++},`;
       values.push(auth_dois_fatores);
     }
+
     if (pergunta_seguranca !== undefined) {
       updateFields += ` pergunta_seguranca = $${index++},`;
       values.push(pergunta_seguranca);
     }
+
     if (!updateFields) {
       return res.status(400).json({
         success: false,
         message: "Nenhum campo de segurança fornecido para atualizar.",
       });
     }
+
+    // Remove a última vírgula
     updateFields = updateFields.slice(0, -1);
 
+    // Monta a query dinâmica
     const query = `
         UPDATE usuarios
         SET ${updateFields}
         WHERE id = $${index}
         RETURNING id
       `;
+
     values.push(userId);
 
     const result = await pool.query(query, values);
@@ -718,6 +554,7 @@ app.put("/api/usuarios/seguranca", isAuthenticated, async (req, res) => {
         message: "Usuário não encontrado para atualizar segurança.",
       });
     }
+
     return res.json({
       success: true,
       message: "Configurações de segurança atualizadas com sucesso!",
@@ -734,6 +571,8 @@ app.put("/api/usuarios/seguranca", isAuthenticated, async (req, res) => {
 app.post("/api/cadastrar-usuario", async (req, res) => {
   try {
     const { nome_completo, cpf_cnpj, telefone, email, senha } = req.body;
+
+    // 1) Verificar se e-mail já existe
     const checkEmail = await pool.query(
       "SELECT id FROM usuarios WHERE email = $1 LIMIT 1",
       [email]
@@ -744,10 +583,13 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
         message: "Este e-mail já está em uso. Tente outro.",
       });
     }
+
+    // 2) Limpa pontuação do CPF/CNPJ
     const docNumeros = (cpf_cnpj || "").replace(/\D/g, "");
     let cpfValue = null;
     let cnpjValue = null;
 
+    // 3) Decide se é CPF (11 dígitos) ou CNPJ (14 dígitos)
     if (docNumeros.length === 11) {
       cpfValue = docNumeros;
     } else if (docNumeros.length === 14) {
@@ -758,6 +600,8 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
         message: "Documento inválido: deve ter 11 dígitos (CPF) ou 14 (CNPJ).",
       });
     }
+
+    // 4) Verifica se já existe o mesmo CPF ou CNPJ
     if (cpfValue) {
       const checkCPF = await pool.query(
         "SELECT id FROM usuarios WHERE cpf = $1 LIMIT 1",
@@ -781,9 +625,12 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
         });
       }
     }
+
+    // 5) Criptografa a senha
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(senha, saltRounds);
 
+    // 6) Insere no banco (init = FALSE por padrão)
     const insertQuery = `
             INSERT INTO usuarios (
                 nome_completo, cpf, cnpj, telefone, email, senha, init
@@ -816,6 +663,7 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
     }
   } catch (error) {
     console.error("Erro ao cadastrar usuário:", error);
+
     if (error.code === "23505") {
       return res.status(400).json({
         success: false,
@@ -823,12 +671,16 @@ app.post("/api/cadastrar-usuario", async (req, res) => {
           "Violação de exclusividade. Verifique se email/CPF/CNPJ já existe.",
       });
     }
+
     return res.status(500).json({
       success: false,
       message: "Erro ao cadastrar usuário. Tente novamente.",
     });
   }
 });
+
+
+// ROTA: LOGIN
 
 app.post("/api/login", async (req, res) => {
   try {
@@ -840,12 +692,14 @@ app.post("/api/login", async (req, res) => {
             LIMIT 1
         `;
     const result = await pool.query(userQuery, [email]);
+
     if (result.rows.length === 0) {
       return res.status(401).json({
         success: false,
         message: "Usuário não encontrado.",
       });
     }
+
     const usuario = result.rows[0];
     if (!usuario.init) {
       return res.status(403).json({
@@ -853,6 +707,7 @@ app.post("/api/login", async (req, res) => {
         message: "Usuário ainda não está inicializado para acesso.",
       });
     }
+
     const match = await bcrypt.compare(senha, usuario.senha);
     if (!match) {
       return res.status(401).json({
@@ -860,7 +715,9 @@ app.post("/api/login", async (req, res) => {
         message: "Senha incorreta.",
       });
     }
+
     req.session.userId = usuario.id;
+
     return res.status(200).json({
       success: true,
       message: "Login bem sucedido!",
@@ -883,6 +740,8 @@ app.get("/api/usuario-logado", async (req, res) => {
         message: "Usuário não está logado.",
       });
     }
+
+    // Traga todos os campos que você quer (SEM a senha).
     const userQuery = `
         SELECT
           id,
@@ -913,12 +772,16 @@ app.get("/api/usuario-logado", async (req, res) => {
         message: "Usuário não encontrado no banco.",
       });
     }
+
     const usuario = result.rows[0];
+
+    // Retornando campos soltos, como antes (nome_completo, email etc.),
+    // mas agora também incluindo outros. Ajuste conforme necessidade:
     return res.json({
       success: true,
       id: usuario.id,
-      nome_completo: usuario.nome_completo,
-      email: usuario.email,
+      nome_completo: usuario.nome_completo, // mesmo nome de antes
+      email: usuario.email, // mesmo nome de antes
       cpf: usuario.cpf,
       cnpj: usuario.cnpj,
       telefone: usuario.telefone,
@@ -943,15 +806,20 @@ app.get("/api/usuario-logado", async (req, res) => {
   }
 });
 
-app.post("/api/zoneamento/cadastrar", checkPermission("GerenciarZoneamentos"), async (req, res) => {
+// ====================================================================================
+// ZONEAMENTOS
+// ====================================================================================
+app.post("/api/zoneamento/cadastrar", async (req, res) => {
   try {
     const { nome_zoneamento, geojson } = req.body;
+
     if (!nome_zoneamento || !geojson) {
       return res.status(400).json({
         success: false,
         message: "Nome do zoneamento ou GeoJSON não fornecidos.",
       });
     }
+
     let parsed;
     try {
       parsed = JSON.parse(geojson);
@@ -961,12 +829,15 @@ app.post("/api/zoneamento/cadastrar", checkPermission("GerenciarZoneamentos"), a
         message: "GeoJSON inválido.",
       });
     }
+
     if (!parsed.type || parsed.type !== "Feature" || !parsed.geometry) {
       return res.status(400).json({
         success: false,
         message: "GeoJSON inválido ou sem geometry.",
       });
     }
+
+    // Permitir Polygon ou LineString
     const validTypes = ["Polygon", "LineString"];
     if (!validTypes.includes(parsed.geometry.type)) {
       return res.status(400).json({
@@ -974,7 +845,10 @@ app.post("/api/zoneamento/cadastrar", checkPermission("GerenciarZoneamentos"), a
         message: "GeoJSON deve ser Polygon ou LineString.",
       });
     }
+
     const userId = req.session?.userId || null;
+
+    // Insere
     const insertQuery = `
         INSERT INTO zoneamentos (nome, geom)
         VALUES ($1, ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
@@ -982,8 +856,10 @@ app.post("/api/zoneamento/cadastrar", checkPermission("GerenciarZoneamentos"), a
       `;
     const insertValues = [nome_zoneamento, JSON.stringify(parsed.geometry)];
     const result = await pool.query(insertQuery, insertValues);
+
     if (result.rows.length > 0) {
       const newId = result.rows[0].id;
+      // Notificação
       const mensagem = `Zoneamento criado: ${nome_zoneamento}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1010,7 +886,7 @@ app.post("/api/zoneamento/cadastrar", checkPermission("GerenciarZoneamentos"), a
   }
 });
 
-app.get("/api/zoneamentos", checkPermission("VisualizarZoneamentos"), async (req, res) => {
+app.get("/api/zoneamentos", async (req, res) => {
   try {
     const query = `
             SELECT
@@ -1034,11 +910,18 @@ app.get("/api/zoneamentos", checkPermission("VisualizarZoneamentos"), async (req
   }
 });
 
-app.delete("/api/zoneamento/:id", checkPermission("GerenciarZoneamentos"), async (req, res) => {
+app.delete("/api/zoneamento/:id", async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
-    const busca = await pool.query("SELECT nome FROM zoneamentos WHERE id = $1", [id]);
+
+    // Buscar o nome do zoneamento antes de deletar (para log)
+    const busca = await pool.query(
+      "SELECT nome FROM zoneamentos WHERE id = $1",
+      [id]
+    );
     if (busca.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -1046,9 +929,12 @@ app.delete("/api/zoneamento/:id", checkPermission("GerenciarZoneamentos"), async
       });
     }
     const nomeZoneamento = busca.rows[0].nome;
+
     const deleteQuery = "DELETE FROM zoneamentos WHERE id = $1";
     const result = await pool.query(deleteQuery, [id]);
+
     if (result.rowCount > 0) {
+      // REGISTRA NOTIFICAÇÃO
       const mensagem = `Zoneamento excluído: ${nomeZoneamento}`;
       const acao = "DELETE";
       const tabela = "zoneamentos";
@@ -1057,6 +943,7 @@ app.delete("/api/zoneamento/:id", checkPermission("GerenciarZoneamentos"), async
                  VALUES ($1, $2, $3, $4, $5)`,
         [userId, acao, tabela, id, mensagem]
       );
+
       res.json({
         success: true,
         message: "Zoneamento excluído com sucesso!",
@@ -1077,7 +964,6 @@ app.delete("/api/zoneamento/:id", checkPermission("GerenciarZoneamentos"), async
 
 app.post(
   "/api/zoneamento/importar",
-  checkPermission("GerenciarZoneamentos"),
   upload.single("file"),
   async (req, res) => {
     try {
@@ -1085,13 +971,18 @@ app.post(
       const originalName = req.file.originalname;
       const geojson = await convertToGeoJSON(filePath, originalName);
       const features = geojson.features || [];
+
+      // (Opcional: pode registrar apenas 1 notificação "Importação de zoneamentos" em vez de uma por feature)
+      // Quem está fazendo a ação?
       const userId = req.session?.userId || null;
+
       for (const feature of features) {
         const props = feature.properties || {};
         const geometry = feature.geometry;
         const nome = props.nome || props.bairros || "Sem nome";
         const lote = props.lote || "Sem número";
         if (!geometry) continue;
+
         const insertQuery = `
                 INSERT INTO zoneamentos (nome, lote, geom)
                 VALUES ($1, $2, ST_SetSRID(ST_Force2D(ST_GeomFromGeoJSON($3)), 4326))
@@ -1099,8 +990,10 @@ app.post(
             `;
         const values = [nome, lote, JSON.stringify(geometry)];
         const result = await pool.query(insertQuery, values);
+
         if (result.rows.length > 0) {
           const newId = result.rows[0].id;
+          // Notificação por cada polígono criado:
           const mensagem = `Zoneamento importado/criado: ${nome}`;
           const acao = "CREATE";
           const tabela = "zoneamentos";
@@ -1125,7 +1018,10 @@ app.post(
   }
 );
 
-app.post("/api/escolas/cadastrar", checkPermission("GerenciarEscolas"), async (req, res) => {
+// ====================================================================================
+// ESCOLAS
+// ====================================================================================
+app.post("/api/escolas/cadastrar", async (req, res) => {
   try {
     const {
       latitude,
@@ -1148,6 +1044,7 @@ app.post("/api/escolas/cadastrar", checkPermission("GerenciarEscolas"), async (r
       req.body.zoneamentosSelecionados || "[]"
     );
 
+    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
     const insertEscolaQuery = `
@@ -1194,6 +1091,7 @@ app.post("/api/escolas/cadastrar", checkPermission("GerenciarEscolas"), async (r
       }
     }
 
+    // NOTIFICAÇÃO
     const mensagem = `Escola criada: ${nomeEscola}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1213,7 +1111,7 @@ app.post("/api/escolas/cadastrar", checkPermission("GerenciarEscolas"), async (r
   }
 });
 
-app.get("/api/escolas", checkPermission("VisualizarEscolas"), async (req, res) => {
+app.get("/api/escolas", async (req, res) => {
   try {
     const query = `
         SELECT
@@ -1273,7 +1171,8 @@ app.get("/api/escolas", checkPermission("VisualizarEscolas"), async (req, res) =
   }
 });
 
-app.put("/api/escolas/:id", checkPermission("GerenciarEscolas"), async (req, res) => {
+// EDITAR ESCOLA
+app.put("/api/escolas/:id", async (req, res) => {
   try {
     const escolaId = req.params.id;
     const {
@@ -1297,8 +1196,10 @@ app.put("/api/escolas/:id", checkPermission("GerenciarEscolas"), async (req, res
       req.body.zoneamentosSelecionadosEditar || "[]"
     );
 
+    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
+    // Atualiza campos na tabela escolas
     const updateEscolaQuery = `
         UPDATE escolas
         SET 
@@ -1345,8 +1246,12 @@ app.put("/api/escolas/:id", checkPermission("GerenciarEscolas"), async (req, res
       });
     }
 
-    await pool.query(`DELETE FROM escolas_zoneamentos WHERE escola_id = $1`, [escolaId]);
+    // Zera os relacionamentos de zoneamentos
+    await pool.query(`DELETE FROM escolas_zoneamentos WHERE escola_id = $1`, [
+      escolaId,
+    ]);
 
+    // Se existirem zoneamentos selecionados, insere novamente
     if (zoneamentosSelecionadosEditar.length > 0) {
       const insertZonaEscolaQuery = `
           INSERT INTO escolas_zoneamentos (escola_id, zoneamento_id)
@@ -1357,6 +1262,7 @@ app.put("/api/escolas/:id", checkPermission("GerenciarEscolas"), async (req, res
       }
     }
 
+    // Notificação
     const mensagem = `Escola atualizada: ${editarNomeEscola}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1377,11 +1283,14 @@ app.put("/api/escolas/:id", checkPermission("GerenciarEscolas"), async (req, res
   }
 });
 
-app.delete("/api/escolas/:id", checkPermission("GerenciarEscolas"), async (req, res) => {
+// EXCLUIR ESCOLA
+app.delete("/api/escolas/:id", async (req, res) => {
   try {
     const escolaId = req.params.id;
+    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
+    // Verifica se a escola existe
     const checkQuery = `SELECT * FROM escolas WHERE id = $1`;
     const checkResult = await pool.query(checkQuery, [escolaId]);
     if (checkResult.rows.length === 0) {
@@ -1391,11 +1300,16 @@ app.delete("/api/escolas/:id", checkPermission("GerenciarEscolas"), async (req, 
       });
     }
 
-    await pool.query(`DELETE FROM escolas_zoneamentos WHERE escola_id = $1`, [escolaId]);
+    // Exclui relacionamentos
+    await pool.query(`DELETE FROM escolas_zoneamentos WHERE escola_id = $1`, [
+      escolaId,
+    ]);
 
+    // Exclui a escola
     const deleteEscolaQuery = `DELETE FROM escolas WHERE id = $1`;
     await pool.query(deleteEscolaQuery, [escolaId]);
 
+    // Notificação
     const mensagem = `Escola excluída: ${checkResult.rows[0].nome}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1416,9 +1330,10 @@ app.delete("/api/escolas/:id", checkPermission("GerenciarEscolas"), async (req, 
   }
 });
 
+// ====================================================================================
 // FORNECEDORES
-
-app.post("/api/fornecedores/cadastrar", checkPermission("GerenciarFornecedores"), async (req, res) => {
+// ====================================================================================
+app.post("/api/fornecedores/cadastrar", async (req, res) => {
   try {
     const {
       nome_fornecedor,
@@ -1441,6 +1356,7 @@ app.post("/api/fornecedores/cadastrar", checkPermission("GerenciarFornecedores")
       });
     }
 
+    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
     const insertQuery = `
@@ -1475,6 +1391,7 @@ app.post("/api/fornecedores/cadastrar", checkPermission("GerenciarFornecedores")
     }
     const newFornecedorId = result.rows[0].id;
 
+    // NOTIFICAÇÃO
     const mensagem = `Fornecedor criado: ${nome_fornecedor}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1494,11 +1411,14 @@ app.post("/api/fornecedores/cadastrar", checkPermission("GerenciarFornecedores")
   }
 });
 
-app.delete("/api/fornecedores/:id", checkPermission("GerenciarFornecedores"), async (req, res) => {
+app.delete("/api/fornecedores/:id", async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
+    // Buscar o nome do fornecedor antes de deletar (para log)
     const busca = await pool.query(
       "SELECT nome_fornecedor FROM fornecedores WHERE id = $1",
       [id]
@@ -1515,6 +1435,7 @@ app.delete("/api/fornecedores/:id", checkPermission("GerenciarFornecedores"), as
     const result = await pool.query(deleteQuery, [id]);
 
     if (result.rowCount > 0) {
+      // NOTIFICAÇÃO
       const mensagem = `Fornecedor excluído: ${nomeFornecedor}`;
       const acao = "DELETE";
       const tabela = "fornecedores";
@@ -1542,9 +1463,10 @@ app.delete("/api/fornecedores/:id", checkPermission("GerenciarFornecedores"), as
   }
 });
 
+// ====================================================================================
 // FROTA
-
-app.get("/api/frota", checkPermission("VisualizarFrota"), async (req, res) => {
+// ====================================================================================
+app.get("/api/frota", async (req, res) => {
   try {
     const query = `
             SELECT
@@ -1603,7 +1525,6 @@ app.get("/api/frota", checkPermission("VisualizarFrota"), async (req, res) => {
 
 app.post(
   "/api/frota/cadastrar",
-  checkPermission("GerenciarFrota"),
   uploadFrota.fields([
     { name: "documentacao", maxCount: 1 },
     { name: "licenca", maxCount: 1 },
@@ -1648,6 +1569,7 @@ app.post(
         });
       }
 
+      // Quem está fazendo a ação?
       const userId = req.session?.userId || null;
 
       let documentacaoPath = null;
@@ -1707,7 +1629,10 @@ app.post(
       }
 
       const frotaId = result.rows[0].id;
-      if (Array.isArray(motoristasAssociados) && motoristasAssociados.length > 0) {
+      if (
+        Array.isArray(motoristasAssociados) &&
+        motoristasAssociados.length > 0
+      ) {
         const relQuery = `
                     INSERT INTO frota_motoristas (frota_id, motorista_id)
                     VALUES ($1, $2);
@@ -1717,6 +1642,7 @@ app.post(
         }
       }
 
+      // NOTIFICAÇÃO
       const mensagem = `Veículo adicionado à frota: ${nome_veiculo}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1738,11 +1664,14 @@ app.post(
   }
 );
 
-app.delete("/api/frota/:id", checkPermission("GerenciarFrota"), async (req, res) => {
+app.delete("/api/frota/:id", async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
+    // Buscar nome do veículo antes de excluir (opcional)
     const busca = await pool.query(
       "SELECT nome_veiculo FROM frota WHERE id = $1",
       [id]
@@ -1758,6 +1687,7 @@ app.delete("/api/frota/:id", checkPermission("GerenciarFrota"), async (req, res)
     const deleteQuery = "DELETE FROM frota WHERE id = $1";
     const result = await pool.query(deleteQuery, [id]);
     if (result.rowCount > 0) {
+      // NOTIFICAÇÃO
       const mensagem = `Veículo removido da frota: ${nomeVeiculo}`;
       const acao = "DELETE";
       const tabela = "frota";
@@ -1785,11 +1715,11 @@ app.delete("/api/frota/:id", checkPermission("GerenciarFrota"), async (req, res)
   }
 });
 
+// ====================================================================================
 // MONITORES
-
+// ====================================================================================
 app.post(
   "/api/monitores/cadastrar",
-  checkPermission("GerenciarMonitores"),
   uploadMonitores.fields([
     { name: "documento_pessoal", maxCount: 1 },
     { name: "certificado_curso", maxCount: 1 },
@@ -1812,6 +1742,7 @@ app.post(
         });
       }
 
+      // Quem está fazendo a ação?
       const userId = req.session?.userId || null;
 
       let documentoPessoalPath = null;
@@ -1888,6 +1819,7 @@ app.post(
       }
       const novoMonitorId = result.rows[0].id;
 
+      // NOTIFICAÇÃO
       const mensagem = `Monitor cadastrado: ${nome_monitor}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1908,7 +1840,7 @@ app.post(
   }
 );
 
-app.get("/api/monitores", checkPermission("VisualizarMonitores"), async (req, res) => {
+app.get("/api/monitores", async (req, res) => {
   try {
     const query = `
             SELECT m.id, m.nome_monitor, m.cpf, m.fornecedor_id, m.telefone, m.email, m.endereco,
@@ -1941,11 +1873,14 @@ app.get("/api/monitores", checkPermission("VisualizarMonitores"), async (req, re
   }
 });
 
-app.delete("/api/monitores/:id", checkPermission("GerenciarMonitores"), async (req, res) => {
+app.delete("/api/monitores/:id", async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Quem está fazendo a ação?
     const userId = req.session?.userId || null;
 
+    // Buscar nome do monitor antes de excluir (opcional)
     const busca = await pool.query(
       "SELECT nome_monitor FROM monitores WHERE id = $1",
       [id]
@@ -1961,6 +1896,7 @@ app.delete("/api/monitores/:id", checkPermission("GerenciarMonitores"), async (r
     const deleteQuery = "DELETE FROM monitores WHERE id = $1";
     const result = await pool.query(deleteQuery, [id]);
     if (result.rowCount > 0) {
+      // NOTIFICAÇÃO
       const mensagem = `Monitor excluído: ${nomeMonitor}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -1986,9 +1922,10 @@ app.delete("/api/monitores/:id", checkPermission("GerenciarMonitores"), async (r
   }
 });
 
+// ====================================================================================
 // MOTORISTAS
-
-app.get("/api/motoristas", checkPermission("VisualizarMotoristas"), async (req, res) => {
+// ====================================================================================
+app.get("/api/motoristas", async (req, res) => {
   try {
     const query = `
             SELECT m.id,
@@ -2018,7 +1955,9 @@ app.get("/api/motoristas", checkPermission("VisualizarMotoristas"), async (req, 
         `;
     const result = await pool.query(query);
     const hoje = new Date();
-    const trintaDiasDepois = new Date(hoje.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const trintaDiasDepois = new Date(
+      hoje.getTime() + 30 * 24 * 60 * 60 * 1000
+    );
 
     const motoristas = result.rows.map((row) => {
       let statusEscolar = "OK";
@@ -2032,14 +1971,18 @@ app.get("/api/motoristas", checkPermission("VisualizarMotoristas"), async (req, 
           statusEscolar = "Próximo do vencimento";
         }
       }
+
       if (row.data_validade_transporte_passageiros) {
-        const validadePassageiros = new Date(row.data_validade_transporte_passageiros);
+        const validadePassageiros = new Date(
+          row.data_validade_transporte_passageiros
+        );
         if (validadePassageiros < hoje) {
           statusPassageiros = "Vencido";
         } else if (validadePassageiros < trintaDiasDepois) {
           statusPassageiros = "Próximo do vencimento";
         }
       }
+
       return {
         id: row.id,
         nome_motorista: row.nome_motorista,
@@ -2078,7 +2021,6 @@ app.get("/api/motoristas", checkPermission("VisualizarMotoristas"), async (req, 
 
 app.post(
   "/api/motoristas/cadastrar",
-  checkPermission("GerenciarMotoristas"),
   uploadFrota.fields([
     { name: "cnh_pdf", maxCount: 1 },
     { name: "cert_transporte_escolar", maxCount: 1 },
@@ -2119,6 +2061,7 @@ app.post(
         });
       }
 
+      // Quem está fazendo a ação?
       const userId = req.session?.userId || null;
 
       let cnhPdfPath = null;
@@ -2221,6 +2164,7 @@ app.post(
       }
       const novoMotoristaId = result.rows[0].id;
 
+      // NOTIFICAÇÃO
       const mensagem = `Motorista cadastrado: ${nome_motorista}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -2240,9 +2184,8 @@ app.post(
     }
   }
 );
-// MOTORISTAS - DOWNLOAD / GET / LOGIN E DEFINIR SENHA
 
-app.get("/api/motoristas/download/:type/:id", checkPermission("VisualizarMotoristas"), async (req, res) => {
+app.get("/api/motoristas/download/:type/:id", async (req, res) => {
   try {
     const { type, id } = req.params;
     const query = `
@@ -2300,7 +2243,7 @@ app.get("/api/motoristas/download/:type/:id", checkPermission("VisualizarMotoris
   }
 });
 
-app.get("/api/motoristas/:id", checkPermission("VisualizarMotoristas"), async (req, res) => {
+app.get("/api/motoristas/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const numericId = parseInt(id, 10);
@@ -2328,6 +2271,9 @@ app.get("/api/motoristas/:id", checkPermission("VisualizarMotoristas"), async (r
   }
 });
 
+// ====================================================================================
+// LOGIN / CHECK CPF / DEFINIR SENHA (MOTORISTAS, se for usar app etc.)
+// ====================================================================================
 app.post("/api/motoristas/login", async (req, res) => {
   try {
     const { cpf, senha } = req.body;
@@ -2442,9 +2388,12 @@ app.post("/api/motoristas/check-cpf", async (req, res) => {
   }
 });
 
-// PONTOS DE PARADA
+// ====================================================================================
+// PONTOS DE PARADA (ROTAS)
+// ====================================================================================
 
-app.post("/api/pontos/cadastrar", checkPermission("GerenciarPontos"), async (req, res) => {
+// Rota para cadastrar UM único ponto
+app.post("/api/pontos/cadastrar", async (req, res) => {
   try {
     const {
       latitudePonto,
@@ -2529,7 +2478,8 @@ app.post("/api/pontos/cadastrar", checkPermission("GerenciarPontos"), async (req
   }
 });
 
-app.post("/api/pontos/cadastrar-multiplos", checkPermission("GerenciarPontos"), async (req, res) => {
+// Rota para cadastrar MÚLTIPLOS pontos
+app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
   const client = await pool.connect();
   try {
     const { pontos, zoneamentos } = req.body;
@@ -2648,7 +2598,7 @@ app.post("/api/pontos/cadastrar-multiplos", checkPermission("GerenciarPontos"), 
   }
 });
 
-app.get("/api/pontos", checkPermission("VisualizarPontos"), async (req, res) => {
+app.get("/api/pontos", async (req, res) => {
   try {
     const query = `
       SELECT p.id,
@@ -2698,7 +2648,7 @@ app.get("/api/pontos", checkPermission("VisualizarPontos"), async (req, res) => 
   }
 });
 
-app.delete("/api/pontos/:id", checkPermission("GerenciarPontos"), async (req, res) => {
+app.delete("/api/pontos/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.session?.userId || null;
@@ -2742,7 +2692,7 @@ app.delete("/api/pontos/:id", checkPermission("GerenciarPontos"), async (req, re
   }
 });
 
-app.put("/api/pontos/atualizar/:id", checkPermission("GerenciarPontos"), async (req, res) => {
+app.put("/api/pontos/atualizar/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -2837,11 +2787,19 @@ app.put("/api/pontos/atualizar/:id", checkPermission("GerenciarPontos"), async (
   }
 });
 
-// NOTIFICAÇÕES
-
-app.get("/api/notificacoes", isAuthenticated, async (req, res) => {
+// ====================================================================================
+// ENDPOINT DE NOTIFICAÇÕES
+// ====================================================================================
+app.get("/api/notificacoes", async (req, res) => {
   try {
+    // Verifica se o usuário está logado
+    if (!req.session || !req.session.userId) {
+      return res.json({ success: false, message: "Não logado" });
+    }
     const userId = req.session.userId;
+
+    // Consulta as 10 notificações mais recentes para esse user
+    // ou notificações cujo user_id é NULL (notificações gerais).
     const query = `
             SELECT id,
                    acao,
@@ -2856,24 +2814,28 @@ app.get("/api/notificacoes", isAuthenticated, async (req, res) => {
             LIMIT 10
         `;
     const { rows } = await pool.query(query, [userId]);
+
+    // Formata o "tempo" relativo (ex.: "Há 15 minutos")
     const now = Date.now();
     const notifications = rows.map((r) => {
       const diffMs = now - r.datahora.getTime();
       const diffMin = Math.floor(diffMs / 60000);
+
       let tempoStr = `Há ${diffMin} minuto(s)`;
       if (diffMin >= 60) {
         const horas = Math.floor(diffMin / 60);
         tempoStr = `Há ${horas} hora(s)`;
       }
+
       return {
         id: r.id,
         acao: r.acao,
         tabela: r.tabela,
         registro_id: r.registro_id,
         mensagem: r.mensagem,
-        datahora: r.datahora,
-        is_read: r.is_read,
-        tempo: tempoStr,
+        datahora: r.datahora, // data/hora real do banco
+        is_read: r.is_read, // para o front saber se está lida ou não
+        tempo: tempoStr, // ex.: "Há 12 minutos"
       };
     });
 
@@ -2890,9 +2852,16 @@ app.get("/api/notificacoes", isAuthenticated, async (req, res) => {
   }
 });
 
-app.patch("/api/notificacoes/marcar-lido", isAuthenticated, async (req, res) => {
+// Marcar uma ou várias notificações como lidas
+app.patch("/api/notificacoes/marcar-lido", async (req, res) => {
   try {
+    // 1) Verifica se o usuário está logado (opcional, dependendo da sua lógica)
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ success: false, message: "Não logado" });
+    }
     const userId = req.session.userId;
+
+    // 2) Recebe um array com os IDs das notificações do front-end
     const { notificacaoIds } = req.body;
     if (!Array.isArray(notificacaoIds) || notificacaoIds.length === 0) {
       return res.status(400).json({
@@ -2900,6 +2869,12 @@ app.patch("/api/notificacoes/marcar-lido", isAuthenticated, async (req, res) => 
         message: "Nenhum ID de notificação fornecido.",
       });
     }
+
+    // 3) Atualiza no banco
+    // Caso deseje garantir que o user atual só possa marcar notificações dele:
+    //   "UPDATE notificacoes SET is_read = TRUE
+    //    WHERE id = ANY($1) AND (user_id = $2 OR user_id IS NULL)"
+    // Se quiser que ele possa marcar qualquer uma, basta remover a checagem do user.
     const updateQuery = `
         UPDATE notificacoes
         SET is_read = TRUE
@@ -2920,9 +2895,10 @@ app.patch("/api/notificacoes/marcar-lido", isAuthenticated, async (req, res) => 
   }
 });
 
+// ====================================================================================
 // ROTAS SIMPLES
-
-app.post("/api/rotas/cadastrar-simples", checkPermission("GerenciarRotas"), async (req, res) => {
+// ====================================================================================
+app.post("/api/rotas/cadastrar-simples", async (req, res) => {
   try {
     const {
       identificador,
@@ -2993,6 +2969,7 @@ app.post("/api/rotas/cadastrar-simples", checkPermission("GerenciarRotas"), asyn
       }
     }
 
+    // Novo: fornecedores
     if (fornecedores && Array.isArray(fornecedores)) {
       const insertFornQuery = `
                 INSERT INTO fornecedores_rotas (rota_id, fornecedor_id)
@@ -3023,7 +3000,7 @@ app.post("/api/rotas/cadastrar-simples", checkPermission("GerenciarRotas"), asyn
   }
 });
 
-app.get("/api/estatisticas-transporte", checkPermission("VisualizarEstatisticas"), async (req, res) => {
+app.get("/api/estatisticas-transporte", async (req, res) => {
   try {
     const meses = [
       "Jan",
@@ -3058,6 +3035,7 @@ app.get("/api/estatisticas-transporte", checkPermission("VisualizarEstatisticas"
       const mesIndex = item.mes - 1;
       const zona = item.area_zona;
       const qtd = parseInt(item.total, 10);
+
       totalRotasPorMes[mesIndex] += qtd;
       if (zona === "URBANA") {
         rotasUrbanaPorMes[mesIndex] = qtd;
@@ -3078,7 +3056,7 @@ app.get("/api/estatisticas-transporte", checkPermission("VisualizarEstatisticas"
   }
 });
 
-app.get("/api/rotas_simples", checkPermission("VisualizarRotas"), async (req, res) => {
+app.get("/api/rotas_simples", async (req, res) => {
   try {
     const query = `
             SELECT 
@@ -3102,7 +3080,7 @@ app.get("/api/rotas_simples", checkPermission("VisualizarRotas"), async (req, re
   }
 });
 
-app.get("/api/rotas_simples/:id", checkPermission("VisualizarRotas"), async (req, res) => {
+app.get("/api/rotas_simples/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const rotaQuery = `
@@ -3168,7 +3146,7 @@ app.get("/api/rotas_simples/:id", checkPermission("VisualizarRotas"), async (req
   }
 });
 
-app.get("/api/fornecedores", checkPermission("VisualizarFornecedores"), async (req, res) => {
+app.get("/api/fornecedores", async (req, res) => {
   try {
     const query = `
             SELECT
@@ -3197,9 +3175,10 @@ app.get("/api/fornecedores", checkPermission("VisualizarFornecedores"), async (r
   }
 });
 
+// ====================================================================================
 // RELACIONAMENTOS: MOTORISTAS / MONITORES -> ROTAS
-
-app.post("/api/motoristas/atribuir-rota", checkPermission("GerenciarMotoristas"), async (req, res) => {
+// ====================================================================================
+app.post("/api/motoristas/atribuir-rota", async (req, res) => {
   try {
     const { motorista_id, rota_id } = req.body;
     if (!motorista_id || !rota_id) {
@@ -3209,6 +3188,7 @@ app.post("/api/motoristas/atribuir-rota", checkPermission("GerenciarMotoristas")
       });
     }
 
+    // Log
     const userId = req.session?.userId || null;
 
     const insertQuery = `
@@ -3218,6 +3198,7 @@ app.post("/api/motoristas/atribuir-rota", checkPermission("GerenciarMotoristas")
         `;
     const result = await pool.query(insertQuery, [motorista_id, rota_id]);
     if (result.rowCount > 0) {
+      // Notificação de "atribuição" (opcionalmente pode ser "CREATE" ou "UPDATE")
       const mensagem = `Rota ${rota_id} atribuída ao motorista ${motorista_id}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
@@ -3242,7 +3223,7 @@ app.post("/api/motoristas/atribuir-rota", checkPermission("GerenciarMotoristas")
   }
 });
 
-app.post("/api/monitores/atribuir-rota", checkPermission("GerenciarMonitores"), async (req, res) => {
+app.post("/api/monitores/atribuir-rota", async (req, res) => {
   try {
     const { monitor_id, rota_id } = req.body;
     if (!monitor_id || !rota_id) {
@@ -3252,6 +3233,7 @@ app.post("/api/monitores/atribuir-rota", checkPermission("GerenciarMonitores"), 
       });
     }
 
+    // Log
     const userId = req.session?.userId || null;
 
     await pool.query(
@@ -3259,11 +3241,12 @@ app.post("/api/monitores/atribuir-rota", checkPermission("GerenciarMonitores"), 
       [monitor_id, rota_id]
     );
 
+    // Notificação
     const mensagem = `Rota ${rota_id} atribuída ao monitor ${monitor_id}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
              VALUES ($1, 'CREATE', 'monitores_rotas', $2, $3)`,
-      [userId, rota_id, mensagem]
+      [userId, rota_id, mensagem] // ou ID do insert, se quisesse
     );
 
     res.json({
@@ -3276,9 +3259,10 @@ app.post("/api/monitores/atribuir-rota", checkPermission("GerenciarMonitores"), 
   }
 });
 
+// ====================================================================================
 // ROTA DE MOTORISTAS -> PONTOS/ESCOLAS
-
-app.get("/api/motoristas/rota", checkPermission("VisualizarMotoristas"), async (req, res) => {
+// ====================================================================================
+app.get("/api/motoristas/rota", async (req, res) => {
   try {
     const { motoristaId } = req.query;
     if (!motoristaId) {
@@ -3376,8 +3360,12 @@ app.get("/api/motoristas/rota", checkPermission("VisualizarMotoristas"), async (
       .json({ success: false, message: "Erro interno ao buscar rota" });
   }
 });
-// DASHBOARD (CONTANDO ESCOLAS)
-app.get("/api/dashboard", checkPermission("VisualizarDashboard"), async (req, res) => {
+
+// ====================================================================================
+// OUTRAS INFORMAÇÕES (DASHBOARD, ESCOLA COORDENADAS, ETC.)
+// ====================================================================================
+// ROTA /api/dashboard (atualizada para contar escolas)
+app.get("/api/dashboard", async (req, res) => {
   try {
     const alunosAtivos = await pool.query(`
       SELECT COUNT(*)::int AS count
@@ -3385,31 +3373,32 @@ app.get("/api/dashboard", checkPermission("VisualizarDashboard"), async (req, re
       WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
     `);
     const rotasAtivas = await pool.query(`
-      SELECT COUNT(*)::int AS count
+      SELECT COUNT(*)::int AS count 
       FROM rotas_simples
     `);
     const zoneamentosCount = await pool.query(`
-      SELECT COUNT(*)::int AS count
+      SELECT COUNT(*)::int AS count 
       FROM zoneamentos
     `);
     const motoristasCount = await pool.query(`
-      SELECT COUNT(*)::int AS count
+      SELECT COUNT(*)::int AS count 
       FROM motoristas
     `);
     const monitoresCount = await pool.query(`
-      SELECT COUNT(*)::int AS count
+      SELECT COUNT(*)::int AS count 
       FROM monitores
     `);
     const fornecedoresCount = await pool.query(`
-      SELECT COUNT(*)::int AS count
+      SELECT COUNT(*)::int AS count 
       FROM fornecedores
     `);
     const pontosCount = await pool.query(`
-      SELECT COUNT(*)::int AS count
+      SELECT COUNT(*)::int AS count 
       FROM pontos
     `);
+    // NOVO: Contar escolas
     const escolasCount = await pool.query(`
-      SELECT COUNT(*)::int AS count
+      SELECT COUNT(*)::int AS count 
       FROM escolas
     `);
 
@@ -3421,16 +3410,21 @@ app.get("/api/dashboard", checkPermission("VisualizarDashboard"), async (req, re
       monitores_total: monitoresCount.rows[0]?.count || 0,
       fornecedores_total: fornecedoresCount.rows[0]?.count || 0,
       pontos_total: pontosCount.rows[0]?.count || 0,
+      // Novo campo
       escolas_total: escolasCount.rows[0]?.count || 0,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Erro interno do servidor." });
+    res
+      .status(500)
+      .json({ success: false, message: "Erro interno do servidor." });
   }
 });
 
-// DOWNLOAD DE ROTAS (KML, KMZ, GPX)
 
+// ====================================================================================
+// DOWNLOAD DE ROTAS (KML, KMZ, GPX)
+// ====================================================================================
 function geojsonToKml(geojson) {
   let kml = `<?xml version="1.0" encoding="UTF-8"?>
     <kml xmlns="http://www.opengis.net/kml/2.2">
@@ -3458,7 +3452,8 @@ function geojsonToGpx(geojson) {
     <gpx version="1.1" creator="MyServer">
   `;
   geojson.features.forEach((f, idx) => {
-    gpx += `<trk><name>Rota ${f.properties.identificador || idx}</name><trkseg>`;
+    gpx += `<trk><name>Rota ${f.properties.identificador || idx
+      }</name><trkseg>`;
     f.geometry.coordinates.forEach((c) => {
       gpx += `<trkpt lat="${c[1]}" lon="${c[0]}"></trkpt>`;
     });
@@ -3468,7 +3463,7 @@ function geojsonToGpx(geojson) {
   return gpx;
 }
 
-app.get("/api/download-rotas-todas", checkPermission("VisualizarRotas"), async (req, res) => {
+app.get("/api/download-rotas-todas", async (req, res) => {
   try {
     const { format } = req.query;
     if (!format || !["kml", "kmz", "gpx"].includes(format.toLowerCase())) {
@@ -3476,28 +3471,28 @@ app.get("/api/download-rotas-todas", checkPermission("VisualizarRotas"), async (
     }
 
     const rotasQuery = `
-      SELECT 
-          rs.id,
-          rs.identificador,
-          rs.descricao,
-          rs.partida_lat,
-          rs.partida_lng,
-          rs.chegada_lat,
-          rs.chegada_lng,
-          COALESCE(json_agg(
-            json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
-          ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
-          COALESCE(json_agg(
-            json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
-          ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
-      FROM rotas_simples rs
-      LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
-      LEFT JOIN pontos p ON p.id = rp.ponto_id
-      LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
-      LEFT JOIN escolas e ON e.id = re.escola_id
-      GROUP BY rs.id
-      ORDER BY rs.id;
-    `;
+            SELECT 
+                rs.id,
+                rs.identificador,
+                rs.descricao,
+                rs.partida_lat,
+                rs.partida_lng,
+                rs.chegada_lat,
+                rs.chegada_lng,
+                COALESCE(json_agg(
+                  json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
+                ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
+                COALESCE(json_agg(
+                  json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
+                ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
+            FROM rotas_simples rs
+            LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
+            LEFT JOIN pontos p ON p.id = rp.ponto_id
+            LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
+            LEFT JOIN escolas e ON e.id = re.escola_id
+            GROUP BY rs.id
+            ORDER BY rs.id;
+        `;
     const result = await pool.query(rotasQuery);
     if (result.rows.length === 0) {
       return res.status(404).send("Nenhuma rota encontrada.");
@@ -3545,12 +3540,18 @@ app.get("/api/download-rotas-todas", checkPermission("VisualizarRotas"), async (
     if (lowerFmt === "kml") {
       const kmlStr = geojsonToKml(geojson);
       res.setHeader("Content-Type", "application/vnd.google-earth.kml+xml");
-      res.setHeader("Content-Disposition", 'attachment; filename="todas_rotas.kml"');
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="todas_rotas.kml"'
+      );
       return res.send(kmlStr);
     } else if (lowerFmt === "kmz") {
       const kmlStr = geojsonToKml(geojson);
       res.setHeader("Content-Type", "application/vnd.google-earth.kmz");
-      res.setHeader("Content-Disposition", 'attachment; filename="todas_rotas.kmz"');
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="todas_rotas.kmz"'
+      );
 
       const archive = archiver("zip", { zlib: { level: 9 } });
       archive.on("error", (err) => {
@@ -3563,7 +3564,10 @@ app.get("/api/download-rotas-todas", checkPermission("VisualizarRotas"), async (
     } else if (lowerFmt === "gpx") {
       const gpxStr = geojsonToGpx(geojson);
       res.setHeader("Content-Type", "application/gpx+xml");
-      res.setHeader("Content-Disposition", 'attachment; filename="todas_rotas.gpx"');
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="todas_rotas.gpx"'
+      );
       res.send(gpxStr);
     } else {
       return res.status(400).send("Formato inválido.");
@@ -3574,7 +3578,7 @@ app.get("/api/download-rotas-todas", checkPermission("VisualizarRotas"), async (
   }
 });
 
-app.get("/api/download-rota/:id", checkPermission("VisualizarRotas"), async (req, res) => {
+app.get("/api/download-rota/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { format } = req.query;
@@ -3583,29 +3587,29 @@ app.get("/api/download-rota/:id", checkPermission("VisualizarRotas"), async (req
     }
 
     const rotaQuery = `
-      SELECT 
-          rs.id,
-          rs.identificador,
-          rs.descricao,
-          rs.partida_lat,
-          rs.partida_lng,
-          rs.chegada_lat,
-          rs.chegada_lng,
-          COALESCE(json_agg(
-            json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
-          ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
-          COALESCE(json_agg(
-            json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
-          ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
-      FROM rotas_simples rs
-      LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
-      LEFT JOIN pontos p ON p.id = rp.ponto_id
-      LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
-      LEFT JOIN escolas e ON e.id = re.escola_id
-      WHERE rs.id = $1
-      GROUP BY rs.id
-      LIMIT 1;
-    `;
+            SELECT 
+                rs.id,
+                rs.identificador,
+                rs.descricao,
+                rs.partida_lat,
+                rs.partida_lng,
+                rs.chegada_lat,
+                rs.chegada_lng,
+                COALESCE(json_agg(
+                  json_build_object('id', p.id, 'latitude', p.latitude, 'longitude', p.longitude)
+                ) FILTER (WHERE p.id IS NOT NULL), '[]') as pontos,
+                COALESCE(json_agg(
+                  json_build_object('id', e.id, 'latitude', e.latitude, 'longitude', e.longitude)
+                ) FILTER (WHERE e.id IS NOT NULL), '[]') as escolas
+            FROM rotas_simples rs
+            LEFT JOIN rotas_pontos rp ON rp.rota_id = rs.id
+            LEFT JOIN pontos p ON p.id = rp.ponto_id
+            LEFT JOIN rotas_escolas re ON re.rota_id = rs.id
+            LEFT JOIN escolas e ON e.id = re.escola_id
+            WHERE rs.id = $1
+            GROUP BY rs.id
+            LIMIT 1;
+        `;
     const result = await pool.query(rotaQuery, [id]);
     if (result.rows.length === 0) {
       return res.status(404).send("Rota não encontrada.");
@@ -3652,12 +3656,18 @@ app.get("/api/download-rota/:id", checkPermission("VisualizarRotas"), async (req
     if (lowerFmt === "kml") {
       const kmlStr = geojsonToKml(geojson);
       res.setHeader("Content-Type", "application/vnd.google-earth.kml+xml");
-      res.setHeader("Content-Disposition", `attachment; filename="rota_${r.id}.kml"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="rota_${r.id}.kml"`
+      );
       return res.send(kmlStr);
     } else if (lowerFmt === "kmz") {
       const kmlStr = geojsonToKml(geojson);
       res.setHeader("Content-Type", "application/vnd.google-earth.kmz");
-      res.setHeader("Content-Disposition", `attachment; filename="rota_${r.id}.kmz"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="rota_${r.id}.kmz"`
+      );
 
       const archive = archiver("zip", { zlib: { level: 9 } });
       archive.on("error", (err) => {
@@ -3670,7 +3680,10 @@ app.get("/api/download-rota/:id", checkPermission("VisualizarRotas"), async (req
     } else if (lowerFmt === "gpx") {
       const gpxStr = geojsonToGpx(geojson);
       res.setHeader("Content-Type", "application/gpx+xml");
-      res.setHeader("Content-Disposition", `attachment; filename="rota_${r.id}.gpx"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="rota_${r.id}.gpx"`
+      );
       return res.send(gpxStr);
     } else {
       return res.status(400).send("Formato inválido.");
@@ -3681,50 +3694,60 @@ app.get("/api/download-rota/:id", checkPermission("VisualizarRotas"), async (req
   }
 });
 
-app.get("/api/rotas-simples-detalhes", checkPermission("VisualizarRotas"), async (req, res) => {
+app.get("/api/rotas-simples-detalhes", async (req, res) => {
   try {
     const query = `
-      WITH re AS (
-          SELECT 
-              r.id AS rota_id,
-              r.identificador,
-              r.descricao,
-              r.area_zona,
-              array_agg(DISTINCT p.id) FILTER (WHERE p.id IS NOT NULL) AS pontos_ids,
-              array_agg(DISTINCT p.nome_ponto) FILTER (WHERE p.id IS NOT NULL) AS pontos_nomes,
-              array_agg(DISTINCT z.id) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_ids,
-              array_agg(DISTINCT z.nome) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_nomes,
-              array_agg(DISTINCT e.id) FILTER (WHERE e.id IS NOT NULL) AS escolas_ids,
-              array_agg(DISTINCT e.nome) FILTER (WHERE e.id IS NOT NULL) AS escolas_nomes,
-              array_agg(DISTINCT f.id) FILTER (WHERE f.id IS NOT NULL) AS forn_ids,
-              array_agg(DISTINCT f.nome_fornecedor) FILTER (WHERE f.id IS NOT NULL) AS forn_nomes
-          FROM rotas_simples r
-          LEFT JOIN rotas_pontos rp ON rp.rota_id = r.id
-          LEFT JOIN pontos p ON p.id = rp.ponto_id
-          LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-          LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
-          LEFT JOIN rotas_escolas re2 ON re2.rota_id = r.id
-          LEFT JOIN escolas e ON e.id = re2.escola_id
-          LEFT JOIN fornecedores_rotas fr ON fr.rota_id = r.id
-          LEFT JOIN fornecedores f ON f.id = fr.fornecedor_id
-          GROUP BY r.id
-      )
-      SELECT 
-          rota_id AS id,
-          identificador,
-          descricao,
-          area_zona,
-          pontos_ids,
-          pontos_nomes,
-          zoneamentos_ids,
-          zoneamentos_nomes,
-          escolas_ids,
-          escolas_nomes,
-          forn_ids,
-          forn_nomes
-      FROM re
-      ORDER BY rota_id;
-    `;
+            WITH re AS (
+                SELECT 
+                    r.id AS rota_id,
+                    r.identificador,
+                    r.descricao,
+                    r.area_zona,
+
+                    array_agg(DISTINCT p.id) FILTER (WHERE p.id IS NOT NULL) AS pontos_ids,
+                    array_agg(DISTINCT p.nome_ponto) FILTER (WHERE p.id IS NOT NULL) AS pontos_nomes,
+
+                    array_agg(DISTINCT z.id) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_ids,
+                    array_agg(DISTINCT z.nome) FILTER (WHERE z.id IS NOT NULL) AS zoneamentos_nomes,
+
+                    array_agg(DISTINCT e.id) FILTER (WHERE e.id IS NOT NULL) AS escolas_ids,
+                    array_agg(DISTINCT e.nome) FILTER (WHERE e.id IS NOT NULL) AS escolas_nomes,
+
+                    array_agg(DISTINCT f.id) FILTER (WHERE f.id IS NOT NULL) AS forn_ids,
+                    array_agg(DISTINCT f.nome_fornecedor) FILTER (WHERE f.id IS NOT NULL) AS forn_nomes
+
+                FROM rotas_simples r
+                LEFT JOIN rotas_pontos rp ON rp.rota_id = r.id
+                LEFT JOIN pontos p ON p.id = rp.ponto_id
+                LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+                LEFT JOIN zoneamentos z ON z.id = pz.zoneamento_id
+
+                LEFT JOIN rotas_escolas re2 ON re2.rota_id = r.id
+                LEFT JOIN escolas e ON e.id = re2.escola_id
+
+                LEFT JOIN fornecedores_rotas fr ON fr.rota_id = r.id
+                LEFT JOIN fornecedores f ON f.id = fr.fornecedor_id
+
+                GROUP BY r.id
+            )
+            SELECT 
+                rota_id AS id,
+                identificador,
+                descricao,
+                area_zona,
+
+                pontos_ids,
+                pontos_nomes,
+                zoneamentos_ids,
+                zoneamentos_nomes,
+                escolas_ids,
+                escolas_nomes,
+                forn_ids,
+                forn_nomes
+
+            FROM re
+            ORDER BY rota_id;
+        `;
     const result = await pool.query(query);
 
     const data = result.rows.map((row) => {
@@ -3739,18 +3762,21 @@ app.get("/api/rotas-simples-detalhes", checkPermission("VisualizarRotas"), async
           nome_ponto: row.pontos_nomes[idx],
         }));
       }
+
       if (row.zoneamentos_ids && row.zoneamentos_ids.length) {
         zoneamentos = row.zoneamentos_ids.map((zid, idx) => ({
           id: zid,
           nome: row.zoneamentos_nomes[idx],
         }));
       }
+
       if (row.escolas_ids && row.escolas_ids.length) {
         escolas = row.escolas_ids.map((eid, idx) => ({
           id: eid,
           nome: row.escolas_nomes[idx],
         }));
       }
+
       if (row.forn_ids && row.forn_ids.length) {
         fornecedores = row.forn_ids.map((fid, idx) => ({
           id: fid,
@@ -3780,7 +3806,7 @@ app.get("/api/rotas-simples-detalhes", checkPermission("VisualizarRotas"), async
   }
 });
 
-app.put("/api/rotas-simples/:id", checkPermission("GerenciarRotas"), async (req, res) => {
+app.put("/api/rotas-simples/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -3796,24 +3822,29 @@ app.put("/api/rotas-simples/:id", checkPermission("GerenciarRotas"), async (req,
       areaZona,
     } = req.body;
 
-    const buscaRota = await pool.query("SELECT id FROM rotas_simples WHERE id = $1", [id]);
+    // 1. Verificar se a rota existe
+    const buscaRota = await pool.query(
+      "SELECT id FROM rotas_simples WHERE id = $1",
+      [id]
+    );
     if (buscaRota.rows.length === 0) {
       return res.json({ success: false, message: "Rota não encontrada." });
     }
 
+    // 2. Atualizar dados básicos da rota (tabela rotas_simples)
     await pool.query(
       `
-        UPDATE rotas_simples
-        SET 
-          identificador = $1,
-          descricao = $2,
-          partida_lat = $3,
-          partida_lng = $4,
-          chegada_lat = $5,
-          chegada_lng = $6,
-          area_zona = $7
-        WHERE id = $8
-      `,
+          UPDATE rotas_simples
+          SET 
+            identificador = $1,
+            descricao = $2,
+            partida_lat = $3,
+            partida_lng = $4,
+            chegada_lat = $5,
+            chegada_lng = $6,
+            area_zona = $7
+          WHERE id = $8
+        `,
       [
         identificador,
         descricao,
@@ -3826,19 +3857,31 @@ app.put("/api/rotas-simples/:id", checkPermission("GerenciarRotas"), async (req,
       ]
     );
 
+    // 3. Atualizar relacionamento da tabela de ligação rotas_pontos
     await pool.query("DELETE FROM rotas_pontos WHERE rota_id = $1", [id]);
     for (const ptId of pontosParada) {
-      await pool.query("INSERT INTO rotas_pontos (rota_id, ponto_id) VALUES ($1, $2)", [id, ptId]);
+      await pool.query(
+        "INSERT INTO rotas_pontos (rota_id, ponto_id) VALUES ($1, $2)",
+        [id, ptId]
+      );
     }
 
+    // 4. Atualizar relacionamento da tabela de ligação rotas_escolas
     await pool.query("DELETE FROM rotas_escolas WHERE rota_id = $1", [id]);
     for (const escId of escolas) {
-      await pool.query("INSERT INTO rotas_escolas (rota_id, escola_id) VALUES ($1, $2)", [id, escId]);
+      await pool.query(
+        "INSERT INTO rotas_escolas (rota_id, escola_id) VALUES ($1, $2)",
+        [id, escId]
+      );
     }
 
+    // 5. Atualizar relacionamento da tabela de ligação rotas_fornecedores
     await pool.query("DELETE FROM rotas_fornecedores WHERE rota_id = $1", [id]);
     for (const fId of fornecedores) {
-      await pool.query("INSERT INTO rotas_fornecedores (rota_id, fornecedor_id) VALUES ($1, $2)", [id, fId]);
+      await pool.query(
+        "INSERT INTO rotas_fornecedores (rota_id, fornecedor_id) VALUES ($1, $2)",
+        [id, fId]
+      );
     }
 
     return res.json({ success: true, message: "Rota atualizada com sucesso!" });
@@ -3851,18 +3894,19 @@ app.put("/api/rotas-simples/:id", checkPermission("GerenciarRotas"), async (req,
   }
 });
 
+// ====================================================================================
 // VEÍCULO POR MOTORISTA
-
-app.get("/api/motoristas/veiculo/:motoristaId", checkPermission("VisualizarMotoristas"), async (req, res) => {
+// ====================================================================================
+app.get("/api/motoristas/veiculo/:motoristaId", async (req, res) => {
   try {
     const { motoristaId } = req.params;
     const query = `
-      SELECT f.*
-      FROM frota f
-      INNER JOIN frota_motoristas fm ON fm.frota_id = f.id
-      WHERE fm.motorista_id = $1
-      LIMIT 1;
-    `;
+            SELECT f.*
+            FROM frota f
+            INNER JOIN frota_motoristas fm ON fm.frota_id = f.id
+            WHERE fm.motorista_id = $1
+            LIMIT 1;
+        `;
     const result = await pool.query(query, [motoristaId]);
     if (result.rows.length === 0) {
       return res.json({
@@ -3883,9 +3927,10 @@ app.get("/api/motoristas/veiculo/:motoristaId", checkPermission("VisualizarMotor
   }
 });
 
+// ====================================================================================
 // CHECKLISTS ÔNIBUS
-
-app.post("/api/checklists_onibus/salvar", checkPermission("GerenciarChecklists"), async (req, res) => {
+// ====================================================================================
+app.post("/api/checklists_onibus/salvar", async (req, res) => {
   try {
     const {
       motorista_id,
@@ -3946,14 +3991,14 @@ app.post("/api/checklists_onibus/salvar", checkPermission("GerenciarChecklists")
       obs_retorno,
     } = req.body;
 
+    // userId para log
     const userId = req.session?.userId || null;
 
     const selectQuery = `
-      SELECT id
-      FROM checklists_onibus
-      WHERE motorista_id=$1 AND frota_id=$2 AND data_checklist=$3
-      LIMIT 1
-    `;
+            SELECT id FROM checklists_onibus
+            WHERE motorista_id=$1 AND frota_id=$2 AND data_checklist=$3
+            LIMIT 1
+        `;
     const selectResult = await pool.query(selectQuery, [
       motorista_id,
       frota_id,
@@ -3964,63 +4009,63 @@ app.post("/api/checklists_onibus/salvar", checkPermission("GerenciarChecklists")
       // UPDATE
       const checklistId = selectResult.rows[0].id;
       const updateQuery = `
-        UPDATE checklists_onibus
-        SET
-          horario_saida = $1,
-          horario_retorno = $2,
-          quilometragem_final = $3,
-          cnh_valida = $4,
-          crlv_atualizado = $5,
-          aut_cert_escolar = $6,
-          pneus_calibragem = $7,
-          pneus_estado = $8,
-          pneu_estepe = $9,
-          fluido_oleo_motor = $10,
-          fluido_freio = $11,
-          fluido_radiador = $12,
-          fluido_parabrisa = $13,
-          freio_pe = $14,
-          freio_mao = $15,
-          farois = $16,
-          lanternas = $17,
-          setas = $18,
-          luz_freio = $19,
-          luz_re = $20,
-          iluminacao_interna = $21,
-          extintor = $22,
-          cintos = $23,
-          martelo_emergencia = $24,
-          kit_primeiros_socorros = $25,
-          lataria_pintura = $26,
-          vidros_limpos = $27,
-          retrovisores_ok = $28,
-          limpador_para_brisa = $29,
-          sinalizacao_externa = $30,
-          interior_limpo = $31,
-          combustivel_suficiente = $32,
-          triangulo_sinalizacao = $33,
-          macaco_chave_roda = $34,
-          material_limpeza = $35,
-          acessibilidade = $36,
-          obs_saida = $37,
-          combustivel_verificar = $38,
-          abastecimento = $39,
-          pneus_desgaste = $40,
-          lataria_avarias = $41,
-          interior_limpeza_retorno = $42,
-          extintor_retorno = $43,
-          cintos_retorno = $44,
-          kit_primeiros_socorros_retorno = $45,
-          equip_obrigatorio_retorno = $46,
-          equip_acessorio_retorno = $47,
-          problemas_mecanicos = $48,
-          incidentes = $49,
-          problema_portas_janelas = $50,
-          manutencao_preventiva = $51,
-          pronto_prox_dia = $52,
-          obs_retorno = $53
-        WHERE id=$54
-      `;
+                UPDATE checklists_onibus
+                SET
+                  horario_saida = $1,
+                  horario_retorno = $2,
+                  quilometragem_final = $3,
+                  cnh_valida = $4,
+                  crlv_atualizado = $5,
+                  aut_cert_escolar = $6,
+                  pneus_calibragem = $7,
+                  pneus_estado = $8,
+                  pneu_estepe = $9,
+                  fluido_oleo_motor = $10,
+                  fluido_freio = $11,
+                  fluido_radiador = $12,
+                  fluido_parabrisa = $13,
+                  freio_pe = $14,
+                  freio_mao = $15,
+                  farois = $16,
+                  lanternas = $17,
+                  setas = $18,
+                  luz_freio = $19,
+                  luz_re = $20,
+                  iluminacao_interna = $21,
+                  extintor = $22,
+                  cintos = $23,
+                  martelo_emergencia = $24,
+                  kit_primeiros_socorros = $25,
+                  lataria_pintura = $26,
+                  vidros_limpos = $27,
+                  retrovisores_ok = $28,
+                  limpador_para_brisa = $29,
+                  sinalizacao_externa = $30,
+                  interior_limpo = $31,
+                  combustivel_suficiente = $32,
+                  triangulo_sinalizacao = $33,
+                  macaco_chave_roda = $34,
+                  material_limpeza = $35,
+                  acessibilidade = $36,
+                  obs_saida = $37,
+                  combustivel_verificar = $38,
+                  abastecimento = $39,
+                  pneus_desgaste = $40,
+                  lataria_avarias = $41,
+                  interior_limpeza_retorno = $42,
+                  extintor_retorno = $43,
+                  cintos_retorno = $44,
+                  kit_primeiros_socorros_retorno = $45,
+                  equip_obrigatorio_retorno = $46,
+                  equip_acessorio_retorno = $47,
+                  problemas_mecanicos = $48,
+                  incidentes = $49,
+                  problema_portas_janelas = $50,
+                  manutencao_preventiva = $51,
+                  pronto_prox_dia = $52,
+                  obs_retorno = $53
+                WHERE id=$54
+            `;
       const updateValues = [
         horario_saida || null,
         horario_retorno || null,
@@ -4093,10 +4138,11 @@ app.post("/api/checklists_onibus/salvar", checkPermission("GerenciarChecklists")
       ];
       await pool.query(updateQuery, updateValues);
 
+      // Notificação: UPDATE
       const mensagem = `Checklist atualizado (ID: ${checklistId}) para motorista ${motorista_id}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-         VALUES ($1, 'UPDATE', 'checklists_onibus', $2, $3)`,
+                 VALUES ($1, 'UPDATE', 'checklists_onibus', $2, $3)`,
         [userId, checklistId, mensagem]
       );
 
@@ -4107,45 +4153,45 @@ app.post("/api/checklists_onibus/salvar", checkPermission("GerenciarChecklists")
     } else {
       // INSERT
       const insertQuery = `
-        INSERT INTO checklists_onibus (
-          motorista_id, frota_id, data_checklist,
-          horario_saida, horario_retorno, quilometragem_final,
-          cnh_valida, crlv_atualizado, aut_cert_escolar,
-          pneus_calibragem, pneus_estado, pneu_estepe,
-          fluido_oleo_motor, fluido_freio, fluido_radiador, fluido_parabrisa,
-          freio_pe, freio_mao,
-          farois, lanternas, setas, luz_freio, luz_re, iluminacao_interna,
-          extintor, cintos, martelo_emergencia, kit_primeiros_socorros,
-          lataria_pintura, vidros_limpos, retrovisores_ok, limpador_para_brisa,
-          sinalizacao_externa, interior_limpo,
-          combustivel_suficiente, triangulo_sinalizacao, macaco_chave_roda,
-          material_limpeza, acessibilidade, obs_saida,
-          combustivel_verificar, abastecimento, pneus_desgaste, lataria_avarias,
-          interior_limpeza_retorno, extintor_retorno, cintos_retorno, kit_primeiros_socorros_retorno,
-          equip_obrigatorio_retorno, equip_acessorio_retorno,
-          problemas_mecanicos, incidentes, problema_portas_janelas,
-          manutencao_preventiva, pronto_prox_dia, obs_retorno
-        ) VALUES (
-          $1, $2, $3,
-          $4, $5, $6,
-          $7, $8, $9,
-          $10, $11, $12,
-          $13, $14, $15, $16,
-          $17, $18,
-          $19, $20, $21, $22, $23, $24,
-          $25, $26, $27, $28,
-          $29, $30, $31, $32,
-          $33, $34,
-          $35, $36, $37,
-          $38, $39, $40,
-          $41, $42, $43, $44,
-          $45, $46, $47, $48,
-          $49, $50,
-          $51, $52, $53,
-          $54, $55, $56
-        )
-        RETURNING id
-      `;
+                INSERT INTO checklists_onibus (
+                  motorista_id, frota_id, data_checklist,
+                  horario_saida, horario_retorno, quilometragem_final,
+                  cnh_valida, crlv_atualizado, aut_cert_escolar,
+                  pneus_calibragem, pneus_estado, pneu_estepe,
+                  fluido_oleo_motor, fluido_freio, fluido_radiador, fluido_parabrisa,
+                  freio_pe, freio_mao,
+                  farois, lanternas, setas, luz_freio, luz_re, iluminacao_interna,
+                  extintor, cintos, martelo_emergencia, kit_primeiros_socorros,
+                  lataria_pintura, vidros_limpos, retrovisores_ok, limpador_para_brisa,
+                  sinalizacao_externa, interior_limpo,
+                  combustivel_suficiente, triangulo_sinalizacao, macaco_chave_roda,
+                  material_limpeza, acessibilidade, obs_saida,
+                  combustivel_verificar, abastecimento, pneus_desgaste, lataria_avarias,
+                  interior_limpeza_retorno, extintor_retorno, cintos_retorno, kit_primeiros_socorros_retorno,
+                  equip_obrigatorio_retorno, equip_acessorio_retorno,
+                  problemas_mecanicos, incidentes, problema_portas_janelas,
+                  manutencao_preventiva, pronto_prox_dia, obs_retorno
+                ) VALUES (
+                  $1, $2, $3,
+                  $4, $5, $6,
+                  $7, $8, $9,
+                  $10, $11, $12,
+                  $13, $14, $15, $16,
+                  $17, $18,
+                  $19, $20, $21, $22, $23, $24,
+                  $25, $26, $27, $28,
+                  $29, $30, $31, $32,
+                  $33, $34,
+                  $35, $36, $37,
+                  $38, $39, $40,
+                  $41, $42, $43, $44,
+                  $45, $46, $47, $48,
+                  $49, $50,
+                  $51, $52, $53,
+                  $54, $55, $56
+                )
+                RETURNING id
+            `;
       const insertValues = [
         motorista_id,
         frota_id,
@@ -4219,10 +4265,11 @@ app.post("/api/checklists_onibus/salvar", checkPermission("GerenciarChecklists")
       const result = await pool.query(insertQuery, insertValues);
       if (result.rows.length > 0) {
         const newChecklistId = result.rows[0].id;
+        // Notificação: CREATE
         const mensagem = `Checklist criado (ID: ${newChecklistId}) para motorista ${motorista_id}`;
         await pool.query(
           `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-           VALUES ($1, 'CREATE', 'checklists_onibus', $2, $3)`,
+                     VALUES ($1, 'CREATE', 'checklists_onibus', $2, $3)`,
           [userId, newChecklistId, mensagem]
         );
 
@@ -4246,8 +4293,7 @@ app.post("/api/checklists_onibus/salvar", checkPermission("GerenciarChecklists")
   }
 });
 
-// CHECKLISTS ÔNIBUS
-app.get("/api/checklists_onibus", checkPermission("VisualizarChecklistsOnibus"), async (req, res) => {
+app.get("/api/checklists_onibus", async (req, res) => {
   try {
     const { motorista_id, frota_id, data_checklist } = req.query;
     if (!motorista_id || !frota_id || !data_checklist) {
@@ -4285,8 +4331,10 @@ app.get("/api/checklists_onibus", checkPermission("VisualizarChecklistsOnibus"),
   }
 });
 
+// ====================================================================================
 // COCESSAO_ROTA (ALUNOS)
-app.get("/api/cocessao-rota", checkPermission("VisualizarCocessaoRota"), async (req, res) => {
+// ====================================================================================
+app.get("/api/cocessao-rota", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM cocessao_rota");
     res.json(result.rows);
@@ -4297,7 +4345,6 @@ app.get("/api/cocessao-rota", checkPermission("VisualizarCocessaoRota"), async (
 
 app.post(
   "/api/enviar-solicitacao",
-  checkPermission("CriarSolicitacao"),
   upload.fields([
     { name: "laudo_deficiencia", maxCount: 1 },
     { name: "comprovante_endereco", maxCount: 1 },
@@ -4409,7 +4456,10 @@ app.post(
         });
       }
     } catch (error) {
-      console.error("Erro ao salvar solicitação na tabela cocessao_rota:", error);
+      console.error(
+        "Erro ao salvar solicitação na tabela cocessao_rota:",
+        error
+      );
       return res.status(500).json({
         success: false,
         message: "Erro interno do servidor ao salvar solicitação.",
@@ -4417,8 +4467,7 @@ app.post(
     }
   }
 );
-
-app.get("/api/alunos-transporte-publico", checkPermission("VisualizarAlunosTransportePublico"), async (req, res) => {
+app.get("/api/alunos-transporte-publico", async (req, res) => {
   try {
     const query = `
             SELECT
@@ -4447,12 +4496,14 @@ app.get("/api/alunos-transporte-publico", checkPermission("VisualizarAlunosTrans
 });
 
 // ENDPOINT ATUALIZADO (com campo data_nascimento)
-app.get("/api/alunos_ativos", checkPermission("VisualizarAlunosAtivos"), async (req, res) => {
+app.get("/api/alunos_ativos", async (req, res) => {
   try {
     const search = req.query.search ? req.query.search.trim() : "";
     if (!search) {
       return res.json(null);
     }
+
+    // Consulta que retorna também data_nascimento
     const query = `
       SELECT
         a.id,
@@ -4477,6 +4528,7 @@ app.get("/api/alunos_ativos", checkPermission("VisualizarAlunosAtivos"), async (
       LIMIT 1
     `;
     const result = await pool.query(query, [search]);
+
     if (result.rows.length === 0) {
       return res.json(null);
     }
@@ -4487,13 +4539,17 @@ app.get("/api/alunos_ativos", checkPermission("VisualizarAlunosAtivos"), async (
   }
 });
 
+
 // 2) Rota para buscar as coordenadas de uma escola por NOME
-app.get("/api/escola-coordenadas", checkPermission("VisualizarEscolaCoordenadas"), async (req, res) => {
+app.get("/api/escola-coordenadas", async (req, res) => {
   try {
     const { nome_escola } = req.query;
     if (!nome_escola) {
       return res.status(400).json({ error: "Parâmetro nome_escola é obrigatório" });
     }
+
+    // Ajuste a query conforme o nome real da coluna 'nome' na tabela 'escolas'
+    // Aqui usamos case-insensitive:
     const query = `
       SELECT latitude, longitude
       FROM escolas
@@ -4501,15 +4557,20 @@ app.get("/api/escola-coordenadas", checkPermission("VisualizarEscolaCoordenadas"
       LIMIT 1
     `;
     const result = await pool.query(query, [nome_escola]);
+
     if (result.rows.length === 0) {
+      // Não achou escola
       return res.status(404).json({ error: "Escola não encontrada pelo nome informado." });
     }
+
     const { latitude, longitude } = result.rows[0];
     if (latitude == null || longitude == null) {
       return res.status(404).json({
         error: "Escola encontrada, mas não possui coordenadas (latitude/longitude)."
       });
     }
+
+    // Retorna exatamente { latitude, longitude } no corpo JSON
     return res.json({
       latitude: parseFloat(latitude),
       longitude: parseFloat(longitude)
@@ -4520,7 +4581,7 @@ app.get("/api/escola-coordenadas", checkPermission("VisualizarEscolaCoordenadas"
   }
 });
 
-app.get("/api/alunos-mapa", checkPermission("VisualizarAlunosMapa"), async (req, res) => {
+app.get("/api/alunos-mapa", async (req, res) => {
   try {
     const { escola_id, busca } = req.query;
     let sql = `
@@ -4537,6 +4598,7 @@ app.get("/api/alunos-mapa", checkPermission("VisualizarAlunosMapa"), async (req,
       WHERE 1=1
     `;
     const params = [];
+
     if (escola_id) {
       params.push(escola_id);
       sql += ` AND a.escola_id = $${params.length}`;
@@ -4552,6 +4614,7 @@ app.get("/api/alunos-mapa", checkPermission("VisualizarAlunosMapa"), async (req,
     }
     sql += " ORDER BY a.id DESC";
     const result = await pool.query(sql, params);
+
     let escola = null;
     if (escola_id) {
       const eData = result.rows.find((r) => r.escola_id == escola_id);
@@ -4581,18 +4644,24 @@ app.get("/api/alunos-mapa", checkPermission("VisualizarAlunosMapa"), async (req,
     });
   }
 });
-
-app.get("/api/zoneamentos/detect", checkPermission("DetectarZoneamento"), async (req, res) => {
+app.get("/api/zoneamentos/detect", async (req, res) => {
   const client = await pool.connect();
   try {
     const { lat, lng } = req.query;
     if (!lat || !lng) {
       return res.json({ zona: null });
     }
+
+    // Transformar em float
     const latNum = parseFloat(lat);
     const lngNum = parseFloat(lng);
+
+    // Cria geometria do ponto
     const pointGeom = `ST_SetSRID(ST_MakePoint(${lngNum}, ${latNum}), 4326)`;
+
     await client.query("BEGIN");
+
+    // Tenta encontrar polígono que contenha o ponto
     const queryPoligono = `
       SELECT id, nome
       FROM zoneamentos
@@ -4604,7 +4673,9 @@ app.get("/api/zoneamentos/detect", checkPermission("DetectarZoneamento"), async 
       await client.query("COMMIT");
       return res.json({ zona: poligono.rows[0].nome });
     }
-    const dist = 0.001;
+
+    // Se não encontrou polígono, procura linha próxima
+    const dist = 0.001; // 100m aprox.
     const queryLinhas = `
       SELECT id, nome
       FROM zoneamentos
@@ -4617,6 +4688,7 @@ app.get("/api/zoneamentos/detect", checkPermission("DetectarZoneamento"), async 
       await client.query("COMMIT");
       return res.json({ zona: linha.rows[0].nome });
     }
+
     await client.query("COMMIT");
     return res.json({ zona: null });
   } catch (err) {
@@ -4628,13 +4700,15 @@ app.get("/api/zoneamentos/detect", checkPermission("DetectarZoneamento"), async 
 });
 
 // Excluir rota
-app.delete("/api/rotas-simples/:id", checkPermission("ExcluirRotas"), async (req, res) => {
+app.delete("/api/rotas-simples/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.session?.userId || null;
+
     const deleteQuery =
       "DELETE FROM rotas_simples WHERE id = $1 RETURNING id, identificador";
     const result = await pool.query(deleteQuery, [id]);
+
     if (result.rowCount > 0) {
       const { identificador } = result.rows[0];
       const mensagem = `Rota simples excluída: ${identificador}`;
@@ -4657,10 +4731,9 @@ app.delete("/api/rotas-simples/:id", checkPermission("ExcluirRotas"), async (req
   }
 });
 
-// Editar solicitação (cocessao-rota)
+// Editar solicitação
 app.put(
   "/api/cocessao-rota/:id",
-  checkPermission("GerenciarSolicitacoes"),
   upload.fields([
     { name: "laudo_deficiencia", maxCount: 1 },
     { name: "comprovante_endereco", maxCount: 1 },
@@ -4684,7 +4757,10 @@ app.put(
         observacoes,
         criterio_direito,
       } = req.body;
+
+      // userId para log
       const userId = req.session?.userId || null;
+
       let laudoDeficienciaPath = null;
       let comprovanteEnderecoPath = null;
       if (
@@ -4699,6 +4775,7 @@ app.put(
       ) {
         comprovanteEnderecoPath = `uploads/${req.files["comprovante_endereco"][0].filename}`;
       }
+
       const oldRowRes = await pool.query(
         "SELECT laudo_deficiencia_path, comprovante_endereco_path FROM cocessao_rota WHERE id=$1",
         [id]
@@ -4709,12 +4786,15 @@ app.put(
           .json({ success: false, message: "Solicitação não encontrada." });
       }
       const oldRow = oldRowRes.rows[0];
+
       if (!laudoDeficienciaPath)
         laudoDeficienciaPath = oldRow.laudo_deficiencia_path;
       if (!comprovanteEnderecoPath)
         comprovanteEnderecoPath = oldRow.comprovante_endereco_path;
+
       const zoneamentoBool = zoneamento === "sim";
       const deficienciaBool = deficiencia === "sim";
+
       const updateQuery = `
                 UPDATE cocessao_rota
                 SET
@@ -4755,13 +4835,17 @@ app.put(
         criterio_direito || null,
         parseInt(id, 10),
       ];
+
       await pool.query(updateQuery, values);
+
+      // NOTIFICAÇÃO
       const mensagem = `Solicitação de rota (ID: ${id}) atualizada. Responsável: ${nome_responsavel}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
                  VALUES ($1, 'UPDATE', 'cocessao_rota', $2, $3)`,
         [userId, id, mensagem]
       );
+
       return res.json({
         success: true,
         message: "Solicitação atualizada com sucesso!",
@@ -4776,10 +4860,14 @@ app.put(
 );
 
 // Excluir solicitação
-app.delete("/api/cocessao-rota/:id", checkPermission("GerenciarSolicitacoes"), async (req, res) => {
+app.delete("/api/cocessao-rota/:id", async (req, res) => {
   try {
     const { id } = req.params;
+
+    // userId para log
     const userId = req.session?.userId || null;
+
+    // Buscar algo p/ mensagem
     const busca = await pool.query(
       "SELECT nome_responsavel FROM cocessao_rota WHERE id=$1",
       [id]
@@ -4790,15 +4878,18 @@ app.delete("/api/cocessao-rota/:id", checkPermission("GerenciarSolicitacoes"), a
         .json({ success: false, message: "Solicitação não encontrada." });
     }
     const nomeResponsavel = busca.rows[0].nome_responsavel;
+
     const deleteQuery = "DELETE FROM cocessao_rota WHERE id = $1";
     const result = await pool.query(deleteQuery, [id]);
     if (result.rowCount > 0) {
+      // NOTIFICAÇÃO
       const mensagem = `Solicitação de rota excluída (ID: ${id}). Responsável: ${nomeResponsavel}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
                  VALUES ($1, 'DELETE', 'cocessao_rota', $2, $3)`,
         [userId, id, mensagem]
       );
+
       return res.json({
         success: true,
         message: "Solicitação excluída com sucesso!",
@@ -4816,8 +4907,12 @@ app.delete("/api/cocessao-rota/:id", checkPermission("GerenciarSolicitacoes"), a
   }
 });
 
+// ====================================================================================
 // MEMORANDOS
-app.get("/api/memorandos", checkPermission("VisualizarMemorandos"), async (req, res) => {
+// ====================================================================================
+
+// app.get("/api/memorandos", ...) ...
+app.get("/api/memorandos", async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT * FROM memorandos ORDER BY data_criacao DESC"
@@ -4832,12 +4927,13 @@ app.get("/api/memorandos", checkPermission("VisualizarMemorandos"), async (req, 
   }
 });
 
+// app.post("/api/memorandos/cadastrar", ...) ...
 app.post(
   "/api/memorandos/cadastrar",
-  checkPermission("GerenciarMemorandos"),
   memorandoUpload.none(),
   async (req, res) => {
     const { document_type, tipo_memorando, destinatario, corpo } = req.body;
+
     if (!document_type || !tipo_memorando || !destinatario || !corpo) {
       return res.status(400).json({
         success: false,
@@ -4845,8 +4941,10 @@ app.post(
           "Campos obrigatórios não fornecidos (document_type, tipo_memorando, destinatario, corpo).",
       });
     }
+
     const userId = req.session?.userId || null;
     const data_criacao = moment().format("YYYY-MM-DD");
+
     try {
       const insertQuery = `
         INSERT INTO memorandos
@@ -4856,6 +4954,7 @@ app.post(
       `;
       const values = [document_type, tipo_memorando, destinatario, corpo, data_criacao];
       const result = await pool.query(insertQuery, values);
+
       if (result.rows.length > 0) {
         const newId = result.rows[0].id;
         const mensagem = `Documento criado: ${document_type} - ${tipo_memorando}, destinatário: ${destinatario}`;
@@ -4864,6 +4963,7 @@ app.post(
            VALUES ($1, 'CREATE', 'memorandos', $2, $3)`,
           [userId, newId, mensagem]
         );
+
         return res.json({
           success: true,
           memorando: {
@@ -4891,16 +4991,19 @@ app.post(
   }
 );
 
-app.put("/api/memorandos/:id", checkPermission("GerenciarMemorandos"), async (req, res) => {
+// app.put("/api/memorandos/:id", ...) ...
+app.put('/api/memorandos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { document_type, tipo_memorando, destinatario, corpo } = req.body;
+
   try {
-    const { id } = req.params;
-    const { document_type, tipo_memorando, destinatario, corpo } = req.body;
     const queryText = `
       UPDATE memorandos
       SET document_type = $1, tipo_memorando = $2, destinatario = $3, corpo = $4
       WHERE id = $5
       RETURNING *;
     `;
+
     const result = await pool.query(queryText, [
       document_type,
       tipo_memorando,
@@ -4908,9 +5011,11 @@ app.put("/api/memorandos/:id", checkPermission("GerenciarMemorandos"), async (re
       corpo,
       id
     ]);
+
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, message: 'Documento não encontrado.' });
     }
+
     return res.json({ success: true, memorando: result.rows[0] });
   } catch (error) {
     console.error('Erro ao atualizar documento:', error);
@@ -4921,652 +5026,252 @@ app.put("/api/memorandos/:id", checkPermission("GerenciarMemorandos"), async (re
   }
 });
 
-// VEÍCULO POR MOTORISTA
-app.get("/api/motoristas/veiculo/:motoristaId", checkPermission("VisualizarMotoristas"), async (req, res) => {
-  try {
-    const { motoristaId } = req.params;
-    const query = `
-      SELECT f.*
-      FROM frota f
-      INNER JOIN frota_motoristas fm ON fm.frota_id = f.id
-      WHERE fm.motorista_id = $1
-      LIMIT 1;
-    `;
-    const result = await pool.query(query, [motoristaId]);
-    if (result.rows.length === 0) {
-      return res.json({
-        success: false,
-        message: "Nenhum veículo encontrado para este motorista",
-      });
-    }
-    return res.json({
-      success: true,
-      vehicle: result.rows[0],
-    });
-  } catch (error) {
-    console.error("Erro ao buscar veículo para motorista:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor",
-    });
-  }
-});
-
-// CHECKLISTS ÔNIBUS - SALVAR
-app.post("/api/checklists_onibus/salvar", checkPermission("GerenciarChecklists"), async (req, res) => {
-  try {
-    const {
-      motorista_id,
-      frota_id,
-      data_checklist,
-      horario_saida,
-      horario_retorno,
-      quilometragem_final,
-      cnh_valida,
-      crlv_atualizado,
-      aut_cert_escolar,
-      pneus_calibragem,
-      pneus_estado,
-      pneu_estepe,
-      fluido_oleo_motor,
-      fluido_freio,
-      fluido_radiador,
-      fluido_parabrisa,
-      freio_pe,
-      freio_mao,
-      farois,
-      lanternas,
-      setas,
-      luz_freio,
-      luz_re,
-      iluminacao_interna,
-      extintor,
-      cintos,
-      martelo_emergencia,
-      kit_primeiros_socorros,
-      lataria_pintura,
-      vidros_limpos,
-      retrovisores_ok,
-      limpador_para_brisa,
-      sinalizacao_externa,
-      interior_limpo,
-      combustivel_suficiente,
-      triangulo_sinalizacao,
-      macaco_chave_roda,
-      material_limpeza,
-      acessibilidade,
-      obs_saida,
-      combustivel_verificar,
-      abastecimento,
-      pneus_desgaste,
-      lataria_avarias,
-      interior_limpeza_retorno,
-      extintor_retorno,
-      cintos_retorno,
-      kit_primeiros_socorros_retorno,
-      equip_obrigatorio_retorno,
-      equip_acessorio_retorno,
-      problemas_mecanicos,
-      incidentes,
-      problema_portas_janelas,
-      manutencao_preventiva,
-      pronto_prox_dia,
-      obs_retorno,
-    } = req.body;
-    const userId = req.session?.userId || null;
-    const selectQuery = `
-      SELECT id FROM checklists_onibus
-      WHERE motorista_id=$1 AND frota_id=$2 AND data_checklist=$3
-      LIMIT 1
-    `;
-    const selectResult = await pool.query(selectQuery, [
-      motorista_id,
-      frota_id,
-      data_checklist,
-    ]);
-    if (selectResult.rows.length > 0) {
-      const checklistId = selectResult.rows[0].id;
-      const updateQuery = `
-        UPDATE checklists_onibus
-        SET
-          horario_saida = $1,
-          horario_retorno = $2,
-          quilometragem_final = $3,
-          cnh_valida = $4,
-          crlv_atualizado = $5,
-          aut_cert_escolar = $6,
-          pneus_calibragem = $7,
-          pneus_estado = $8,
-          pneu_estepe = $9,
-          fluido_oleo_motor = $10,
-          fluido_freio = $11,
-          fluido_radiador = $12,
-          fluido_parabrisa = $13,
-          freio_pe = $14,
-          freio_mao = $15,
-          farois = $16,
-          lanternas = $17,
-          setas = $18,
-          luz_freio = $19,
-          luz_re = $20,
-          iluminacao_interna = $21,
-          extintor = $22,
-          cintos = $23,
-          martelo_emergencia = $24,
-          kit_primeiros_socorros = $25,
-          lataria_avias = $26,
-          vidros_limpos = $27,
-          retrovisores_ok = $28,
-          limpador_para_brisa = $29,
-          sinalizacao_externa = $30,
-          interior_limpo = $31,
-          combustivel_suficiente = $32,
-          triangulo_sinalizacao = $33,
-          macaco_chave_roda = $34,
-          material_limpeza = $35,
-          acessibilidade = $36,
-          obs_saida = $37,
-          combustivel_verificar = $38,
-          abastecimento = $39,
-          pneus_desgaste = $40,
-          lataria_avarias = $41,
-          interior_limpeza_retorno = $42,
-          extintor_retorno = $43,
-          cintos_retorno = $44,
-          kit_primeiros_socorros_retorno = $45,
-          equip_obrigatorio_retorno = $46,
-          equip_acessorio_retorno = $47,
-          problemas_mecanicos = $48,
-          incidentes = $49,
-          problema_portas_janelas = $50,
-          manutencao_preventiva = $51,
-          pronto_prox_dia = $52,
-          obs_retorno = $53
-        WHERE id=$54
-      `;
-      const updateValues = [
-        horario_saida || null,
-        horario_retorno || null,
-        quilometragem_final ? parseInt(quilometragem_final, 10) : null,
-        cnh_valida === "true",
-        crlv_atualizado === "true",
-        aut_cert_escolar === "true",
-        pneus_calibragem === "true",
-        pneus_estado === "true",
-        pneu_estepe === "true",
-        fluido_oleo_motor === "true",
-        fluido_freio === "true",
-        fluido_radiador === "true",
-        fluido_parabrisa === "true",
-        freio_pe === "true",
-        freio_mao === "true",
-        farois === "true",
-        lanternas === "true",
-        setas === "true",
-        luz_freio === "true",
-        luz_re === "true",
-        iluminacao_interna === "true",
-        extintor === "true",
-        cintos === "true",
-        martelo_emergencia === "true",
-        kit_primeiros_socorros === "true",
-        lataria_avias === "true",
-        vidros_limpos === "true",
-        retrovisores_ok === "true",
-        limpador_para_brisa === "true",
-        sinalizacao_externa === "true",
-        interior_limpo === "true",
-        combustivel_suficiente === "true",
-        triangulo_sinalizacao === "true",
-        macaco_chave_roda === "true",
-        material_limpeza === "true",
-        acessibilidade === "true",
-        obs_saida || null,
-        combustivel_verificar === "true",
-        abastecimento === "true",
-        pneus_desgaste === "true",
-        lataria_avarias === "true",
-        interior_limpeza_retorno === "true",
-        extintor_retorno === "true",
-        cintos_retorno === "true",
-        kit_primeiros_socorros_retorno === "true",
-        equip_obrigatorio_retorno === "true",
-        equip_acessorio_retorno === "true",
-        problemas_mecanicos === "true",
-        incidentes === "true",
-        problema_portas_janelas === "true",
-        manutencao_preventiva === "true",
-        pronto_prox_dia === "true",
-        obs_retorno || null,
-        checklistId,
-      ];
-      await pool.query(updateQuery, updateValues);
-      const mensagem = `Checklist atualizado (ID: ${checklistId}) para motorista ${motorista_id}`;
-      await pool.query(
-        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-         VALUES ($1, 'UPDATE', 'checklists_onibus', $2, $3)`,
-        [userId, checklistId, mensagem]
-      );
-      return res.json({
-        success: true,
-        message: "Checklist atualizado com sucesso!",
-      });
-    } else {
-      const insertQuery = `
-        INSERT INTO checklists_onibus (
-          motorista_id, frota_id, data_checklist,
-          horario_saida, horario_retorno, quilometragem_final,
-          cnh_valida, crlv_atualizado, aut_cert_escolar,
-          pneus_calibragem, pneus_estado, pneu_estepe,
-          fluido_oleo_motor, fluido_freio, fluido_radiador, fluido_parabrisa,
-          freio_pe, freio_mao,
-          farois, lanternas, setas, luz_freio, luz_re, iluminacao_interna,
-          extintor, cintos, martelo_emergencia, kit_primeiros_socorros,
-          lataria_avarias, vidros_limpos, retrovisores_ok, limpador_para_brisa,
-          sinalizacao_externa, interior_limpo,
-          combustivel_suficiente, triangulo_sinalizacao, macaco_chave_roda,
-          material_limpeza, acessibilidade, obs_saida,
-          combustivel_verificar, abastecimento, pneus_desgaste, lataria_avarias,
-          interior_limpeza_retorno, extintor_retorno, cintos_retorno, kit_primeiros_socorros_retorno,
-          equip_obrigatorio_retorno, equip_acessorio_retorno,
-          problemas_mecanicos, incidentes, problema_portas_janelas,
-          manutencao_preventiva, pronto_prox_dia, obs_retorno
-        ) VALUES (
-          $1, $2, $3,
-          $4, $5, $6,
-          $7, $8, $9,
-          $10, $11, $12,
-          $13, $14, $15, $16,
-          $17, $18,
-          $19, $20, $21, $22, $23, $24,
-          $25, $26, $27, $28,
-          $29, $30, $31, $32,
-          $33, $34,
-          $35, $36, $37,
-          $38, $39, $40,
-          $41, $42, $43, $44,
-          $45, $46, $47, $48,
-          $49, $50,
-          $51, $52, $53,
-          $54, $55, $56
-        )
-        RETURNING id
-      `;
-      const insertValues = [
-        motorista_id,
-        frota_id,
-        data_checklist,
-        horario_saida || null,
-        horario_retorno || null,
-        quilometragem_final ? parseInt(quilometragem_final, 10) : null,
-        cnh_valida === "true",
-        crlv_atualizado === "true",
-        aut_cert_escolar === "true",
-        pneus_calibragem === "true",
-        pneus_estado === "true",
-        pneu_estepe === "true",
-        fluido_oleo_motor === "true",
-        fluido_freio === "true",
-        fluido_radiador === "true",
-        fluido_parabrisa === "true",
-        freio_pe === "true",
-        freio_mao === "true",
-        farois === "true",
-        lanternas === "true",
-        setas === "true",
-        luz_freio === "true",
-        luz_re === "true",
-        iluminacao_interna === "true",
-        extintor === "true",
-        cintos === "true",
-        martelo_emergencia === "true",
-        kit_primeiros_socorros === "true",
-        lataria_avarias === "true",
-        vidros_limpos === "true",
-        retrovisores_ok === "true",
-        limpador_para_brisa === "true",
-        sinalizacao_externa === "true",
-        interior_limpo === "true",
-        combustivel_suficiente === "true",
-        triangulo_sinalizacao === "true",
-        macaco_chave_roda === "true",
-        material_limpeza === "true",
-        acessibilidade === "true",
-        obs_saida || null,
-        combustivel_verificar === "true",
-        abastecimento === "true",
-        pneus_desgaste === "true",
-        lataria_avarias === "true",
-        interior_limpeza_retorno === "true",
-        extintor_retorno === "true",
-        cintos_retorno === "true",
-        kit_primeiros_socorros_retorno === "true",
-        equip_obrigatorio_retorno === "true",
-        equip_acessorio_retorno === "true",
-        problemas_mecanicos === "true",
-        incidentes === "true",
-        problema_portas_janelas === "true",
-        manutencao_preventiva === "true",
-        pronto_prox_dia === "true",
-        obs_retorno || null,
-      ];
-      const result = await pool.query(insertQuery, insertValues);
-      if (result.rows.length > 0) {
-        const newChecklistId = result.rows[0].id;
-        const mensagem = `Checklist criado (ID: ${newChecklistId}) para motorista ${motorista_id}`;
-        await pool.query(
-          `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-           VALUES ($1, 'CREATE', 'checklists_onibus', $2, $3)`,
-          [userId, newChecklistId, mensagem]
-        );
-        return res.json({
-          success: true,
-          message: "Checklist cadastrado com sucesso!",
-          id: newChecklistId,
-        });
-      } else {
-        return res.status(500).json({
-          success: false,
-          message: "Não foi possível inserir o checklist.",
-        });
-      }
-    }
-  } catch (error) {
-    console.error("Erro ao salvar checklist_onibus:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Erro interno do servidor." });
-  }
-});
-
-// COCESSAO_ROTA - ALUNOS: Alunos transporte público
-app.get("/api/alunos-transporte-publico", checkPermission("VisualizarAlunosTransportePublico"), async (req, res) => {
-  try {
-    const query = `
-            SELECT
-              id,
-              id_matricula,
-              pessoa_nome,
-              transporte_escolar_poder_publico,
-              cep
-            FROM alunos_ativos
-            WHERE LOWER(transporte_escolar_poder_publico) IN ('estadual', 'municipal')
-              AND cep IS NOT NULL
-              AND cep <> ''
-        `;
-    const result = await pool.query(query);
-    return res.json({
-      success: true,
-      data: result.rows,
-    });
-  } catch (error) {
-    console.error("Erro ao buscar alunos para mapear:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno ao buscar alunos para mapear.",
-    });
-  }
-});
-
 // app.get("/api/memorandos/:id/gerar-docx", ...) ...
-app.get(
-  "/api/memorandos/:id/gerar-docx",
-  checkPermission("GerarDocxMemorandos"),
-  async (req, res) => {
-    const { id } = req.params;
-    try {
-      const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [id]);
-      if (result.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Documento não encontrado." });
-      }
-      const memorando = result.rows[0];
+app.get("/api/memorandos/:id/gerar-docx", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Documento não encontrado." });
+    }
+    const memorando = result.rows[0];
 
-      const fs = require("fs");
-      function loadBase64(filePath) {
-        if (!fs.existsSync(filePath)) return null;
-        const file = fs.readFileSync(filePath);
-        return Buffer.from(file).toString("base64");
-      }
+    const fs = require("fs");
+    function loadBase64(filePath) {
+      if (!fs.existsSync(filePath)) return null;
+      const file = fs.readFileSync(filePath);
+      return Buffer.from(file).toString("base64");
+    }
 
-      const logo1Path = path.join(
-        __dirname,
-        "public",
-        "assets",
-        "img",
-        "logo_memorando1.png"
-      );
-      const separadorPath = path.join(
-        __dirname,
-        "public",
-        "assets",
-        "img",
-        "memorando_separador.png"
-      );
-      const logo2Path = path.join(
-        __dirname,
-        "public",
-        "assets",
-        "img",
-        "memorando_logo2.png"
-      );
+    const logo1Path = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "logo_memorando1.png"
+    );
+    const separadorPath = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_separador.png"
+    );
+    const logo2Path = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_logo2.png"
+    );
 
-      const logo1Base64 = loadBase64(logo1Path);
-      const separadorBase64 = loadBase64(separadorPath);
-      const logo2Base64 = loadBase64(logo2Path);
+    const logo1Base64 = loadBase64(logo1Path);
+    const separadorBase64 = loadBase64(separadorPath);
+    const logo2Base64 = loadBase64(logo2Path);
 
-      const {
-        Document,
-        Packer,
-        Paragraph,
-        TextRun,
-        Header,
-        Footer,
-        AlignmentType,
-        HeadingLevel,
-        ImageRun
-      } = require("docx");
-
-      const headerChildren = [];
-      if (logo1Base64) {
-        headerChildren.push(
-          new Paragraph({
-            children: [
-              new ImageRun({
-                data: Buffer.from(logo1Base64, "base64"),
-                transformation: { width: 60, height: 60 },
-              }),
-            ],
-          })
-        );
-      }
+    const headerChildren = [];
+    if (logo1Base64) {
       headerChildren.push(
         new Paragraph({
-          alignment: AlignmentType.RIGHT,
           children: [
-            new TextRun({
-              text: "ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO",
-              bold: true,
-              size: 22,
+            new ImageRun({
+              data: Buffer.from(logo1Base64, "base64"),
+              transformation: { width: 60, height: 60 },
             }),
           ],
         })
       );
-      if (separadorBase64) {
-        headerChildren.push(
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-              new ImageRun({
-                data: Buffer.from(separadorBase64, "base64"),
-                transformation: { width: 510, height: 20 },
-              }),
-            ],
-          })
-        );
-      }
+    }
+    headerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.RIGHT,
+        children: [
+          new TextRun({
+            text: "ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO",
+            bold: true,
+            size: 22,
+          }),
+        ],
+      })
+    );
+    if (separadorBase64) {
+      headerChildren.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new ImageRun({
+              data: Buffer.from(separadorBase64, "base64"),
+              transformation: { width: 510, height: 20 },
+            }),
+          ],
+        })
+      );
+    }
 
-      const footerChildren = [];
-      if (separadorBase64) {
-        footerChildren.push(
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-              new ImageRun({
-                data: Buffer.from(separadorBase64, "base64"),
-                transformation: { width: 510, height: 20 },
-              }),
-            ],
-          })
-        );
-      }
-      if (logo2Base64) {
-        footerChildren.push(
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [
-              new ImageRun({
-                data: Buffer.from(logo2Base64, "base64"),
-                transformation: { width: 160, height: 40 },
-              }),
-            ],
-          })
-        );
-      }
+    const footerChildren = [];
+    if (separadorBase64) {
       footerChildren.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
           children: [
-            new TextRun({
-              text: "SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED\nRua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA\nTelefone: (94) 99293-4500",
-              size: 20,
+            new ImageRun({
+              data: Buffer.from(separadorBase64, "base64"),
+              transformation: { width: 510, height: 20 },
             }),
           ],
         })
       );
-
-      const docBody = [];
-      const docTitle =
-        memorando.document_type === "OFICIO" ? "OFÍCIO" : "MEMORANDO";
-
-      docBody.push(
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          alignment: AlignmentType.JUSTIFIED,
-          children: [
-            new TextRun({
-              text: `${docTitle} N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
-              bold: true,
-              size: 24,
-            }),
-          ],
-        })
-      );
-      docBody.push(new Paragraph({ text: "" }));
-      docBody.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          children: [
-            new TextRun({ text: `A: ${memorando.destinatario}`, size: 24 }),
-          ],
-        })
-      );
-      docBody.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          children: [
-            new TextRun({
-              text: `Assunto: ${memorando.tipo_memorando}`,
-              size: 24,
-            }),
-          ],
-        })
-      );
-      docBody.push(new Paragraph({ text: "" }));
-      docBody.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          children: [new TextRun({ text: "Prezados(as),", size: 24 })],
-        })
-      );
-      docBody.push(new Paragraph({ text: "" }));
-      docBody.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          children: [new TextRun({ text: memorando.corpo || "", size: 24 })],
-        })
-      );
-      docBody.push(new Paragraph({ text: "" }));
-      docBody.push(
-        new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          children: [new TextRun({ text: "Atenciosamente,", size: 24 })],
-        })
-      );
-      docBody.push(new Paragraph({ text: "" }));
-      docBody.push(
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: "DANILO DE MORAIS GUSTAVO", size: 24 })],
-        })
-      );
-      docBody.push(
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [
-            new TextRun({ text: "Gestor de Transporte Escolar", size: 24 }),
-          ],
-        })
-      );
-      docBody.push(
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [new TextRun({ text: "Portaria 118/2023 - GP", size: 24 })],
-        })
-      );
-
-      const doc = new Document({
-        sections: [
-          {
-            headers: {
-              default: new Header({ children: headerChildren }),
-            },
-            footers: {
-              default: new Footer({ children: footerChildren }),
-            },
-            children: docBody,
-          },
-        ],
-      });
-
-      const buffer = await Packer.toBuffer(doc);
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename=documento_${id}.docx`
-      );
-      res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      );
-      return res.send(buffer);
-    } catch (error) {
-      console.error("Erro ao gerar DOCX:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao gerar .docx do documento.",
-      });
     }
+    if (logo2Base64) {
+      footerChildren.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new ImageRun({
+              data: Buffer.from(logo2Base64, "base64"),
+              transformation: { width: 160, height: 40 },
+            }),
+          ],
+        })
+      );
+    }
+    footerChildren.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({
+            text: "SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED\nRua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA\nTelefone: (94) 99293-4500",
+            size: 20,
+          }),
+        ],
+      })
+    );
+
+    const { Document, Packer, Paragraph, TextRun, Header, Footer, AlignmentType, HeadingLevel, ImageRun } = require("docx");
+    const docBody = [];
+
+    const docTitle = memorando.document_type === "OFICIO" ? "OFÍCIO" : "MEMORANDO";
+
+    docBody.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_2,
+        alignment: AlignmentType.JUSTIFIED,
+        children: [
+          new TextRun({
+            text: `${docTitle} N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
+            bold: true,
+            size: 24,
+          }),
+        ],
+      })
+    );
+    docBody.push(new Paragraph({ text: "" }));
+    docBody.push(
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        children: [
+          new TextRun({ text: `A: ${memorando.destinatario}`, size: 24 }),
+        ],
+      })
+    );
+    docBody.push(
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        children: [
+          new TextRun({
+            text: `Assunto: ${memorando.tipo_memorando}`,
+            size: 24,
+          }),
+        ],
+      })
+    );
+    docBody.push(new Paragraph({ text: "" }));
+    docBody.push(
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        children: [new TextRun({ text: "Prezados(as),", size: 24 })],
+      })
+    );
+    docBody.push(new Paragraph({ text: "" }));
+    docBody.push(
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        children: [new TextRun({ text: memorando.corpo || "", size: 24 })],
+      })
+    );
+    docBody.push(new Paragraph({ text: "" }));
+    docBody.push(
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        children: [new TextRun({ text: "Atenciosamente,", size: 24 })],
+      })
+    );
+    docBody.push(new Paragraph({ text: "" }));
+    docBody.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: "DANILO DE MORAIS GUSTAVO", size: 24 })],
+      })
+    );
+    docBody.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({ text: "Gestor de Transporte Escolar", size: 24 }),
+        ],
+      })
+    );
+    docBody.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new TextRun({ text: "Portaria 118/2023 - GP", size: 24 })],
+      })
+    );
+
+    const doc = new Document({
+      sections: [
+        {
+          headers: {
+            default: new Header({ children: headerChildren }),
+          },
+          footers: {
+            default: new Footer({ children: footerChildren }),
+          },
+          children: docBody,
+        },
+      ],
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=documento_${id}.docx`
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    return res.send(buffer);
+  } catch (error) {
+    console.error("Erro ao gerar DOCX:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar .docx do documento.",
+    });
   }
-);
+});
 
 // app.get("/api/memorandos/:id", ...) ...
-app.get("/api/memorandos/:id", checkPermission("VisualizarMemorandos"), async (req, res) => {
+app.get("/api/memorandos/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [
       id,
     ]);
+
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -5587,7 +5292,7 @@ app.get("/api/memorandos/:id", checkPermission("VisualizarMemorandos"), async (r
 });
 
 // app.delete("/api/memorandos/:id", ...) ...
-app.delete("/api/memorandos/:id", checkPermission("GerenciarMemorandos"), async (req, res) => {
+app.delete("/api/memorandos/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const userId = req.session?.userId || null;
@@ -5614,12 +5319,14 @@ app.delete("/api/memorandos/:id", checkPermission("GerenciarMemorandos"), async 
         message: "Documento não encontrado.",
       });
     }
+
     const mensagem = `Documento excluído: ${docType} - ${tipo}`;
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
        VALUES ($1, 'DELETE', 'memorandos', $2, $3)`,
       [userId, id, mensagem]
     );
+
     return res.json({
       success: true,
       message: "Documento excluído com sucesso.",
@@ -5634,1320 +5341,1335 @@ app.delete("/api/memorandos/:id", checkPermission("GerenciarMemorandos"), async 
 });
 
 // app.get("/api/memorandos/:id/gerar-pdf", ...) ...
-app.get(
-  "/api/memorandos/:id/gerar-pdf",
-  checkPermission("GerarPdfMemorandos"),
-  async (req, res) => {
-    const { id } = req.params;
-    try {
-      const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [
-        id,
-      ]);
-      if (result.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Documento não encontrado." });
-      }
-      const memorando = result.rows[0];
-      const docTitle =
-        memorando.document_type === "OFICIO" ? "OFÍCIO" : "MEMORANDO";
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename=documento_${id}.pdf`
-      );
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
-
-      const logoPath = path.join(
-        __dirname,
-        "public",
-        "assets",
-        "img",
-        "logo_memorando1.png"
-      );
-      const separadorPath = path.join(
-        __dirname,
-        "public",
-        "assets",
-        "img",
-        "memorando_separador.png"
-      );
-      const logo2Path = path.join(
-        __dirname,
-        "public",
-        "assets",
-        "img",
-        "memorando_logo2.png"
-      );
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica-Bold")
-        .text(
-          `${docTitle} N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
-          {
-            align: "justify",
-          }
-        )
-        .moveDown();
-      const corpoAjustado = memorando.corpo
-        .replace(/\r\n/g, "\n")
-        .replace(/\r/g, "");
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(`A: ${memorando.destinatario}`, { align: "justify" })
-        .text(`Assunto: ${memorando.tipo_memorando}`, { align: "justify" })
-        .moveDown()
-        .text("Prezados(as),", { align: "justify" })
-        .moveDown()
-        .text(corpoAjustado, { align: "justify" })
-        .moveDown();
-      const spaceNeededForSignature = 100;
-      if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-        doc.addPage();
-      }
-      const signatureY = doc.page.height - 270;
-      doc.y = signatureY;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text("Atenciosamente,", { align: "justify" })
-        .moveDown(2)
-        .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
-        .text("Gestor de Transporte Escolar", { align: "center" })
-        .text("Portaria 118/2023 - GP", { align: "center" });
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text(
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED",
-          50,
-          doc.page.height - 85,
-          {
-            width: doc.page.width - 100,
-            align: "center",
-          }
-        )
-        .text(
-          "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-          {
-            align: "center",
-          }
-        )
-        .text("Telefone: (94) 99293-4500", { align: "center" });
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao gerar PDF.",
-      });
+app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM memorandos WHERE id = $1", [
+      id,
+    ]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Documento não encontrado." });
     }
+    const memorando = result.rows[0];
+
+    const docTitle = memorando.document_type === "OFICIO" ? "OFÍCIO" : "MEMORANDO";
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename=documento_${id}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "logo_memorando1.png"
+    );
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    const separadorPath = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_separador.png"
+    );
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text(
+        `${docTitle} N.º ${memorando.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
+        {
+          align: "justify",
+        }
+      )
+      .moveDown();
+
+    const corpoAjustado = memorando.corpo
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "");
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`A: ${memorando.destinatario}`, { align: "justify" })
+      .text(`Assunto: ${memorando.tipo_memorando}`, { align: "justify" })
+      .moveDown()
+      .text("Prezados(as),", { align: "justify" })
+      .moveDown()
+      .text(corpoAjustado, { align: "justify" })
+      .moveDown();
+
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
+      .text("Gestor de Transporte Escolar", { align: "center" })
+      .text("Portaria 118/2023 - GP", { align: "center" });
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    const logo2Path = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_logo2.png"
+    );
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED",
+        50,
+        doc.page.height - 85,
+        {
+          width: doc.page.width - 100,
+          align: "center",
+        }
+      )
+      .text(
+        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        {
+          align: "center",
+        }
+      )
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF.",
+    });
   }
-);
+});
+
+// EXEMPLO COMPLETO DAS APIS ATUALIZADAS SEM EXPLICAÇÕES ADICIONAIS
 
 // ============================================================================
 // COMPROVANTE NÃO APROVADO - MUNICIPAL
 // ============================================================================
-app.get(
-  "/api/comprovante-nao-aprovado/:alunoId/gerar-pdf",
-  checkPermission("GerarPdfComprovantes"),
-  async (req, res) => {
-    const { alunoId } = req.params;
-    const signer = req.query.signer || "filiacao1";
-    try {
-      const query = `
-        SELECT
-          a.id,
-          a.pessoa_nome AS aluno_nome,
-          a.cpf,
-          e.nome AS escola_nome,
-          a.turma,
-          a.filiacao_1,
-          a.filiacao_2,
-          a.responsavel
-        FROM alunos_ativos a
-        LEFT JOIN escolas e ON e.id = a.escola_id
-        WHERE a.id = $1
-      `;
-      const result = await pool.query(query, [alunoId]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ success: false, message: "Aluno não encontrado." });
-      }
-      const aluno = result.rows[0];
-
-      let signerName = "______________________";
-      if (signer === "filiacao2") {
-        signerName = aluno.filiacao_2 || "______________________";
-      } else if (signer === "responsavel") {
-        signerName = aluno.responsavel || "______________________";
-      } else {
-        signerName = aluno.filiacao_1 || "______________________";
-      }
-
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader("Content-Disposition", `inline; filename=nao_aprovado_${alunoId}.pdf`);
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
-
-      const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-      const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-      const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica-Bold")
-        .text("COMPROVANTE DE NÃO APROVAÇÃO Nº 2025", {
-          align: "justify",
-        })
-        .moveDown();
-
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
-        .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
-        .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
-        .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
-        .moveDown()
-        .text(
-          "Informamos que o(a) aluno(a) acima mencionado não atende aos critérios estabelecidos para uso do Transporte Escolar. Portanto, não foi possível aprovar seu cadastro.",
-          { align: "justify" }
-        )
-        .moveDown()
-        .text("Motivo da Não Aprovação:", { align: "justify", underline: true })
-        .moveDown()
-        .text("• Distância insuficiente ou outros critérios não cumpridos;", {
-          align: "justify",
-        })
-        .moveDown()
-        .text("Em caso de dúvidas, favor dirigir-se à SEMED.", {
-          align: "justify",
-        })
-        .moveDown()
-        .text(
-          `Eu, ${signerName}, declaro ciência do resultado e estou ciente de que, caso haja nova documentação ou mudança de endereço, devo procurar a Secretaria de Educação para nova avaliação.`,
-          { align: "justify" }
-        )
-        .moveDown();
-
-      const spaceNeededForSignature = 100;
-      if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-        doc.addPage();
-      }
-      const signatureY = doc.page.height - 270;
-      doc.y = signatureY;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text("Atenciosamente,", { align: "justify" })
-        .moveDown(2)
-        .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
-        .text("Gestor de Transporte Escolar", { align: "center" })
-        .text("Portaria 118/2023 - GP", { align: "center" });
-
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
-          width: doc.page.width - 100,
-          align: "center",
-        })
-        .text(
-          "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-          { align: "center" }
-        )
-        .text("Telefone: (94) 99293-4500", { align: "center" });
-
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar PDF (Não Aprovado Municipal):", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao gerar comprovante de não aprovação.",
-      });
+app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  // Recebe quem assina pelo query param (opcional)
+  const signer = req.query.signer || "filiacao1";
+  try {
+    // Consulta do aluno
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
+    const aluno = result.rows[0];
+
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    // Gera PDF
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=nao_aprovado_${alunoId}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("COMPROVANTE DE NÃO APROVAÇÃO Nº 2025", {
+        align: "justify",
+      })
+      .moveDown();
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text("Informamos que o(a) aluno(a) acima mencionado não atende aos critérios estabelecidos para uso do Transporte Escolar. Portanto, não foi possível aprovar seu cadastro.", { align: "justify" })
+      .moveDown()
+      .text("Motivo da Não Aprovação:", { align: "justify", underline: true })
+      .moveDown()
+      .text("• Distância insuficiente ou outros critérios não cumpridos;", { align: "justify" })
+      .moveDown()
+      .text("Em caso de dúvidas, favor dirigir-se à SEMED.", { align: "justify" })
+      .moveDown()
+      .text(
+        `Eu, ${signerName}, declaro ciência do resultado e estou ciente de que, caso haja nova documentação ou mudança de endereço, devo procurar a Secretaria de Educação para nova avaliação.`,
+        { align: "justify" }
+      )
+      .moveDown();
+
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
+      .text("Gestor de Transporte Escolar", { align: "center" })
+      .text("Portaria 118/2023 - GP", { align: "center" });
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center",
+      })
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF (Não Aprovado Municipal):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de não aprovação.",
+    });
   }
-);
+});
+
 
 // ============================================================================
 // COMPROVANTE APROVADO - MUNICIPAL
 // ============================================================================
-app.get(
-  "/api/comprovante-aprovado/:alunoId/gerar-pdf",
-  checkPermission("GerarPdfComprovantes"),
-  async (req, res) => {
-    const { alunoId } = req.params;
-    const signer = req.query.signer || "filiacao1";
-    try {
-      const query = `
-        SELECT
-          a.id,
-          a.pessoa_nome AS aluno_nome,
-          a.cpf,
-          e.nome AS escola_nome,
-          a.turma,
-          a.filiacao_1,
-          a.filiacao_2,
-          a.responsavel
-        FROM alunos_ativos a
-        LEFT JOIN escolas e ON e.id = a.escola_id
-        WHERE a.id = $1
-      `;
-      const result = await pool.query(query, [alunoId]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ success: false, message: "Aluno não encontrado." });
-      }
-      const aluno = result.rows[0];
-
-      let signerName = "______________________";
-      if (signer === "filiacao2") {
-        signerName = aluno.filiacao_2 || "______________________";
-      } else if (signer === "responsavel") {
-        signerName = aluno.responsavel || "______________________";
-      } else {
-        signerName = aluno.filiacao_1 || "______________________";
-      }
-
-      const solQuery = `
-        SELECT
-          id AS solicitacao_id
-        FROM solicitacoes_transporte
-        WHERE aluno_id = $1
-        ORDER BY id DESC
-        LIMIT 1
-      `;
-      const solResult = await pool.query(solQuery, [alunoId]);
-      let numeroProtocolo = "000";
-      if (solResult.rows.length > 0) {
-        numeroProtocolo = solResult.rows[0].solicitacao_id;
-      }
-
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader("Content-Disposition", `inline; filename=aprovado_${alunoId}.pdf`);
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
-
-      const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-      const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-      const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica-Bold")
-        .text(`COMPROVANTE DE APROVAÇÃO Nº ${numeroProtocolo}`, {
-          align: "justify",
-        })
-        .moveDown(1);
-
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
-        .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
-        .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
-        .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
-        .moveDown()
-        .text(
-          "O(a) aluno(a) acima mencionado(a) atende aos critérios estabelecidos e está devidamente autorizado(a) a usufruir do Transporte Escolar, conforme verificação e aprovação da Secretaria Municipal de Educação.",
-          { align: "justify" }
-        )
-        .moveDown()
-        .text(
-          `Eu, ${signerName}, declaro estar ciente das regras de utilização do transporte escolar, bem como da necessidade de manter os dados atualizados junto à SEMED.`,
-          { align: "justify" }
-        )
-        .moveDown();
-
-      const spaceNeededForSignature = 100;
-      if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-        doc.addPage();
-      }
-      const signatureY = doc.page.height - 270;
-      doc.y = signatureY;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text("Atenciosamente,", { align: "justify" })
-        .moveDown(2)
-        .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
-        .text("Gestor de Transporte Escolar", { align: "center" })
-        .text("Portaria 118/2023 - GP", { align: "center" });
-
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
-          width: doc.page.width - 100,
-          align: "center",
-        })
-        .text(
-          "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-          { align: "center" }
-        )
-        .text("Telefone: (94) 99293-4500", { align: "center" });
-
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao gerar comprovante de aprovação.",
-      });
+app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  const signer = req.query.signer || "filiacao1";
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
+    const aluno = result.rows[0];
+
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    const solQuery = `
+      SELECT
+        id AS solicitacao_id
+      FROM solicitacoes_transporte
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const solResult = await pool.query(solQuery, [alunoId]);
+    let numeroProtocolo = "000";
+    if (solResult.rows.length > 0) {
+      numeroProtocolo = solResult.rows[0].solicitacao_id;
+    }
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=aprovado_${alunoId}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text(`COMPROVANTE DE APROVAÇÃO Nº ${numeroProtocolo}`, {
+        align: "justify",
+      })
+      .moveDown(1);
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        "O(a) aluno(a) acima mencionado(a) atende aos critérios estabelecidos e está devidamente autorizado(a) a usufruir do Transporte Escolar, conforme verificação e aprovação da Secretaria Municipal de Educação.",
+        { align: "justify" }
+      )
+      .moveDown()
+      .text(
+        `Eu, ${signerName}, declaro estar ciente das regras de utilização do transporte escolar, bem como da necessidade de manter os dados atualizados junto à SEMED.`,
+        { align: "justify" }
+      )
+      .moveDown();
+
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
+      .text("Gestor de Transporte Escolar", { align: "center" })
+      .text("Portaria 118/2023 - GP", { align: "center" });
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center",
+      })
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de aprovação.",
+    });
   }
-);
+});
+
 
 // ============================================================================
 // COMPROVANTE APROVADO - ESTADUAL
 // ============================================================================
-app.get(
-  "/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf",
-  checkPermission("GerarPdfComprovantesEstadual"),
-  async (req, res) => {
-    const { alunoId } = req.params;
-    const signer = req.query.signer || "filiacao1";
-    try {
-      const query = `
-        SELECT
-          a.id,
-          a.pessoa_nome AS aluno_nome,
-          a.cpf,
-          e.nome AS escola_nome,
-          a.turma,
-          a.turno,
-          a.filiacao_1,
-          a.filiacao_2,
-          a.responsavel
-        FROM alunos_ativos_estadual a
-        LEFT JOIN escolas e ON e.id = a.escola_id
-        WHERE a.id = $1
-      `;
-      const result = await pool.query(query, [alunoId]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Aluno estadual não encontrado."
-        });
-      }
-      const aluno = result.rows[0];
-
-      let signerName = "______________________";
-      if (signer === "filiacao2") {
-        signerName = aluno.filiacao_2 || "______________________";
-      } else if (signer === "responsavel") {
-        signerName = aluno.responsavel || "______________________";
-      } else {
-        signerName = aluno.filiacao_1 || "______________________";
-      }
-
-      const solQuery = `
-        SELECT id
-        FROM solicitacoes_transporte
-        WHERE aluno_id = $1
-        ORDER BY id DESC
-        LIMIT 1
-      `;
-      const solResult = await pool.query(solQuery, [alunoId]);
-      let numeroProtocolo = "000";
-      if (solResult.rows.length > 0) {
-        numeroProtocolo = solResult.rows[0].id;
-      }
-
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename=aprovado_estadual_${alunoId}.pdf`
-      );
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
-
-      const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-      const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-      const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
-          "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica-Bold")
-        .text(`DECLARAÇÃO DE USO DO TRANSPORTE ESCOLAR Nº ${numeroProtocolo}`, {
-          align: "justify",
-        })
-        .moveDown();
-
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
-        .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
-        .text(`Escola (Estadual): ${aluno.escola_nome || ""}`, { align: "justify" })
-        .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
-        .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
-        .moveDown()
-        .text(
-          "Declaramos que o(a) aluno(a) acima mencionado(a) encontra-se APTO(a) para o transporte escolar oferecido pela rede estadual, tendo cumprido os critérios necessários.",
-          { align: "justify" }
-        )
-        .moveDown()
-        .text(
-          `Eu, ${signerName}, responsável, declaro ciência das normas e da obrigatoriedade de manter os dados atualizados junto à SEDUC.`,
-          { align: "justify" }
-        )
-        .moveDown();
-
-      const spaceNeededForSignature = 100;
-      if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-        doc.addPage();
-      }
-      const signatureY = doc.page.height - 270;
-      doc.y = signatureY;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text("Atenciosamente,", { align: "justify" })
-        .moveDown(2)
-        .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
-        .text("Estado do Pará", { align: "center" });
-
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text(
-          "SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC",
-          50,
-          doc.page.height - 85,
-          {
-            width: doc.page.width - 100,
-            align: "center",
-          }
-        )
-        .text(
-          "Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA",
-          { align: "center" }
-        )
-        .text("Telefone: (94) 99999-9999", { align: "center" });
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar PDF (Aprovado Estadual):", error);
-      return res.status(500).json({
+app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  const signer = req.query.signer || "filiacao1";
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.turno,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
+      FROM alunos_ativos_estadual a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({
         success: false,
-        message: "Erro ao gerar comprovante de aprovação (estadual).",
+        message: "Aluno estadual não encontrado."
       });
     }
+    const aluno = result.rows[0];
+
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    const solQuery = `
+      SELECT id
+      FROM solicitacoes_transporte
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const solResult = await pool.query(solQuery, [alunoId]);
+    let numeroProtocolo = "000";
+    if (solResult.rows.length > 0) {
+      numeroProtocolo = solResult.rows[0].id;
+    }
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename=aprovado_estadual_${alunoId}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
+        "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text(`DECLARAÇÃO DE USO DO TRANSPORTE ESCOLAR Nº ${numeroProtocolo}`, {
+        align: "justify",
+      })
+      .moveDown();
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola (Estadual): ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        "Declaramos que o(a) aluno(a) acima mencionado(a) encontra-se APTO(a) para o transporte escolar oferecido pela rede estadual, tendo cumprido os critérios necessários.",
+        { align: "justify" }
+      )
+      .moveDown()
+      .text(
+        `Eu, ${signerName}, responsável, declaro ciência das normas e da obrigatoriedade de manter os dados atualizados junto à SEDUC.`,
+        { align: "justify" }
+      )
+      .moveDown();
+
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
+      .text("Estado do Pará", { align: "center" });
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(
+        "SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC",
+        50,
+        doc.page.height - 85,
+        {
+          width: doc.page.width - 100,
+          align: "center",
+        }
+      )
+      .text(
+        "Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99999-9999", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF (Aprovado Estadual):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de aprovação (estadual).",
+    });
   }
-);
+});
+
 
 // ============================================================================
 // COMPROVANTE NÃO APROVADO - ESTADUAL
 // ============================================================================
-app.get(
-  "/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf",
-  checkPermission("GerarPdfComprovantesEstadual"),
-  async (req, res) => {
-    const { alunoId } = req.params;
-    const signer = req.query.signer || "filiacao1";
-    try {
-      const query = `
-        SELECT
-          a.id,
-          a.pessoa_nome AS aluno_nome,
-          a.cpf,
-          e.nome AS escola_nome,
-          a.turma,
-          a.turno,
-          a.filiacao_1,
-          a.filiacao_2,
-          a.responsavel
-        FROM alunos_ativos_estadual a
-        LEFT JOIN escolas e ON e.id = a.escola_id
-        WHERE a.id = $1
-      `;
-      const result = await pool.query(query, [alunoId]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Aluno estadual não encontrado."
-        });
-      }
-      const aluno = result.rows[0];
-
-      let signerName = "______________________";
-      if (signer === "filiacao2") {
-        signerName = aluno.filiacao_2 || "______________________";
-      } else if (signer === "responsavel") {
-        signerName = aluno.responsavel || "______________________";
-      } else {
-        signerName = aluno.filiacao_1 || "______________________";
-      }
-
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename=nao_aprovado_estadual_${alunoId}.pdf`
-      );
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
-
-      const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-      const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-      const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
-          "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica-Bold")
-        .text("COMPROVANTE DE NÃO APROVAÇÃO Nº 2025", {
-          align: "justify",
-        })
-        .moveDown();
-
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
-        .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
-        .text(`Escola (Estadual): ${aluno.escola_nome || ""}`, { align: "justify" })
-        .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
-        .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
-        .moveDown()
-        .text(
-          `Eu, ${signerName}, responsável legal pelo(a) aluno(a) acima, estou ciente de que a solicitação de transporte escolar não foi aprovada por não atendimento aos critérios estabelecidos.`,
-          { align: "justify" }
-        )
-        .moveDown()
-        .text(
-          "Para maiores informações, favor dirigir-se à Coordenação de Transporte Escolar da SEDUC.",
-          { align: "justify" }
-        )
-        .moveDown();
-
-      const spaceNeededForSignature = 100;
-      if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-        doc.addPage();
-      }
-      const signatureY = doc.page.height - 270;
-      doc.y = signatureY;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text("Atenciosamente,", { align: "justify" })
-        .moveDown(2)
-        .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
-        .text("Estado do Pará", { align: "center" });
-
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text(
-          "SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC",
-          50,
-          doc.page.height - 85,
-          {
-            width: doc.page.width - 100,
-            align: "center",
-          }
-        )
-        .text(
-          "Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA",
-          { align: "center" }
-        )
-        .text("Telefone: (94) 99999-9999", { align: "center" });
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar PDF (Não Aprovado Estadual):", error);
-      return res.status(500).json({
+app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  const signer = req.query.signer || "filiacao1";
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.turno,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
+      FROM alunos_ativos_estadual a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({
         success: false,
-        message: "Erro ao gerar comprovante de não aprovação (estadual).",
+        message: "Aluno estadual não encontrado."
       });
     }
+    const aluno = result.rows[0];
+
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename=nao_aprovado_estadual_${alunoId}.pdf`
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
+        "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("COMPROVANTE DE NÃO APROVAÇÃO Nº 2025", {
+        align: "justify",
+      })
+      .moveDown();
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola (Estadual): ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        `Eu, ${signerName}, responsável legal pelo(a) aluno(a) acima, estou ciente de que a solicitação de transporte escolar não foi aprovada por não atendimento aos critérios estabelecidos.`,
+        { align: "justify" }
+      )
+      .moveDown()
+      .text(
+        "Para maiores informações, favor dirigir-se à Coordenação de Transporte Escolar da SEDUC.",
+        { align: "justify" }
+      )
+      .moveDown();
+
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
+      .text("Estado do Pará", { align: "center" });
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(
+        "SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC",
+        50,
+        doc.page.height - 85,
+        {
+          width: doc.page.width - 100,
+          align: "center",
+        }
+      )
+      .text(
+        "Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99999-9999", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF (Não Aprovado Estadual):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de não aprovação (estadual).",
+    });
   }
-);
+});
+
 
 // ============================================================================
 // TERMO DE CADASTRO (MUNICIPAL) COM ESCOLHA DE FILIAÇÃO
 // ============================================================================
-app.get(
-  "/api/termo-cadastro/:id/gerar-pdf",
-  checkPermission("GerarPdfTermos"),
-  async (req, res) => {
-    const { id } = req.params;
-    const signer = req.query.signer || "filiacao1";
-    try {
-      const query = `
-        SELECT
-          a.id,
-          a.pessoa_nome AS aluno_nome,
-          a.cpf,
-          e.nome AS escola_nome,
-          a.turma,
-          a.deficiencia,
-          a.rua,
-          a.bairro,
-          a.numero_pessoa_endereco,
-          a.latitude,
-          a.longitude,
-          a.filiacao_1,
-          a.filiacao_2,
-          a.responsavel
-        FROM alunos_ativos a
-        LEFT JOIN escolas e ON e.id = a.escola_id
-        WHERE a.id = $1
-      `;
-      const result = await pool.query(query, [id]);
-      if (result.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Aluno não encontrado." });
-      }
-      const aluno = result.rows[0];
-      let signerName = "______________________";
-      if (signer === "filiacao2") {
-        signerName = aluno.filiacao_2 || "______________________";
-      } else if (signer === "responsavel") {
-        signerName = aluno.responsavel || "______________________";
-      } else {
-        signerName = aluno.filiacao_1 || "______________________";
-      }
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader("Content-Disposition", `inline; filename=termo_cadastro_${id}.pdf`);
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
-
-      const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-      const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-      const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(14)
-        .font("Helvetica-Bold")
-        .text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
-          align: "center",
-          underline: false,
-        });
-      doc.moveDown(1);
-      doc.lineGap(4);
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(`Eu, ${signerName}, `, { align: "justify", continued: true })
-        .text("confirmo que sou o(a) responsável pelo(a) aluno(a) ", {
-          continued: true,
-        })
-        .font("Helvetica-Bold")
-        .text(`${aluno.aluno_nome || ""}`, { continued: true })
-        .font("Helvetica")
-        .text(", portador(a) do CPF nº ", { continued: true })
-        .font("Helvetica-Bold")
-        .text(`${aluno.cpf || ""}`, { continued: true })
-        .font("Helvetica")
-        .text(", devidamente matriculado(a) na Escola ", { continued: true })
-        .font("Helvetica-Bold")
-        .text(`${aluno.escola_nome || ""}`, { continued: true })
-        .font("Helvetica")
-        .text(". Residente no endereço: ", { continued: true })
-        .font("Helvetica-Bold")
-        .text(`${aluno.rua || ""}`, { continued: true })
-        .font("Helvetica")
-        .text(", nº ", { continued: true })
-        .font("Helvetica-Bold")
-        .text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
-        .font("Helvetica")
-        .text(", Bairro ", { continued: true })
-        .font("Helvetica-Bold")
-        .text(`${aluno.bairro || ""}`, { continued: true })
-        .font("Helvetica")
-        .text(
-          ". Declaro, para os devidos fins, a veracidade das informações acima, bem como minha plena consciência e responsabilidade sobre os dados fornecidos, estando ciente de que a omissão ou falsidade de dados pode acarretar o cancelamento do direito ao transporte e responsabilizações legais cabíveis."
-        );
-      doc.moveDown(1);
-      doc.font("Helvetica-Bold").text("CRITÉRIOS DE ELEGIBILIDADE:", { align: "left" });
-      doc.font("Helvetica");
-
-      const criterios = [
-        "Idade Mínima: 4 (quatro) anos completos até 31 de março do ano vigente.",
-        "Distância Mínima para Educação Infantil: residência a mais de 1,5 km da escola e para Ensino Fundamental e EJA: residência a mais de 2 km da escola.",
-        "Alunos com Necessidades Especiais: apresentar laudo médico. Priorização conforme a necessidade, demandando transporte adaptado."
-      ];
-
-      doc.moveDown(0.5).list(criterios, { align: "justify" });
-      doc.moveDown(1);
-      doc.font("Helvetica").text(
-        "Declaro ciência e concordância com os critérios acima descritos para a utilização do Transporte Escolar no Município de Canaã dos Carajás. Estou ciente de que somente após a verificação desses critérios e a efetivação do cadastro o(a) aluno(a) estará habilitado(a) para o uso do transporte escolar, caso necessário. "
-      );
-      doc.moveDown(1);
-      doc.font("Helvetica").text(
-        "Por meio deste, autorizo o uso da imagem do(a) aluno(a) para fins de reconhecimento facial no sistema de embarque e desembarque do Transporte Escolar, ciente de que tal procedimento visa exclusivamente à segurança e identificação do(a) aluno(a)."
-      );
-      doc.moveDown(2);
-      doc.text("_____________________________________________", { align: "center" });
-      doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
-      doc.moveDown(2);
-
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 100, {
-          width: doc.page.width - 100,
-          align: "center",
-        })
-        .text(
-          "Rua Itamarati, s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-          { align: "center" }
-        )
-        .text("Telefone: (94) 99293-4500", { align: "center" });
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar PDF do termo:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao gerar PDF do termo.",
-      });
+app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  const signer = req.query.signer || "filiacao1";
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.deficiencia,
+        a.rua,
+        a.bairro,
+        a.numero_pessoa_endereco,
+        a.latitude,
+        a.longitude,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno não encontrado." });
     }
+    const aluno = result.rows[0];
+
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_cadastro_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("TERMO DE CONFIRMAÇÃO DE CRITÉRIOS", {
+        align: "center",
+        underline: false,
+      });
+    doc.moveDown(1);
+
+    doc.lineGap(4);
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Eu, ${signerName}, `, { align: "justify", continued: true })
+      .text("confirmo que sou o(a) responsável pelo(a) aluno(a) ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.aluno_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(", portador(a) do CPF nº ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.cpf || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(", devidamente matriculado(a) na Escola ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.escola_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(". Residente no endereço: ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.rua || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(", nº ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.numero_pessoa_endereco || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(", Bairro ", { continued: true })
+      .font("Helvetica-Bold")
+      .text(`${aluno.bairro || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        ". Declaro, para os devidos fins, a veracidade das informações acima, bem como minha plena consciência e responsabilidade sobre os dados fornecidos, estando ciente de que a omissão ou falsidade de dados pode acarretar o cancelamento do direito ao transporte e responsabilizações legais cabíveis."
+      );
+
+    doc.moveDown(1);
+
+    doc.font("Helvetica-Bold").text("CRITÉRIOS DE ELEGIBILIDADE:", { align: "left" });
+    doc.font("Helvetica");
+
+    const criterios = [
+      "Idade Mínima: 4 (quatro) anos completos até 31 de março do ano vigente.",
+      "Distância Mínima para Educação Infantil: residência a mais de 1,5 km da escola e para Ensino Fundamental e EJA: residência a mais de 2 km da escola.",
+      "Alunos com Necessidades Especiais: apresentar laudo médico. Priorização conforme a necessidade, demandando transporte adaptado."
+    ];
+
+    doc.moveDown(0.5).list(criterios, { align: "justify" });
+    doc.moveDown(1);
+    doc.font("Helvetica").text(
+      "Declaro ciência e concordância com os critérios acima descritos para a utilização do Transporte Escolar no Município de Canaã dos Carajás. Estou ciente de que somente após a verificação desses critérios e a efetivação do cadastro o(a) aluno(a) estará habilitado(a) para o uso do transporte escolar, caso necessário. "
+    );
+
+    doc.moveDown(1);
+    doc.font("Helvetica").text(
+      "Por meio deste, autorizo o uso da imagem do(a) aluno(a) para fins de reconhecimento facial no sistema de embarque e desembarque do Transporte Escolar, ciente de que tal procedimento visa exclusivamente à segurança e identificação do(a) aluno(a)."
+    );
+
+    doc.moveDown(2);
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(2);
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 100, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text(
+        "Rua Itamarati, s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF do termo:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF do termo.",
+    });
   }
-);
+});
+
 
 // ============================================================================
 // TERMO DE DESEMBARQUE (MUNICIPAL) - MANTÉM COMO ESTAVA
 // ============================================================================
-app.get(
-  "/api/termo-desembarque/:id/gerar-pdf",
-  checkPermission("GerarPdfTermos"),
-  async (req, res) => {
-    const { id } = req.params;
-    const { signer = "responsavel" } = req.query;
-    try {
-      const query = `
-        SELECT
-          a.id,
-          a.pessoa_nome AS aluno_nome,
-          a.cpf,
-          e.nome AS escola_nome,
-          a.turma,
-          a.deficiencia,
-          a.rua,
-          a.bairro,
-          a.numero_pessoa_endereco,
-          a.latitude,
-          a.longitude,
-          a.responsavel,
-          a.filiacao_1,
-          a.filiacao_2
-        FROM alunos_ativos a
-        LEFT JOIN escolas e ON e.id = a.escola_id
-        WHERE a.id = $1
-      `;
-      const result = await pool.query(query, [id]);
-      if (result.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Aluno não encontrado." });
-      }
-      const aluno = result.rows[0];
-      let signerName = "_______________________________";
-      if (signer === "filiacao1") {
-        signerName = aluno.filiacao_1 || "_______________________________";
-      } else if (signer === "filiacao2") {
-        signerName = aluno.filiacao_2 || "_______________________________";
-      } else {
-        signerName = aluno.responsavel || "_______________________________";
-      }
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader("Content-Disposition", `inline; filename=termo_desembarque_${id}.pdf`);
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
 
-      const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-      const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-      const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(14)
-        .font("Helvetica-Bold")
-        .text("TERMO DE RESPONSABILIDADE PARA DESEMBARQUE DESACOMPANHADO", {
-          align: "center",
-          underline: false,
-        });
-      doc.moveDown(1);
-      doc.lineGap(4);
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(
-          `Eu, ${signerName}, responsável legal pelo(a) aluno(a) `,
-          { align: "justify", continued: true }
-        )
-        .font("Helvetica-Bold")
-        .text(`${aluno.aluno_nome || ""}`, { continued: true })
-        .font("Helvetica")
-        .text(
-          `, CPF: ${aluno.cpf || "___"}, matriculado(a) na escola ${aluno.escola_nome || "___"
-          }, turma ${aluno.turma || "___"
-          }, autorizo, por meio deste documento, o desembarque desacompanhado do(a) estudante no trajeto de transporte escolar.`
-        );
-      doc.moveDown(1);
-      doc
-        .font("Helvetica")
-        .text(
-          "Declaro estar ciente de que esta autorização exime os responsáveis pelo transporte escolar, bem como a Secretaria Municipal de Educação, de quaisquer responsabilidades relativas à segurança e acompanhamento do(a) aluno(a) após o desembarque. "
-        );
-      doc.moveDown(1);
-      doc
-        .text(
-          "Reafirmo minha plena ciência de que tal autorização se aplica exclusivamente ao momento de desembarque, devendo ser respeitadas todas as demais regras e orientações estabelecidas pelo serviço de transporte escolar."
-        );
-      doc.moveDown(2);
-      doc.text("_____________________________________________", { align: "center" });
-      doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
-      doc.moveDown(2);
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 100, {
-          width: doc.page.width - 100,
-          align: "center",
-        })
-        .text(
-          "Rua Itamarati, s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-          { align: "center" }
-        )
-        .text("Telefone: (94) 99293-4500", { align: "center" });
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar PDF do termo de desembarque:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao gerar PDF do termo de desembarque.",
-      });
+app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  // Capturamos o 'signer' da query string. Se não vier nada, definimos como 'responsavel'.
+  const { signer = "responsavel" } = req.query;
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.deficiencia,
+        a.rua,
+        a.bairro,
+        a.numero_pessoa_endereco,
+        a.latitude,
+        a.longitude,
+        a.responsavel,
+        a.filiacao_1,
+        a.filiacao_2
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno não encontrado." });
     }
+    const aluno = result.rows[0];
+
+    // Definimos o nome que será usado para "Eu, XXX, responsável..."
+    let signerName = "_______________________________";
+    if (signer === "filiacao1") {
+      signerName = aluno.filiacao_1 || "_______________________________";
+    } else if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "_______________________________";
+    } else {
+      signerName = aluno.responsavel || "_______________________________";
+    }
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_desembarque_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("TERMO DE RESPONSABILIDADE PARA DESEMBARQUE DESACOMPANHADO", {
+        align: "center",
+        underline: false,
+      });
+    doc.moveDown(1);
+
+    doc.lineGap(4);
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(
+        `Eu, ${signerName}, responsável legal pelo(a) aluno(a) `,
+        { align: "justify", continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.aluno_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `, CPF: ${aluno.cpf || "___"}, matriculado(a) na escola ${aluno.escola_nome || "___"
+        }, turma ${aluno.turma || "___"
+        }, autorizo, por meio deste documento, o desembarque desacompanhado do(a) estudante no trajeto de transporte escolar.`
+      );
+
+    doc.moveDown(1);
+    doc
+      .font("Helvetica")
+      .text(
+        "Declaro estar ciente de que esta autorização exime os responsáveis pelo transporte escolar, bem como a Secretaria Municipal de Educação, de quaisquer responsabilidades relativas à segurança e acompanhamento do(a) aluno(a) após o desembarque. "
+      );
+    doc.moveDown(1);
+    doc
+      .text(
+        "Reafirmo minha plena ciência de que tal autorização se aplica exclusivamente ao momento de desembarque, devendo ser respeitadas todas as demais regras e orientações estabelecidas pelo serviço de transporte escolar."
+      );
+
+    doc.moveDown(2);
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(2);
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 100, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text(
+        "Rua Itamarati, s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        { align: "center" }
+      )
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF do termo de desembarque:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF do termo de desembarque.",
+    });
   }
-);
+});
 
 // ============================================================================
 // TERMO DE AUTORIZAÇÃO DE OUTROS RESPONSÁVEIS (MUNICIPAL)
 // ============================================================================
-app.get(
-  "/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf",
-  checkPermission("GerarPdfTermos"),
-  async (req, res) => {
-    const { id } = req.params;
-    const signer = req.query.signer || "filiacao1";
-    try {
-      const queryAluno = `
-        SELECT
-          a.id,
-          a.pessoa_nome AS aluno_nome,
-          a.cpf,
-          a.filiacao_1,
-          a.filiacao_2,
-          a.responsavel,
-          e.nome AS escola_nome,
-          a.turma
-        FROM alunos_ativos a
-        LEFT JOIN escolas e ON e.id = a.escola_id
-        WHERE a.id = $1
-      `;
-      const result = await pool.query(queryAluno, [id]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ success: false, message: "Aluno não encontrado." });
-      }
-      const aluno = result.rows[0];
+app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  const signer = req.query.signer || "filiacao1";
 
-      let signerName = "______________________";
-      if (signer === "filiacao2") {
-        signerName = aluno.filiacao_2 || "______________________";
-      } else if (signer === "responsavel") {
-        signerName = aluno.responsavel || "______________________";
-      } else {
-        signerName = aluno.filiacao_1 || "______________________";
-      }
-
-      const solQuery = `
-        SELECT id
-        FROM solicitacoes_transporte
-        WHERE aluno_id = $1
-        ORDER BY id DESC
-        LIMIT 1
-      `;
-      const solResult = await pool.query(solQuery, [id]);
-      let solicitacaoId = "000";
-      if (solResult.rows.length > 0) {
-        solicitacaoId = solResult.rows[0].id;
-      }
-
-      const respOutros = await pool.query(
-        "SELECT nome, rg, cpf FROM outros_responsaveis WHERE aluno_id = $1 ORDER BY id ASC",
-        [id]
-      );
-      const listaOutros = respOutros.rows;
-
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader("Content-Disposition", `inline; filename=termo_outros_responsaveis_${id}.pdf`);
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
-
-      const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-      const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-      const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica-Bold")
-        .text(`TERMO DE AUTORIZAÇÃO Nº ${solicitacaoId} - OUTROS RESPONSÁVEIS`, {
-          align: "justify",
-        })
-        .moveDown(1);
-
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
-        .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
-        .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
-        .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
-        .moveDown()
-        .text(
-          `Eu, ${signerName}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar.`,
-          { align: "justify" }
-        )
-        .moveDown();
-
-      doc.text("Pessoas Autorizadas:", { align: "justify" }).moveDown(0.5);
-
-      if (listaOutros.length === 0) {
-        doc.text("Nenhum responsável cadastrado.", { indent: 20 }).moveDown(1);
-      } else {
-        listaOutros.forEach((r) => {
-          doc
-            .text(`Nome: ${r.nome || "___"}, CPF: ${r.cpf || "___"}, RG: ${r.rg || "___"}`, {
-              indent: 20,
-            })
-            .moveDown(0.5);
-        });
-        doc.moveDown(1);
-      }
-
-      doc
-        .text(
-          "Declaro que todos os responsáveis indicados possuem mais de 18 anos e que responderei por quaisquer informações inverídicas.",
-          { align: "justify" }
-        )
-        .moveDown();
-      doc
-        .text(
-          "Para receber o(a) aluno(a), cada responsável indicado deverá apresentar um documento de identificação oficial com foto, comprovando ser a pessoa autorizada. Caso não haja ninguém aguardando ou apresentando identificação idônea no momento do desembarque, o(a) aluno(a) será levado(a) de volta à escola, onde será realizado contato com a família. Na impossibilidade de localizar os familiares ou outro responsável, poderão ser acionados os órgãos competentes de proteção à criança e ao adolescente.",
-          { align: "justify" }
-        )
-        .moveDown(1);
-      doc
-        .text(
-          "Caso essa situação de falta de recepção no ponto ocorra mais de uma vez, o direito de uso do transporte escolar pelo(a) aluno(a) ficará suspenso por tempo indeterminado, como forma de penalidade pela reincidência e falta de compromisso.",
-          { align: "justify" }
-        )
-        .moveDown(2);
-
-      const spaceNeededForSignature = 100;
-      if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
-        doc.addPage();
-      }
-      const signatureY = doc.page.height - 270;
-      doc.y = signatureY;
-      doc.x = 50;
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text("Atenciosamente,", { align: "justify" })
-        .moveDown(2)
-        .text("_____________________________________", { align: "center" })
-        .text("Assinatura do Responsável", { align: "center" });
-
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
-          width: doc.page.width - 100,
-          align: "center",
-        })
-        .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
-          align: "center",
-        })
-        .text("Telefone: (94) 99293-4500", { align: "center" });
-
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar termo de outros responsáveis:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao gerar termo de outros responsáveis.",
-      });
+  try {
+    const queryAluno = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel,
+        e.nome AS escola_nome,
+        a.turma
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(queryAluno, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
-  }
-);
+    const aluno = result.rows[0];
 
-app.post("/api/outros-responsaveis", checkPermission("GerenciarOutrosResponsaveis"), async (req, res) => {
+    // Define quem assina (filiacao1, filiacao2, ou responsavel)
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    const solQuery = `
+      SELECT id
+      FROM solicitacoes_transporte
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const solResult = await pool.query(solQuery, [id]);
+    let solicitacaoId = "000";
+    if (solResult.rows.length > 0) {
+      solicitacaoId = solResult.rows[0].id;
+    }
+
+    const respOutros = await pool.query(
+      "SELECT nome, rg, cpf FROM outros_responsaveis WHERE aluno_id = $1 ORDER BY id ASC",
+      [id]
+    );
+    const listaOutros = respOutros.rows;
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_outros_responsaveis_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text(`TERMO DE AUTORIZAÇÃO Nº ${solicitacaoId} - OUTROS RESPONSÁVEIS`, {
+        align: "justify",
+      })
+      .moveDown(1);
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        `Eu, ${signerName}, responsável legal pelo(a) aluno(a) acima, autorizo as pessoas abaixo (sem parentesco direto) a buscá-lo(a) no ponto de embarque/desembarque do Transporte Escolar.`,
+        { align: "justify" }
+      )
+      .moveDown();
+
+    doc
+      .text("Pessoas Autorizadas:", { align: "justify" })
+      .moveDown(0.5);
+
+    if (listaOutros.length === 0) {
+      doc
+        .text("Nenhum responsável cadastrado.", { indent: 20 })
+        .moveDown(1);
+    } else {
+      listaOutros.forEach((r) => {
+        doc
+          .text(`Nome: ${r.nome || "___"}, CPF: ${r.cpf || "___"}, RG: ${r.rg || "___"}`, {
+            indent: 20,
+          })
+          .moveDown(0.5);
+      });
+      doc.moveDown(1);
+    }
+
+    doc
+      .text(
+        "Declaro que todos os responsáveis indicados possuem mais de 18 anos e que responderei por quaisquer informações inverídicas.",
+        { align: "justify" }
+      )
+      .moveDown();
+
+    doc
+      .text(
+        "Para receber o(a) aluno(a), cada responsável indicado deverá apresentar um documento de identificação oficial com foto, comprovando ser a pessoa autorizada. Caso não haja ninguém aguardando ou apresentando identificação idônea no momento do desembarque, o(a) aluno(a) será levado(a) de volta à escola, onde será realizado contato com a família. Na impossibilidade de localizar os familiares ou outro responsável, poderão ser acionados os órgãos competentes de proteção à criança e ao adolescente.",
+        { align: "justify" }
+      )
+      .moveDown(1);
+
+    doc
+      .text(
+        "Caso essa situação de falta de recepção no ponto ocorra mais de uma vez, o direito de uso do transporte escolar pelo(a) aluno(a) ficará suspenso por tempo indeterminado, como forma de penalidade pela reincidência e falta de compromisso.",
+        { align: "justify" }
+      )
+      .moveDown(2);
+
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("_____________________________________", { align: "center" })
+      .text("Assinatura do Responsável", { align: "center" });
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center",
+      })
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar termo de outros responsáveis:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar termo de outros responsáveis.",
+    });
+  }
+});
+
+app.post("/api/outros-responsaveis", async (req, res) => {
   const { aluno_id, responsaveis } = req.body;
   if (!aluno_id || !Array.isArray(responsaveis)) {
     return res.status(400).json({ success: false, message: "Dados inválidos." });
@@ -6956,7 +6678,9 @@ app.post("/api/outros-responsaveis", checkPermission("GerenciarOutrosResponsavei
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
+      // Se desejar, pode-se apagar todos os antigos antes:
       await client.query("DELETE FROM outros_responsaveis WHERE aluno_id = $1", [aluno_id]);
+
       for (const r of responsaveis) {
         await client.query(
           `INSERT INTO outros_responsaveis (aluno_id, nome, rg, cpf, data_nascimento)
@@ -6989,13 +6713,10 @@ app.post("/api/outros-responsaveis", checkPermission("GerenciarOutrosResponsavei
 // ============================================================================
 // TERMO DE DESEMBARQUE - ESTADUAL (se desejar ter outro endpoint para estadual)
 // ============================================================================
-app.get(
-  "/api/termo-desembarque-estadual/:id/gerar-pdf",
-  checkPermission("GerarPdfTermosEstadual"),
-  async (req, res) => {
-    const { id } = req.params;
-    try {
-      const query = `
+app.get("/api/termo-desembarque-estadual/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const query = `
       SELECT
         a.id,
         a.pessoa_nome AS aluno_nome,
@@ -7008,144 +6729,139 @@ app.get(
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.id = $1
     `;
-      const result = await pool.query(query, [id]);
-      if (result.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Aluno Estadual não encontrado." });
-      }
-      const aluno = result.rows[0];
-
-      const doc = new PDFDocument({ size: "A4", margin: 50 });
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename=termo_desembarque_estadual_${id}.pdf`
-      );
-      res.setHeader("Content-Type", "application/pdf");
-      doc.pipe(res);
-
-      const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
-      const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-      const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
-
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 20, { width: 60 });
-      }
-
-      doc
-        .fontSize(11)
-        .font("Helvetica-Bold")
-        .text(
-          "ESTADO DO PARÁ\n" +
-          "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
-          "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
-          250,
-          20,
-          { width: 300, align: "right" }
-        );
-
-      if (fs.existsSync(separadorPath)) {
-        const separadorX = (doc.page.width - 510) / 2;
-        const separadorY = 90;
-        doc.image(separadorPath, separadorX, separadorY, { width: 510 });
-      }
-
-      doc.y = 130;
-      doc.x = 50;
-      doc
-        .fontSize(14)
-        .font("Helvetica-Bold")
-        .text("TERMO DE RESPONSABILIDADE PARA DESEMBARQUE DESACOMPANHADO (Estadual)", {
-          align: "center",
-          underline: false,
-        });
-      doc.moveDown(1);
-
-      doc.lineGap(4);
-      doc
-        .fontSize(12)
-        .font("Helvetica")
-        .text(
-          `Eu, ${aluno.responsavel || "______________________"}, responsável legal pelo(a) aluno(a) `,
-          { align: "justify", continued: true }
-        )
-        .font("Helvetica-Bold")
-        .text(`${aluno.aluno_nome || ""}`, { continued: true })
-        .font("Helvetica")
-        .text(
-          `, CPF: ${aluno.cpf || "___"}, matriculado(a) na escola (Estadual) ${aluno.escola_nome || "___"}, turma ${aluno.turma || "___"}, turno ${aluno.turno || "___"}, autorizo, por meio deste documento, o desembarque desacompanhado do(a) estudante no trajeto de transporte escolar fornecido pela SEDUC.`
-        );
-
-      doc.moveDown(1);
-      doc
-        .font("Helvetica")
-        .text(
-          "Declaro estar ciente de que esta autorização exime os responsáveis pelo transporte escolar, bem como a Secretaria de Estado de Educação, de quaisquer responsabilidades relativas à segurança e acompanhamento do(a) aluno(a) após o desembarque."
-        );
-      doc.moveDown(1);
-      doc
-        .text(
-          "Reafirmo minha plena ciência de que tal autorização se aplica exclusivamente ao momento de desembarque, devendo ser respeitadas todas as demais regras e orientações estabelecidas pelo serviço de transporte escolar estadual."
-        );
-
-      doc.moveDown(2);
-      doc.text("_____________________________________________", { align: "center" });
-      doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
-      doc.moveDown(2);
-
-      if (fs.existsSync(separadorPath)) {
-        const footerSepX = (doc.page.width - 510) / 2;
-        const footerSepY = doc.page.height - 160;
-        doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
-      }
-      if (fs.existsSync(logo2Path)) {
-        const logo2X = (doc.page.width - 160) / 2;
-        const logo2Y = doc.page.height - 150;
-        doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
-      }
-
-      doc
-        .fontSize(10)
-        .font("Helvetica")
-        .text("SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC", 50, doc.page.height - 100, {
-          width: doc.page.width - 100,
-          align: "center",
-        })
-        .text("Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA", {
-          align: "center",
-        })
-        .text("Telefone: (94) 99999-9999", { align: "center" });
-
-      doc.end();
-    } catch (error) {
-      console.error("Erro ao gerar PDF do termo de desembarque (Estadual):", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao gerar PDF do termo de desembarque (estadual).",
-      });
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno Estadual não encontrado." });
     }
+    const aluno = result.rows[0];
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=termo_desembarque_estadual_${id}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "SECRETARIA DE ESTADO DE EDUCAÇÃO (SEDUC)\n" +
+        "COORDENAÇÃO DE TRANSPORTE ESCOLAR",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .text("TERMO DE RESPONSABILIDADE PARA DESEMBARQUE DESACOMPANHADO (Estadual)", {
+        align: "center",
+        underline: false,
+      });
+    doc.moveDown(1);
+
+    doc.lineGap(4);
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(
+        `Eu, ${aluno.responsavel || "_______________________________"}, responsável legal pelo(a) aluno(a) `,
+        { align: "justify", continued: true }
+      )
+      .font("Helvetica-Bold")
+      .text(`${aluno.aluno_nome || ""}`, { continued: true })
+      .font("Helvetica")
+      .text(
+        `, CPF: ${aluno.cpf || "___"}, matriculado(a) na escola (Estadual) ${aluno.escola_nome || "___"}, turma ${aluno.turma || "___"
+        }, turno ${aluno.turno || "___"}, autorizo, por meio deste documento, o desembarque desacompanhado do(a) estudante no trajeto de transporte escolar fornecido pela SEDUC.`
+      );
+
+    doc.moveDown(1);
+    doc
+      .font("Helvetica")
+      .text(
+        "Declaro estar ciente de que esta autorização exime os responsáveis pelo transporte escolar, bem como a Secretaria de Estado de Educação, de quaisquer responsabilidades relativas à segurança e acompanhamento do(a) aluno(a) após o desembarque."
+      );
+    doc.moveDown(1);
+    doc
+      .text(
+        "Reafirmo minha plena ciência de que tal autorização se aplica exclusivamente ao momento de desembarque, devendo ser respeitadas todas as demais regras e orientações estabelecidas pelo serviço de transporte escolar estadual."
+      );
+
+    doc.moveDown(2);
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(2);
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC", 50, doc.page.height - 100, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA", {
+        align: "center",
+      })
+      .text("Telefone: (94) 99999-9999", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF do termo de desembarque (Estadual):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF do termo de desembarque (estadual).",
+    });
   }
-);
+});
+
 
 // Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
-app.post(
-  "/api/solicitacoes-transporte",
-  checkPermission("CriarSolicitacoesTransporte"),
-  async (req, res) => {
-    try {
-      const {
-        aluno_id,
-        status,
-        motivo,
-        tipo_fluxo,
-        menor10_acompanhado,
-        responsaveis_extras,
-        desembarque_sozinho_10a12,
-      } = req.body;
+app.post("/api/solicitacoes-transporte", async (req, res) => {
+  try {
+    const {
+      aluno_id,
+      status,
+      motivo,
+      tipo_fluxo,
+      menor10_acompanhado,
+      responsaveis_extras,
+      desembarque_sozinho_10a12,
+    } = req.body;
 
-      const protocoloGerado = "PROTO-" + Date.now();
+    const protocoloGerado = "PROTO-" + Date.now();
 
-      const insertQuery = `
+    const insertQuery = `
       INSERT INTO solicitacoes_transporte (
         protocolo,
         aluno_id,
@@ -7160,111 +6876,111 @@ app.post(
       RETURNING id
     `;
 
-      const values = [
-        protocoloGerado,
-        aluno_id,
-        status,
-        motivo || null,
-        tipo_fluxo,
-        menor10_acompanhado,
-        JSON.stringify(responsaveis_extras || []),
-        desembarque_sozinho_10a12,
-      ];
+    const values = [
+      protocoloGerado,
+      aluno_id,
+      status,
+      motivo || null,                       // caso o motivo não venha preenchido
+      tipo_fluxo,
+      menor10_acompanhado,
+      JSON.stringify(responsaveis_extras || []),
+      desembarque_sozinho_10a12,
+    ];
 
-      const result = await pool.query(insertQuery, values);
-      return res.json({ success: true, id: result.rows[0].id });
-    } catch (err) {
-      console.error("Erro ao criar solicitação de transporte", err);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno ao criar solicitação",
-      });
-    }
+    const result = await pool.query(insertQuery, values);
+    return res.json({ success: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error("Erro ao criar solicitação de transporte", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao criar solicitação"
+    });
   }
-);
+});
+
 
 // Import alunos ativos
-app.post(
-  "/api/import-alunos-ativos",
-  checkPermission("ImportarAlunosAtivos"),
-  async (req, res) => {
-    try {
-      const { alunos, escolaId } = req.body;
-      if (!alunos || !Array.isArray(alunos)) {
-        return res.json({ success: false, message: "Dados inválidos." });
-      }
-      if (!escolaId) {
-        return res.json({
-          success: false,
-          message: "É necessário informar uma escola.",
-        });
-      }
+app.post("/api/import-alunos-ativos", async (req, res) => {
+  try {
+    const { alunos, escolaId } = req.body;
+    if (!alunos || !Array.isArray(alunos)) {
+      return res.json({ success: false, message: "Dados inválidos." });
+    }
+    if (!escolaId) {
+      return res.json({
+        success: false,
+        message: "É necessário informar uma escola.",
+      });
+    }
 
-      const userId = req.session?.userId || null;
-      const buscaEscola = await pool.query(`SELECT id FROM escolas WHERE id = $1`, [escolaId]);
-      if (buscaEscola.rows.length === 0) {
-        return res.json({ success: false, message: "Escola não encontrada." });
-      }
+    const userId = req.session?.userId || null;
+    const buscaEscola = await pool.query(
+      `SELECT id FROM escolas WHERE id = $1`,
+      [escolaId]
+    );
+    if (buscaEscola.rows.length === 0) {
+      return res.json({ success: false, message: "Escola não encontrada." });
+    }
 
-      for (const aluno of alunos) {
-        const {
-          id_matricula,
-          UNIDADE_ENSINO,
-          ANO,
-          MODALIDADE,
-          FORMATO_LETIVO,
-          TURMA,
-          pessoa_nome,
-          cpf,
-          transporte_escolar_poder_publico,
-          cep,
-          bairro,
-          numero_pessoa_endereco,
-          filiacao_1,
-          numero_telefone,
-          filiacao_2,
-          RESPONSAVEL,
-          deficiencia,
-        } = aluno;
+    for (const aluno of alunos) {
+      const {
+        id_matricula,
+        UNIDADE_ENSINO,
+        ANO,
+        MODALIDADE,
+        FORMATO_LETIVO,
+        TURMA,
+        pessoa_nome,
+        cpf,
+        transporte_escolar_poder_publico,
+        cep,
+        bairro,
+        numero_pessoa_endereco, // <== NOVO CAMPO VINDO DO XLSX
+        filiacao_1,
+        numero_telefone,
+        filiacao_2,
+        RESPONSAVEL,
+        deficiencia,
+      } = aluno;
 
-        let defArray = [];
-        try {
-          if (typeof deficiencia === "string") {
-            defArray = JSON.parse(deficiencia);
-            if (!Array.isArray(defArray)) defArray = [];
-          }
-        } catch {
-          defArray = [];
+      let defArray = [];
+      try {
+        if (typeof deficiencia === "string") {
+          defArray = JSON.parse(deficiencia);
+          if (!Array.isArray(defArray)) defArray = [];
         }
+      } catch {
+        defArray = [];
+      }
 
-        let alreadyExists = false;
-        if (cpf) {
-          const check = await pool.query(
-            `SELECT id FROM alunos_ativos 
+      let alreadyExists = false;
+      if (cpf) {
+        const check = await pool.query(
+          `SELECT id FROM alunos_ativos 
                      WHERE (cpf = $1 AND cpf <> '')
                        OR (id_matricula = $2 AND id_matricula IS NOT NULL)`,
-            [cpf, id_matricula]
-          );
-          if (check.rows.length > 0) {
-            alreadyExists = true;
-          }
-        } else if (id_matricula) {
-          const check = await pool.query(
-            `SELECT id FROM alunos_ativos 
+          [cpf, id_matricula]
+        );
+        if (check.rows.length > 0) {
+          alreadyExists = true;
+        }
+      } else if (id_matricula) {
+        const check = await pool.query(
+          `SELECT id FROM alunos_ativos 
                      WHERE id_matricula = $1 AND id_matricula IS NOT NULL`,
-            [id_matricula]
-          );
-          if (check.rows.length > 0) {
-            alreadyExists = true;
-          }
+          [id_matricula]
+        );
+        if (check.rows.length > 0) {
+          alreadyExists = true;
         }
+      }
 
-        if (alreadyExists) {
-          continue;
-        }
+      if (alreadyExists) {
+        continue;
+      }
 
-        await pool.query(
-          `INSERT INTO alunos_ativos(
+      await pool.query(
+        `INSERT INTO alunos_ativos(
                     id_matricula,
                     escola_id,
                     ano,
@@ -7276,7 +6992,7 @@ app.post(
                     transporte_escolar_poder_publico,
                     cep,
                     bairro,
-                    numero_pessoa_endereco,
+                    numero_pessoa_endereco,  -- <== INSERINDO NOVA COLUNA
                     filiacao_1,
                     numero_telefone,
                     filiacao_2,
@@ -7289,82 +7005,79 @@ app.post(
                     $11, $12, $13, $14, $15,
                     $16, $17
                 )`,
-          [
-            id_matricula || null,
-            escolaId,
-            ANO || null,
-            MODALIDADE || null,
-            FORMATO_LETIVO || null,
-            TURMA || null,
-            pessoa_nome || null,
-            cpf || null,
-            transporte_escolar_poder_publico || null,
-            cep || null,
-            bairro || null,
-            numero_pessoa_endereco || null,
-            filiacao_1 || null,
-            numero_telefone || null,
-            filiacao_2 || null,
-            RESPONSAVEL || null,
-            defArray,
-          ]
-        );
-      }
-
-      const mensagem = `Importados alunos para a escola ID ${escolaId}`;
-      await pool.query(
-        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-             VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
-        [userId, mensagem]
+        [
+          id_matricula || null,
+          escolaId,
+          ANO || null,
+          MODALIDADE || null,
+          FORMATO_LETIVO || null,
+          TURMA || null,
+          pessoa_nome || null,
+          cpf || null,
+          transporte_escolar_poder_publico || null,
+          cep || null,
+          bairro || null,
+          numero_pessoa_endereco || null,
+          filiacao_1 || null,
+          numero_telefone || null,
+          filiacao_2 || null,
+          RESPONSAVEL || null,
+          defArray,
+        ]
       );
-
-      return res.json({
-        success: true,
-        message: "Alunos importados com sucesso!",
-      });
-    } catch (err) {
-      console.error(err);
-      return res.json({ success: false, message: "Erro ao importar os alunos." });
     }
+
+    const mensagem = `Importados alunos para a escola ID ${escolaId}`;
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+             VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
+      [userId, mensagem]
+    );
+
+    return res.json({
+      success: true,
+      message: "Alunos importados com sucesso!",
+    });
+  } catch (err) {
+    console.error(err);
+    return res.json({ success: false, message: "Erro ao importar os alunos." });
   }
-);
+});
 
 // Rotas (exemplo) - Ajustando para permitir filtros na query
-app.get(
-  "/api/alunos-ativos",
-  checkPermission("VisualizarAlunosAtivos"),
-  async (req, res) => {
-    try {
-      let { escola, bairro, cep, search } = req.query;
-      escola = escola || "";
-      bairro = bairro || "";
-      cep = cep || "";
-      search = search || "";
+app.get("/api/alunos-ativos", async (req, res) => {
+  try {
+    let { escola, bairro, cep, search } = req.query;
+    escola = escola || "";
+    bairro = bairro || "";
+    cep = cep || "";
+    search = search || "";
 
-      let whereClauses = [];
-      if (escola) {
-        whereClauses.push(`e.nome ILIKE '%${escola}%'`);
-      }
-      if (bairro) {
-        whereClauses.push(`a.bairro ILIKE '%${bairro}%'`);
-      }
-      if (cep) {
-        whereClauses.push(`a.cep ILIKE '%${cep}%'`);
-      }
-      if (search) {
-        const lowerBusca = `%${search.toLowerCase()}%`;
-        whereClauses.push(`(
-        a.pessoa_nome ILIKE '${lowerBusca}'
-         OR a.id_matricula ILIKE '${lowerBusca}'
-         OR a.cpf ILIKE '${lowerBusca}'
-      )`);
-      }
-      let whereStr = "";
-      if (whereClauses.length) {
-        whereStr = "WHERE " + whereClauses.join(" AND ");
-      }
+    // Ajuste ou substitua conforme sua lógica de WHERE
+    // Exemplo simples:
+    let whereClauses = [];
+    if (escola) {
+      whereClauses.push(`e.nome ILIKE '%${escola}%'`);
+    }
+    if (bairro) {
+      whereClauses.push(`a.bairro ILIKE '%${bairro}%'`);
+    }
+    if (cep) {
+      whereClauses.push(`a.cep ILIKE '%${cep}%'`);
+    }
+    if (search) {
+      whereClauses.push(`
+        (a.pessoa_nome ILIKE '%${search}%'
+         OR a.id_matricula ILIKE '%${search}%'
+         OR a.cpf ILIKE '%${search}%')
+      `);
+    }
+    let whereStr = "";
+    if (whereClauses.length) {
+      whereStr = "WHERE " + whereClauses.join(" AND ");
+    }
 
-      const query = `
+    const query = `
       SELECT a.*,
              e.nome AS escola_nome
       FROM alunos_ativos a
@@ -7372,75 +7085,72 @@ app.get(
       ${whereStr}
       ORDER BY a.id DESC
     `;
-      const result = await pool.query(query);
-      return res.json(result.rows);
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao buscar alunos.",
-      });
-    }
+    const result = await pool.query(query);
+    return res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao buscar alunos.",
+    });
   }
-);
+});
 
-app.delete(
-  "/api/alunos-ativos/:id",
-  checkPermission("ExcluirAlunosAtivos"),
-  async (req, res) => {
-    try {
-      const { id } = req.params;
-      const check = await pool.query(
-        "SELECT id FROM alunos_ativos WHERE id = $1",
-        [id]
-      );
-      if (check.rows.length === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Aluno não encontrado." });
-      }
-      await pool.query("DELETE FROM alunos_ativos WHERE id = $1", [id]);
-      return res.json({ success: true, message: "Aluno excluído com sucesso." });
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao excluir o aluno.",
-      });
+app.delete("/api/alunos-ativos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const check = await pool.query(
+      "SELECT id FROM alunos_ativos WHERE id = $1",
+      [id]
+    );
+    if (check.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Aluno não encontrado." });
     }
+    await pool.query("DELETE FROM alunos_ativos WHERE id = $1", [id]);
+    return res.json({ success: true, message: "Aluno excluído com sucesso." });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao excluir o aluno.",
+    });
   }
-);
+});
 
-app.put(
-  "/api/alunos-recadastro/:id",
-  checkPermission("AtualizarAlunosRecadastro"),
-  async (req, res) => {
-    try {
-      const { id } = req.params;
-      const {
-        cep,
-        bairro,
-        numero_pessoa_endereco,
-        numero_telefone,
-        deficiencia,
-        latitude,
-        longitude,
-        rua
-      } = req.body;
+// PUT /api/alunos-recadastro/:id
+// Exemplo de ajuste para evitar erro de array malformado quando o valor for "NADA INFORMADO":
+// Dentro do PUT /api/alunos-recadastro/:id
 
-      let defArray = null;
-      if (Array.isArray(deficiencia)) {
-        defArray = deficiencia.map(item => item === "NADA INFORMADO" ? null : item).filter(Boolean);
-        if (defArray.length === 0) defArray = null;
-      } else if (typeof deficiencia === "string") {
-        if (deficiencia.trim() && deficiencia.trim() !== "NADA INFORMADO") {
-          defArray = [deficiencia.trim()];
-        } else {
-          defArray = null;
-        }
+app.put("/api/alunos-recadastro/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      cep,
+      bairro,
+      numero_pessoa_endereco,
+      numero_telefone,
+      deficiencia,
+      latitude,
+      longitude,
+      rua
+    } = req.body;
+
+    // Se a deficiencia for "NADA INFORMADO" ou vazia, seta como null
+    let defArray = null;
+    if (Array.isArray(deficiencia)) {
+      defArray = deficiencia.map(item => item === "NADA INFORMADO" ? null : item).filter(Boolean);
+      if (defArray.length === 0) defArray = null;
+    } else if (typeof deficiencia === "string") {
+      if (deficiencia.trim() && deficiencia.trim() !== "NADA INFORMADO") {
+        defArray = [deficiencia.trim()];
+      } else {
+        defArray = null;
       }
+    }
 
-      const query = `
+    const query = `
       UPDATE alunos_ativos
       SET
         cep = $1,
@@ -7455,63 +7165,70 @@ app.put(
       RETURNING id
     `;
 
-      const values = [
-        cep || null,
-        bairro || null,
-        numero_pessoa_endereco || null,
-        numero_telefone || null,
-        defArray,
-        latitude || null,
-        longitude || null,
-        rua || null,
-        id
-      ];
+    // deficiencia em $5 deve receber defArray ou null
+    const values = [
+      cep || null,
+      bairro || null,
+      numero_pessoa_endereco || null,
+      numero_telefone || null,
+      defArray, // text[] ou null
+      latitude || null,
+      longitude || null,
+      rua || null,
+      id
+    ];
 
-      const result = await pool.query(query, values);
-      if (result.rowCount === 0) {
-        return res.status(404).json({ success: false, message: "Aluno não encontrado." });
-      }
-
-      return res.json({ success: true, message: "Dados atualizados com sucesso." });
-    } catch (error) {
-      console.error("Erro ao atualizar aluno:", error);
-      return res.status(500).json({ success: false, message: "Erro ao atualizar aluno." });
+    const result = await pool.query(query, values);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
+
+    return res.json({ success: true, message: "Dados atualizados com sucesso." });
+  } catch (error) {
+    console.error("Erro ao atualizar aluno:", error);
+    return res.status(500).json({ success: false, message: "Erro ao atualizar aluno." });
   }
-);
+});
 
-app.post(
-  "/api/alunos-ativos-estadual",
-  checkPermission("CriarAlunosAtivosEstadual"),
-  async (req, res) => {
-    try {
-      const {
-        id_matricula,
-        pessoa_nome,
-        escola_id,
-        turma,
-        turno,
-        cpf,
-        cep,
-        rua,
-        bairro,
-        numero_pessoa_endereco,
-        numero_telefone,
-        filiacao_1,
-        filiacao_2,
-        responsavel,
-        deficiencia,
-        latitude,
-        longitude
-      } = req.body;
 
-      if (!pessoa_nome) {
-        return res.status(400).json({
-          message: "O campo 'pessoa_nome' é obrigatório."
-        });
-      }
+/***************************************************************
+ * POST /api/alunos-ativos-estadual
+ * Cria um novo aluno estadual na tabela alunos_ativos_estadual
+ ***************************************************************/
+app.post("/api/alunos-ativos-estadual", async (req, res) => {
+  try {
+    const {
+      id_matricula,
+      pessoa_nome,
+      escola_id,
+      turma,
+      turno,
+      cpf,
+      cep,
+      rua,
+      bairro,
+      numero_pessoa_endereco,
+      numero_telefone,
+      filiacao_1,
+      filiacao_2,
+      responsavel,
+      deficiencia,
+      latitude,
+      longitude
+    } = req.body;
 
-      const insertSQL = `
+    // Validações básicas (exemplo)
+    if (!pessoa_nome) {
+      return res.status(400).json({
+        message: "O campo 'pessoa_nome' é obrigatório."
+      });
+    }
+
+    // Para o campo deficiencia do tipo TEXT[] em PostgreSQL, 
+    // basta enviar como array no body. Ex: deficiencia: ["auditiva", "visual"]
+    // Se preferir armazenar como string, seria necessária conversão (mas aqui vamos armazenar nativo em array).
+
+    const insertSQL = `
       INSERT INTO alunos_ativos_estadual (
         id_matricula,
         pessoa_nome,
@@ -7535,73 +7252,77 @@ app.post(
       RETURNING id
     `;
 
-      const values = [
-        id_matricula || null,
-        pessoa_nome,
-        escola_id || null,
-        turma || null,
-        turno || null,
-        cpf || null,
-        cep || null,
-        rua || null,
-        bairro || null,
-        numero_pessoa_endereco || null,
-        numero_telefone || null,
-        filiacao_1 || null,
-        filiacao_2 || null,
-        responsavel || null,
-        Array.isArray(deficiencia) && deficiencia.length > 0 ? deficiencia : null,
-        latitude || null,
-        longitude || null
-      ];
+    const values = [
+      id_matricula || null,
+      pessoa_nome,
+      escola_id || null,
+      turma || null,
+      turno || null,
+      cpf || null,
+      cep || null,
+      rua || null,
+      bairro || null,
+      numero_pessoa_endereco || null,
+      numero_telefone || null,
+      filiacao_1 || null,
+      filiacao_2 || null,
+      responsavel || null,
+      // deficiencia como array (nativo no PostgreSQL)
+      Array.isArray(deficiencia) && deficiencia.length > 0 ? deficiencia : null,
+      // Latitude e longitude
+      latitude || null,
+      longitude || null
+    ];
 
-      const result = await pool.query(insertSQL, values);
+    const result = await pool.query(insertSQL, values);
 
-      return res.status(201).json({
-        success: true,
-        message: "Aluno estadual cadastrado com sucesso.",
-        id: result.rows[0].id
-      });
-    } catch (error) {
-      console.error("Erro no POST /api/alunos-ativos-estadual:", error);
-      return res.status(500).json({
-        message: "Erro interno ao criar aluno estadual."
-      });
-    }
+    return res.status(201).json({
+      success: true,
+      message: "Aluno estadual cadastrado com sucesso.",
+      id: result.rows[0].id
+    });
+  } catch (error) {
+    console.error("Erro no POST /api/alunos-ativos-estadual:", error);
+    return res.status(500).json({
+      message: "Erro interno ao criar aluno estadual."
+    });
   }
-);
+});
 
-app.put(
-  "/api/alunos-ativos-estadual/:id",
-  checkPermission("AtualizarAlunosAtivosEstadual"),
-  async (req, res) => {
-    try {
-      const alunoId = req.params.id;
-      const {
-        id_matricula,
-        pessoa_nome,
-        escola_id,
-        turma,
-        turno,
-        cpf,
-        cep,
-        rua,
-        bairro,
-        numero_pessoa_endereco,
-        numero_telefone,
-        filiacao_1,
-        filiacao_2,
-        responsavel,
-        deficiencia,
-        latitude,
-        longitude
-      } = req.body;
 
-      if (!alunoId) {
-        return res.status(400).json({ message: "ID do aluno não informado." });
-      }
+/***************************************************************
+ * PUT /api/alunos-ativos-estadual/:id
+ * Atualiza os dados de um aluno estadual já existente
+ ***************************************************************/
+app.put("/api/alunos-ativos-estadual/:id", async (req, res) => {
+  try {
+    const alunoId = req.params.id;
+    const {
+      id_matricula,
+      pessoa_nome,
+      escola_id,
+      turma,
+      turno,
+      cpf,
+      cep,
+      rua,
+      bairro,
+      numero_pessoa_endereco,
+      numero_telefone,
+      filiacao_1,
+      filiacao_2,
+      responsavel,
+      deficiencia,
+      latitude,
+      longitude
+    } = req.body;
 
-      const updateSQL = `
+    if (!alunoId) {
+      return res.status(400).json({ message: "ID do aluno não informado." });
+    }
+
+    // Aqui também armazenamos deficiencia como array:
+    const updateSQL = `
       UPDATE alunos_ativos_estadual
       SET
         id_matricula = $1,
@@ -7626,117 +7347,130 @@ app.put(
       RETURNING id
     `;
 
-      const values = [
-        id_matricula || null,
-        pessoa_nome || null,
-        escola_id || null,
-        turma || null,
-        turno || null,
-        cpf || null,
-        cep || null,
-        rua || null,
-        bairro || null,
-        numero_pessoa_endereco || null,
-        numero_telefone || null,
-        filiacao_1 || null,
-        filiacao_2 || null,
-        responsavel || null,
-        Array.isArray(deficiencia) && deficiencia.length > 0 ? deficiencia : null,
-        latitude || null,
-        longitude || null,
-        alunoId
-      ];
+    const values = [
+      id_matricula || null,
+      pessoa_nome || null,
+      escola_id || null,
+      turma || null,
+      turno || null,
+      cpf || null,
+      cep || null,
+      rua || null,
+      bairro || null,
+      numero_pessoa_endereco || null,
+      numero_telefone || null,
+      filiacao_1 || null,
+      filiacao_2 || null,
+      responsavel || null,
+      // deficiencia como array (nativo no PostgreSQL)
+      Array.isArray(deficiencia) && deficiencia.length > 0 ? deficiencia : null,
+      latitude || null,
+      longitude || null,
+      alunoId
+    ];
 
-      const result = await pool.query(updateSQL, values);
+    const result = await pool.query(updateSQL, values);
 
-      if (result.rowCount === 0) {
-        return res.status(404).json({
-          message: "Aluno não encontrado ou não foi possível atualizar."
-        });
-      }
-
-      return res.json({
-        success: true,
-        message: "Dados do aluno estadual atualizados com sucesso.",
-        updatedId: result.rows[0].id
-      });
-    } catch (error) {
-      console.error("Erro no PUT /api/alunos-ativos-estadual/:id:", error);
-      return res.status(500).json({
-        message: "Erro interno ao atualizar o aluno estadual."
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        message: "Aluno não encontrado ou não foi possível atualizar."
       });
     }
+
+    return res.json({
+      success: true,
+      message: "Dados do aluno estadual atualizados com sucesso.",
+      updatedId: result.rows[0].id
+    });
+  } catch (error) {
+    console.error("Erro no PUT /api/alunos-ativos-estadual/:id:", error);
+    return res.status(500).json({
+      message: "Erro interno ao atualizar o aluno estadual."
+    });
   }
-);
+});
 
-app.put(
-  "/api/alunos-ativos/:id",
-  checkPermission("AtualizarAlunosAtivos"),
-  async (req, res) => {
+app.put("/api/alunos-ativos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      id_matricula,
+      escola_id,
+      ano,
+      modalidade,
+      formato_letivo,
+      turma,
+      pessoa_nome,
+      cpf,
+      transporte_escolar_poder_publico,
+      cep,
+      bairro,
+      numero_pessoa_endereco,
+      filiacao_1,
+      numero_telefone,
+      filiacao_2,
+      responsavel,
+      deficiencia,
+      longitude,
+      latitude,
+      rua  // NOVO CAMPO
+    } = req.body;
+
+    // Busca o aluno
+    const check = await pool.query("SELECT * FROM alunos_ativos WHERE id = $1", [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+    }
+
+    const oldData = check.rows[0];
+    // Ajusta a lista de deficiências
+    let defArray = oldData.deficiencia || null;
     try {
-      const { id } = req.params;
-      const {
-        id_matricula,
-        escola_id,
-        ano,
-        modalidade,
-        formato_letivo,
-        turma,
-        pessoa_nome,
-        cpf,
-        transporte_escolar_poder_publico,
-        cep,
-        bairro,
-        numero_pessoa_endereco,
-        filiacao_1,
-        numero_telefone,
-        filiacao_2,
-        responsavel,
-        deficiencia,
-        longitude,
-        latitude,
-        rua
-      } = req.body;
-
-      const check = await pool.query("SELECT * FROM alunos_ativos WHERE id = $1", [id]);
-      if (check.rows.length === 0) {
-        return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+      if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
+        defArray = JSON.parse(deficiencia);
+      } else if (Array.isArray(deficiencia)) {
+        defArray = deficiencia;
       }
+    } catch (e) {
+      // se der erro no parse, ignora e mantém oldData.deficiencia
+    }
 
-      const oldData = check.rows[0];
-      let defArray = oldData.deficiencia || null;
-      try {
-        if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
-          defArray = JSON.parse(deficiencia);
-        } else if (Array.isArray(deficiencia)) {
-          defArray = deficiencia;
-        }
-      } catch (e) { }
+    const newData = {
+      id_matricula: (id_matricula !== undefined ? id_matricula : oldData.id_matricula),
+      escola_id: (escola_id !== undefined ? escola_id : oldData.escola_id),
+      ano: (ano !== undefined ? ano : oldData.ano),
+      modalidade: (modalidade !== undefined ? modalidade : oldData.modalidade),
+      formato_letivo: (formato_letivo !== undefined ? formato_letivo : oldData.formato_letivo),
+      turma: (turma !== undefined ? turma : oldData.turma),
+      pessoa_nome: (pessoa_nome !== undefined ? pessoa_nome : oldData.pessoa_nome),
+      cpf: (cpf !== undefined ? cpf : oldData.cpf),
+      transporte_escolar_poder_publico: (
+        transporte_escolar_poder_publico !== undefined
+          ? transporte_escolar_poder_publico
+          : oldData.transporte_escolar_poder_publico
+      ),
+      cep: (cep !== undefined ? cep : oldData.cep),
+      bairro: (bairro !== undefined ? bairro : oldData.bairro),
+      numero_pessoa_endereco: (
+        numero_pessoa_endereco !== undefined
+          ? numero_pessoa_endereco
+          : oldData.numero_pessoa_endereco
+      ),
+      filiacao_1: (filiacao_1 !== undefined ? filiacao_1 : oldData.filiacao_1),
+      numero_telefone: (
+        numero_telefone !== undefined
+          ? numero_telefone
+          : oldData.numero_telefone
+      ),
+      filiacao_2: (filiacao_2 !== undefined ? filiacao_2 : oldData.filiacao_2),
+      responsavel: (responsavel !== undefined ? responsavel : oldData.responsavel),
+      deficiencia: (defArray !== null ? defArray : oldData.deficiencia),
+      longitude: (longitude !== undefined ? longitude : oldData.longitude),
+      latitude: (latitude !== undefined ? latitude : oldData.latitude),
+      rua: (rua !== undefined ? rua : oldData.rua) // NOVO
+    };
 
-      const newData = {
-        id_matricula: id_matricula !== undefined ? id_matricula : oldData.id_matricula,
-        escola_id: escola_id !== undefined ? escola_id : oldData.escola_id,
-        ano: ano !== undefined ? ano : oldData.ano,
-        modalidade: modalidade !== undefined ? modalidade : oldData.modalidade,
-        formato_letivo: formato_letivo !== undefined ? formato_letivo : oldData.formato_letivo,
-        turma: turma !== undefined ? turma : oldData.turma,
-        pessoa_nome: pessoa_nome !== undefined ? pessoa_nome : oldData.pessoa_nome,
-        cpf: cpf !== undefined ? cpf : oldData.cpf,
-        transporte_escolar_poder_publico: transporte_escolar_poder_publico !== undefined ? transporte_escolar_poder_publico : oldData.transporte_escolar_poder_publico,
-        cep: cep !== undefined ? cep : oldData.cep,
-        bairro: bairro !== undefined ? bairro : oldData.bairro,
-        numero_pessoa_endereco: numero_pessoa_endereco !== undefined ? numero_pessoa_endereco : oldData.numero_pessoa_endereco,
-        filiacao_1: filiacao_1 !== undefined ? filiacao_1 : oldData.filiacao_1,
-        numero_telefone: numero_telefone !== undefined ? numero_telefone : oldData.numero_telefone,
-        filiacao_2: filiacao_2 !== undefined ? filiacao_2 : oldData.filiacao_2,
-        responsavel: responsavel !== undefined ? responsavel : oldData.responsavel,
-        deficiencia: defArray !== null ? defArray : oldData.deficiencia,
-        longitude: longitude !== undefined ? longitude : oldData.longitude,
-        latitude: latitude !== undefined ? latitude : oldData.latitude,
-        rua: rua !== undefined ? rua : oldData.rua
-      };
-
-      const updateQuery = `
+    const updateQuery = `
       UPDATE alunos_ativos
       SET
         id_matricula = $1,
@@ -7762,46 +7496,45 @@ app.put(
       WHERE id = $21
     `;
 
-      await pool.query(updateQuery, [
-        newData.id_matricula,
-        newData.escola_id,
-        newData.ano,
-        newData.modalidade,
-        newData.formato_letivo,
-        newData.turma,
-        newData.pessoa_nome,
-        newData.cpf,
-        newData.transporte_escolar_poder_publico,
-        newData.cep,
-        newData.bairro,
-        newData.numero_pessoa_endereco,
-        newData.filiacao_1,
-        newData.numero_telefone,
-        newData.filiacao_2,
-        newData.responsavel,
-        newData.deficiencia,
-        newData.longitude,
-        newData.latitude,
-        newData.rua,
-        id
-      ]);
+    await pool.query(updateQuery, [
+      newData.id_matricula,
+      newData.escola_id,
+      newData.ano,
+      newData.modalidade,
+      newData.formato_letivo,
+      newData.turma,
+      newData.pessoa_nome,
+      newData.cpf,
+      newData.transporte_escolar_poder_publico,
+      newData.cep,
+      newData.bairro,
+      newData.numero_pessoa_endereco,
+      newData.filiacao_1,
+      newData.numero_telefone,
+      newData.filiacao_2,
+      newData.responsavel,
+      newData.deficiencia,
+      newData.longitude,
+      newData.latitude,
+      newData.rua,
+      id
+    ]);
 
-      return res.json({
-        success: true,
-        message: "Aluno atualizado com sucesso."
-      });
-    } catch (err) {
-      console.error("Erro ao atualizar aluno:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Erro ao atualizar o aluno."
-      });
-    }
+    return res.json({
+      success: true,
+      message: "Aluno atualizado com sucesso."
+    });
+  } catch (err) {
+    console.error("Erro ao atualizar aluno:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao atualizar o aluno."
+    });
   }
-);
+});
 
 function getDistanceFromLatLngInKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
+  const R = 6371; // Raio da terra em km
   const dLat = toRad(lat2 - lat1);
   const dLng = toRad(lng2 - lng1);
   const a =
@@ -7816,7 +7549,10 @@ function toRad(value) {
   return value * Math.PI / 180;
 }
 
+
+
 // LISTEN (FINAL)
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
