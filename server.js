@@ -3005,41 +3005,114 @@ app.delete("/api/fornecedor/motoristas/:id", async (req, res) => {
   }
 });
 
-// ====> Exemplo de rota atualizada para buscar rotas do fornecedor logado
-// Ajuste conforme a sua necessidade
+// ====> server.js (ou arquivo de rotas Express), trecho que retorna as rotas do fornecedor
+// OBS: agora iremos buscar todas as rotas que tenham associação na tabela intermediária fornecedores_rotas
+// com o fornecedor_id do usuário logado.
 
 app.get("/api/fornecedor/rotas", async (req, res) => {
   try {
-    const userId = req.session.userId;
-    // 1) Verifica fornecedor do usuário
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Usuário não está logado." });
+    }
+
+    // Busca o fornecedor_id do usuário logado
     const relForn = await pool.query(
       "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
       [userId]
     );
     if (relForn.rows.length === 0) {
+      // Se não houver associação, retorna array vazio
       return res.json([]);
     }
     const fornecedorId = relForn.rows[0].fornecedor_id;
 
-    // 2) Busca rotas associadas ao fornecedor na tabela rotas_simples
+    // Rotas associadas ao fornecedor_id via tabela intermediária
     const query = `
-      SELECT id, identificador, descricao
-      FROM rotas_simples
-      WHERE fornecedor_id = $1
-      ORDER BY id ASC
+      SELECT r.id, r.identificador, r.descricao
+      FROM rotas_simples r
+      JOIN fornecedores_rotas fr ON fr.rota_id = r.id
+      WHERE fr.fornecedor_id = $1
+      ORDER BY r.id ASC
     `;
     const result = await pool.query(query, [fornecedorId]);
-
-    return res.json(result.rows); // Retorna array de rotas
+    return res.json(result.rows);
   } catch (error) {
     console.error("Erro ao listar rotas do fornecedor:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Erro interno ao listar rotas do fornecedor." });
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao listar rotas do fornecedor.",
+    });
   }
 });
 
+app.post("/api/fornecedor/monitores/atribuir-rota", async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+    const { monitor_id, rota_id } = req.body;
 
+    // Verifica o fornecedor do usuário
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Usuário não vinculado a nenhum fornecedor.",
+      });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    // Verifica se o monitor pertence a este fornecedor
+    const checkMonitor = await pool.query(
+      "SELECT id FROM monitores WHERE id = $1 AND fornecedor_id = $2 LIMIT 1",
+      [monitor_id, fornecedorId]
+    );
+    if (checkMonitor.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Monitor não encontrado ou não pertence a este fornecedor.",
+      });
+    }
+
+    // Verifica se a rota está associada ao mesmo fornecedor
+    const checkRota = await pool.query(
+      `SELECT r.id
+       FROM rotas_simples r
+       JOIN fornecedores_rotas fr ON fr.rota_id = r.id
+       WHERE r.id = $1
+         AND fr.fornecedor_id = $2
+       LIMIT 1`,
+      [rota_id, fornecedorId]
+    );
+    if (checkRota.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Rota não encontrada ou não pertence a este fornecedor.",
+      });
+    }
+
+    // Exemplo: tabela rota_monitor (rota_id, monitor_id)
+    await pool.query(
+      `INSERT INTO rota_monitor (rota_id, monitor_id)
+       VALUES ($1, $2)
+       ON CONFLICT (rota_id, monitor_id) DO NOTHING`,
+      [rota_id, monitor_id]
+    );
+
+    return res.json({
+      success: true,
+      message: "Rota atribuída ao monitor com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao atribuir rota ao monitor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao atribuir rota ao monitor.",
+    });
+  }
+});
 
 // ====> API: Atribuir rota ao motorista
 app.post("/api/fornecedor/motoristas/atribuir-rota", async (req, res) => {

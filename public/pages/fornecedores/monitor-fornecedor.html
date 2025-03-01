@@ -1,4 +1,4 @@
-<!-- ====> public/pages/fornecedores/monitor-fornecedor.html <==== -->
+<!-- ====> public/pages/fornecedores/monitor-fornecedor.html (ATUALIZADO) <==== -->
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -57,10 +57,16 @@
                             height="20" />
                     </a>
                     <div class="nav-toggle">
-                        <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
-                        <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+                        <button class="btn btn-toggle toggle-sidebar">
+                            <i class="gg-menu-right"></i>
+                        </button>
+                        <button class="btn btn-toggle sidenav-toggler">
+                            <i class="gg-menu-left"></i>
+                        </button>
                     </div>
-                    <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+                    <button class="topbar-toggler more">
+                        <i class="gg-more-vertical-alt"></i>
+                    </button>
                 </div>
             </div>
             <div class="sidebar-wrapper scrollbar scrollbar-inner">
@@ -72,6 +78,7 @@
                                 <p>Dashboard Fornecedor</p>
                             </a>
                         </li>
+
                         <li class="nav-item">
                             <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
                                 <i class="fas fa-id-card"></i>
@@ -93,6 +100,7 @@
                                 </ul>
                             </div>
                         </li>
+
                         <li class="nav-item active">
                             <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="true">
                                 <i class="fas fa-user-check"></i>
@@ -109,6 +117,7 @@
                                 </ul>
                             </div>
                         </li>
+
                         <li class="nav-item">
                             <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
                                 <i class="fas fa-bus"></i>
@@ -135,6 +144,7 @@
                                 </ul>
                             </div>
                         </li>
+
                     </ul>
                 </div>
             </div>
@@ -189,7 +199,8 @@
                                                 <div class="u-text">
                                                     <h4 id="dropdownUserBoxName">Fornecedor</h4>
                                                     <p class="text-muted" id="dropdownUserEmail">
-                                                        fornecedor@pydenexpress.com</p>
+                                                        fornecedor@pydenexpress.com
+                                                    </p>
                                                     <a href="#" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
                                                 </div>
                                             </div>
@@ -330,9 +341,8 @@
                                                     accept=".pdf" class="form-control" required />
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="certificado_curso" class="form-label">
-                                                    Certificado do Curso de Monitor (PDF)
-                                                </label>
+                                                <label for="certificado_curso" class="form-label">Certificado do Curso
+                                                    de Monitor (PDF)</label>
                                                 <input type="file" id="certificado_curso" name="certificado_curso"
                                                     accept=".pdf" class="form-control" />
                                                 <small class="text-muted">
@@ -358,7 +368,9 @@
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="modalAtribuirRotaLabel">Atribuir Rota ao Monitor</h5>
+                                    <h5 class="modal-title" id="modalAtribuirRotaLabel">
+                                        Atribuir Rota ao Monitor
+                                    </h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                         aria-label="Fechar"></button>
                                 </div>
@@ -396,7 +408,8 @@
                     <div class="copyright">
                         2024, made with <i class="fa fa-heart heart text-danger"></i> by
                         <a href="http://www.themekita.com">ThemeKita</a>.
-                        Distributed by <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
+                        Distributed by
+                        <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
                     </div>
                 </div>
             </footer>
@@ -418,69 +431,78 @@
         let fornecedor_id_glob = null;
 
         function showNotification(type, message, title = "") {
-            $.notify({
-                title: title ? title + ' ' : '',
-                message: message,
-                icon: type === 'success' ? 'fa fa-check-circle'
-                    : type === 'danger' ? 'fa fa-exclamation-circle'
-                        : type === 'warning' ? 'fa fa-exclamation-triangle'
-                            : type === 'info' ? 'fa fa-info-circle' : ''
-            }, {
-                type: type,
-                placement: { from: "top", align: "right" },
-                offset: 20,
-                spacing: 10,
-                z_index: 1031,
-                delay: 3000,
-                timer: 1000,
-                animate: { enter: 'animated fadeInDown', exit: 'animated fadeOutUp' }
-            });
+            $.notify(
+                {
+                    title: title ? title + " " : "",
+                    message: message,
+                    icon:
+                        type === "success"
+                            ? "fa fa-check-circle"
+                            : type === "danger"
+                                ? "fa fa-exclamation-circle"
+                                : type === "warning"
+                                    ? "fa fa-exclamation-triangle"
+                                    : type === "info"
+                                        ? "fa fa-info-circle"
+                                        : "",
+                },
+                {
+                    type: type,
+                    placement: { from: "top", align: "right" },
+                    offset: 20,
+                    spacing: 10,
+                    z_index: 1031,
+                    delay: 3000,
+                    timer: 1000,
+                    animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" },
+                }
+            );
         }
 
         // Carrega o fornecedor_id vinculado ao usuário
         function loadFornecedorId() {
-            return fetch('/api/fornecedor/meu')
-                .then(res => {
-                    if (!res.ok) throw new Error('Erro ao buscar fornecedor do usuário');
+            return fetch("/api/fornecedor/meu")
+                .then((res) => {
+                    if (!res.ok) throw new Error("Erro ao buscar fornecedor do usuário");
                     return res.json();
                 })
-                .then(data => {
+                .then((data) => {
                     fornecedor_id_glob = data.fornecedor_id;
                     if (!fornecedor_id_glob) {
-                        showNotification('danger', 'Você não está vinculado a um fornecedor.', 'Erro');
+                        showNotification("danger", "Você não está vinculado a um fornecedor.", "Erro");
                     }
                     // Define o hidden input
-                    document.getElementById('fornecedor_id').value = fornecedor_id_glob;
+                    document.getElementById("fornecedor_id").value = fornecedor_id_glob;
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.error(err);
-                    showNotification('danger', 'Erro ao buscar fornecedor do usuário.');
+                    showNotification("danger", "Erro ao buscar fornecedor do usuário.");
                 });
         }
 
         // Carrega lista de monitores do fornecedor
         function loadMonitores() {
-            fetch('/api/fornecedor/monitores')
-                .then(res => {
-                    if (!res.ok) throw new Error('Erro ao carregar monitores');
+            fetch("/api/fornecedor/monitores")
+                .then((res) => {
+                    if (!res.ok) throw new Error("Erro ao carregar monitores");
                     return res.json();
                 })
-                .then(data => {
+                .then((data) => {
                     monitores = data;
                     populateTable();
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.error(err);
-                    showNotification('danger', 'Não foi possível carregar os monitores.');
+                    showNotification("danger", "Não foi possível carregar os monitores.");
                 });
         }
 
         // Popula DataTable
         function populateTable() {
-            const tableBody = $('#monitores-table tbody');
+            const tableBody = $("#monitores-table tbody");
             tableBody.empty();
 
-            monitores.forEach(m => {
+            monitores.forEach((m) => {
                 const row = `
           <tr>
             <td>${m.id}</td>
@@ -488,12 +510,22 @@
             <td>${m.cpf}</td>
             <td>
               <div class="form-button-action">
-                <button type="button" class="btn btn-link btn-info btn-lg" onclick="openAssignRotaModal(${m.id})"
-                  data-bs-toggle="tooltip" title="Atribuir Rota">
+                <button
+                  type="button"
+                  class="btn btn-link btn-info btn-lg"
+                  onclick="openAssignRotaModal(${m.id})"
+                  data-bs-toggle="tooltip"
+                  title="Atribuir Rota"
+                >
                   <i class="fa fa-route"></i>
                 </button>
-                <button type="button" class="btn btn-link btn-danger btn-lg" onclick="deleteMonitor(${m.id})"
-                  data-bs-toggle="tooltip" title="Excluir Monitor">
+                <button
+                  type="button"
+                  class="btn btn-link btn-danger btn-lg"
+                  onclick="deleteMonitor(${m.id})"
+                  data-bs-toggle="tooltip"
+                  title="Excluir Monitor"
+                >
                   <i class="fa fa-trash-alt"></i>
                 </button>
               </div>
@@ -503,11 +535,11 @@
                 tableBody.append(row);
             });
 
-            if ($.fn.DataTable.isDataTable('#monitores-table')) {
-                $('#monitores-table').DataTable().clear().destroy();
+            if ($.fn.DataTable.isDataTable("#monitores-table")) {
+                $("#monitores-table").DataTable().clear().destroy();
             }
 
-            $('#monitores-table').DataTable({
+            $("#monitores-table").DataTable({
                 pageLength: 10,
                 language: {
                     decimal: ",",
@@ -520,129 +552,136 @@
                     processing: "Processando...",
                     search: "Pesquisar:",
                     zeroRecords: "Nenhum registro encontrado",
-                    paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
-                    emptyTable: "Nenhum dado disponível na tabela"
-                }
+                    paginate: {
+                        first: "Primeiro",
+                        last: "Último",
+                        next: "Próximo",
+                        previous: "Anterior",
+                    },
+                    emptyTable: "Nenhum dado disponível na tabela",
+                },
             });
         }
 
         // Excluir monitor
         function deleteMonitor(id) {
-            fetch('/api/fornecedor/monitores/' + id, { method: 'DELETE' })
-                .then(res => res.json())
-                .then(data => {
+            fetch("/api/fornecedor/monitores/" + id, { method: "DELETE" })
+                .then((res) => res.json())
+                .then((data) => {
                     if (data.success) {
-                        showNotification('success', 'Monitor excluído com sucesso!');
+                        showNotification("success", "Monitor excluído com sucesso!");
                         loadMonitores();
                     } else {
-                        showNotification('danger', 'Erro ao excluir monitor: ' + data.message);
+                        showNotification("danger", "Erro ao excluir monitor: " + data.message);
                     }
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.error(err);
-                    showNotification('danger', 'Erro ao excluir monitor. Tente novamente.');
+                    showNotification("danger", "Erro ao excluir monitor. Tente novamente.");
                 });
         }
 
         // Abrir modal de atribuir rota
         function openAssignRotaModal(monitorId) {
             monitorSelecionado = monitorId;
-            const rotaSelect = document.getElementById('rota_id');
-            rotaSelect.innerHTML = '';
+            const rotaSelect = document.getElementById("rota_id");
+            rotaSelect.innerHTML = "";
 
             // Busca rotas do mesmo fornecedor
-            fetch('/api/fornecedor/rotas')
-                .then(res => res.json())
-                .then(data => {
+            fetch("/api/fornecedor/rotas")
+                .then((res) => res.json())
+                .then((data) => {
                     rotas = data;
-                    rotas.forEach(r => {
-                        const option = document.createElement('option');
+                    rotas.forEach((r) => {
+                        const option = document.createElement("option");
                         option.value = r.id;
-                        option.textContent = r.identificador + ' - ' + (r.descricao || '');
+                        option.textContent = r.identificador + " - " + (r.descricao || "");
                         rotaSelect.appendChild(option);
                     });
-                    $('#modalAtribuirRota').modal('show');
+                    $("#modalAtribuirRota").modal("show");
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.error(err);
-                    showNotification('danger', 'Não foi possível carregar as rotas.');
+                    showNotification("danger", "Não foi possível carregar as rotas.");
                 });
         }
 
         // Atribuir rota ao monitor
         function assignRota() {
-            const form = document.getElementById('atribuir-rota-form');
+            const form = document.getElementById("atribuir-rota-form");
             const formData = new FormData(form);
-            const rota_id = formData.get('rota_id');
+            const rota_id = formData.get("rota_id");
 
             if (!rota_id) {
-                showNotification('danger', 'Selecione uma rota.', 'Erro');
+                showNotification("danger", "Selecione uma rota.", "Erro");
                 return;
             }
 
-            fetch('/api/fornecedor/monitores/atribuir-rota', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ monitor_id: monitorSelecionado, rota_id: rota_id })
+            fetch("/api/fornecedor/monitores/atribuir-rota", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ monitor_id: monitorSelecionado, rota_id: rota_id }),
             })
-                .then(res => res.json())
-                .then(data => {
+                .then((res) => res.json())
+                .then((data) => {
                     if (data.success) {
-                        showNotification('success', data.message || 'Rota atribuída com sucesso!');
-                        $('#modalAtribuirRota').modal('hide');
+                        showNotification("success", data.message || "Rota atribuída com sucesso!");
+                        $("#modalAtribuirRota").modal("hide");
                     } else {
-                        showNotification('danger', data.message || 'Erro ao atribuir rota.');
+                        showNotification("danger", data.message || "Erro ao atribuir rota.");
                     }
                 })
-                .catch(err => {
+                .catch((err) => {
                     console.error(err);
-                    showNotification('danger', 'Falha na requisição.');
+                    showNotification("danger", "Falha na requisição.");
                 });
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener("DOMContentLoaded", function () {
             // Primeiro, carrega o fornecedor do usuário
-            loadFornecedorId()
-                .then(() => {
-                    // Depois carrega lista de monitores do fornecedor
-                    loadMonitores();
-                });
+            loadFornecedorId().then(() => {
+                // Depois carrega lista de monitores do fornecedor
+                loadMonitores();
+            });
 
             // Submete cadastro de monitor
-            document.getElementById('monitor-form').addEventListener('submit', function (e) {
+            document.getElementById("monitor-form").addEventListener("submit", function (e) {
                 e.preventDefault();
                 const formData = new FormData(this);
 
                 // Garante que estamos passando o fornecedor_id do usuário logado
                 if (!fornecedor_id_glob) {
-                    showNotification('danger', 'Você não está vinculado a um fornecedor. Não é possível cadastrar.');
+                    showNotification(
+                        "danger",
+                        "Você não está vinculado a um fornecedor. Não é possível cadastrar."
+                    );
                     return;
                 }
-                formData.set('fornecedor_id', fornecedor_id_glob);
+                formData.set("fornecedor_id", fornecedor_id_glob);
 
-                fetch('/api/fornecedor/monitores/cadastrar', {
-                    method: 'POST',
-                    body: formData
+                fetch("/api/fornecedor/monitores/cadastrar", {
+                    method: "POST",
+                    body: formData,
                 })
-                    .then(res => res.json())
-                    .then(data => {
+                    .then((res) => res.json())
+                    .then((data) => {
                         if (data.success) {
-                            showNotification('success', 'Monitor cadastrado com sucesso!');
-                            document.getElementById('monitor-form').reset();
-                            $('#modalCadastroMonitor').modal('hide');
+                            showNotification("success", "Monitor cadastrado com sucesso!");
+                            document.getElementById("monitor-form").reset();
+                            $("#modalCadastroMonitor").modal("hide");
                             loadMonitores();
                         } else {
-                            showNotification('danger', 'Erro ao cadastrar monitor: ' + data.message);
+                            showNotification("danger", "Erro ao cadastrar monitor: " + data.message);
                         }
                     })
-                    .catch(err => {
+                    .catch((err) => {
                         console.error(err);
-                        showNotification('danger', 'Erro ao cadastrar monitor. Tente novamente.');
+                        showNotification("danger", "Erro ao cadastrar monitor. Tente novamente.");
                     });
             });
 
             // Atribuir rota ao monitor
-            document.getElementById('atribuir-rota-form').addEventListener('submit', function (e) {
+            document.getElementById("atribuir-rota-form").addEventListener("submit", function (e) {
                 e.preventDefault();
                 assignRota();
             });
