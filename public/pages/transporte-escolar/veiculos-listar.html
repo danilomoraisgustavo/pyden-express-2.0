@@ -50,7 +50,7 @@
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
-          <a href="dashboard-fornecedor.html" class="logo">
+          <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
             <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
           </a>
           <div class="nav-toggle">
@@ -63,11 +63,36 @@
       <div class="sidebar-wrapper scrollbar scrollbar-inner">
         <div class="sidebar-content">
           <ul class="nav nav-secondary">
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Transporte Escolar</h4>
+            </li>
             <li class="nav-item">
-              <a href="dashboard-fornecedor.html">
+              <a href="../../pages/transporte-escolar/dashboard-escolar.html">
                 <i class="fas fa-tachometer-alt"></i>
-                <p>Dashboard Fornecedor</p>
+                <p>Dashboard Escolar</p>
               </a>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
+                <i class="fas fa-user-graduate"></i>
+                <p>Alunos</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teAlunos">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html">
+                      <span class="sub-item">Listar Solicitações de Transporte</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/alunos-listar.html">
+                      <span class="sub-item">Listar Alunos</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </li>
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
@@ -78,28 +103,28 @@
               <div class="collapse" id="teMotoristas">
                 <ul class="nav nav-collapse">
                   <li>
-                    <a href="motorista-fornecedor.html">
+                    <a href="../../pages/transporte-escolar/motoristas-listar.html">
                       <span class="sub-item">Listar Motoristas</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#">
+                    <a href="../../pages/transporte-escolar/motoristas-licencas.html">
                       <span class="sub-item">Licenças e Certificações</span>
                     </a>
                   </li>
                 </ul>
               </div>
             </li>
-            <li class="nav-item active">
-              <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="true">
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="false">
                 <i class="fas fa-user-check"></i>
                 <p>Monitores</p>
                 <span class="caret"></span>
               </a>
-              <div class="collapse show" id="teMonitores">
+              <div class="collapse" id="teMonitores">
                 <ul class="nav nav-collapse">
-                  <li class="active">
-                    <a href="monitor-fornecedor.html">
+                  <li>
+                    <a href="../../pages/transporte-escolar/monitores-listar.html">
                       <span class="sub-item">Listar Monitores</span>
                     </a>
                   </li>
@@ -107,26 +132,388 @@
               </div>
             </li>
             <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="true">
+              <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
                 <i class="fas fa-bus"></i>
                 <p>Veículos</p>
                 <span class="caret"></span>
               </a>
-              <div class="collapse show" id="teVeiculos">
+              <div class="collapse" id="teVeiculos">
                 <ul class="nav nav-collapse">
-                  <li class="active">
-                    <a href="frota-fornecedor.html">
+                  <li>
+                    <a href="../../pages/transporte-escolar/veiculos-listar.html">
                       <span class="sub-item">Listar Veículos</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#">
+                    <a href="../../pages/transporte-escolar/veiculos-manutencao.html">
                       <span class="sub-item">Manutenção</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#">
+                    <a href="../../pages/transporte-escolar/veiculos-documentacao.html">
                       <span class="sub-item">Documentação e Seguros</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teRotas" aria-expanded="false">
+                <i class="fas fa-route"></i>
+                <p>Rotas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teRotas">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/rotas-listar.html">
+                      <span class="sub-item">Listar Rotas</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/pontos-cadastrar.html">
+                      <span class="sub-item">Pontos de Parada</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teRelatorios" aria-expanded="false">
+                <i class="fas fa-chart-line"></i>
+                <p>Relatórios</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teRelatorios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/financeiro/gerar-memorando.html">
+                      <span class="sub-item">Memorandos</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/financeiro/relatorios-rotas.html">
+                      <span class="sub-item">Por Rota</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
+                <i class="fas fa-school"></i>
+                <p>Zoneamento</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teZoneamento">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/zoneamento-listar.html">
+                      <span class="sub-item">Listar Zoneamento</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/zoneamento-cadastrar.html">
+                      <span class="sub-item">Cadastrar Zoneamento</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teEscolas" aria-expanded="false">
+                <i class="fas fa-school"></i>
+                <p>Escolas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teEscolas">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/escolas-listar.html">
+                      <span class="sub-item">Listar Escolas</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teFornecedores" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Fornecedores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="teFornecedores">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/fornecedores-listar.html">
+                      <span class="sub-item">Listar Fornecedores</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/fornecedores-cadastrar.html">
+                      <span class="sub-item">Cadastrar Fornecedor</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Transporte Administrativo</h4>
+            </li>
+            <li class="nav-item">
+              <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
+                <i class="fas fa-tachometer-alt"></i>
+                <p>Dashboard Administrativo</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taFuncionarios" aria-expanded="false">
+                <i class="fas fa-users-cog"></i>
+                <p>Funcionários</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taFuncionarios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/funcionarios-listar.html">
+                      <span class="sub-item">Listar Funcionários</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/funcionarios-cadastrar.html">
+                      <span class="sub-item">Cadastrar Funcionário</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/funcionarios-cargos.html">
+                      <span class="sub-item">Funções e Cargos</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/funcionarios-visualizar.html">
+                      <span class="sub-item">Visualizar Funcionário</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
+                <i class="fas fa-id-card"></i>
+                <p>Motoristas</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taMotoristas">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-listar.html">
+                      <span class="sub-item">Listar Motoristas</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-cadastrar.html">
+                      <span class="sub-item">Cadastrar Motorista</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-licencas.html">
+                      <span class="sub-item">Licenças e Certificações</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taMonitores" aria-expanded="false">
+                <i class="fas fa-user-check"></i>
+                <p>Monitores</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taMonitores">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/monitores-listar.html">
+                      <span class="sub-item">Listar Monitores</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/monitores-cadastrar.html">
+                      <span class="sub-item">Cadastrar Monitor</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
+                <i class="fas fa-warehouse"></i>
+                <p>Frota Administrativa</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taFrota">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-listar.html">
+                      <span class="sub-item">Listar Frota</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-manutencao.html">
+                      <span class="sub-item">Manutenção</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-rotas.html">
+                      <span class="sub-item">Rotas Internas</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
+                <i class="far fa-calendar-alt"></i>
+                <p>Agenda de Viagens</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taAgenda">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-listar.html">
+                      <span class="sub-item">Listar Viagens</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-nova.html">
+                      <span class="sub-item">Agendar Nova Viagem</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-historico.html">
+                      <span class="sub-item">Histórico de Viagens</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taLogistica" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Logística Interna</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taLogistica">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/logistica-materiais.html">
+                      <span class="sub-item">Transporte de Materiais</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/logistica-manutencoes.html">
+                      <span class="sub-item">Agendamento Manutenção</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/logistica-suprimentos.html">
+                      <span class="sub-item">Controle de Suprimentos</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taRelatorios" aria-expanded="false">
+                <i class="fas fa-chart-pie"></i>
+                <p>Relatórios</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="taRelatorios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/gerar-memorando.html">
+                      <span class="sub-item">Gerar Memorando</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-eficiencia.html">
+                      <span class="sub-item">Eficiência</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-custos.html">
+                      <span class="sub-item">Custos Operacionais</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-comparativos.html">
+                      <span class="sub-item">Comparativos</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-mensais.html">
+                      <span class="sub-item">Mensais</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/relatorios-rotas.html">
+                      <span class="sub-item">Por Rota</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Financeiro</h4>
+            </li>
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#finRelatorios" aria-expanded="false">
+                <i class="far fa-chart-bar"></i>
+                <p>Relatórios Financeiros</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="finRelatorios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/financeiro/relatorios-mensal.html">
+                      <span class="sub-item">Relatório Mensal</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/financeiro/relatorios-custos-setor.html">
+                      <span class="sub-item">Custos por Setor</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/financeiro/relatorios-comparativos.html">
+                      <span class="sub-item">Comparativos</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+
+            <!-- Novo item de Relatórios dentro de Financeiro -->
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
+                <i class="fas fa-chart-line"></i>
+                <p>Relatórios</p>
+                <span class="caret"></span>
+              </a>
+              <div class="collapse" id="finOutrosRelatorios">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/financeiro/gerar-memorando.html">
+                      <span class="sub-item">Memorandos</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/financeiro/relatorios-rotas.html">
+                      <span class="sub-item">Por Rota</span>
                     </a>
                   </li>
                 </ul>
@@ -138,11 +525,12 @@
     </div>
     <!-- END SIDEBAR -->
 
+
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
-            <a href="dashboard-fornecedor.html" class="logo">
+            <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
               <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
                 height="20" />
             </a>
@@ -162,7 +550,141 @@
 
         <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
           <div class="container-fluid">
+            <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+
+              <!-- =====================================
+             ÍCONE MENSAGENS (exemplo)
+        ===================================== -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-envelope"></i>
+                </a>
+                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
+                  <li>
+                    <div class="dropdown-title d-flex justify-content-between align-items-center">
+                      Mensagens
+                      <a href="#" class="small">Marcar todas como lidas</a>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="message-notif-scroll scrollbar-outer">
+                      <div class="notif-center">
+                        <!-- Exemplos de mensagens fixas ou carregadas via JS -->
+                        <a href="#">
+                          <div class="notif-img">
+                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
+                          </div>
+                          <div class="notif-content">
+                            <span class="subject">Jimmy Denis</span>
+                            <span class="block">Como você está?</span>
+                            <span class="time">Há 5 minutos</span>
+                          </div>
+                        </a>
+                        <!-- ... -->
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);">
+                      Ver todas as mensagens
+                      <i class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <!-- =====================================
+             ÍCONE NOTIFICAÇÕES (DINÂMICO)
+        ===================================== -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
+                  aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-bell"></i>
+                  <span class="notification" id="notifCount">0</span>
+                </a>
+                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
+                  <li>
+                    <div class="dropdown-title" id="notifTitle">
+                      Você não tem novas notificações
+                    </div>
+                  </li>
+                  <li>
+                    <div class="notif-scroll scrollbar-outer">
+                      <div class="notif-center" id="notifList">
+                        <!-- Conteúdo gerado dinamicamente -->
+                      </div>
+                    </div>
+                  </li>
+                  <li>
+                    <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
+                      Ver todas as notificações
+                      <i class="fa fa-angle-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+
+              <!-- =====================================
+             ÍCONE AÇÕES RÁPIDAS
+        ===================================== -->
+              <li class="nav-item topbar-icon dropdown hidden-caret">
+                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fas fa-layer-group"></i>
+                </a>
+                <div class="dropdown-menu quick-actions animated fadeIn">
+                  <div class="quick-actions-header">
+                    <span class="title mb-1">Ações Rápidas</span>
+                    <span class="subtitle op-7">Atalhos</span>
+                  </div>
+                  <div class="quick-actions-scroll scrollbar-outer">
+                    <div class="quick-actions-items">
+                      <div class="row m-0">
+                        <!-- Exemplo de cards para algumas páginas existentes -->
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-primary rounded-circle">
+                              <i class="fas fa-school"></i>
+                            </div>
+                            <span class="text">Cad. Escola</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/monitores-cadastrar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-success rounded-circle">
+                              <i class="fas fa-user-check"></i>
+                            </div>
+                            <span class="text">Cad. Monitor</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/rotas-listar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-warning rounded-circle">
+                              <i class="fas fa-route"></i>
+                            </div>
+                            <span class="text">Listar Rotas</span>
+                          </div>
+                        </a>
+                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-administrativo/frota-listar.html">
+                          <div class="quick-actions-item">
+                            <div class="avatar-item bg-info rounded-circle">
+                              <i class="fas fa-warehouse"></i>
+                            </div>
+                            <span class="text">Listar Frota</span>
+                          </div>
+                        </a>
+                        <!-- ... Adicione mais se quiser -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+
+              <!-- =====================================
+             DROPDOWN USUÁRIO
+        ===================================== -->
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
@@ -170,7 +692,7 @@
                   </div>
                   <span class="profile-username">
                     <span class="op-7">Olá,</span>
-                    <span class="fw-bold" id="dropdownUserName">Fornecedor</span>
+                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
                   </span>
                 </a>
                 <ul class="dropdown-menu dropdown-user animated fadeIn">
@@ -181,15 +703,19 @@
                           <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
                         </div>
                         <div class="u-text">
-                          <h4 id="dropdownUserBoxName">Fornecedor</h4>
-                          <p class="text-muted" id="dropdownUserEmail">fornecedor@pydenexpress.com</p>
-                          <a href="#" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                          <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
+                          <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
+                            Perfil</a>
                         </div>
                       </div>
                     </li>
                     <li>
                       <div class="dropdown-divider"></div>
-                      <a class="dropdown-item" href="#">Meu Perfil</a>
+                      <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu Perfil</a>
+                      <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/configuracoes.html">Configurações</a>
                       <div class="dropdown-divider"></div>
                       <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
                     </li>
