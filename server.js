@@ -134,6 +134,7 @@ async function isAuthenticated(req, res, next) {
     if (!init) {
       return res.status(403).send("Acesso negado: usuário não liberado.");
     }
+
     let listaPermissoes = [];
     if (permissoes) {
       try {
@@ -183,6 +184,9 @@ app.get("/solicitar-rota.html", (req, res) => {
 });
 app.get("/admin-login.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/admin-login.html"));
+});
+app.get("/dashboard-admin.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/admin/dashboard-admin.html"));
 });
 
 app.get("/logout", (req, res) => {
@@ -974,7 +978,7 @@ app.post("/api/admin-login", async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Login de admin bem-sucedido!",
-      redirectUrl: "/dashboard-admin.html",
+      redirectUrl: "/admin/dashboard-admin.html",
     });
   } catch (error) {
     console.error("Erro ao efetuar login admin:", error);
