@@ -3015,9 +3015,219 @@ app.delete("/api/fornecedor/motoristas/:id", async (req, res) => {
   }
 });
 
-// ====> server.js (ou arquivo de rotas Express), trecho que retorna as rotas do fornecedor
-// OBS: agora iremos buscar todas as rotas que tenham associação na tabela intermediária fornecedores_rotas
-// com o fornecedor_id do usuário logado.
+app.get("/api/fornecedor/frota", async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Não está logado." });
+    }
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.json([]);
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const query = `
+      SELECT f.id,
+             f.cor_veiculo,
+             f.placa,
+             f.tipo_veiculo,
+             f.capacidade
+      FROM frota f
+      WHERE f.fornecedor_id = $1
+      ORDER BY f.id DESC
+    `;
+    const result = await pool.query(query, [fornecedorId]);
+    return res.json(result.rows);
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro interno ao listar frota." });
+  }
+});
+
+app.post("/api/fornecedor/frota/cadastrar", uploadFrota.fields([
+  { name: "documentacao", maxCount: 1 },
+  { name: "licenca", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+    const {
+      cor_veiculo,
+      placa,
+      tipo_veiculo,
+      capacidade,
+      ano,
+      marca,
+      modelo,
+      tipo_combustivel,
+      data_aquisicao,
+      adaptado,
+      elevador,
+      ar_condicionado,
+      gps,
+      cinto_seguranca,
+      fornecedor_id
+    } = req.body;
+
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.status(403).json({ success: false, message: "Usuário não vinculado a fornecedor." });
+    }
+    const realFornId = relForn.rows[0].fornecedor_id;
+    if (parseInt(fornecedor_id, 10) !== realFornId) {
+      return res.status(403).json({ success: false, message: "Fornecedor inválido." });
+    }
+
+    let docPath = null;
+    let licPath = null;
+    if (req.files["documentacao"] && req.files["documentacao"].length > 0) {
+      docPath = "uploads/" + req.files["documentacao"][0].filename;
+    }
+    if (req.files["licenca"] && req.files["licenca"].length > 0) {
+      licPath = "uploads/" + req.files["licenca"][0].filename;
+    }
+
+    const adapt = adaptado === "Sim";
+    const elev = elevador === "Sim";
+    const arCond = ar_condicionado === "Sim";
+    const gpsBool = gps === "Sim";
+    const cintoBool = cinto_seguranca === "Sim";
+
+    const insertQuery = `
+      INSERT INTO frota (
+        cor_veiculo, placa, tipo_veiculo, capacidade,
+        ano, marca, modelo, tipo_combustivel, data_aquisicao,
+        adaptado, elevador, ar_condicionado, gps, cinto_seguranca,
+        fornecedor_id, documentacao, licenca
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6, $7, $8, $9,
+        $10, $11, $12, $13, $14,
+        $15, $16, $17
+      )
+      RETURNING id
+    `;
+    const values = [
+      cor_veiculo,
+      placa,
+      tipo_veiculo || null,
+      capacidade ? parseInt(capacidade, 10) : null,
+      ano ? parseInt(ano, 10) : null,
+      marca || null,
+      modelo || null,
+      tipo_combustivel || null,
+      data_aquisicao || null,
+      adapt,
+      elev,
+      arCond,
+      gpsBool,
+      cintoBool,
+      realFornId,
+      docPath,
+      licPath
+    ];
+    const result = await pool.query(insertQuery, values);
+    if (result.rows.length === 0) {
+      return res.status(500).json({ success: false, message: "Falha ao cadastrar veículo." });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro interno ao cadastrar veículo." });
+  }
+});
+
+app.post("/api/fornecedor/frota/atribuir-rota", async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+    const { frota_id, rota_id } = req.body;
+
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Usuário não vinculado a fornecedor."
+      });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const checkFrota = await pool.query(
+      "SELECT id FROM frota WHERE id = $1 AND fornecedor_id = $2 LIMIT 1",
+      [frota_id, fornecedorId]
+    );
+    if (checkFrota.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Veículo não encontrado ou não pertence a este fornecedor."
+      });
+    }
+
+    const checkRota = await pool.query(`
+      SELECT r.id
+      FROM rotas_simples r
+      JOIN fornecedores_rotas fr ON fr.rota_id = r.id
+      WHERE r.id = $1
+        AND fr.fornecedor_id = $2
+      LIMIT 1
+    `, [rota_id, fornecedorId]);
+    if (checkRota.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Rota não encontrada ou não pertence a este fornecedor."
+      });
+    }
+
+    await pool.query(`
+      INSERT INTO frota_rotas (frota_id, rota_id)
+      VALUES ($1, $2)
+      ON CONFLICT (frota_id, rota_id) DO NOTHING
+    `, [frota_id, rota_id]);
+
+    return res.json({ success: true, message: "Veículo associado à rota com sucesso!" });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao associar veículo à rota."
+    });
+  }
+});
+
+app.delete("/api/fornecedor/frota/:id", async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+    const { id } = req.params;
+
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res.status(403).json({ success: false, message: "Usuário não vinculado a fornecedor." });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const check = await pool.query(
+      "SELECT id FROM frota WHERE id = $1 AND fornecedor_id = $2 LIMIT 1",
+      [id, fornecedorId]
+    );
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Veículo não encontrado para este fornecedor." });
+    }
+
+    await pool.query("DELETE FROM frota WHERE id = $1", [id]);
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro interno ao excluir veículo." });
+  }
+});
 
 app.get("/api/fornecedor/rotas", async (req, res) => {
   try {
