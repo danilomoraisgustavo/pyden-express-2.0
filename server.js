@@ -102,32 +102,60 @@ function isAdmin(req, res, next) {
 
 // MIDDLEWARE: isAuthenticated (protege rotas e páginas)
 
-function isAuthenticated(req, res, next) {
-  if (!req.session || !req.session.userId) {
-    return res.redirect("/");
-  }
-  // Se usuário for ID 1, é "master"
-  if (req.session.userId === 1) {
-    return next();
-  }
-  // Caso contrário, verifica se 'init' está true
-  pool
-    .query("SELECT init FROM usuarios WHERE id = $1", [req.session.userId])
-    .then((result) => {
-      if (result.rows.length === 0) {
-        return res.redirect("/");
+async function isAuthenticated(req, res, next) {
+  try {
+    // Verifica se existe sessão e userId
+    if (!req.session || !req.session.userId) {
+      return res.redirect("/"); // ou res.status(401).send("Não autenticado"), etc.
+    }
+
+    // Se userId for 1 (superuser), libera o acesso
+    if (req.session.userId === 1) {
+      return next();
+    }
+
+    // Senão, busca as permissões no banco
+    const userQuery = `
+      SELECT init, permissoes
+      FROM usuarios
+      WHERE id = $1
+      LIMIT 1
+    `;
+    const result = await pool.query(userQuery, [req.session.userId]);
+
+    if (result.rows.length === 0) {
+      // Usuário não encontrado
+      return res.redirect("/");
+    }
+
+    const { init, permissoes } = result.rows[0];
+
+    // Se 'init' for false, o usuário não foi "liberado" ou algo do tipo
+    if (!init) {
+      return res.status(403).send("Acesso negado: usuário não liberado.");
+    }
+    let listaPermissoes = [];
+    if (permissoes) {
+      try {
+        listaPermissoes = JSON.parse(permissoes); // se estiver em JSON
+      } catch (err) {
+        // se não estiver em JSON, pode tratar como CSV, etc.
+        console.error("Falha ao parsear permissoes:", err);
       }
-      const { init } = result.rows[0];
-      if (init === true) {
-        return next();
-      } else {
-        return res.status(403).send("Acesso negado: usuário sem permissão.");
-      }
-    })
-    .catch((error) => {
-      console.error("Erro ao verificar permissões:", error);
-      return res.status(500).send("Erro interno do servidor.");
-    });
+    }
+
+    // Lógica de acesso: se tiver "admin" ou "gestor" na lista, prossegue
+    if (listaPermissoes.includes("admin") || listaPermissoes.includes("gestor")) {
+      return next();
+    }
+
+    // Caso contrário, nega o acesso
+    return res.status(403).send("Acesso negado: permissões insuficientes.");
+
+  } catch (error) {
+    console.error("Erro ao verificar permissões:", error);
+    return res.status(500).send("Erro interno do servidor.");
+  }
 }
 
 
@@ -870,7 +898,7 @@ app.post("/api/login", async (req, res) => {
         usuario.permissoes.includes("locan") ||
         usuario.permissoes.includes("talismã")
       ) {
-        redirectUrl = "/pages/fornecedores/dashboard-fornecedor.html";
+        redirectUrl = "/fornecedores/dashboard-fornecedor.html";
       }
     }
 
@@ -946,7 +974,7 @@ app.post("/api/admin-login", async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Login de admin bem-sucedido!",
-      redirectUrl: "/pages/admin/dashboard-admin.html",
+      redirectUrl: "/admin/dashboard-admin.html",
     });
   } catch (error) {
     console.error("Erro ao efetuar login admin:", error);
