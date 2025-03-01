@@ -1,9 +1,10 @@
+<!-- ====> public/pages/fornecedores/frota-fornecedor.html <==== -->
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Listar Frota Escolar </title>
+  <title>Listar Frota Escolar (Fornecedor)</title>
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
@@ -31,34 +32,10 @@
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
 
-  <!-- Google Maps API -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
-
   <style>
-    /* Mapa principal */
-    #map {
-      height: 500px;
-      width: 100%;
-    }
-
-    /* Aumentando um pouco a altura do mapa do modal */
-    #map2 {
-      height: 330px !important;
-      width: 100%;
-    }
-
     .required-label::after {
       content: " *";
       color: red;
-    }
-
-    .map-instructions {
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-
-    .select2-container {
-      width: 100% !important;
     }
 
     .modal-lg {
@@ -73,7 +50,7 @@
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
-          <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
+          <a href="dashboard-fornecedor.html" class="logo">
             <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
           </a>
           <div class="nav-toggle">
@@ -86,36 +63,11 @@
       <div class="sidebar-wrapper scrollbar scrollbar-inner">
         <div class="sidebar-content">
           <ul class="nav nav-secondary">
-            <li class="nav-section">
-              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
-              <h4 class="text-section">Transporte Escolar</h4>
-            </li>
             <li class="nav-item">
-              <a href="../../pages/transporte-escolar/dashboard-escolar.html">
+              <a href="dashboard-fornecedor.html">
                 <i class="fas fa-tachometer-alt"></i>
-                <p>Dashboard Escolar</p>
+                <p>Dashboard Fornecedor</p>
               </a>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
-                <i class="fas fa-user-graduate"></i>
-                <p>Alunos</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teAlunos">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html">
-                      <span class="sub-item">Listar Solicitações de Transporte</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/alunos-listar.html">
-                      <span class="sub-item">Listar Alunos</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
             </li>
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
@@ -126,28 +78,28 @@
               <div class="collapse" id="teMotoristas">
                 <ul class="nav nav-collapse">
                   <li>
-                    <a href="../../pages/transporte-escolar/motoristas-listar.html">
+                    <a href="motorista-fornecedor.html">
                       <span class="sub-item">Listar Motoristas</span>
                     </a>
                   </li>
                   <li>
-                    <a href="../../pages/transporte-escolar/motoristas-licencas.html">
+                    <a href="#">
                       <span class="sub-item">Licenças e Certificações</span>
                     </a>
                   </li>
                 </ul>
               </div>
             </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="false">
+            <li class="nav-item active">
+              <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="true">
                 <i class="fas fa-user-check"></i>
                 <p>Monitores</p>
                 <span class="caret"></span>
               </a>
-              <div class="collapse" id="teMonitores">
+              <div class="collapse show" id="teMonitores">
                 <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/monitores-listar.html">
+                  <li class="active">
+                    <a href="monitor-fornecedor.html">
                       <span class="sub-item">Listar Monitores</span>
                     </a>
                   </li>
@@ -155,388 +107,26 @@
               </div>
             </li>
             <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
+              <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="true">
                 <i class="fas fa-bus"></i>
                 <p>Veículos</p>
                 <span class="caret"></span>
               </a>
-              <div class="collapse" id="teVeiculos">
+              <div class="collapse show" id="teVeiculos">
                 <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/veiculos-listar.html">
+                  <li class="active">
+                    <a href="frota-fornecedor.html">
                       <span class="sub-item">Listar Veículos</span>
                     </a>
                   </li>
                   <li>
-                    <a href="../../pages/transporte-escolar/veiculos-manutencao.html">
+                    <a href="#">
                       <span class="sub-item">Manutenção</span>
                     </a>
                   </li>
                   <li>
-                    <a href="../../pages/transporte-escolar/veiculos-documentacao.html">
+                    <a href="#">
                       <span class="sub-item">Documentação e Seguros</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teRotas" aria-expanded="false">
-                <i class="fas fa-route"></i>
-                <p>Rotas</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teRotas">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/rotas-listar.html">
-                      <span class="sub-item">Listar Rotas</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/pontos-cadastrar.html">
-                      <span class="sub-item">Pontos de Parada</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teRelatorios" aria-expanded="false">
-                <i class="fas fa-chart-line"></i>
-                <p>Relatórios</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teRelatorios">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/financeiro/gerar-memorando.html">
-                      <span class="sub-item">Memorandos</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-rotas.html">
-                      <span class="sub-item">Por Rota</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
-                <i class="fas fa-school"></i>
-                <p>Zoneamento</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teZoneamento">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/zoneamento-listar.html">
-                      <span class="sub-item">Listar Zoneamento</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/zoneamento-cadastrar.html">
-                      <span class="sub-item">Cadastrar Zoneamento</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teEscolas" aria-expanded="false">
-                <i class="fas fa-school"></i>
-                <p>Escolas</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teEscolas">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/escolas-listar.html">
-                      <span class="sub-item">Listar Escolas</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teFornecedores" aria-expanded="false">
-                <i class="fas fa-truck-loading"></i>
-                <p>Fornecedores</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teFornecedores">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/fornecedores-listar.html">
-                      <span class="sub-item">Listar Fornecedores</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/fornecedores-cadastrar.html">
-                      <span class="sub-item">Cadastrar Fornecedor</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="nav-section">
-              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
-              <h4 class="text-section">Transporte Administrativo</h4>
-            </li>
-            <li class="nav-item">
-              <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
-                <i class="fas fa-tachometer-alt"></i>
-                <p>Dashboard Administrativo</p>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taFuncionarios" aria-expanded="false">
-                <i class="fas fa-users-cog"></i>
-                <p>Funcionários</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taFuncionarios">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/funcionarios-listar.html">
-                      <span class="sub-item">Listar Funcionários</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/funcionarios-cadastrar.html">
-                      <span class="sub-item">Cadastrar Funcionário</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/funcionarios-cargos.html">
-                      <span class="sub-item">Funções e Cargos</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/funcionarios-visualizar.html">
-                      <span class="sub-item">Visualizar Funcionário</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
-                <i class="fas fa-id-card"></i>
-                <p>Motoristas</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taMotoristas">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/motoristas-listar.html">
-                      <span class="sub-item">Listar Motoristas</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/motoristas-cadastrar.html">
-                      <span class="sub-item">Cadastrar Motorista</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/motoristas-licencas.html">
-                      <span class="sub-item">Licenças e Certificações</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taMonitores" aria-expanded="false">
-                <i class="fas fa-user-check"></i>
-                <p>Monitores</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taMonitores">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/monitores-listar.html">
-                      <span class="sub-item">Listar Monitores</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/monitores-cadastrar.html">
-                      <span class="sub-item">Cadastrar Monitor</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
-                <i class="fas fa-warehouse"></i>
-                <p>Frota Administrativa</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taFrota">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/frota-listar.html">
-                      <span class="sub-item">Listar Frota</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/frota-manutencao.html">
-                      <span class="sub-item">Manutenção</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/frota-rotas.html">
-                      <span class="sub-item">Rotas Internas</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
-                <i class="far fa-calendar-alt"></i>
-                <p>Agenda de Viagens</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taAgenda">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/agenda-viagens-listar.html">
-                      <span class="sub-item">Listar Viagens</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/agenda-viagens-nova.html">
-                      <span class="sub-item">Agendar Nova Viagem</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/agenda-viagens-historico.html">
-                      <span class="sub-item">Histórico de Viagens</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taLogistica" aria-expanded="false">
-                <i class="fas fa-truck-loading"></i>
-                <p>Logística Interna</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taLogistica">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/logistica-materiais.html">
-                      <span class="sub-item">Transporte de Materiais</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/logistica-manutencoes.html">
-                      <span class="sub-item">Agendamento Manutenção</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/logistica-suprimentos.html">
-                      <span class="sub-item">Controle de Suprimentos</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taRelatorios" aria-expanded="false">
-                <i class="fas fa-chart-pie"></i>
-                <p>Relatórios</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taRelatorios">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/gerar-memorando.html">
-                      <span class="sub-item">Gerar Memorando</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/relatorios-eficiencia.html">
-                      <span class="sub-item">Eficiência</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/relatorios-custos.html">
-                      <span class="sub-item">Custos Operacionais</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/relatorios-comparativos.html">
-                      <span class="sub-item">Comparativos</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/relatorios-mensais.html">
-                      <span class="sub-item">Mensais</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/relatorios-rotas.html">
-                      <span class="sub-item">Por Rota</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="nav-section">
-              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
-              <h4 class="text-section">Financeiro</h4>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#finRelatorios" aria-expanded="false">
-                <i class="far fa-chart-bar"></i>
-                <p>Relatórios Financeiros</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="finRelatorios">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-mensal.html">
-                      <span class="sub-item">Relatório Mensal</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-custos-setor.html">
-                      <span class="sub-item">Custos por Setor</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-comparativos.html">
-                      <span class="sub-item">Comparativos</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-
-            <!-- Novo item de Relatórios dentro de Financeiro -->
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
-                <i class="fas fa-chart-line"></i>
-                <p>Relatórios</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="finOutrosRelatorios">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/financeiro/gerar-memorando.html">
-                      <span class="sub-item">Memorandos</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-rotas.html">
-                      <span class="sub-item">Por Rota</span>
                     </a>
                   </li>
                 </ul>
@@ -548,12 +138,11 @@
     </div>
     <!-- END SIDEBAR -->
 
-
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
-            <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
+            <a href="dashboard-fornecedor.html" class="logo">
               <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
                 height="20" />
             </a>
@@ -573,141 +162,7 @@
 
         <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
           <div class="container-fluid">
-            <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-
-              <!-- =====================================
-             ÍCONE MENSAGENS (exemplo)
-        ===================================== -->
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fa fa-envelope"></i>
-                </a>
-                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
-                  <li>
-                    <div class="dropdown-title d-flex justify-content-between align-items-center">
-                      Mensagens
-                      <a href="#" class="small">Marcar todas como lidas</a>
-                    </div>
-                  </li>
-                  <li>
-                    <div class="message-notif-scroll scrollbar-outer">
-                      <div class="notif-center">
-                        <!-- Exemplos de mensagens fixas ou carregadas via JS -->
-                        <a href="#">
-                          <div class="notif-img">
-                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
-                          </div>
-                          <div class="notif-content">
-                            <span class="subject">Jimmy Denis</span>
-                            <span class="block">Como você está?</span>
-                            <span class="time">Há 5 minutos</span>
-                          </div>
-                        </a>
-                        <!-- ... -->
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <a class="see-all" href="javascript:void(0);">
-                      Ver todas as mensagens
-                      <i class="fa fa-angle-right"></i>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-
-              <!-- =====================================
-             ÍCONE NOTIFICAÇÕES (DINÂMICO)
-        ===================================== -->
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
-                  aria-haspopup="true" aria-expanded="false">
-                  <i class="fa fa-bell"></i>
-                  <span class="notification" id="notifCount">0</span>
-                </a>
-                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
-                  <li>
-                    <div class="dropdown-title" id="notifTitle">
-                      Você não tem novas notificações
-                    </div>
-                  </li>
-                  <li>
-                    <div class="notif-scroll scrollbar-outer">
-                      <div class="notif-center" id="notifList">
-                        <!-- Conteúdo gerado dinamicamente -->
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
-                      Ver todas as notificações
-                      <i class="fa fa-angle-right"></i>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-
-              <!-- =====================================
-             ÍCONE AÇÕES RÁPIDAS
-        ===================================== -->
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fas fa-layer-group"></i>
-                </a>
-                <div class="dropdown-menu quick-actions animated fadeIn">
-                  <div class="quick-actions-header">
-                    <span class="title mb-1">Ações Rápidas</span>
-                    <span class="subtitle op-7">Atalhos</span>
-                  </div>
-                  <div class="quick-actions-scroll scrollbar-outer">
-                    <div class="quick-actions-items">
-                      <div class="row m-0">
-                        <!-- Exemplo de cards para algumas páginas existentes -->
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-primary rounded-circle">
-                              <i class="fas fa-school"></i>
-                            </div>
-                            <span class="text">Cad. Escola</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/monitores-cadastrar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-success rounded-circle">
-                              <i class="fas fa-user-check"></i>
-                            </div>
-                            <span class="text">Cad. Monitor</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/rotas-listar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-warning rounded-circle">
-                              <i class="fas fa-route"></i>
-                            </div>
-                            <span class="text">Listar Rotas</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-administrativo/frota-listar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-info rounded-circle">
-                              <i class="fas fa-warehouse"></i>
-                            </div>
-                            <span class="text">Listar Frota</span>
-                          </div>
-                        </a>
-                        <!-- ... Adicione mais se quiser -->
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-
-              <!-- =====================================
-             DROPDOWN USUÁRIO
-        ===================================== -->
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
@@ -715,7 +170,7 @@
                   </div>
                   <span class="profile-username">
                     <span class="op-7">Olá,</span>
-                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
+                    <span class="fw-bold" id="dropdownUserName">Fornecedor</span>
                   </span>
                 </a>
                 <ul class="dropdown-menu dropdown-user animated fadeIn">
@@ -726,19 +181,15 @@
                           <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
                         </div>
                         <div class="u-text">
-                          <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
-                          <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
-                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
-                            Perfil</a>
+                          <h4 id="dropdownUserBoxName">Fornecedor</h4>
+                          <p class="text-muted" id="dropdownUserEmail">fornecedor@pydenexpress.com</p>
+                          <a href="#" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
                         </div>
                       </div>
                     </li>
                     <li>
                       <div class="dropdown-divider"></div>
-                      <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu Perfil</a>
-                      <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item" href="/pages/usuarios/configuracoes.html">Configurações</a>
+                      <a class="dropdown-item" href="#">Meu Perfil</a>
                       <div class="dropdown-divider"></div>
                       <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
                     </li>
@@ -750,14 +201,13 @@
         </nav>
       </div>
 
-
       <div class="container">
         <div class="page-inner">
           <div class="page-header">
-            <h3 class="fw-bold mb-3">Listar Frota Escolar</h3>
+            <h3 class="fw-bold mb-3">Listar Veículos (Fornecedor)</h3>
             <ul class="breadcrumbs mb-3">
               <li class="nav-home">
-                <a href="../../">
+                <a href="dashboard-fornecedor.html">
                   <i class="icon-home"></i>
                 </a>
               </li>
@@ -771,23 +221,9 @@
                 <i class="icon-arrow-right"></i>
               </li>
               <li class="nav-item">
-                <a href="#">Listar Frota</a>
+                <a href="#">Listar Veículos</a>
               </li>
             </ul>
-          </div>
-
-          <!-- Mapa Principal -->
-          <div class="row">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header">
-                  <div class="card-title">Visualização dos Veículos no Mapa</div>
-                </div>
-                <div class="card-body">
-                  <div id="map"></div>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Tabela de Veículos -->
@@ -806,7 +242,7 @@
                       <thead>
                         <tr>
                           <th>ID</th>
-                          <th>Nome do Veículo</th>
+                          <th>Cor</th>
                           <th>Placa</th>
                           <th>Tipo</th>
                           <th>Capacidade</th>
@@ -817,7 +253,7 @@
                       <tfoot>
                         <tr>
                           <th>ID</th>
-                          <th>Nome do Veículo</th>
+                          <th>Cor</th>
                           <th>Placa</th>
                           <th>Tipo</th>
                           <th>Capacidade</th>
@@ -826,7 +262,7 @@
                         </tr>
                       </tfoot>
                       <tbody>
-                        <!-- Preenchido via JavaScript -->
+                        <!-- Conteúdo via JavaScript -->
                       </tbody>
                     </table>
                   </div>
@@ -846,11 +282,12 @@
                 </div>
                 <div class="modal-body">
                   <form id="veiculo-form" enctype="multipart/form-data">
-                    <!-- Linha 1 (3 colunas) -->
+                    <input type="hidden" id="fornecedor_id" name="fornecedor_id" />
+                    <!-- Linha 1 -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
-                        <label for="nome_veiculo" class="form-label required-label">Nome do Veículo</label>
-                        <input type="text" id="nome_veiculo" name="nome_veiculo" class="form-control" required />
+                        <label for="cor_veiculo" class="form-label required-label">Cor do Veículo</label>
+                        <input type="text" id="cor_veiculo" name="cor_veiculo" class="form-control" required />
                       </div>
                       <div class="col-md-4 mb-3">
                         <label for="placa" class="form-label required-label">Placa</label>
@@ -866,8 +303,7 @@
                         </select>
                       </div>
                     </div>
-
-                    <!-- Linha 2 (3 colunas) -->
+                    <!-- Linha 2 -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="capacidade" class="form-label required-label">Capacidade</label>
@@ -882,8 +318,7 @@
                         <input type="text" id="marca" name="marca" class="form-control" required />
                       </div>
                     </div>
-
-                    <!-- Linha 3 (3 colunas) -->
+                    <!-- Linha 3 -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="modelo" class="form-label required-label">Modelo</label>
@@ -905,8 +340,7 @@
                         <input type="date" id="data_aquisicao" name="data_aquisicao" class="form-control" required />
                       </div>
                     </div>
-
-                    <!-- Linha 4 (3 colunas) -->
+                    <!-- Linha 4 -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="adaptado" class="form-label required-label">Adaptado?</label>
@@ -933,8 +367,7 @@
                         </select>
                       </div>
                     </div>
-
-                    <!-- Linha 5 (3 colunas) -->
+                    <!-- Linha 5 -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="gps" class="form-label required-label">GPS Integrado?</label>
@@ -960,41 +393,19 @@
                         </select>
                       </div>
                     </div>
-
-                    <!-- Linha 6: Associar Motoristas (única coluna no row) -->
+                    <!-- Linha 6: Associar Motoristas -->
                     <h5>Associar a Motoristas</h5>
                     <div class="mb-3">
-                      <label for="motoristas_associados" class="form-label">
-                        Selecione um ou mais Motoristas
-                      </label>
+                      <label for="motoristas_associados" class="form-label">Selecione um ou mais Motoristas</label>
                       <select id="motoristas_associados" name="motoristas_associados[]" class="form-control" multiple>
                         <!-- Preenchido via JS -->
                       </select>
                     </div>
-
-                    <!-- Mapa e coordenadas -->
-                    <h5 class="mt-4">Localização da Garagem</h5>
-                    <p class="map-instructions">Clique no mapa para selecionar latitude e longitude:</p>
-                    <div id="map2" class="mb-3"></div>
-                    <div class="row mb-3">
-                      <div class="col-md-6">
-                        <label for="latitude_garagem" class="form-label">Latitude</label>
-                        <input type="text" id="latitude_garagem" name="latitude_garagem" class="form-control"
-                          readonly />
-                      </div>
-                      <div class="col-md-6">
-                        <label for="longitude_garagem" class="form-label">Longitude</label>
-                        <input type="text" id="longitude_garagem" name="longitude_garagem" class="form-control"
-                          readonly />
-                      </div>
-                    </div>
-
                     <!-- Documentação -->
                     <h5 class="mt-4">Documentação</h5>
                     <div class="row">
                       <div class="col-md-6 mb-3">
-                        <label for="documentacao" class="form-label required-label">Documentação do Veículo
-                          (PDF)</label>
+                        <label for="documentacao" class="form-label required-label">Documentação (PDF)</label>
                         <input type="file" id="documentacao" name="documentacao" class="form-control" accept=".pdf"
                           required />
                       </div>
@@ -1003,7 +414,6 @@
                         <input type="file" id="licenca" name="licenca" class="form-control" accept=".pdf" required />
                       </div>
                     </div>
-
                     <div class="mt-4 text-end">
                       <button type="submit" class="btn btn-success">Cadastrar Veículo</button>
                     </div>
@@ -1012,7 +422,179 @@
               </div>
             </div>
           </div>
-          <!-- FIM MODAL -->
+          <!-- MODAL: Atribuir Rota -->
+          <div class="modal fade" id="modalAtribuirRota" tabindex="-1" aria-labelledby="modalAtribuirRotaLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalAtribuirRotaLabel">Atribuir Rota ao Veículo</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="atribuir-rota-form">
+                    <div class="mb-3">
+                      <label for="rota_id" class="form-label">Selecione a Rota</label>
+                      <select id="rota_id" name="rota_id" class="form-control" required></select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Atribuir Rota</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- MODAL: Editar Veículo -->
+          <div class="modal fade" id="modalEditarVeiculo" tabindex="-1" aria-labelledby="modalEditarVeiculoLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalEditarVeiculoLabel">Editar Veículo</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="editar-veiculo-form" enctype="multipart/form-data">
+                    <input type="hidden" id="edit_id" name="edit_id" />
+                    <!-- Linha 1 -->
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_cor_veiculo" class="form-label">Cor do Veículo</label>
+                        <input type="text" id="edit_cor_veiculo" name="cor_veiculo" class="form-control" />
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_placa" class="form-label">Placa</label>
+                        <input type="text" id="edit_placa" name="placa" class="form-control" />
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_tipo_veiculo" class="form-label">Tipo de Veículo</label>
+                        <select id="edit_tipo_veiculo" name="tipo_veiculo" class="form-control">
+                          <option value="">Selecione</option>
+                          <option value="Ônibus">Ônibus</option>
+                          <option value="Micro-ônibus">Micro-ônibus</option>
+                          <option value="Van">Van</option>
+                        </select>
+                      </div>
+                    </div>
+                    <!-- Linha 2 -->
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_capacidade" class="form-label">Capacidade</label>
+                        <input type="number" id="edit_capacidade" name="capacidade" class="form-control" />
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_ano" class="form-label">Ano</label>
+                        <input type="number" id="edit_ano" name="ano" class="form-control" min="1900" max="2100" />
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_marca" class="form-label">Marca</label>
+                        <input type="text" id="edit_marca" name="marca" class="form-control" />
+                      </div>
+                    </div>
+                    <!-- Linha 3 -->
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_modelo" class="form-label">Modelo</label>
+                        <input type="text" id="edit_modelo" name="modelo" class="form-control" />
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_tipo_combustivel" class="form-label">Tipo de Combustível</label>
+                        <select id="edit_tipo_combustivel" name="tipo_combustivel" class="form-control">
+                          <option value="">Selecione</option>
+                          <option value="Diesel">Diesel</option>
+                          <option value="Gasolina">Gasolina</option>
+                          <option value="Álcool">Álcool</option>
+                          <option value="GNV">GNV</option>
+                          <option value="Elétrico">Elétrico</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_data_aquisicao" class="form-label">Data de Aquisição</label>
+                        <input type="date" id="edit_data_aquisicao" name="data_aquisicao" class="form-control" />
+                      </div>
+                    </div>
+                    <!-- Linha 4 -->
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_adaptado" class="form-label">Adaptado?</label>
+                        <select id="edit_adaptado" name="adaptado" class="form-control">
+                          <option value="">Selecione</option>
+                          <option value="Sim">Sim</option>
+                          <option value="Não">Não</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_elevador" class="form-label">Elevador?</label>
+                        <select id="edit_elevador" name="elevador" class="form-control">
+                          <option value="">Selecione</option>
+                          <option value="Sim">Sim</option>
+                          <option value="Não">Não</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_ar_condicionado" class="form-label">Ar-condicionado?</label>
+                        <select id="edit_ar_condicionado" name="ar_condicionado" class="form-control">
+                          <option value="">Selecione</option>
+                          <option value="Sim">Sim</option>
+                          <option value="Não">Não</option>
+                        </select>
+                      </div>
+                    </div>
+                    <!-- Linha 5 -->
+                    <div class="row">
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_gps" class="form-label">GPS Integrado?</label>
+                        <select id="edit_gps" name="gps" class="form-control">
+                          <option value="">Selecione</option>
+                          <option value="Sim">Sim</option>
+                          <option value="Não">Não</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_cinto_seguranca" class="form-label">Cinto de Segurança?</label>
+                        <select id="edit_cinto_seguranca" name="cinto_seguranca" class="form-control">
+                          <option value="">Selecione</option>
+                          <option value="Sim">Sim</option>
+                          <option value="Não">Não</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4 mb-3">
+                        <label for="edit_fornecedor_id" class="form-label">Fornecedor</label>
+                        <select id="edit_fornecedor_id" name="fornecedor_id" class="form-control" required>
+                          <!-- Preenchido via JS -->
+                        </select>
+                      </div>
+                    </div>
+                    <!-- Linha 6: Associar Motoristas -->
+                    <h5>Associar a Motoristas</h5>
+                    <div class="mb-3">
+                      <label for="edit_motoristas_associados" class="form-label">Selecione um ou mais Motoristas</label>
+                      <select id="edit_motoristas_associados" name="motoristas_associados[]" class="form-control"
+                        multiple>
+                        <!-- Preenchido via JS -->
+                      </select>
+                    </div>
+                    <!-- Documentação -->
+                    <h5 class="mt-4">Documentação</h5>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="edit_documentacao" class="form-label">Documentação (PDF)</label>
+                        <input type="file" id="edit_documentacao" name="documentacao" class="form-control"
+                          accept=".pdf" />
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label for="edit_licenca" class="form-label">Alvará / Licença (PDF)</label>
+                        <input type="file" id="edit_licenca" name="licenca" class="form-control" accept=".pdf" />
+                      </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                      <button type="submit" class="btn btn-success">Salvar Alterações</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- FIM MODAL Editar Veículo -->
         </div>
       </div>
 
@@ -1033,9 +615,7 @@
           </nav>
           <div class="copyright">
             2024, made with <i class="fa fa-heart heart text-danger"></i> by
-            <a href="http://www.themekita.com">ThemeKita</a>
-          </div>
-          <div>
+            <a href="http://www.themekita.com">ThemeKita</a>.
             Distributed by <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
           </div>
         </div>
@@ -1055,166 +635,95 @@
   <script src="../../assets/js/setting-demo2.js"></script>
 
   <script>
-    let map;         // Mapa principal
-    let map2;        // Mapa do modal
-    let marker2;     // Marker do modal
     let vehicles = [];
+    let fornecedorIdGlobal = null;
+    let rotas = [];
+    let selectedFrotaId = null;
     let markers = [];
-    let fornecedores = [];
-    let motoristas = [];
     let bounds;
 
     function showNotification(type, message, title = "") {
       $.notify({
         title: title ? title + ' ' : '',
         message: message,
-        icon:
-          type === 'success' ? 'fa fa-check-circle' :
-            type === 'danger' ? 'fa fa-exclamation-circle' :
-              type === 'warning' ? 'fa fa-exclamation-triangle' :
-                type === 'info' ? 'fa fa-info-circle' : ''
+        icon: type === 'success' ? 'fa fa-check-circle' :
+          type === 'danger' ? 'fa fa-exclamation-circle' :
+            type === 'warning' ? 'fa fa-exclamation-triangle' :
+              'fa fa-info-circle'
       }, {
         type: type,
-        placement: {
-          from: "top",
-          align: "right"
-        },
+        placement: { from: "top", align: "right" },
         offset: 20,
         spacing: 10,
         z_index: 1031,
         delay: 3000,
         timer: 1000,
-        animate: {
-          enter: 'animated fadeInDown',
-          exit: 'animated fadeOutUp'
-        }
+        animate: { enter: 'animated fadeInDown', exit: 'animated fadeOutUp' }
       });
     }
 
-    // Inicia o mapa principal
-    function initMap() {
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13,
-        mapTypeId: 'satellite'
-      });
-    }
-
-    // Inicia o mapa do modal de cadastro
-    function initMap2() {
-      map2 = new google.maps.Map(document.getElementById('map2'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13,
-        mapTypeId: 'satellite'
-      });
-
-      // Ao clicar no map2, cria/move o marker e atualiza campos de latitude/longitude
-      map2.addListener('click', function (event) {
-        const lat = event.latLng.lat();
-        const lng = event.latLng.lng();
-        if (marker2) {
-          marker2.setPosition(event.latLng);
-        } else {
-          marker2 = new google.maps.Marker({
-            position: event.latLng,
-            map: map2
-          });
-        }
-        document.getElementById('latitude_garagem').value = lat;
-        document.getElementById('longitude_garagem').value = lng;
-      });
-    }
-
-    // Carrega fornecedores para o select
-    function loadFornecedores() {
-      fetch('/api/fornecedores')
+    function loadFornecedorUser() {
+      return fetch("/api/fornecedor/meu")
         .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar fornecedores');
+          if (!res.ok) throw new Error("Erro ao buscar fornecedor do usuário");
           return res.json();
         })
         .then(data => {
-          fornecedores = data;
-          const fornecedorSelect = document.getElementById('fornecedor_id');
-          fornecedorSelect.innerHTML = '<option value="">Selecione um fornecedor</option>';
-          fornecedores.forEach(f => {
-            const option = document.createElement('option');
-            option.value = f.id;
-            option.textContent = f.nome_fornecedor;
-            fornecedorSelect.appendChild(option);
-          });
+          fornecedorIdGlobal = data.fornecedor_id;
+          if (!fornecedorIdGlobal) {
+            showNotification("danger", "Você não está vinculado a um fornecedor.");
+          }
+          document.getElementById("fornecedor_id").value = fornecedorIdGlobal || "";
         })
         .catch(err => {
           console.error(err);
-          showNotification('danger', 'Não foi possível carregar os fornecedores.');
+          showNotification("danger", "Erro ao buscar fornecedor do usuário.");
         });
     }
 
-    // Carrega motoristas para o select
-    function loadMotoristas() {
-      fetch('/api/motoristas')
+    function loadFrota() {
+      fetch("/api/fornecedor/frota")
         .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar motoristas');
-          return res.json();
-        })
-        .then(data => {
-          motoristas = data;
-          const motoristasSelect = document.getElementById('motoristas_associados');
-          motoristasSelect.innerHTML = '';
-          motoristas.forEach(m => {
-            const option = document.createElement('option');
-            option.value = m.id;
-            option.textContent = m.nome_motorista + ' - ' + (m.cpf || '');
-            motoristasSelect.appendChild(option);
-          });
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Não foi possível carregar os motoristas.');
-        });
-    }
-
-    // Carrega veículos
-    function loadVeiculos() {
-      fetch('/api/frota')
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar veículos');
+          if (!res.ok) throw new Error("Erro ao carregar frota");
           return res.json();
         })
         .then(data => {
           vehicles = data;
           populateTable();
-          plotAllVehiclesOnMap();
         })
         .catch(err => {
           console.error(err);
-          showNotification('danger', 'Não foi possível carregar os veículos.');
+          showNotification("danger", "Não foi possível carregar a frota.");
         });
     }
 
-    // Preenche a tabela
     function populateTable() {
-      const tableBody = $('#frota-table tbody');
+      const tableBody = $("#frota-table tbody");
       tableBody.empty();
-
       vehicles.forEach(v => {
         const row = `
           <tr>
             <td>${v.id}</td>
-            <td>${v.nome_veiculo}</td>
+            <td>${v.cor_veiculo || ""}</td>
             <td>${v.placa}</td>
-            <td>${v.tipo_veiculo}</td>
-            <td>${v.capacidade}</td>
-            <td>${v.fornecedor_nome || ''}</td>
+            <td>${v.tipo_veiculo || ""}</td>
+            <td>${v.capacidade || ""}</td>
+            <td>${v.fornecedor_nome || ""}</td>
             <td>
               <div class="form-button-action">
-                <button type="button" class="btn btn-link btn-primary btn-lg"
-                        onclick="focusVeiculo(${v.id})"
-                        data-bs-toggle="tooltip" title="Focar no Mapa">
-                  <i class="fa fa-map-marker-alt"></i>
+                <button type="button" class="btn btn-link btn-primary btn-lg" 
+                        data-bs-toggle="tooltip" title="Atribuir Rota"
+                        onclick="openAssignRotaModal(${v.id})">
+                  <i class="fa fa-route"></i>
                 </button>
-                <button type="button" class="btn btn-link btn-danger btn-lg"
-                        onclick="deleteVeiculo(${v.id})"
-                        data-bs-toggle="tooltip" title="Excluir Veículo">
+                <button type="button" class="btn btn-link btn-warning btn-lg" 
+                        data-bs-toggle="tooltip" title="Editar Veículo"
+                        onclick="openEditVeiculoModal(${v.id})">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-link btn-danger btn-lg" 
+                        data-bs-toggle="tooltip" title="Excluir Veículo"
+                        onclick="deleteVeiculo(${v.id})">
                   <i class="fa fa-trash-alt"></i>
                 </button>
               </div>
@@ -1223,11 +732,10 @@
         `;
         tableBody.append(row);
       });
-
-      if ($.fn.DataTable.isDataTable('#frota-table')) {
-        $('#frota-table').DataTable().clear().destroy();
+      if ($.fn.DataTable.isDataTable("#frota-table")) {
+        $("#frota-table").DataTable().clear().destroy();
       }
-      $('#frota-table').DataTable({
+      $("#frota-table").DataTable({
         pageLength: 10,
         language: {
           decimal: ",",
@@ -1246,136 +754,171 @@
             next: "Próximo",
             previous: "Anterior"
           },
-          emptyTable: "Nenhum dado disponível na tabela"
+          emptyTable: "Nenhum veículo disponível"
         }
       });
     }
 
-    // Plota todos os veículos no mapa principal
-    function plotAllVehiclesOnMap() {
-      // Remove markers anteriores
-      markers.forEach(m => m.setMap(null));
-      markers = [];
-
-      // Cria bounds para ajustar mapa
-      bounds = new google.maps.LatLngBounds();
-      let hasAtLeastOne = false;
-
-      vehicles.forEach(v => {
-        if (v.latitude_garagem && v.longitude_garagem) {
-          const lat = parseFloat(v.latitude_garagem);
-          const lng = parseFloat(v.longitude_garagem);
-          const position = { lat, lng };
-          const marker = new google.maps.Marker({
-            position,
-            map,
-            title: v.nome_veiculo
-          });
-          markers.push({ marker, id: v.id });
-          bounds.extend(position);
-          hasAtLeastOne = true;
-        }
-      });
-
-      if (hasAtLeastOne) {
-        map.fitBounds(bounds);
-      }
-    }
-
-    // Focar no veículo clicado
-    function focusVeiculo(id) {
-      const v = vehicles.find(veic => veic.id == id);
-      if (!v) return;
-      if (!v.latitude_garagem || !v.longitude_garagem) {
-        showNotification('warning', 'Este veículo não possui coordenadas da garagem cadastradas.');
-        return;
-      }
-      const lat = parseFloat(v.latitude_garagem);
-      const lng = parseFloat(v.longitude_garagem);
-      const position = { lat, lng };
-
-      const m = markers.find(m => m.id == id);
-      if (m) {
-        map.setCenter(position);
-        map.setZoom(16);
-        m.marker.setAnimation(google.maps.Animation.BOUNCE);
-        setTimeout(() => {
-          m.marker.setAnimation(null);
-        }, 1500);
-      } else {
-        showNotification('warning', 'Este veículo não possui marcador no mapa.');
-      }
-      document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // Excluir veículo
     function deleteVeiculo(id) {
-      fetch('/api/frota/' + id, {
-        method: 'DELETE'
-      })
+      if (!confirm("Tem certeza que deseja excluir este veículo?")) return;
+      fetch("/api/fornecedor/frota/" + id, { method: "DELETE" })
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            showNotification('success', 'Veículo excluído com sucesso!');
-            loadVeiculos();
+            showNotification("success", "Veículo excluído com sucesso!");
+            loadFrota();
           } else {
-            showNotification('danger', 'Erro ao excluir veículo: ' + data.message);
+            showNotification("danger", data.message || "Falha ao excluir veículo.");
           }
         })
         .catch(err => {
           console.error(err);
-          showNotification('danger', 'Erro ao excluir veículo. Tente novamente.');
+          showNotification("danger", "Erro interno ao excluir veículo.");
         });
     }
 
-    // Ao carregar o DOM
-    document.addEventListener('DOMContentLoaded', function () {
-      initMap();
+    function openAssignRotaModal(frotaId) {
+      selectedFrotaId = frotaId;
+      const rotaSelect = document.getElementById("rota_id");
+      rotaSelect.innerHTML = "";
+      fetch("/api/fornecedor/rotas")
+        .then(res => res.json())
+        .then(data => {
+          rotas = data;
+          rotas.forEach(r => {
+            const option = document.createElement("option");
+            option.value = r.id;
+            option.textContent = r.identificador + " - " + (r.descricao || "");
+            rotaSelect.appendChild(option);
+          });
+          $("#modalAtribuirRota").modal("show");
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification("danger", "Não foi possível carregar as rotas.");
+        });
+    }
+
+    function openEditVeiculoModal(frotaId) {
+      editFrotaId = frotaId;
+      fetch("/api/fornecedor/frota/" + frotaId)
+        .then(res => res.json())
+        .then(v => {
+          document.getElementById("edit_id").value = v.id;
+          document.getElementById("edit_cor_veiculo").value = v.cor_veiculo || "";
+          document.getElementById("edit_placa").value = v.placa || "";
+          document.getElementById("edit_tipo_veiculo").value = v.tipo_veiculo || "";
+          document.getElementById("edit_capacidade").value = v.capacidade || "";
+          document.getElementById("edit_ano").value = v.ano || "";
+          document.getElementById("edit_marca").value = v.marca || "";
+          document.getElementById("edit_modelo").value = v.modelo || "";
+          document.getElementById("edit_tipo_combustivel").value = v.tipo_combustivel || "";
+          document.getElementById("edit_data_aquisicao").value = v.data_aquisicao || "";
+          document.getElementById("edit_adaptado").value = v.adaptado ? "Sim" : "Não";
+          document.getElementById("edit_elevador").value = v.elevador ? "Sim" : "Não";
+          document.getElementById("edit_ar_condicionado").value = v.ar_condicionado ? "Sim" : "Não";
+          document.getElementById("edit_gps").value = v.gps ? "Sim" : "Não";
+          document.getElementById("edit_cinto_seguranca").value = v.cinto_seguranca ? "Sim" : "Não";
+          document.getElementById("edit_fornecedor_id").innerHTML = "";
+          fornecedores.forEach(f => {
+            const option = document.createElement("option");
+            option.value = f.id;
+            option.textContent = f.nome_fornecedor;
+            if (f.id == v.fornecedor_id) option.selected = true;
+            document.getElementById("edit_fornecedor_id").appendChild(option);
+          });
+          $("#modalEditarVeiculo").modal("show");
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification("danger", "Erro ao carregar dados do veículo para edição.");
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      loadFornecedorUser().then(() => {
+        loadFrota();
+      });
       loadFornecedores();
       loadMotoristas();
-      loadVeiculos();
 
-      // Quando abrir o modal de cadastro, inicializa o segundo mapa
-      $('#modalCadastroVeiculo').on('shown.bs.modal', function () {
-        if (!map2) {
-          initMap2();
-        }
-      });
-
-      // Submit do formulário de cadastro
-      document.getElementById('veiculo-form').addEventListener('submit', function (e) {
+      document.getElementById("veiculo-form").addEventListener("submit", function (e) {
         e.preventDefault();
         const formData = new FormData(this);
-
-        // Pegar IDs de motoristas selecionados
-        const motoristasSelect = document.getElementById('motoristas_associados');
-        const selectedMotoristas = Array.from(motoristasSelect.selectedOptions).map(opt => opt.value);
-        formData.append('motoristasAssociados', JSON.stringify(selectedMotoristas));
-
-        fetch('/api/frota/cadastrar', {
-          method: 'POST',
+        fetch("/api/fornecedor/frota/cadastrar", {
+          method: "POST",
           body: formData
         })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
-              showNotification('success', 'Veículo cadastrado com sucesso!');
-              document.getElementById('veiculo-form').reset();
-              // Remove marker do mapa2
-              if (marker2) {
-                marker2.setMap(null);
-                marker2 = null;
-              }
-              // Fecha modal e recarrega lista
-              $('#modalCadastroVeiculo').modal('hide');
-              loadVeiculos();
+              showNotification("success", "Veículo cadastrado com sucesso!");
+              document.getElementById("veiculo-form").reset();
+              $("#modalCadastroVeiculo").modal("hide");
+              loadFrota();
             } else {
-              showNotification('danger', 'Erro ao cadastrar veículo: ' + data.message);
+              showNotification("danger", data.message || "Erro ao cadastrar veículo.");
             }
           })
           .catch(err => {
             console.error(err);
-            showNotification('danger', 'Erro ao cadastrar veículo. Tente novamente.');
+            showNotification("danger", "Erro interno ao cadastrar veículo. Tente novamente.");
+          });
+      });
+
+      document.getElementById("atribuir-rota-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const rotaId = document.getElementById("rota_id").value;
+        if (!rotaId || !selectedFrotaId) {
+          showNotification("danger", "Selecione uma rota.", "Erro");
+          return;
+        }
+        const body = { frota_id: selectedFrotaId, rota_id: rotaId };
+        fetch("/api/fornecedor/frota/atribuir-rota", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showNotification("success", data.message);
+              $("#modalAtribuirRota").modal("hide");
+            } else {
+              showNotification("danger", data.message || "Erro ao atribuir rota.");
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            showNotification("danger", "Falha na requisição de atribuir rota.");
+          });
+      });
+
+      document.getElementById("editar-veiculo-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const vid = document.getElementById("edit_id").value;
+        if (!vid) {
+          showNotification("danger", "ID do veículo inválido.");
+          return;
+        }
+        const formData = new FormData(this);
+        fetch("/api/fornecedor/frota/" + vid, {
+          method: "PUT",
+          body: formData
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showNotification("success", "Veículo atualizado com sucesso!");
+              $("#modalEditarVeiculo").modal("hide");
+              loadFrota();
+            } else {
+              showNotification("danger", data.message || "Erro ao atualizar veículo.");
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            showNotification("danger", "Erro interno ao atualizar veículo.");
           });
       });
     });

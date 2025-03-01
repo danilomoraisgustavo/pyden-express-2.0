@@ -1774,39 +1774,39 @@ app.delete("/api/fornecedores/:id", async (req, res) => {
 app.get("/api/frota", async (req, res) => {
   try {
     const query = `
-            SELECT
-                f.id,
-                f.nome_veiculo,
-                f.placa,
-                f.tipo_veiculo,
-                f.capacidade,
-                f.latitude_garagem,
-                f.longitude_garagem,
-                f.fornecedor_id,
-                f.documentacao,
-                f.licenca,
-                fr.nome_fornecedor AS fornecedor_nome,
-                COALESCE(
-                  json_agg(
-                    json_build_object(
-                      'id', m.id,
-                      'nome_motorista', m.nome_motorista,
-                      'cpf', m.cpf
-                    )
-                  ) FILTER (WHERE m.id IS NOT NULL),
-                  '[]'
-                ) AS motoristas
-            FROM frota f
-            LEFT JOIN fornecedores fr ON fr.id = f.fornecedor_id
-            LEFT JOIN frota_motoristas fm ON fm.frota_id = f.id
-            LEFT JOIN motoristas m ON m.id = fm.motorista_id
-            GROUP BY f.id, fr.nome_fornecedor
-            ORDER BY f.id;
-        `;
+      SELECT
+        f.id,
+        f.cor_veiculo,
+        f.placa,
+        f.tipo_veiculo,
+        f.capacidade,
+        f.latitude_garagem,
+        f.longitude_garagem,
+        f.fornecedor_id,
+        f.documentacao,
+        f.licenca,
+        fr.nome_fornecedor AS fornecedor_nome,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', m.id,
+              'nome_motorista', m.nome_motorista,
+              'cpf', m.cpf
+            )
+          ) FILTER (WHERE m.id IS NOT NULL),
+          '[]'
+        ) AS motoristas
+      FROM frota f
+      LEFT JOIN fornecedores fr ON fr.id = f.fornecedor_id
+      LEFT JOIN frota_motoristas fm ON fm.frota_id = f.id
+      LEFT JOIN motoristas m ON m.id = fm.motorista_id
+      GROUP BY f.id, fr.nome_fornecedor
+      ORDER BY f.id;
+    `;
     const result = await pool.query(query);
-    const frotaCompleta = result.rows.map((row) => ({
+    const frotaCompleta = result.rows.map(row => ({
       id: row.id,
-      nome_veiculo: row.nome_veiculo,
+      cor_veiculo: row.cor_veiculo,
       placa: row.placa,
       tipo_veiculo: row.tipo_veiculo,
       capacidade: row.capacidade,
@@ -1816,28 +1816,26 @@ app.get("/api/frota", async (req, res) => {
       documentacao: row.documentacao,
       licenca: row.licenca,
       fornecedor_nome: row.fornecedor_nome,
-      motoristas: row.motoristas || [],
+      motoristas: row.motoristas || []
     }));
     res.json(frotaCompleta);
   } catch (error) {
     console.error("Erro ao listar frota:", error);
-    res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor.",
-    });
+    res.status(500).json({ success: false, message: "Erro interno do servidor." });
   }
 });
 
+// POST cadastrar frota
 app.post(
   "/api/frota/cadastrar",
   uploadFrota.fields([
     { name: "documentacao", maxCount: 1 },
-    { name: "licenca", maxCount: 1 },
+    { name: "licenca", maxCount: 1 }
   ]),
   async (req, res) => {
     try {
       const {
-        nome_veiculo,
+        cor_veiculo,
         placa,
         tipo_veiculo,
         capacidade,
@@ -1853,58 +1851,49 @@ app.post(
         elevador,
         ar_condicionado,
         gps,
-        cinto_seguranca,
+        cinto_seguranca
       } = req.body;
-
       let motoristasAssociados = [];
       if (req.body.motoristasAssociados) {
         motoristasAssociados = JSON.parse(req.body.motoristasAssociados);
       }
-
       if (
-        !nome_veiculo ||
+        !cor_veiculo ||
         !placa ||
         !tipo_veiculo ||
         !capacidade ||
         !fornecedor_id
       ) {
-        return res.status(400).json({
-          success: false,
-          message: "Campos obrigatórios não fornecidos.",
-        });
+        return res.status(400).json({ success: false, message: "Campos obrigatórios não fornecidos." });
       }
-
-      // Quem está fazendo a ação?
       const userId = req.session?.userId || null;
-
       let documentacaoPath = null;
       let licencaPath = null;
       if (req.files["documentacao"] && req.files["documentacao"].length > 0) {
-        documentacaoPath = "uploads/" + req.files["documentacao"][0].filename;
+        documentacaoPath = "uploads/frota/" + req.files["documentacao"][0].filename;
       }
       if (req.files["licenca"] && req.files["licenca"].length > 0) {
-        licencaPath = "uploads/" + req.files["licenca"][0].filename;
+        licencaPath = "uploads/frota/" + req.files["licenca"][0].filename;
       }
-
       const insertQuery = `
-                INSERT INTO frota (
-                    nome_veiculo, placa, tipo_veiculo, capacidade,
-                    latitude_garagem, longitude_garagem, fornecedor_id,
-                    documentacao, licenca, ano, marca, modelo,
-                    tipo_combustivel, data_aquisicao,
-                    adaptado, elevador, ar_condicionado, gps, cinto_seguranca
-                )
-                VALUES (
-                    $1, $2, $3, $4,
-                    $5, $6, $7,
-                    $8, $9, $10, $11, $12,
-                    $13, $14,
-                    $15, $16, $17, $18, $19
-                )
-                RETURNING id;
-            `;
+        INSERT INTO frota (
+          cor_veiculo, placa, tipo_veiculo, capacidade,
+          latitude_garagem, longitude_garagem, fornecedor_id,
+          documentacao, licenca, ano, marca, modelo,
+          tipo_combustivel, data_aquisicao,
+          adaptado, elevador, ar_condicionado, gps, cinto_seguranca
+        )
+        VALUES (
+          $1, $2, $3, $4,
+          $5, $6, $7,
+          $8, $9, $10, $11, $12,
+          $13, $14,
+          $15, $16, $17, $18, $19
+        )
+        RETURNING id;
+      `;
       const values = [
-        nome_veiculo,
+        cor_veiculo,
         placa,
         tipo_veiculo,
         parseInt(capacidade, 10),
@@ -1922,52 +1911,36 @@ app.post(
         elevador === "Sim",
         ar_condicionado === "Sim",
         gps === "Sim",
-        cinto_seguranca === "Sim",
+        cinto_seguranca === "Sim"
       ];
       const result = await pool.query(insertQuery, values);
-
       if (result.rows.length === 0) {
-        return res.status(500).json({
-          success: false,
-          message: "Erro ao cadastrar veículo.",
-        });
+        return res.status(500).json({ success: false, message: "Erro ao cadastrar veículo." });
       }
-
       const frotaId = result.rows[0].id;
-      if (
-        Array.isArray(motoristasAssociados) &&
-        motoristasAssociados.length > 0
-      ) {
+      if (Array.isArray(motoristasAssociados) && motoristasAssociados.length > 0) {
         const relQuery = `
-                    INSERT INTO frota_motoristas (frota_id, motorista_id)
-                    VALUES ($1, $2);
-                `;
+          INSERT INTO frota_motoristas (frota_id, motorista_id)
+          VALUES ($1, $2);
+        `;
         for (const motoristaId of motoristasAssociados) {
           await pool.query(relQuery, [frotaId, motoristaId]);
         }
       }
-
-      // NOTIFICAÇÃO
-      const mensagem = `Veículo adicionado à frota: ${nome_veiculo}`;
+      const mensagem = `Veículo adicionado à frota: ${cor_veiculo}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-                 VALUES ($1, 'CREATE', 'frota', $2, $3)`,
+         VALUES ($1, 'CREATE', 'frota', $2, $3)`,
         [userId, frotaId, mensagem]
       );
-
-      return res.json({
-        success: true,
-        message: "Veículo cadastrado com sucesso!",
-      });
+      return res.json({ success: true, message: "Veículo cadastrado com sucesso!" });
     } catch (error) {
       console.error("Erro no /api/frota/cadastrar:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Erro interno do servidor.",
-      });
+      return res.status(500).json({ success: false, message: "Erro interno do servidor." });
     }
   }
 );
+
 
 app.delete("/api/frota/:id", async (req, res) => {
   try {
