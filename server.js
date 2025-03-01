@@ -974,7 +974,7 @@ app.post("/api/admin-login", async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Login de admin bem-sucedido!",
-      redirectUrl: "/admin/dashboard-admin.html",
+      redirectUrl: "/dashboard-admin.html",
     });
   } catch (error) {
     console.error("Erro ao efetuar login admin:", error);
