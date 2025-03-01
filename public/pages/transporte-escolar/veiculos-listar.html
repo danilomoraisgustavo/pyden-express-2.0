@@ -1,13 +1,13 @@
-<!-- ====> public/pages/fornecedores/frota-fornecedor.html <==== -->
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Listar Frota Escolar (Fornecedor)</title>
+  <title>Listar Frota Escolar</title>
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
+  <!-- Webfont -->
   <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
   <script>
     WebFont.load({
@@ -17,16 +17,17 @@
           "Font Awesome 5 Solid",
           "Font Awesome 5 Regular",
           "Font Awesome 5 Brands",
-          "simple-line-icons"
+          "simple-line-icons",
         ],
-        urls: ["../../assets/css/fonts.min.css"]
+        urls: ["../../assets/css/fonts.min.css"],
       },
       active: function () {
         sessionStorage.fonts = true;
-      }
+      },
     });
   </script>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
@@ -46,7 +47,7 @@
 
 <body>
   <div class="wrapper">
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR (MANTÉM INALTERADO) -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
@@ -63,6 +64,7 @@
       <div class="sidebar-wrapper scrollbar scrollbar-inner">
         <div class="sidebar-content">
           <ul class="nav nav-secondary">
+            <!-- Conteúdo do sidebar permanece igual -->
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Transporte Escolar</h4>
@@ -496,7 +498,6 @@
                 </ul>
               </div>
             </li>
-
             <!-- Novo item de Relatórios dentro de Financeiro -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
@@ -519,14 +520,16 @@
                 </ul>
               </div>
             </li>
+            <!-- FIM SIDEBAR -->
           </ul>
         </div>
       </div>
     </div>
     <!-- END SIDEBAR -->
 
-
+    <!-- MAIN PANEL -->
     <div class="main-panel">
+      <!-- HEADER (MANTÉM INALTERADO) -->
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
@@ -550,12 +553,8 @@
 
         <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
           <div class="container-fluid">
-            <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
+            <!-- Ícones e outros itens do topbar -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-
-              <!-- =====================================
-             ÍCONE MENSAGENS (exemplo)
-        ===================================== -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -571,7 +570,7 @@
                   <li>
                     <div class="message-notif-scroll scrollbar-outer">
                       <div class="notif-center">
-                        <!-- Exemplos de mensagens fixas ou carregadas via JS -->
+                        <!-- Exemplos de mensagens -->
                         <a href="#">
                           <div class="notif-img">
                             <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
@@ -595,9 +594,6 @@
                 </ul>
               </li>
 
-              <!-- =====================================
-             ÍCONE NOTIFICAÇÕES (DINÂMICO)
-        ===================================== -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
                   aria-haspopup="true" aria-expanded="false">
@@ -606,15 +602,11 @@
                 </a>
                 <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
                   <li>
-                    <div class="dropdown-title" id="notifTitle">
-                      Você não tem novas notificações
-                    </div>
+                    <div class="dropdown-title" id="notifTitle">Você não tem novas notificações</div>
                   </li>
                   <li>
                     <div class="notif-scroll scrollbar-outer">
-                      <div class="notif-center" id="notifList">
-                        <!-- Conteúdo gerado dinamicamente -->
-                      </div>
+                      <div class="notif-center" id="notifList"></div>
                     </div>
                   </li>
                   <li>
@@ -626,9 +618,6 @@
                 </ul>
               </li>
 
-              <!-- =====================================
-             ÍCONE AÇÕES RÁPIDAS
-        ===================================== -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -642,7 +631,7 @@
                   <div class="quick-actions-scroll scrollbar-outer">
                     <div class="quick-actions-items">
                       <div class="row m-0">
-                        <!-- Exemplo de cards para algumas páginas existentes -->
+                        <!-- Alguns atalhos de exemplo -->
                         <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
                           <div class="quick-actions-item">
                             <div class="avatar-item bg-primary rounded-circle">
@@ -675,16 +664,13 @@
                             <span class="text">Listar Frota</span>
                           </div>
                         </a>
-                        <!-- ... Adicione mais se quiser -->
+                        <!-- ... -->
                       </div>
                     </div>
                   </div>
                 </div>
               </li>
 
-              <!-- =====================================
-             DROPDOWN USUÁRIO
-        ===================================== -->
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
@@ -726,29 +712,22 @@
           </div>
         </nav>
       </div>
+      <!-- FIM HEADER -->
 
       <div class="container">
         <div class="page-inner">
           <div class="page-header">
-            <h3 class="fw-bold mb-3">Listar Veículos (Fornecedor)</h3>
+            <h3 class="fw-bold mb-3">Listar Frota Escolar</h3>
             <ul class="breadcrumbs mb-3">
               <li class="nav-home">
-                <a href="dashboard-fornecedor.html">
+                <a href="../../">
                   <i class="icon-home"></i>
                 </a>
               </li>
-              <li class="separator">
-                <i class="icon-arrow-right"></i>
-              </li>
-              <li class="nav-item">
-                <a href="#">Veículos</a>
-              </li>
-              <li class="separator">
-                <i class="icon-arrow-right"></i>
-              </li>
-              <li class="nav-item">
-                <a href="#">Listar Veículos</a>
-              </li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Veículos</a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Listar Frota</a></li>
             </ul>
           </div>
 
@@ -768,7 +747,7 @@
                       <thead>
                         <tr>
                           <th>ID</th>
-                          <th>Cor</th>
+                          <th>Nome do Veículo</th>
                           <th>Placa</th>
                           <th>Tipo</th>
                           <th>Capacidade</th>
@@ -779,7 +758,7 @@
                       <tfoot>
                         <tr>
                           <th>ID</th>
-                          <th>Cor</th>
+                          <th>Nome do Veículo</th>
                           <th>Placa</th>
                           <th>Tipo</th>
                           <th>Capacidade</th>
@@ -788,7 +767,7 @@
                         </tr>
                       </tfoot>
                       <tbody>
-                        <!-- Conteúdo via JavaScript -->
+                        <!-- Preenchido via JavaScript -->
                       </tbody>
                     </table>
                   </div>
@@ -808,12 +787,10 @@
                 </div>
                 <div class="modal-body">
                   <form id="veiculo-form" enctype="multipart/form-data">
-                    <input type="hidden" id="fornecedor_id" name="fornecedor_id" />
-                    <!-- Linha 1 -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
-                        <label for="cor_veiculo" class="form-label required-label">Cor do Veículo</label>
-                        <input type="text" id="cor_veiculo" name="cor_veiculo" class="form-control" required />
+                        <label for="nome_veiculo" class="form-label required-label">Nome do Veículo</label>
+                        <input type="text" id="nome_veiculo" name="nome_veiculo" class="form-control" required />
                       </div>
                       <div class="col-md-4 mb-3">
                         <label for="placa" class="form-label required-label">Placa</label>
@@ -829,7 +806,7 @@
                         </select>
                       </div>
                     </div>
-                    <!-- Linha 2 -->
+
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="capacidade" class="form-label required-label">Capacidade</label>
@@ -844,7 +821,7 @@
                         <input type="text" id="marca" name="marca" class="form-control" required />
                       </div>
                     </div>
-                    <!-- Linha 3 -->
+
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="modelo" class="form-label required-label">Modelo</label>
@@ -866,7 +843,7 @@
                         <input type="date" id="data_aquisicao" name="data_aquisicao" class="form-control" required />
                       </div>
                     </div>
-                    <!-- Linha 4 -->
+
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="adaptado" class="form-label required-label">Adaptado?</label>
@@ -893,7 +870,7 @@
                         </select>
                       </div>
                     </div>
-                    <!-- Linha 5 -->
+
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="gps" class="form-label required-label">GPS Integrado?</label>
@@ -919,19 +896,25 @@
                         </select>
                       </div>
                     </div>
-                    <!-- Linha 6: Associar Motoristas -->
-                    <h5>Associar a Motoristas</h5>
+
+                    <!-- Em vez de motoristas, troca por rotas (conforme pedido) -->
+                    <h5>Associar a Rota</h5>
                     <div class="mb-3">
-                      <label for="motoristas_associados" class="form-label">Selecione um ou mais Motoristas</label>
-                      <select id="motoristas_associados" name="motoristas_associados[]" class="form-control" multiple>
-                        <!-- Preenchido via JS -->
+                      <label for="rota_id" class="form-label">Selecione a Rota</label>
+                      <select id="rota_id" name="rota_id" class="form-control">
+                        <!-- Preenchido via JS com rotas -->
                       </select>
+                      <small class="text-muted">
+                        (Opcional, se quiser já associar a uma rota)
+                      </small>
                     </div>
+
                     <!-- Documentação -->
                     <h5 class="mt-4">Documentação</h5>
                     <div class="row">
                       <div class="col-md-6 mb-3">
-                        <label for="documentacao" class="form-label required-label">Documentação (PDF)</label>
+                        <label for="documentacao" class="form-label required-label">Documentação do Veículo
+                          (PDF)</label>
                         <input type="file" id="documentacao" name="documentacao" class="form-control" accept=".pdf"
                           required />
                       </div>
@@ -940,6 +923,7 @@
                         <input type="file" id="licenca" name="licenca" class="form-control" accept=".pdf" required />
                       </div>
                     </div>
+
                     <div class="mt-4 text-end">
                       <button type="submit" class="btn btn-success">Cadastrar Veículo</button>
                     </div>
@@ -948,179 +932,7 @@
               </div>
             </div>
           </div>
-          <!-- MODAL: Atribuir Rota -->
-          <div class="modal fade" id="modalAtribuirRota" tabindex="-1" aria-labelledby="modalAtribuirRotaLabel"
-            aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="modalAtribuirRotaLabel">Atribuir Rota ao Veículo</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                  <form id="atribuir-rota-form">
-                    <div class="mb-3">
-                      <label for="rota_id" class="form-label">Selecione a Rota</label>
-                      <select id="rota_id" name="rota_id" class="form-control" required></select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Atribuir Rota</button>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- MODAL: Editar Veículo -->
-          <div class="modal fade" id="modalEditarVeiculo" tabindex="-1" aria-labelledby="modalEditarVeiculoLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="modalEditarVeiculoLabel">Editar Veículo</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                </div>
-                <div class="modal-body">
-                  <form id="editar-veiculo-form" enctype="multipart/form-data">
-                    <input type="hidden" id="edit_id" name="edit_id" />
-                    <!-- Linha 1 -->
-                    <div class="row">
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_cor_veiculo" class="form-label">Cor do Veículo</label>
-                        <input type="text" id="edit_cor_veiculo" name="cor_veiculo" class="form-control" />
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_placa" class="form-label">Placa</label>
-                        <input type="text" id="edit_placa" name="placa" class="form-control" />
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_tipo_veiculo" class="form-label">Tipo de Veículo</label>
-                        <select id="edit_tipo_veiculo" name="tipo_veiculo" class="form-control">
-                          <option value="">Selecione</option>
-                          <option value="Ônibus">Ônibus</option>
-                          <option value="Micro-ônibus">Micro-ônibus</option>
-                          <option value="Van">Van</option>
-                        </select>
-                      </div>
-                    </div>
-                    <!-- Linha 2 -->
-                    <div class="row">
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_capacidade" class="form-label">Capacidade</label>
-                        <input type="number" id="edit_capacidade" name="capacidade" class="form-control" />
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_ano" class="form-label">Ano</label>
-                        <input type="number" id="edit_ano" name="ano" class="form-control" min="1900" max="2100" />
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_marca" class="form-label">Marca</label>
-                        <input type="text" id="edit_marca" name="marca" class="form-control" />
-                      </div>
-                    </div>
-                    <!-- Linha 3 -->
-                    <div class="row">
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_modelo" class="form-label">Modelo</label>
-                        <input type="text" id="edit_modelo" name="modelo" class="form-control" />
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_tipo_combustivel" class="form-label">Tipo de Combustível</label>
-                        <select id="edit_tipo_combustivel" name="tipo_combustivel" class="form-control">
-                          <option value="">Selecione</option>
-                          <option value="Diesel">Diesel</option>
-                          <option value="Gasolina">Gasolina</option>
-                          <option value="Álcool">Álcool</option>
-                          <option value="GNV">GNV</option>
-                          <option value="Elétrico">Elétrico</option>
-                        </select>
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_data_aquisicao" class="form-label">Data de Aquisição</label>
-                        <input type="date" id="edit_data_aquisicao" name="data_aquisicao" class="form-control" />
-                      </div>
-                    </div>
-                    <!-- Linha 4 -->
-                    <div class="row">
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_adaptado" class="form-label">Adaptado?</label>
-                        <select id="edit_adaptado" name="adaptado" class="form-control">
-                          <option value="">Selecione</option>
-                          <option value="Sim">Sim</option>
-                          <option value="Não">Não</option>
-                        </select>
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_elevador" class="form-label">Elevador?</label>
-                        <select id="edit_elevador" name="elevador" class="form-control">
-                          <option value="">Selecione</option>
-                          <option value="Sim">Sim</option>
-                          <option value="Não">Não</option>
-                        </select>
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_ar_condicionado" class="form-label">Ar-condicionado?</label>
-                        <select id="edit_ar_condicionado" name="ar_condicionado" class="form-control">
-                          <option value="">Selecione</option>
-                          <option value="Sim">Sim</option>
-                          <option value="Não">Não</option>
-                        </select>
-                      </div>
-                    </div>
-                    <!-- Linha 5 -->
-                    <div class="row">
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_gps" class="form-label">GPS Integrado?</label>
-                        <select id="edit_gps" name="gps" class="form-control">
-                          <option value="">Selecione</option>
-                          <option value="Sim">Sim</option>
-                          <option value="Não">Não</option>
-                        </select>
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_cinto_seguranca" class="form-label">Cinto de Segurança?</label>
-                        <select id="edit_cinto_seguranca" name="cinto_seguranca" class="form-control">
-                          <option value="">Selecione</option>
-                          <option value="Sim">Sim</option>
-                          <option value="Não">Não</option>
-                        </select>
-                      </div>
-                      <div class="col-md-4 mb-3">
-                        <label for="edit_fornecedor_id" class="form-label">Fornecedor</label>
-                        <select id="edit_fornecedor_id" name="fornecedor_id" class="form-control" required>
-                          <!-- Preenchido via JS -->
-                        </select>
-                      </div>
-                    </div>
-                    <!-- Linha 6: Associar Motoristas -->
-                    <h5>Associar a Motoristas</h5>
-                    <div class="mb-3">
-                      <label for="edit_motoristas_associados" class="form-label">Selecione um ou mais Motoristas</label>
-                      <select id="edit_motoristas_associados" name="motoristas_associados[]" class="form-control"
-                        multiple>
-                        <!-- Preenchido via JS -->
-                      </select>
-                    </div>
-                    <!-- Documentação -->
-                    <h5 class="mt-4">Documentação</h5>
-                    <div class="row">
-                      <div class="col-md-6 mb-3">
-                        <label for="edit_documentacao" class="form-label">Documentação (PDF)</label>
-                        <input type="file" id="edit_documentacao" name="documentacao" class="form-control"
-                          accept=".pdf" />
-                      </div>
-                      <div class="col-md-6 mb-3">
-                        <label for="edit_licenca" class="form-label">Alvará / Licença (PDF)</label>
-                        <input type="file" id="edit_licenca" name="licenca" class="form-control" accept=".pdf" />
-                      </div>
-                    </div>
-                    <div class="mt-3 text-end">
-                      <button type="submit" class="btn btn-success">Salvar Alterações</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- FIM MODAL Editar Veículo -->
+          <!-- FIM MODAL -->
         </div>
       </div>
 
@@ -1142,6 +954,8 @@
           <div class="copyright">
             2024, made with <i class="fa fa-heart heart text-danger"></i> by
             <a href="http://www.themekita.com">ThemeKita</a>.
+          </div>
+          <div>
             Distributed by <a target="_blank" href="https://themewagon.com/">ThemeWagon</a>.
           </div>
         </div>
@@ -1162,20 +976,17 @@
 
   <script>
     let vehicles = [];
-    let fornecedorIdGlobal = null;
+    let fornecedores = [];
     let rotas = [];
-    let selectedFrotaId = null;
-    let markers = [];
-    let bounds;
 
     function showNotification(type, message, title = "") {
       $.notify({
         title: title ? title + ' ' : '',
         message: message,
-        icon: type === 'success' ? 'fa fa-check-circle' :
-          type === 'danger' ? 'fa fa-exclamation-circle' :
-            type === 'warning' ? 'fa fa-exclamation-triangle' :
-              'fa fa-info-circle'
+        icon: type === 'success' ? 'fa fa-check-circle'
+          : type === 'danger' ? 'fa fa-exclamation-circle'
+            : type === 'warning' ? 'fa fa-exclamation-triangle'
+              : type === 'info' ? 'fa fa-info-circle' : ''
       }, {
         type: type,
         placement: { from: "top", align: "right" },
@@ -1188,29 +999,59 @@
       });
     }
 
-    function loadFornecedorUser() {
-      return fetch("/api/fornecedor/meu")
+    // Carrega lista de fornecedores
+    function loadFornecedores() {
+      fetch('/api/fornecedores')
         .then(res => {
-          if (!res.ok) throw new Error("Erro ao buscar fornecedor do usuário");
+          if (!res.ok) throw new Error('Erro ao carregar fornecedores');
           return res.json();
         })
         .then(data => {
-          fornecedorIdGlobal = data.fornecedor_id;
-          if (!fornecedorIdGlobal) {
-            showNotification("danger", "Você não está vinculado a um fornecedor.");
-          }
-          document.getElementById("fornecedor_id").value = fornecedorIdGlobal || "";
+          fornecedores = data;
+          const fornecedorSelect = document.getElementById('fornecedor_id');
+          fornecedorSelect.innerHTML = '<option value="">Selecione um fornecedor</option>';
+          fornecedores.forEach(f => {
+            const option = document.createElement('option');
+            option.value = f.id;
+            option.textContent = f.nome_fornecedor;
+            fornecedorSelect.appendChild(option);
+          });
         })
         .catch(err => {
           console.error(err);
-          showNotification("danger", "Erro ao buscar fornecedor do usuário.");
+          showNotification('danger', 'Não foi possível carregar os fornecedores.');
         });
     }
 
-    function loadFrota() {
-      fetch("/api/fornecedor/frota")
+    // Carrega lista de rotas (para associação imediata opcional)
+    function loadRotas() {
+      fetch('/api/rotas-simples-detalhes') // OU /api/fornecedor/rotas, conforme necessidade
         .then(res => {
-          if (!res.ok) throw new Error("Erro ao carregar frota");
+          if (!res.ok) throw new Error('Erro ao carregar rotas');
+          return res.json();
+        })
+        .then(data => {
+          rotas = data;
+          const rotaSelect = document.getElementById('rota_id');
+          rotaSelect.innerHTML = '<option value="">Nenhuma Rota</option>';
+          rotas.forEach(r => {
+            const option = document.createElement('option');
+            option.value = r.id;
+            option.textContent = r.identificador + ' - ' + (r.descricao || '');
+            rotaSelect.appendChild(option);
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Não foi possível carregar as rotas.');
+        });
+    }
+
+    // Carrega veículos
+    function loadVeiculos() {
+      fetch('/api/frota')
+        .then(res => {
+          if (!res.ok) throw new Error('Erro ao carregar veículos');
           return res.json();
         })
         .then(data => {
@@ -1219,37 +1060,29 @@
         })
         .catch(err => {
           console.error(err);
-          showNotification("danger", "Não foi possível carregar a frota.");
+          showNotification('danger', 'Não foi possível carregar os veículos.');
         });
     }
 
+    // Popula DataTable de Veículos
     function populateTable() {
-      const tableBody = $("#frota-table tbody");
+      const tableBody = $('#frota-table tbody');
       tableBody.empty();
+
       vehicles.forEach(v => {
         const row = `
           <tr>
             <td>${v.id}</td>
-            <td>${v.cor_veiculo || ""}</td>
+            <td>${v.nome_veiculo}</td>
             <td>${v.placa}</td>
-            <td>${v.tipo_veiculo || ""}</td>
-            <td>${v.capacidade || ""}</td>
-            <td>${v.fornecedor_nome || ""}</td>
+            <td>${v.tipo_veiculo}</td>
+            <td>${v.capacidade}</td>
+            <td>${v.fornecedor_nome || ''}</td>
             <td>
               <div class="form-button-action">
-                <button type="button" class="btn btn-link btn-primary btn-lg" 
-                        data-bs-toggle="tooltip" title="Atribuir Rota"
-                        onclick="openAssignRotaModal(${v.id})">
-                  <i class="fa fa-route"></i>
-                </button>
-                <button type="button" class="btn btn-link btn-warning btn-lg" 
-                        data-bs-toggle="tooltip" title="Editar Veículo"
-                        onclick="openEditVeiculoModal(${v.id})">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button type="button" class="btn btn-link btn-danger btn-lg" 
-                        data-bs-toggle="tooltip" title="Excluir Veículo"
-                        onclick="deleteVeiculo(${v.id})">
+                <button type="button" class="btn btn-link btn-danger btn-lg"
+                  onclick="deleteVeiculo(${v.id})"
+                  data-bs-toggle="tooltip" title="Excluir Veículo">
                   <i class="fa fa-trash-alt"></i>
                 </button>
               </div>
@@ -1258,10 +1091,11 @@
         `;
         tableBody.append(row);
       });
-      if ($.fn.DataTable.isDataTable("#frota-table")) {
-        $("#frota-table").DataTable().clear().destroy();
+
+      if ($.fn.DataTable.isDataTable('#frota-table')) {
+        $('#frota-table').DataTable().clear().destroy();
       }
-      $("#frota-table").DataTable({
+      $('#frota-table').DataTable({
         pageLength: 10,
         language: {
           decimal: ",",
@@ -1285,166 +1119,61 @@
       });
     }
 
+    // Excluir veículo
     function deleteVeiculo(id) {
-      if (!confirm("Tem certeza que deseja excluir este veículo?")) return;
-      fetch("/api/fornecedor/frota/" + id, { method: "DELETE" })
+      if (!confirm('Tem certeza que deseja excluir este veículo?')) return;
+      fetch('/api/frota/' + id, { method: 'DELETE' })
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            showNotification("success", "Veículo excluído com sucesso!");
-            loadFrota();
+            showNotification('success', 'Veículo excluído com sucesso!');
+            loadVeiculos();
           } else {
-            showNotification("danger", data.message || "Falha ao excluir veículo.");
+            showNotification('danger', 'Erro ao excluir veículo: ' + data.message);
           }
         })
         .catch(err => {
           console.error(err);
-          showNotification("danger", "Erro interno ao excluir veículo.");
+          showNotification('danger', 'Erro ao excluir veículo. Tente novamente.');
         });
     }
 
-    function openAssignRotaModal(frotaId) {
-      selectedFrotaId = frotaId;
-      const rotaSelect = document.getElementById("rota_id");
-      rotaSelect.innerHTML = "";
-      fetch("/api/fornecedor/rotas")
-        .then(res => res.json())
-        .then(data => {
-          rotas = data;
-          rotas.forEach(r => {
-            const option = document.createElement("option");
-            option.value = r.id;
-            option.textContent = r.identificador + " - " + (r.descricao || "");
-            rotaSelect.appendChild(option);
-          });
-          $("#modalAtribuirRota").modal("show");
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification("danger", "Não foi possível carregar as rotas.");
-        });
-    }
-
-    function openEditVeiculoModal(frotaId) {
-      editFrotaId = frotaId;
-      fetch("/api/fornecedor/frota/" + frotaId)
-        .then(res => res.json())
-        .then(v => {
-          document.getElementById("edit_id").value = v.id;
-          document.getElementById("edit_cor_veiculo").value = v.cor_veiculo || "";
-          document.getElementById("edit_placa").value = v.placa || "";
-          document.getElementById("edit_tipo_veiculo").value = v.tipo_veiculo || "";
-          document.getElementById("edit_capacidade").value = v.capacidade || "";
-          document.getElementById("edit_ano").value = v.ano || "";
-          document.getElementById("edit_marca").value = v.marca || "";
-          document.getElementById("edit_modelo").value = v.modelo || "";
-          document.getElementById("edit_tipo_combustivel").value = v.tipo_combustivel || "";
-          document.getElementById("edit_data_aquisicao").value = v.data_aquisicao || "";
-          document.getElementById("edit_adaptado").value = v.adaptado ? "Sim" : "Não";
-          document.getElementById("edit_elevador").value = v.elevador ? "Sim" : "Não";
-          document.getElementById("edit_ar_condicionado").value = v.ar_condicionado ? "Sim" : "Não";
-          document.getElementById("edit_gps").value = v.gps ? "Sim" : "Não";
-          document.getElementById("edit_cinto_seguranca").value = v.cinto_seguranca ? "Sim" : "Não";
-          document.getElementById("edit_fornecedor_id").innerHTML = "";
-          fornecedores.forEach(f => {
-            const option = document.createElement("option");
-            option.value = f.id;
-            option.textContent = f.nome_fornecedor;
-            if (f.id == v.fornecedor_id) option.selected = true;
-            document.getElementById("edit_fornecedor_id").appendChild(option);
-          });
-          $("#modalEditarVeiculo").modal("show");
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification("danger", "Erro ao carregar dados do veículo para edição.");
-        });
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-      loadFornecedorUser().then(() => {
-        loadFrota();
-      });
+    document.addEventListener('DOMContentLoaded', function () {
+      // Carregar dados
       loadFornecedores();
-      loadMotoristas();
+      loadRotas();
+      loadVeiculos();
 
-      document.getElementById("veiculo-form").addEventListener("submit", function (e) {
+      // Submete cadastro de veículo
+      document.getElementById('veiculo-form').addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);
-        fetch("/api/fornecedor/frota/cadastrar", {
-          method: "POST",
+
+        // Caso quiséssemos associar rota no momento do cadastro
+        const rotaId = document.getElementById('rota_id').value;
+        if (rotaId) {
+          formData.append('associarRotaId', rotaId);
+        }
+
+        fetch('/api/frota/cadastrar', {
+          method: 'POST',
           body: formData
         })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
-              showNotification("success", "Veículo cadastrado com sucesso!");
-              document.getElementById("veiculo-form").reset();
-              $("#modalCadastroVeiculo").modal("hide");
-              loadFrota();
+              showNotification('success', 'Veículo cadastrado com sucesso!');
+              document.getElementById('veiculo-form').reset();
+              // Fecha modal
+              $('#modalCadastroVeiculo').modal('hide');
+              loadVeiculos();
             } else {
-              showNotification("danger", data.message || "Erro ao cadastrar veículo.");
+              showNotification('danger', 'Erro ao cadastrar veículo: ' + data.message);
             }
           })
           .catch(err => {
             console.error(err);
-            showNotification("danger", "Erro interno ao cadastrar veículo. Tente novamente.");
-          });
-      });
-
-      document.getElementById("atribuir-rota-form").addEventListener("submit", function (e) {
-        e.preventDefault();
-        const rotaId = document.getElementById("rota_id").value;
-        if (!rotaId || !selectedFrotaId) {
-          showNotification("danger", "Selecione uma rota.", "Erro");
-          return;
-        }
-        const body = { frota_id: selectedFrotaId, rota_id: rotaId };
-        fetch("/api/fornecedor/frota/atribuir-rota", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              showNotification("success", data.message);
-              $("#modalAtribuirRota").modal("hide");
-            } else {
-              showNotification("danger", data.message || "Erro ao atribuir rota.");
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            showNotification("danger", "Falha na requisição de atribuir rota.");
-          });
-      });
-
-      document.getElementById("editar-veiculo-form").addEventListener("submit", function (e) {
-        e.preventDefault();
-        const vid = document.getElementById("edit_id").value;
-        if (!vid) {
-          showNotification("danger", "ID do veículo inválido.");
-          return;
-        }
-        const formData = new FormData(this);
-        fetch("/api/fornecedor/frota/" + vid, {
-          method: "PUT",
-          body: formData
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              showNotification("success", "Veículo atualizado com sucesso!");
-              $("#modalEditarVeiculo").modal("hide");
-              loadFrota();
-            } else {
-              showNotification("danger", data.message || "Erro ao atualizar veículo.");
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            showNotification("danger", "Erro interno ao atualizar veículo.");
+            showNotification('danger', 'Erro ao cadastrar veículo. Tente novamente.');
           });
       });
     });
