@@ -2434,9 +2434,10 @@ app.delete("/api/fornecedor/monitores/:id", async (req, res) => {
 // ====> ROTA: Atribuir rota a monitor
 app.post("/api/fornecedor/monitores/atribuir-rota", async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.session?.userId;
     const { monitor_id, rota_id } = req.body;
 
+    // Verifica o fornecedor do usuário
     const relForn = await pool.query(
       "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
       [userId]
@@ -2448,6 +2449,7 @@ app.post("/api/fornecedor/monitores/atribuir-rota", async (req, res) => {
     }
     const fornecedorId = relForn.rows[0].fornecedor_id;
 
+    // Verifica se o monitor pertence a este fornecedor
     const checkMonitor = await pool.query(
       "SELECT id FROM monitores WHERE id = $1 AND fornecedor_id = $2",
       [monitor_id, fornecedorId]
@@ -2459,8 +2461,16 @@ app.post("/api/fornecedor/monitores/atribuir-rota", async (req, res) => {
       });
     }
 
+    // Verifica se a rota está associada a este fornecedor (rotas_simples + fornecedores_rotas)
     const checkRota = await pool.query(
-      "SELECT id FROM rotas WHERE id = $1 AND fornecedor_id = $2",
+      `
+        SELECT r.id
+        FROM rotas_simples r
+        JOIN fornecedores_rotas fr ON fr.rota_id = r.id
+        WHERE r.id = $1
+          AND fr.fornecedor_id = $2
+        LIMIT 1
+      `,
       [rota_id, fornecedorId]
     );
     if (checkRota.rows.length === 0) {
@@ -2470,14 +2480,14 @@ app.post("/api/fornecedor/monitores/atribuir-rota", async (req, res) => {
       });
     }
 
-    // Exemplo: Tabela de relacionamento rota_monitor
+    // Insere na tabela monitores_rotas (ou monitores_rotas - sua escolha):
     await pool.query(
       `
-        INSERT INTO rota_monitor (rota_id, monitor_id)
+        INSERT INTO monitores_rotas (monitor_id, rota_id)
         VALUES ($1, $2)
-        ON CONFLICT (rota_id, monitor_id) DO NOTHING
+        ON CONFLICT (monitor_id, rota_id) DO NOTHING
       `,
-      [rota_id, monitor_id]
+      [monitor_id, rota_id]
     );
 
     return res.json({
@@ -3049,44 +3059,71 @@ app.get("/api/fornecedor/rotas", async (req, res) => {
 // ====> API: Atribuir rota ao motorista
 app.post("/api/fornecedor/motoristas/atribuir-rota", async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.session?.userId;
     const { motorista_id, rota_id } = req.body;
 
+    // Verifica o fornecedor do usuário
     const relForn = await pool.query(
       "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
       [userId]
     );
     if (relForn.rows.length === 0) {
-      return res.status(403).json({ success: false, message: "Usuário não vinculado a fornecedor." });
+      return res
+        .status(403)
+        .json({ success: false, message: "Usuário não vinculado a fornecedor." });
     }
     const fornecedorId = relForn.rows[0].fornecedor_id;
 
+    // Verifica se o motorista pertence a este fornecedor
     const checkMotorista = await pool.query(
       "SELECT id FROM motoristas WHERE id = $1 AND fornecedor_id = $2",
       [motorista_id, fornecedorId]
     );
     if (checkMotorista.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Motorista não encontrado ou não pertence a este fornecedor." });
+      return res.status(404).json({
+        success: false,
+        message: "Motorista não encontrado ou não pertence a este fornecedor.",
+      });
     }
 
+    // Verifica se a rota está associada a este fornecedor (rotas_simples + fornecedores_rotas)
     const checkRota = await pool.query(
-      "SELECT id FROM rotas WHERE id = $1 AND fornecedor_id = $2",
+      `
+        SELECT r.id
+        FROM rotas_simples r
+        JOIN fornecedores_rotas fr ON fr.rota_id = r.id
+        WHERE r.id = $1
+          AND fr.fornecedor_id = $2
+        LIMIT 1
+      `,
       [rota_id, fornecedorId]
     );
     if (checkRota.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Rota não encontrada ou não pertence a este fornecedor." });
+      return res.status(404).json({
+        success: false,
+        message: "Rota não encontrada ou não pertence a este fornecedor.",
+      });
     }
 
-    // Exemplo: Tabela de relacionamento rota_motorista
-    await pool.query(`
-      INSERT INTO rota_motorista (rota_id, motorista_id)
-      VALUES ($1, $2)
-      ON CONFLICT (rota_id, motorista_id) DO NOTHING
-    `, [rota_id, motorista_id]);
+    // Insere na tabela motoristas_rotas (ou outro nome):
+    await pool.query(
+      `
+        INSERT INTO motoristas_rotas (motorista_id, rota_id)
+        VALUES ($1, $2)
+        ON CONFLICT (motorista_id, rota_id) DO NOTHING
+      `,
+      [motorista_id, rota_id]
+    );
 
-    return res.json({ success: true, message: "Rota atribuída ao motorista com sucesso!" });
+    return res.json({
+      success: true,
+      message: "Rota atribuída ao motorista com sucesso!",
+    });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Erro ao atribuir rota ao motorista." });
+    console.error("Erro ao atribuir rota ao motorista:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao atribuir rota ao motorista." });
   }
 });
 
