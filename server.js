@@ -3141,6 +3141,195 @@ app.post("/api/fornecedor/frota/cadastrar", uploadFrota.fields([
     return res.status(500).json({ success: false, message: "Erro interno ao cadastrar veículo." });
   }
 });
+// Retorna dados de um veículo (for modal edit)
+app.get("/api/fornecedor/frota/:id", async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+    const { id } = req.params;
+
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Usuário não vinculado a fornecedor." });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const check = await pool.query(
+      `SELECT *
+       FROM frota
+       WHERE id = $1
+         AND fornecedor_id = $2
+       LIMIT 1`,
+      [id, fornecedorId]
+    );
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Veículo não encontrado." });
+    }
+    return res.json(check.rows[0]);
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro interno ao buscar veículo." });
+  }
+});
+
+// Atualiza dados do veículo (PUT)
+app.put("/api/fornecedor/frota/:id", uploadFrota.fields([
+  { name: "documentacao", maxCount: 1 },
+  { name: "licenca", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const userId = req.session?.userId;
+    const { id } = req.params;
+
+    const relForn = await pool.query(
+      "SELECT fornecedor_id FROM usuario_fornecedor WHERE usuario_id = $1 LIMIT 1",
+      [userId]
+    );
+    if (relForn.rows.length === 0) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Usuário não vinculado a fornecedor." });
+    }
+    const fornecedorId = relForn.rows[0].fornecedor_id;
+
+    const check = await pool.query(
+      `SELECT *
+       FROM frota
+       WHERE id = $1
+         AND fornecedor_id = $2
+       LIMIT 1`,
+      [id, fornecedorId]
+    );
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Veículo não encontrado." });
+    }
+
+    const {
+      cor_veiculo,
+      placa,
+      tipo_veiculo,
+      capacidade,
+      ano,
+      marca,
+      modelo,
+      tipo_combustivel,
+      data_aquisicao,
+      adaptado,
+      elevador,
+      ar_condicionado,
+      gps,
+      cinto_seguranca
+    } = req.body;
+
+    let docPath = null;
+    let licPath = null;
+    if (req.files["documentacao"] && req.files["documentacao"].length > 0) {
+      docPath = "uploads/" + req.files["documentacao"][0].filename;
+    }
+    if (req.files["licenca"] && req.files["licenca"].length > 0) {
+      licPath = "uploads/" + req.files["licenca"][0].filename;
+    }
+
+    const adaptBool = (adaptado === "Sim");
+    const elevBool = (elevador === "Sim");
+    const arBool = (ar_condicionado === "Sim");
+    const gpsBool = (gps === "Sim");
+    const cintoBool = (cinto_seguranca === "Sim");
+
+    let updateFields = [];
+    let values = [];
+    let index = 1;
+
+    if (cor_veiculo != null) {
+      updateFields.push(`cor_veiculo = $${index++}`);
+      values.push(cor_veiculo);
+    }
+    if (placa != null) {
+      updateFields.push(`placa = $${index++}`);
+      values.push(placa);
+    }
+    if (tipo_veiculo != null) {
+      updateFields.push(`tipo_veiculo = $${index++}`);
+      values.push(tipo_veiculo);
+    }
+    if (capacidade != null) {
+      updateFields.push(`capacidade = $${index++}`);
+      values.push(parseInt(capacidade, 10));
+    }
+    if (ano != null && ano !== "") {
+      updateFields.push(`ano = $${index++}`);
+      values.push(parseInt(ano, 10));
+    }
+    if (marca != null) {
+      updateFields.push(`marca = $${index++}`);
+      values.push(marca);
+    }
+    if (modelo != null) {
+      updateFields.push(`modelo = $${index++}`);
+      values.push(modelo);
+    }
+    if (tipo_combustivel != null) {
+      updateFields.push(`tipo_combustivel = $${index++}`);
+      values.push(tipo_combustivel);
+    }
+    if (data_aquisicao != null && data_aquisicao !== "") {
+      updateFields.push(`data_aquisicao = $${index++}`);
+      values.push(data_aquisicao);
+    }
+    if (adaptado != null) {
+      updateFields.push(`adaptado = $${index++}`);
+      values.push(adaptBool);
+    }
+    if (elevador != null) {
+      updateFields.push(`elevador = $${index++}`);
+      values.push(elevBool);
+    }
+    if (ar_condicionado != null) {
+      updateFields.push(`ar_condicionado = $${index++}`);
+      values.push(arBool);
+    }
+    if (gps != null) {
+      updateFields.push(`gps = $${index++}`);
+      values.push(gpsBool);
+    }
+    if (cinto_seguranca != null) {
+      updateFields.push(`cinto_seguranca = $${index++}`);
+      values.push(cintoBool);
+    }
+    if (docPath) {
+      updateFields.push(`documentacao = $${index++}`);
+      values.push(docPath);
+    }
+    if (licPath) {
+      updateFields.push(`licenca = $${index++}`);
+      values.push(licPath);
+    }
+
+    if (updateFields.length === 0) {
+      return res.json({ success: true, message: "Nada para atualizar." });
+    }
+
+    const updateQuery = `
+      UPDATE frota
+      SET ${updateFields.join(", ")}
+      WHERE id = $${index}
+      RETURNING id
+    `;
+    values.push(id);
+
+    const result = await pool.query(updateQuery, values);
+    if (result.rows.length === 0) {
+      return res.status(500).json({ success: false, message: "Erro ao atualizar veículo." });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Erro interno ao atualizar veículo." });
+  }
+});
 
 app.post("/api/fornecedor/frota/atribuir-rota", async (req, res) => {
   try {

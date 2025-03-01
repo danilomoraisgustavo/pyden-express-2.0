@@ -1,10 +1,10 @@
-<!-- ====> public/pages/fornecedores/frota-fornecedor.html <==== -->
+<!-- ====> public/pages/fornecedores/frota-fornecedor.html (ATUALIZADO) <==== -->
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Listar Frota (Fornecedor)</title>
+    <title>Listar Veículos (Fornecedor)</title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
     <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
@@ -422,6 +422,181 @@
                         </div>
                     </div>
                     <!-- Fim do Modal -->
+
+                    <!-- Modal Atribuir Rota -->
+                    <div class="modal fade" id="modalAtribuirRota" tabindex="-1"
+                        aria-labelledby="modalAtribuirRotaLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalAtribuirRotaLabel">Atribuir Rota ao Veículo</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="atribuir-rota-form">
+                                        <div class="mb-3">
+                                            <label for="rota_id" class="form-label">Selecione a Rota</label>
+                                            <select id="rota_id" name="rota_id" class="form-control" required></select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Atribuir Rota</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Fim Modal Atribuir Rota -->
+
+                    <!-- Modal Editar Veículo -->
+                    <div class="modal fade" id="modalEditarVeiculo" tabindex="-1"
+                        aria-labelledby="modalEditarVeiculoLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalEditarVeiculoLabel">Editar Veículo</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="editar-veiculo-form" enctype="multipart/form-data">
+                                        <input type="hidden" id="edit_id" name="edit_id" />
+                                        <!-- Repete os campos, mas com prefixo "edit_" -->
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_cor_veiculo" class="form-label">Cor do Veículo</label>
+                                                <input type="text" id="edit_cor_veiculo" name="cor_veiculo"
+                                                    class="form-control" />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_placa" class="form-label">Placa</label>
+                                                <input type="text" id="edit_placa" name="placa" class="form-control" />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_tipo_veiculo" class="form-label">Tipo</label>
+                                                <select id="edit_tipo_veiculo" name="tipo_veiculo" class="form-control">
+                                                    <option value="">Selecione</option>
+                                                    <option value="Ônibus">Ônibus</option>
+                                                    <option value="Micro-ônibus">Micro-ônibus</option>
+                                                    <option value="Van">Van</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label for="edit_capacidade" class="form-label">Capacidade</label>
+                                                <input type="number" id="edit_capacidade" name="capacidade"
+                                                    class="form-control" />
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="edit_ano" class="form-label">Ano</label>
+                                                <input type="number" id="edit_ano" name="ano" class="form-control"
+                                                    min="1900" max="2100" />
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="edit_marca" class="form-label">Marca</label>
+                                                <input type="text" id="edit_marca" name="marca" class="form-control" />
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label for="edit_modelo" class="form-label">Modelo</label>
+                                                <input type="text" id="edit_modelo" name="modelo"
+                                                    class="form-control" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_tipo_combustivel"
+                                                    class="form-label">Combustível</label>
+                                                <select id="edit_tipo_combustivel" name="tipo_combustivel"
+                                                    class="form-control">
+                                                    <option value="">Selecione</option>
+                                                    <option value="Diesel">Diesel</option>
+                                                    <option value="Gasolina">Gasolina</option>
+                                                    <option value="Álcool">Álcool</option>
+                                                    <option value="GNV">GNV</option>
+                                                    <option value="Elétrico">Elétrico</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_data_aquisicao" class="form-label">Data de
+                                                    Aquisição</label>
+                                                <input type="date" id="edit_data_aquisicao" name="data_aquisicao"
+                                                    class="form-control" />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_adaptado" class="form-label">Adaptado?</label>
+                                                <select id="edit_adaptado" name="adaptado" class="form-control">
+                                                    <option value="">Selecione</option>
+                                                    <option value="Sim">Sim</option>
+                                                    <option value="Não">Não</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_elevador" class="form-label">Elevador?</label>
+                                                <select id="edit_elevador" name="elevador" class="form-control">
+                                                    <option value="">Selecione</option>
+                                                    <option value="Sim">Sim</option>
+                                                    <option value="Não">Não</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_ar_condicionado"
+                                                    class="form-label">Ar-condicionado?</label>
+                                                <select id="edit_ar_condicionado" name="ar_condicionado"
+                                                    class="form-control">
+                                                    <option value="">Selecione</option>
+                                                    <option value="Sim">Sim</option>
+                                                    <option value="Não">Não</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_gps" class="form-label">GPS Integrado?</label>
+                                                <select id="edit_gps" name="gps" class="form-control">
+                                                    <option value="">Selecione</option>
+                                                    <option value="Sim">Sim</option>
+                                                    <option value="Não">Não</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_cinto_seguranca" class="form-label">Cinto de
+                                                    Segurança?</label>
+                                                <select id="edit_cinto_seguranca" name="cinto_seguranca"
+                                                    class="form-control">
+                                                    <option value="">Selecione</option>
+                                                    <option value="Sim">Sim</option>
+                                                    <option value="Não">Não</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_documentacao" class="form-label">Documentação
+                                                    (PDF)</label>
+                                                <input type="file" id="edit_documentacao" name="documentacao"
+                                                    class="form-control" accept=".pdf" />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="edit_licenca" class="form-label">Alvará / Licença
+                                                    (PDF)</label>
+                                                <input type="file" id="edit_licenca" name="licenca" class="form-control"
+                                                    accept=".pdf" />
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 text-end">
+                                            <button type="submit" class="btn btn-success">Salvar Alterações</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Fim Modal Editar Veículo -->
                 </div>
             </div>
 
@@ -460,8 +635,10 @@
 
     <script>
         let frota = [];
-        let tableFrota;
         let fornecedorIdGlobal = null;
+        let rotas = [];
+        let selectedFrotaId = null; // usado para atribuir rota
+        let editFrotaId = null;     // usado para editar veículo
 
         function showNotification(type, message) {
             let icon = "fa fa-info-circle";
@@ -484,7 +661,6 @@
             );
         }
 
-        // Carrega o ID do fornecedor do usuário
         function loadFornecedorUser() {
             return fetch("/api/fornecedor/meu")
                 .then((res) => {
@@ -504,7 +680,6 @@
                 });
         }
 
-        // Carrega a lista de veículos desse fornecedor
         function loadFrota() {
             fetch("/api/fornecedor/frota")
                 .then((res) => {
@@ -513,7 +688,7 @@
                 })
                 .then((data) => {
                     frota = data;
-                    populateTable();
+                    populateFrotaTable();
                 })
                 .catch((err) => {
                     console.error(err);
@@ -521,30 +696,43 @@
                 });
         }
 
-        // Preenche DataTable
-        function populateTable() {
-            const tbody = $("#frota-table tbody");
-            tbody.empty();
+        function populateFrotaTable() {
+            const tableBody = $("#frota-table tbody");
+            tableBody.empty();
 
             frota.forEach((v) => {
                 const row = `
           <tr>
             <td>${v.id}</td>
-            <td>${v.cor_veiculo}</td>
+            <td>${v.cor_veiculo || ""}</td>
             <td>${v.placa}</td>
             <td>${v.tipo_veiculo || ""}</td>
             <td>${v.capacidade || ""}</td>
             <td>
               <div class="form-button-action">
+                <button type="button" class="btn btn-link btn-info btn-lg"
+                  data-bs-toggle="tooltip"
+                  title="Atribuir Rota"
+                  onclick="openAssignRotaModal(${v.id})">
+                  <i class="fa fa-route"></i>
+                </button>
+                <button type="button" class="btn btn-link btn-warning btn-lg"
+                  data-bs-toggle="tooltip"
+                  title="Editar Veículo"
+                  onclick="openEditVeiculoModal(${v.id})">
+                  <i class="fa fa-edit"></i>
+                </button>
                 <button type="button" class="btn btn-link btn-danger btn-lg"
-                  onclick="deleteVeiculo(${v.id})" data-bs-toggle="tooltip" title="Excluir Veículo">
+                  data-bs-toggle="tooltip"
+                  title="Excluir Veículo"
+                  onclick="deleteVeiculo(${v.id})">
                   <i class="fa fa-trash-alt"></i>
                 </button>
               </div>
             </td>
           </tr>
         `;
-                tbody.append(row);
+                tableBody.append(row);
             });
 
             if ($.fn.DataTable.isDataTable("#frota-table")) {
@@ -575,7 +763,6 @@
             });
         }
 
-        // Excluir veículo
         function deleteVeiculo(id) {
             if (!confirm("Tem certeza que deseja excluir este veículo?")) return;
             fetch("/api/fornecedor/frota/" + id, {
@@ -596,8 +783,64 @@
                 });
         }
 
-        // Cadastro do veículo
-        function setupVeiculoForm() {
+        function openAssignRotaModal(frotaId) {
+            selectedFrotaId = frotaId;
+            const rotaSelect = document.getElementById("rota_id");
+            rotaSelect.innerHTML = "";
+
+            fetch("/api/fornecedor/rotas")
+                .then((res) => res.json())
+                .then((data) => {
+                    rotas = data;
+                    rotas.forEach((r) => {
+                        const option = document.createElement("option");
+                        option.value = r.id;
+                        option.textContent = r.identificador + " - " + (r.descricao || "");
+                        rotaSelect.appendChild(option);
+                    });
+                    $("#modalAtribuirRota").modal("show");
+                })
+                .catch((err) => {
+                    console.error(err);
+                    showNotification("danger", "Não foi possível carregar as rotas.");
+                });
+        }
+
+        function openEditVeiculoModal(frotaId) {
+            editFrotaId = frotaId;
+            fetch("/api/fornecedor/frota/" + frotaId)
+                .then((res) => res.json())
+                .then((v) => {
+                    document.getElementById("edit_id").value = v.id;
+                    document.getElementById("edit_cor_veiculo").value = v.cor_veiculo || "";
+                    document.getElementById("edit_placa").value = v.placa || "";
+                    document.getElementById("edit_tipo_veiculo").value = v.tipo_veiculo || "";
+                    document.getElementById("edit_capacidade").value = v.capacidade || "";
+                    document.getElementById("edit_ano").value = v.ano || "";
+                    document.getElementById("edit_marca").value = v.marca || "";
+                    document.getElementById("edit_modelo").value = v.modelo || "";
+                    document.getElementById("edit_tipo_combustivel").value = v.tipo_combustivel || "";
+                    document.getElementById("edit_data_aquisicao").value = v.data_aquisicao || "";
+                    document.getElementById("edit_adaptado").value = v.adaptado ? "Sim" : "Não";
+                    document.getElementById("edit_elevador").value = v.elevador ? "Sim" : "Não";
+                    document.getElementById("edit_ar_condicionado").value = v.ar_condicionado ? "Sim" : "Não";
+                    document.getElementById("edit_gps").value = v.gps ? "Sim" : "Não";
+                    document.getElementById("edit_cinto_seguranca").value = v.cinto_seguranca ? "Sim" : "Não";
+
+                    $("#modalEditarVeiculo").modal("show");
+                })
+                .catch((err) => {
+                    console.error(err);
+                    showNotification("danger", "Erro ao carregar dados do veículo para edição.");
+                });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            loadFornecedorUser().then(() => {
+                loadFrota();
+            });
+
+            // Cadastro
             const form = document.getElementById("veiculo-form");
             form.addEventListener("submit", function (e) {
                 e.preventDefault();
@@ -605,7 +848,6 @@
                     showNotification("danger", "Você não está vinculado a um fornecedor.");
                     return;
                 }
-
                 const formData = new FormData(form);
                 fetch("/api/fornecedor/frota/cadastrar", {
                     method: "POST",
@@ -627,13 +869,66 @@
                         showNotification("danger", "Erro interno ao cadastrar veículo.");
                     });
             });
-        }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            loadFornecedorUser().then(() => {
-                loadFrota();
+            // Atribuir Rota
+            const atribuirForm = document.getElementById("atribuir-rota-form");
+            atribuirForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const rotaId = document.getElementById("rota_id").value;
+                if (!rotaId || !selectedFrotaId) {
+                    showNotification("danger", "Selecione uma rota.", "Erro");
+                    return;
+                }
+                const body = { frota_id: selectedFrotaId, rota_id: rotaId };
+                fetch("/api/fornecedor/frota/atribuir-rota", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        if (data.success) {
+                            showNotification("success", data.message);
+                            $("#modalAtribuirRota").modal("hide");
+                        } else {
+                            showNotification("danger", data.message || "Erro ao atribuir rota.");
+                        }
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        showNotification("danger", "Falha na requisição de atribuir rota.");
+                    });
             });
-            setupVeiculoForm();
+
+            // Editar Veículo
+            const editForm = document.getElementById("editar-veiculo-form");
+            editForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const vid = document.getElementById("edit_id").value;
+                if (!vid) {
+                    showNotification("danger", "ID do veículo inválido.");
+                    return;
+                }
+                const formData = new FormData(editForm);
+                fetch("/api/fornecedor/frota/" + vid, {
+                    method: "PUT",
+                    body: formData,
+                })
+                    .then((res) => res.json())
+                    .then((data) => {
+                        if (data.success) {
+                            showNotification("success", "Veículo atualizado com sucesso!");
+                            $("#modalEditarVeiculo").modal("hide");
+                            loadFrota();
+                        } else {
+                            showNotification("danger", data.message || "Erro ao atualizar veículo.");
+                        }
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        showNotification("danger", "Erro interno ao atualizar veículo.");
+                    });
+            });
         });
     </script>
 </body>
