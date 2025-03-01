@@ -1771,6 +1771,7 @@ app.delete("/api/fornecedores/:id", async (req, res) => {
 // ====================================================================================
 // FROTA
 // ====================================================================================
+// ENDPOINT GET /api/frota (ajustado para "cor_veiculo" e sem latitude/longitude)
 app.get("/api/frota", async (req, res) => {
   try {
     const query = `
@@ -1780,11 +1781,19 @@ app.get("/api/frota", async (req, res) => {
         f.placa,
         f.tipo_veiculo,
         f.capacidade,
-        f.latitude_garagem,
-        f.longitude_garagem,
         f.fornecedor_id,
         f.documentacao,
         f.licenca,
+        f.ano,
+        f.marca,
+        f.modelo,
+        f.tipo_combustivel,
+        f.data_aquisicao,
+        f.adaptado,
+        f.elevador,
+        f.ar_condicionado,
+        f.gps,
+        f.cinto_seguranca,
         fr.nome_fornecedor AS fornecedor_nome,
         COALESCE(
           json_agg(
@@ -1804,34 +1813,45 @@ app.get("/api/frota", async (req, res) => {
       ORDER BY f.id;
     `;
     const result = await pool.query(query);
+
+    // Monta o objeto final
     const frotaCompleta = result.rows.map(row => ({
       id: row.id,
       cor_veiculo: row.cor_veiculo,
       placa: row.placa,
       tipo_veiculo: row.tipo_veiculo,
       capacidade: row.capacidade,
-      latitude_garagem: row.latitude_garagem,
-      longitude_garagem: row.longitude_garagem,
       fornecedor_id: row.fornecedor_id,
       documentacao: row.documentacao,
       licenca: row.licenca,
+      ano: row.ano,
+      marca: row.marca,
+      modelo: row.modelo,
+      tipo_combustivel: row.tipo_combustivel,
+      data_aquisicao: row.data_aquisicao,
+      adaptado: row.adaptado,
+      elevador: row.elevador,
+      ar_condicionado: row.ar_condicionado,
+      gps: row.gps,
+      cinto_seguranca: row.cinto_seguranca,
       fornecedor_nome: row.fornecedor_nome,
       motoristas: row.motoristas || []
     }));
+
     res.json(frotaCompleta);
   } catch (error) {
     console.error("Erro ao listar frota:", error);
-    res.status(500).json({ success: false, message: "Erro interno do servidor." });
+    res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor."
+    });
   }
 });
 
-// POST cadastrar frota
+// ENDPOINT POST /api/frota/cadastrar (ajustado para "cor_veiculo" e sem latitude/longitude)
 app.post(
   "/api/frota/cadastrar",
-  uploadFrota.fields([
-    { name: "documentacao", maxCount: 1 },
-    { name: "licenca", maxCount: 1 }
-  ]),
+  uploadFrota.fields([{ name: "documentacao", maxCount: 1 }, { name: "licenca", maxCount: 1 }]),
   async (req, res) => {
     try {
       const {
@@ -1840,8 +1860,6 @@ app.post(
         tipo_veiculo,
         capacidade,
         fornecedor_id,
-        latitude_garagem,
-        longitude_garagem,
         ano,
         marca,
         modelo,
@@ -1853,20 +1871,24 @@ app.post(
         gps,
         cinto_seguranca
       } = req.body;
+
+      // Motoristas associados (se existir)
       let motoristasAssociados = [];
       if (req.body.motoristasAssociados) {
         motoristasAssociados = JSON.parse(req.body.motoristasAssociados);
       }
-      if (
-        !cor_veiculo ||
-        !placa ||
-        !tipo_veiculo ||
-        !capacidade ||
-        !fornecedor_id
-      ) {
-        return res.status(400).json({ success: false, message: "Campos obrigatórios não fornecidos." });
+
+      // Verifica campos obrigatórios
+      if (!cor_veiculo || !placa || !tipo_veiculo || !capacidade || !fornecedor_id) {
+        return res.status(400).json({
+          success: false,
+          message: "Campos obrigatórios não fornecidos."
+        });
       }
+
       const userId = req.session?.userId || null;
+
+      // Upload de documentação e licenca
       let documentacaoPath = null;
       let licencaPath = null;
       if (req.files["documentacao"] && req.files["documentacao"].length > 0) {
@@ -1875,20 +1897,22 @@ app.post(
       if (req.files["licenca"] && req.files["licenca"].length > 0) {
         licencaPath = "uploads/frota/" + req.files["licenca"][0].filename;
       }
+
+      // Insere novo veículo na tabela frota
       const insertQuery = `
         INSERT INTO frota (
           cor_veiculo, placa, tipo_veiculo, capacidade,
-          latitude_garagem, longitude_garagem, fornecedor_id,
-          documentacao, licenca, ano, marca, modelo,
-          tipo_combustivel, data_aquisicao,
-          adaptado, elevador, ar_condicionado, gps, cinto_seguranca
+          fornecedor_id, documentacao, licenca,
+          ano, marca, modelo, tipo_combustivel,
+          data_aquisicao, adaptado, elevador,
+          ar_condicionado, gps, cinto_seguranca
         )
         VALUES (
           $1, $2, $3, $4,
           $5, $6, $7,
-          $8, $9, $10, $11, $12,
-          $13, $14,
-          $15, $16, $17, $18, $19
+          $8, $9, $10, $11,
+          $12, $13, $14,
+          $15, $16, $17
         )
         RETURNING id;
       `;
@@ -1897,8 +1921,6 @@ app.post(
         placa,
         tipo_veiculo,
         parseInt(capacidade, 10),
-        latitude_garagem ? parseFloat(latitude_garagem) : null,
-        longitude_garagem ? parseFloat(longitude_garagem) : null,
         parseInt(fornecedor_id, 10),
         documentacaoPath,
         licencaPath,
@@ -1914,32 +1936,60 @@ app.post(
         cinto_seguranca === "Sim"
       ];
       const result = await pool.query(insertQuery, values);
+
       if (result.rows.length === 0) {
-        return res.status(500).json({ success: false, message: "Erro ao cadastrar veículo." });
+        return res.status(500).json({
+          success: false,
+          message: "Erro ao cadastrar veículo."
+        });
       }
+
       const frotaId = result.rows[0].id;
+
+      // Relacionamento com motoristas, se houver
       if (Array.isArray(motoristasAssociados) && motoristasAssociados.length > 0) {
         const relQuery = `
           INSERT INTO frota_motoristas (frota_id, motorista_id)
-          VALUES ($1, $2);
+          VALUES ($1, $2)
         `;
         for (const motoristaId of motoristasAssociados) {
           await pool.query(relQuery, [frotaId, motoristaId]);
         }
       }
+
+      // Exemplo: se quiser relacionar rota no momento do cadastro:
+      const associarRotaId = req.body.associarRotaId;
+      if (associarRotaId) {
+        // Insere na tabela frota_rotas
+        await pool.query(
+          `INSERT INTO frota_rotas (frota_id, rota_id) VALUES ($1, $2)
+           ON CONFLICT (frota_id, rota_id) DO NOTHING`,
+          [frotaId, associarRotaId]
+        );
+      }
+
+      // Notificação
       const mensagem = `Veículo adicionado à frota: ${cor_veiculo}`;
       await pool.query(
         `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
          VALUES ($1, 'CREATE', 'frota', $2, $3)`,
         [userId, frotaId, mensagem]
       );
-      return res.json({ success: true, message: "Veículo cadastrado com sucesso!" });
+
+      return res.json({
+        success: true,
+        message: "Veículo cadastrado com sucesso!"
+      });
     } catch (error) {
       console.error("Erro no /api/frota/cadastrar:", error);
-      return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor."
+      });
     }
   }
 );
+
 
 
 app.delete("/api/frota/:id", async (req, res) => {
