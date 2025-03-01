@@ -188,7 +188,18 @@ app.get("/admin-login.html", (req, res) => {
 app.get("/dashboard-admin.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/admin/dashboard-admin.html"));
 });
-
+app.get("/dashboard-fornecedor.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/fornecedores/dashboard-fornecedor.html"));
+});
+app.get("/frota-fornecedor.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/fornecedores/frota-fornecedor.html"));
+});
+app.get("/monitor-fornecedor.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/fornecedores/monitor-fornecedor.html"));
+});
+app.get("/motorista-fornecedor.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/fornecedores/motorista-fornecedor.html"));
+});
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     res.clearCookie("connect.sid");
@@ -902,7 +913,7 @@ app.post("/api/login", async (req, res) => {
         usuario.permissoes.includes("locan") ||
         usuario.permissoes.includes("talismã")
       ) {
-        redirectUrl = "/fornecedores/dashboard-fornecedor.html";
+        redirectUrl = "/dashboard-fornecedor.html";
       }
     }
 
