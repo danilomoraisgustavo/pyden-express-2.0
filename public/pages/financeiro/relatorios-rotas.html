@@ -1,12 +1,23 @@
+<!-- =========================================================
+     ARQUIVO: listar-relatorios-ocorrencias.html
+     DESCRIÇÃO:
+        Página para Listar Relatórios de Ocorrências em Rotas Escolares,
+        baseada no mesmo estilo de formatação da página de Memorandos.
+     OBS:
+        Ajuste os caminhos dos links e scripts de acordo com
+        sua estrutura de pastas se necessário.
+     ========================================================= -->
+
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Listar Relatórios de Rotas </title>
+    <title>Listar Relatórios de Ocorrências</title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
     <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
+    <!-- CARREGAMENTO DAS FONTES -->
     <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
     <script>
         WebFont.load({
@@ -16,16 +27,17 @@
                     "Font Awesome 5 Solid",
                     "Font Awesome 5 Regular",
                     "Font Awesome 5 Brands",
-                    "simple-line-icons"
+                    "simple-line-icons",
                 ],
-                urls: ["../../assets/css/fonts.min.css"]
+                urls: ["../../assets/css/fonts.min.css"],
             },
             active: function () {
                 sessionStorage.fonts = true;
-            }
+            },
         });
     </script>
 
+    <!-- ESTILOS E CSS -->
     <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
     <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
     <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
@@ -45,6 +57,7 @@
 
 <body>
     <div class="wrapper">
+        <!-- SIDEBAR (MESMA ESTRUTURA DO EXEMPLO FORNECIDO) -->
         <div class="sidebar" data-background-color="dark">
             <div class="sidebar-logo">
                 <div class="logo-header" data-background-color="dark">
@@ -62,6 +75,11 @@
             <div class="sidebar-wrapper scrollbar scrollbar-inner">
                 <div class="sidebar-content">
                     <ul class="nav nav-secondary">
+                        <!-- ===============================================================
+                      Exemplo de Sidebar igual à do projeto. Ajuste como precisar.
+                      Aqui estão incluídos somente alguns itens de exemplo.
+                      =============================================================== -->
+
                         <li class="nav-section">
                             <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
                             <h4 class="text-section">Transporte Escolar</h4>
@@ -71,90 +89,6 @@
                                 <i class="fas fa-tachometer-alt"></i>
                                 <p>Dashboard Escolar</p>
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
-                                <i class="fas fa-user-graduate"></i>
-                                <p>Alunos</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="teAlunos">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html">
-                                            <span class="sub-item">Listar Solicitações de Transporte</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/alunos-listar.html">
-                                            <span class="sub-item">Listar Alunos</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
-                                <i class="fas fa-id-card"></i>
-                                <p>Motoristas</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="teMotoristas">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/motoristas-listar.html">
-                                            <span class="sub-item">Listar Motoristas</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/motoristas-licencas.html">
-                                            <span class="sub-item">Licenças e Certificações</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="false">
-                                <i class="fas fa-user-check"></i>
-                                <p>Monitores</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="teMonitores">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/monitores-listar.html">
-                                            <span class="sub-item">Listar Monitores</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
-                                <i class="fas fa-bus"></i>
-                                <p>Veículos</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="teVeiculos">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/veiculos-listar.html">
-                                            <span class="sub-item">Listar Veículos</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/veiculos-manutencao.html">
-                                            <span class="sub-item">Manutenção</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/veiculos-documentacao.html">
-                                            <span class="sub-item">Documentação e Seguros</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
                         </li>
                         <li class="nav-item">
                             <a data-bs-toggle="collapse" href="#teRotas" aria-expanded="false">
@@ -174,365 +108,23 @@
                                             <span class="sub-item">Pontos de Parada</span>
                                         </a>
                                     </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#teRelatorios" aria-expanded="false">
-                                <i class="fas fa-chart-line"></i>
-                                <p>Relatórios</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="teRelatorios">
-                                <ul class="nav nav-collapse">
+                                    <!-- Novo link para Relatórios de Ocorrências -->
                                     <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-mensais.html">
-                                            <span class="sub-item">Mensais</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-rotas.html">
-                                            <span class="sub-item">Por Rota</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-comparativos.html">
-                                            <span class="sub-item">Comparativos</span>
+                                        <a href="../../pages/transporte-escolar/listar-relatorios-ocorrencias.html">
+                                            <span class="sub-item">Relatórios de Ocorrências</span>
                                         </a>
                                     </li>
                                 </ul>
                             </div>
                         </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
-                                <i class="fas fa-school"></i>
-                                <p>Zoneamento</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="teZoneamento">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/zoneamento-listar.html">
-                                            <span class="sub-item">Listar Zoneamento</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/zoneamento-cadastrar.html">
-                                            <span class="sub-item">Cadastrar Zoneamento</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#teEscolas" aria-expanded="false">
-                                <i class="fas fa-school"></i>
-                                <p>Escolas</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="teEscolas">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/escolas-listar.html">
-                                            <span class="sub-item">Listar Escolas</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#teFornecedores" aria-expanded="false">
-                                <i class="fas fa-truck-loading"></i>
-                                <p>Fornecedores</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="teFornecedores">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/fornecedores-listar.html">
-                                            <span class="sub-item">Listar Fornecedores</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/fornecedores-cadastrar.html">
-                                            <span class="sub-item">Cadastrar Fornecedor</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-
-                        <li class="nav-section">
-                            <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
-                            <h4 class="text-section">Transporte Administrativo</h4>
-                        </li>
-                        <li class="nav-item">
-                            <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
-                                <i class="fas fa-tachometer-alt"></i>
-                                <p>Dashboard Administrativo</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#taFuncionarios" aria-expanded="false">
-                                <i class="fas fa-users-cog"></i>
-                                <p>Funcionários</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="taFuncionarios">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/funcionarios-listar.html">
-                                            <span class="sub-item">Listar Funcionários</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/funcionarios-cadastrar.html">
-                                            <span class="sub-item">Cadastrar Funcionário</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/funcionarios-cargos.html">
-                                            <span class="sub-item">Funções e Cargos</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/funcionarios-visualizar.html">
-                                            <span class="sub-item">Visualizar Funcionário</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
-                                <i class="fas fa-id-card"></i>
-                                <p>Motoristas</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="taMotoristas">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/motoristas-listar.html">
-                                            <span class="sub-item">Listar Motoristas</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/motoristas-cadastrar.html">
-                                            <span class="sub-item">Cadastrar Motorista</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/motoristas-licencas.html">
-                                            <span class="sub-item">Licenças e Certificações</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#taMonitores" aria-expanded="false">
-                                <i class="fas fa-user-check"></i>
-                                <p>Monitores</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="taMonitores">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/monitores-listar.html">
-                                            <span class="sub-item">Listar Monitores</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/monitores-cadastrar.html">
-                                            <span class="sub-item">Cadastrar Monitor</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
-                                <i class="fas fa-warehouse"></i>
-                                <p>Frota Administrativa</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="taFrota">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/frota-listar.html">
-                                            <span class="sub-item">Listar Frota</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/frota-manutencao.html">
-                                            <span class="sub-item">Manutenção</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/frota-rotas.html">
-                                            <span class="sub-item">Rotas Internas</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
-                                <i class="far fa-calendar-alt"></i>
-                                <p>Agenda de Viagens</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="taAgenda">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/agenda-viagens-listar.html">
-                                            <span class="sub-item">Listar Viagens</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/agenda-viagens-nova.html">
-                                            <span class="sub-item">Agendar Nova Viagem</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/agenda-viagens-historico.html">
-                                            <span class="sub-item">Histórico de Viagens</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#taLogistica" aria-expanded="false">
-                                <i class="fas fa-truck-loading"></i>
-                                <p>Logística Interna</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="taLogistica">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/logistica-materiais.html">
-                                            <span class="sub-item">Transporte de Materiais</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/logistica-manutencoes.html">
-                                            <span class="sub-item">Agendamento Manutenção</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/logistica-suprimentos.html">
-                                            <span class="sub-item">Controle de Suprimentos</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#taRelatorios" aria-expanded="false">
-                                <i class="fas fa-chart-pie"></i>
-                                <p>Relatórios</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="taRelatorios">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/gerar-memorando.html">
-                                            <span class="sub-item">Gerar Memorando</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/relatorios-eficiencia.html">
-                                            <span class="sub-item">Eficiência</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/relatorios-custos.html">
-                                            <span class="sub-item">Custos Operacionais</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/relatorios-comparativos.html">
-                                            <span class="sub-item">Comparativos</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/relatorios-mensais.html">
-                                            <span class="sub-item">Mensais</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-administrativo/relatorios-rotas.html">
-                                            <span class="sub-item">Por Rota</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-
-                        <li class="nav-section">
-                            <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
-                            <h4 class="text-section">Financeiro</h4>
-                        </li>
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#finRelatorios" aria-expanded="false">
-                                <i class="far fa-chart-bar"></i>
-                                <p>Relatórios Financeiros</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="finRelatorios">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/financeiro/relatorios-mensal.html">
-                                            <span class="sub-item">Relatório Mensal</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/financeiro/relatorios-custos-setor.html">
-                                            <span class="sub-item">Custos por Setor</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/financeiro/relatorios-comparativos.html">
-                                            <span class="sub-item">Comparativos</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
-
-                        <li class="nav-item">
-                            <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
-                                <i class="fas fa-chart-line"></i>
-                                <p>Relatórios</p>
-                                <span class="caret"></span>
-                            </a>
-                            <div class="collapse" id="finOutrosRelatorios">
-                                <ul class="nav nav-collapse">
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-mensais.html">
-                                            <span class="sub-item">Mensais</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-rotas.html">
-                                            <span class="sub-item">Por Rota</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="../../pages/transporte-escolar/relatorios-comparativos.html">
-                                            <span class="sub-item">Comparativos</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
+                        <!-- ...continue as opções do sidebar, se necessário... -->
                     </ul>
                 </div>
             </div>
         </div>
+        <!-- END SIDEBAR -->
 
-
+        <!-- MAIN PANEL -->
         <div class="main-panel">
             <div class="main-header" style="top: 0;">
                 <div class="main-header-logo">
@@ -557,7 +149,9 @@
 
                 <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
                     <div class="container-fluid">
+                        <!-- Ícones de mensagens, notificações, etc. - Opcional -->
                         <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+                            <!-- Ícone Mensagens (Exemplo) -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -595,6 +189,8 @@
                                     </li>
                                 </ul>
                             </li>
+
+                            <!-- Ícone Notificações (Exemplo) -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -621,6 +217,8 @@
                                     </li>
                                 </ul>
                             </li>
+
+                            <!-- Ícone Ações Rápidas (Exemplo) -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -634,8 +232,7 @@
                                     <div class="quick-actions-scroll scrollbar-outer">
                                         <div class="quick-actions-items">
                                             <div class="row m-0">
-                                                <a class="col-6 col-md-4 p-0"
-                                                    href="/pages/transporte-escolar/escolas-cadastrar.html">
+                                                <a class="col-6 col-md-4 p-0" href="#">
                                                     <div class="quick-actions-item">
                                                         <div class="avatar-item bg-primary rounded-circle">
                                                             <i class="fas fa-school"></i>
@@ -643,38 +240,14 @@
                                                         <span class="text">Cad. Escola</span>
                                                     </div>
                                                 </a>
-                                                <a class="col-6 col-md-4 p-0"
-                                                    href="/pages/transporte-escolar/monitores-cadastrar.html">
-                                                    <div class="quick-actions-item">
-                                                        <div class="avatar-item bg-success rounded-circle">
-                                                            <i class="fas fa-user-check"></i>
-                                                        </div>
-                                                        <span class="text">Cad. Monitor</span>
-                                                    </div>
-                                                </a>
-                                                <a class="col-6 col-md-4 p-0"
-                                                    href="/pages/transporte-escolar/rotas-listar.html">
-                                                    <div class="quick-actions-item">
-                                                        <div class="avatar-item bg-warning rounded-circle">
-                                                            <i class="fas fa-route"></i>
-                                                        </div>
-                                                        <span class="text">Listar Rotas</span>
-                                                    </div>
-                                                </a>
-                                                <a class="col-6 col-md-4 p-0"
-                                                    href="/pages/transporte-administrativo/frota-listar.html">
-                                                    <div class="quick-actions-item">
-                                                        <div class="avatar-item bg-info rounded-circle">
-                                                            <i class="fas fa-warehouse"></i>
-                                                        </div>
-                                                        <span class="text">Listar Frota</span>
-                                                    </div>
-                                                </a>
+                                                <!-- Etc... Adicione mais cards de atalho se desejar -->
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </li>
+
+                            <!-- Dropdown Usuário (Exemplo) -->
                             <li class="nav-item topbar-user dropdown hidden-caret">
                                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
                                     aria-expanded="false">
@@ -698,21 +271,13 @@
                                                 <div class="u-text">
                                                     <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
                                                     <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
-                                                    <a href="/pages/usuarios/meu-perfil.html"
-                                                        class="btn btn-xs btn-secondary btn-sm">Ver
-                                                        Perfil</a>
+                                                    <a href="#" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
                                                 </div>
                                             </div>
                                         </li>
                                         <li>
                                             <div class="dropdown-divider"></div>
-                                            <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu
-                                                Perfil</a>
-                                            <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de
-                                                Entrada</a>
-                                            <div class="dropdown-divider"></div>
-                                            <a class="dropdown-item"
-                                                href="/pages/usuarios/configuracoes.html">Configurações</a>
+                                            <a class="dropdown-item" href="#">Meu Perfil</a>
                                             <div class="dropdown-divider"></div>
                                             <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
                                         </li>
@@ -724,10 +289,11 @@
                 </nav>
             </div>
 
+            <!-- CONTEÚDO PRINCIPAL -->
             <div class="container">
                 <div class="page-inner">
                     <div class="page-header">
-                        <h3 class="fw-bold mb-3">Listar Relatórios de Rotas</h3>
+                        <h3 class="fw-bold mb-3">Listar Relatórios de Ocorrências</h3>
                         <ul class="breadcrumbs mb-3">
                             <li class="nav-home">
                                 <a href="../../">
@@ -744,44 +310,47 @@
                                 <i class="icon-arrow-right"></i>
                             </li>
                             <li class="nav-item">
-                                <a href="#">Listar Relatórios de Rotas</a>
+                                <a href="#">Listar Ocorrências</a>
                             </li>
                         </ul>
                     </div>
 
+                    <!-- Tabela de Relatórios de Ocorrências -->
                     <div class="row mt-4">
                         <div class="col-md-12">
                             <div class="card">
                                 <div class="card-header d-flex justify-content-between">
-                                    <h4 class="card-title">Lista de Relatórios de Rotas</h4>
+                                    <h4 class="card-title">Lista de Relatórios</h4>
                                     <button class="btn btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#modalNovoRelatorio">
-                                        <i class="fa fa-plus"></i> Criar Novo Relatório
+                                        <i class="fa fa-plus"></i> Novo Relatório
                                     </button>
                                 </div>
                                 <div class="card-body">
                                     <div class="table-responsive">
-                                        <table id="relatorios-rotas-table"
-                                            class="display table table-striped table-hover">
+                                        <table id="relatorios-table" class="display table table-striped table-hover">
                                             <thead>
                                                 <tr>
                                                     <th>ID</th>
-                                                    <th>Título</th>
-                                                    <th>Empresa Responsável</th>
-                                                    <th>Data</th>
+                                                    <th>Tipo</th>
+                                                    <th>Data do Ocorrido</th>
+                                                    <th>Rota ID</th>
+                                                    <th>Anexo</th>
                                                     <th>Ações</th>
                                                 </tr>
                                             </thead>
                                             <tfoot>
                                                 <tr>
                                                     <th>ID</th>
-                                                    <th>Título</th>
-                                                    <th>Empresa Responsável</th>
-                                                    <th>Data</th>
+                                                    <th>Tipo</th>
+                                                    <th>Data do Ocorrido</th>
+                                                    <th>Rota ID</th>
+                                                    <th>Anexo</th>
                                                     <th>Ações</th>
                                                 </tr>
                                             </tfoot>
                                             <tbody>
+                                                <!-- Linhas geradas dinamicamente via JavaScript -->
                                             </tbody>
                                         </table>
                                     </div>
@@ -790,98 +359,233 @@
                         </div>
                     </div>
 
+                    <!-- Modal Novo Relatório de Ocorrência -->
                     <div class="modal fade" id="modalNovoRelatorio" tabindex="-1"
                         aria-labelledby="modalNovoRelatorioLabel" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="modalNovoRelatorioLabel">Criar Novo Relatório</h5>
+                                    <h5 class="modal-title" id="modalNovoRelatorioLabel">Novo Relatório de Ocorrência
+                                    </h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                         aria-label="Fechar"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <form id="relatorio-rotas-form" enctype="multipart/form-data">
+                                    <form id="relatorio-form" enctype="multipart/form-data">
                                         <div class="row mb-3">
-                                            <div class="col-md-6">
-                                                <label for="titulo" class="form-label required-label">Título</label>
-                                                <input type="text" id="titulo" name="titulo" class="form-control"
+                                            <div class="col-md-12">
+                                                <label for="tipo_relatorio" class="form-label fw-bold">Tipo de
+                                                    Relatório</label>
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="tipo_relatorio" id="tr1"
+                                                                value="Atraso no Transporte" checked />
+                                                            <label class="form-check-label" for="tr1">
+                                                                Atraso no Transporte
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="tipo_relatorio" id="tr2" value="Acidente" />
+                                                            <label class="form-check-label" for="tr2">
+                                                                Acidente
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="tipo_relatorio" id="tr3" value="Indisciplina" />
+                                                            <label class="form-check-label" for="tr3">
+                                                                Indisciplina
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="tipo_relatorio" id="tr4"
+                                                                value="Problema Mecânico" />
+                                                            <label class="form-check-label" for="tr4">
+                                                                Problema Mecânico
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="tipo_relatorio" id="tr5" value="Vandalismo" />
+                                                            <label class="form-check-label" for="tr5">
+                                                                Vandalismo
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="tipo_relatorio" id="tr6" value="Outros" />
+                                                            <label class="form-check-label" for="tr6">
+                                                                Outros
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Acrescente mais se precisar -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <hr />
+
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
+                                                <label for="rota_id" class="form-label required-label">ID da
+                                                    Rota</label>
+                                                <input type="number" id="rota_id" name="rota_id" class="form-control"
                                                     required />
                                             </div>
-                                            <div class="col-md-6">
-                                                <label for="empresa_responsavel"
-                                                    class="form-label required-label">Empresa Responsável</label>
-                                                <input type="text" id="empresa_responsavel" name="empresa_responsavel"
+                                            <div class="col-md-4">
+                                                <label for="data_ocorrido" class="form-label required-label">Data do
+                                                    Ocorrido</label>
+                                                <input type="date" id="data_ocorrido" name="data_ocorrido"
                                                     class="form-control" required />
                                             </div>
                                         </div>
+
                                         <div class="row mb-3">
                                             <div class="col-md-12">
-                                                <label for="corpo_relatorio" class="form-label required-label">Corpo do
-                                                    Relatório</label>
-                                                <textarea id="corpo_relatorio" name="corpo_relatorio"
-                                                    class="form-control" rows="4" required></textarea>
+                                                <label for="corpo" class="form-label required-label">Descrição da
+                                                    Ocorrência</label>
+                                                <textarea id="corpo" name="corpo" class="form-control" rows="4"
+                                                    required></textarea>
                                             </div>
                                         </div>
+
                                         <div class="row mb-3">
                                             <div class="col-md-12">
-                                                <label for="arquivos" class="form-label">Anexos (opcional)</label>
-                                                <input type="file" id="arquivos" name="arquivos[]" class="form-control"
-                                                    multiple accept="image/*,video/*,application/pdf" />
+                                                <label for="anexo" class="form-label fw-bold">Anexo (opcional)</label>
+                                                <input type="file" id="anexo" name="anexo" class="form-control"
+                                                    accept=".jpg,.jpeg,.png,.pdf" />
+                                                <small class="text-muted">Suporta imagens (.jpg, .png) ou PDF.</small>
                                             </div>
                                         </div>
+
                                         <div class="mt-4">
-                                            <button type="submit" class="btn btn-success">Gerar Relatório</button>
+                                            <button type="submit" class="btn btn-success">Criar Relatório</button>
                                         </div>
                                     </form>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <!-- Fim Modal Novo Relatório -->
 
+                    <!-- Modal Editar Relatório -->
                     <div class="modal fade" id="modalEditarRelatorio" tabindex="-1"
                         aria-labelledby="modalEditarRelatorioLabel" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="modalEditarRelatorioLabel">Editar Relatório</h5>
+                                    <h5 class="modal-title" id="modalEditarRelatorioLabel">Editar Relatório de
+                                        Ocorrência</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                         aria-label="Fechar"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <form id="editar-relatorio-rotas-form" enctype="multipart/form-data">
-                                        <input type="hidden" id="editar_relatorio_id" name="editar_relatorio_id"
-                                            value="" />
+                                    <form id="editar-relatorio-form" enctype="multipart/form-data">
+                                        <input type="hidden" id="editar_relatorio_id" name="relatorio_id" value="" />
+
                                         <div class="row mb-3">
-                                            <div class="col-md-6">
-                                                <label for="editar_titulo"
-                                                    class="form-label required-label">Título</label>
-                                                <input type="text" id="editar_titulo" name="editar_titulo"
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold">Tipo de Relatório</label>
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="editar_tipo_relatorio" id="etr1"
+                                                                value="Atraso no Transporte" />
+                                                            <label class="form-check-label" for="etr1">
+                                                                Atraso no Transporte
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="editar_tipo_relatorio" id="etr2"
+                                                                value="Acidente" />
+                                                            <label class="form-check-label" for="etr2">
+                                                                Acidente
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="editar_tipo_relatorio" id="etr3"
+                                                                value="Indisciplina" />
+                                                            <label class="form-check-label" for="etr3">
+                                                                Indisciplina
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="editar_tipo_relatorio" id="etr4"
+                                                                value="Problema Mecânico" />
+                                                            <label class="form-check-label" for="etr4">
+                                                                Problema Mecânico
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="editar_tipo_relatorio" id="etr5"
+                                                                value="Vandalismo" />
+                                                            <label class="form-check-label" for="etr5">
+                                                                Vandalismo
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio"
+                                                                name="editar_tipo_relatorio" id="etr6" value="Outros" />
+                                                            <label class="form-check-label" for="etr6">
+                                                                Outros
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <hr />
+
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
+                                                <label for="editar_rota_id" class="form-label required-label">ID da
+                                                    Rota</label>
+                                                <input type="number" id="editar_rota_id" name="editar_rota_id"
                                                     class="form-control" required />
                                             </div>
-                                            <div class="col-md-6">
-                                                <label for="editar_empresa_responsavel"
-                                                    class="form-label required-label">Empresa Responsável</label>
-                                                <input type="text" id="editar_empresa_responsavel"
-                                                    name="editar_empresa_responsavel" class="form-control" required />
+                                            <div class="col-md-4">
+                                                <label for="editar_data_ocorrido" class="form-label required-label">Data
+                                                    do Ocorrido</label>
+                                                <input type="date" id="editar_data_ocorrido" name="editar_data_ocorrido"
+                                                    class="form-control" required />
                                             </div>
                                         </div>
+
                                         <div class="row mb-3">
                                             <div class="col-md-12">
-                                                <label for="editar_corpo_relatorio"
-                                                    class="form-label required-label">Corpo do Relatório</label>
-                                                <textarea id="editar_corpo_relatorio" name="editar_corpo_relatorio"
-                                                    class="form-control" rows="4" required></textarea>
+                                                <label for="editar_corpo" class="form-label required-label">Descrição da
+                                                    Ocorrência</label>
+                                                <textarea id="editar_corpo" name="editar_corpo" class="form-control"
+                                                    rows="4" required></textarea>
                                             </div>
                                         </div>
+
                                         <div class="row mb-3">
                                             <div class="col-md-12">
-                                                <label for="editar_arquivos" class="form-label">Adicionar/Alterar
-                                                    Arquivos (opcional)</label>
-                                                <input type="file" id="editar_arquivos" name="editar_arquivos[]"
-                                                    class="form-control" multiple
-                                                    accept="image/*,video/*,application/pdf" />
+                                                <label for="editar_anexo" class="form-label fw-bold">Atualizar Anexo
+                                                    (opcional)</label>
+                                                <input type="file" id="editar_anexo" name="editar_anexo"
+                                                    class="form-control" accept=".jpg,.jpeg,.png,.pdf" />
+                                                <small class="text-muted">Deixe em branco se não quiser alterar o
+                                                    anexo.</small>
                                             </div>
                                         </div>
+
                                         <div class="mt-4">
                                             <button type="submit" class="btn btn-success">Salvar Alterações</button>
                                         </div>
@@ -890,10 +594,12 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Fim Modal Editar Relatório -->
                 </div>
             </div>
+            <!-- /CONTEÚDO PRINCIPAL -->
 
-
+            <!-- FOOTER -->
             <footer class="footer">
                 <div class="container-fluid d-flex justify-content-between">
                     <nav class="pull-left">
@@ -904,7 +610,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#"> Termos de Uuso </a>
+                                <a class="nav-link" href="#"> Termos de Uso </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="#"> Política de Privacidade </a>
@@ -921,9 +627,12 @@
                     </div>
                 </div>
             </footer>
+            <!-- /FOOTER -->
         </div>
+        <!-- /MAIN PANEL -->
     </div>
 
+    <!-- SCRIPTS -->
     <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="../../assets/js/core/popper.min.js"></script>
     <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -935,7 +644,7 @@
     <script src="../../assets/js/setting-demo2.js"></script>
 
     <script>
-        let relatoriosRotas = [];
+        let relatorios = [];
 
         function showNotification(type, message, title = "") {
             $.notify({
@@ -966,89 +675,94 @@
 
         function formatDate(dateStr) {
             if (!dateStr) return '';
+            // Caso venha formato YYYY-MM-DD, apenas reorganize
+            // Se vier com time, ajuste conforme necessidade
             const d = new Date(dateStr);
+            if (isNaN(d)) {
+                // Tenta quando vier no formato (YYYY-MM-DD sem time)
+                return dateStr;
+            }
             const day = String(d.getDate()).padStart(2, '0');
             const month = String(d.getMonth() + 1).padStart(2, '0');
             const year = d.getFullYear();
-            const hours = String(d.getHours()).padStart(2, '0');
-            const minutes = String(d.getMinutes()).padStart(2, '0');
-            return `${day}-${month}-${year} ${hours}:${minutes}`;
+            return `${day}/${month}/${year}`;
         }
 
-        function loadRelatoriosRotas() {
-            fetch('/api/relatorios-rotas')
+        // Carregar relatórios do back-end
+        function loadRelatorios() {
+            fetch('/api/relatorios')
                 .then(res => {
                     if (!res.ok) {
-                        throw new Error('Erro ao carregar relatórios de rotas');
+                        throw new Error('Erro ao carregar relatórios');
                     }
                     return res.json();
                 })
                 .then(data => {
-                    relatoriosRotas = data;
+                    relatorios = data;
                     populateTable();
                 })
                 .catch(err => {
                     console.error(err);
-                    showNotification('danger', 'Não foi possível carregar os relatórios de rotas.');
+                    showNotification('danger', 'Não foi possível carregar os relatórios.');
                 });
         }
 
         function populateTable() {
-            const tableBody = $('#relatorios-rotas-table tbody');
+            const tableBody = $('#relatorios-table tbody');
             tableBody.empty();
 
-            relatoriosRotas.forEach(r => {
-                const dataFormatada = formatDate(r.data_criacao);
-                // Ajustando para r.titulo em vez de r.rota
+            relatorios.forEach(r => {
+                const dataFormatada = formatDate(r.data_ocorrido);
+                const anexoLabel = r.caminho_anexo
+                    ? `<a href="${r.caminho_anexo}" target="_blank">Ver Anexo</a>`
+                    : 'Sem Anexo';
+
                 const row = `
-          <tr>
-            <td>${r.id}</td>
-            <td>${r.titulo}</td>
-            <td>${r.empresa_responsavel}</td>
-            <td>${dataFormatada}</td>
-            <td>
-              <div class="form-button-action">
-                <button type="button" class="btn btn-link btn-dark btn-lg"
-                  onclick="visualizarRelatorioPdf('${r.id}')"
-                  data-bs-toggle="tooltip" title="Visualizar PDF">
-                  <i class="fa fa-eye"></i>
-                </button>
-
-                <button type="button" class="btn btn-link btn-secondary btn-lg"
-                  onclick="gerarPdf('${r.id}')"
-                  data-bs-toggle="tooltip" title="Baixar PDF">
-                  <i class="fa fa-file-pdf"></i>
-                </button>
-
-                <button type="button" class="btn btn-link btn-info btn-lg"
-                  onclick="gerarDocx('${r.id}')"
-                  data-bs-toggle="tooltip" title="Baixar .docx">
-                  <i class="fa fa-file-word"></i>
-                </button>
-
-                <button type="button" class="btn btn-link btn-warning btn-lg"
-                  onclick="abrirModalEditarRelatorio('${r.id}')"
-                  data-bs-toggle="tooltip" title="Editar Relatório">
-                  <i class="fa fa-edit"></i>
-                </button>
-
-                <button type="button" class="btn btn-link btn-danger btn-lg"
-                  onclick="excluirRelatorio('${r.id}')"
-                  data-bs-toggle="tooltip" title="Excluir">
-                  <i class="fa fa-trash-alt"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
+               <tr>
+                 <td>${r.id}</td>
+                 <td>${r.tipo_relatorio}</td>
+                 <td>${dataFormatada}</td>
+                 <td>${r.rota_id}</td>
+                 <td>${anexoLabel}</td>
+                 <td>
+                   <div class="form-button-action">
+                     <button type="button" class="btn btn-link btn-dark btn-lg"
+                       onclick="visualizarRelatorioEmPdf('${r.id}')"
+                       data-bs-toggle="tooltip" title="Visualizar PDF">
+                       <i class="fa fa-eye"></i>
+                     </button>
+                     <button type="button" class="btn btn-link btn-secondary btn-lg"
+                       onclick="gerarPdf('${r.id}')"
+                       data-bs-toggle="tooltip" title="Baixar PDF">
+                       <i class="fa fa-file-pdf"></i>
+                     </button>
+                     <button type="button" class="btn btn-link btn-info btn-lg"
+                       onclick="gerarDocx('${r.id}')"
+                       data-bs-toggle="tooltip" title="Baixar .docx">
+                       <i class="fa fa-file-word"></i>
+                     </button>
+                     <button type="button" class="btn btn-link btn-warning btn-lg"
+                       onclick="abrirModalEditarRelatorio('${r.id}')"
+                       data-bs-toggle="tooltip" title="Editar">
+                       <i class="fa fa-edit"></i>
+                     </button>
+                     <button type="button" class="btn btn-link btn-danger btn-lg"
+                       onclick="excluirRelatorio('${r.id}')"
+                       data-bs-toggle="tooltip" title="Excluir">
+                       <i class="fa fa-trash-alt"></i>
+                     </button>
+                   </div>
+                 </td>
+               </tr>
+             `;
                 tableBody.append(row);
             });
 
-            if ($.fn.DataTable.isDataTable('#relatorios-rotas-table')) {
-                $('#relatorios-rotas-table').DataTable().clear().destroy();
+            if ($.fn.DataTable.isDataTable('#relatorios-table')) {
+                $('#relatorios-table').DataTable().clear().destroy();
             }
 
-            $('#relatorios-rotas-table').DataTable({
+            $('#relatorios-table').DataTable({
                 pageLength: 10,
                 language: {
                     decimal: ",",
@@ -1072,12 +786,12 @@
             });
         }
 
-        function visualizarRelatorioPdf(id) {
-            window.open(`/api/relatorios-rotas/${id}/pdf`, '_blank');
+        function visualizarRelatorioEmPdf(id) {
+            window.open(`/api/relatorios/${id}/gerar-pdf`, '_blank');
         }
 
         function gerarPdf(id) {
-            fetch(`/api/relatorios-rotas/${id}/pdf`)
+            fetch(`/api/relatorios/${id}/gerar-pdf`)
                 .then(res => {
                     if (!res.ok) throw new Error('Erro ao gerar PDF');
                     return res.blob();
@@ -1099,7 +813,7 @@
         }
 
         function gerarDocx(id) {
-            fetch(`/api/relatorios-rotas/${id}/docx`)
+            fetch(`/api/relatorios/${id}/gerar-docx`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error('Erro ao gerar .docx');
@@ -1123,25 +837,30 @@
         }
 
         function abrirModalEditarRelatorio(id) {
-            const relatorio = relatoriosRotas.find(item => item.id == id);
-            if (!relatorio) {
+            const rel = relatorios.find(item => item.id == id);
+            if (!rel) {
                 showNotification('danger', 'Relatório não encontrado.');
                 return;
             }
 
-            // Ajustar campos para titulo
-            document.getElementById('editar_relatorio_id').value = relatorio.id;
-            document.getElementById('editar_titulo').value = relatorio.titulo;
-            document.getElementById('editar_empresa_responsavel').value = relatorio.empresa_responsavel;
-            document.getElementById('editar_corpo_relatorio').value = relatorio.corpo_relatorio || '';
+            document.getElementById('editar_relatorio_id').value = rel.id;
+            document.getElementById('editar_rota_id').value = rel.rota_id;
+            document.getElementById('editar_data_ocorrido').value =
+                rel.data_ocorrido ? rel.data_ocorrido.split('T')[0] : '';
+
+            document.getElementById('editar_corpo').value = rel.corpo;
+
+            // Marcar o radio correspondente ao tipo
+            const radios = document.getElementsByName('editar_tipo_relatorio');
+            for (let i = 0; i < radios.length; i++) {
+                radios[i].checked = (radios[i].value === rel.tipo_relatorio);
+            }
 
             $('#modalEditarRelatorio').modal('show');
         }
 
         function excluirRelatorio(id) {
-            fetch(`/api/relatorios-rotas/${id}`, {
-                method: 'DELETE'
-            })
+            fetch(`/api/relatorios/${id}`, { method: 'DELETE' })
                 .then(res => {
                     if (!res.ok) {
                         throw new Error('Erro ao excluir relatório');
@@ -1151,7 +870,7 @@
                 .then(data => {
                     if (data.success) {
                         showNotification('success', 'Relatório excluído com sucesso!');
-                        loadRelatoriosRotas();
+                        loadRelatorios();
                     } else {
                         showNotification('danger', 'Erro ao excluir relatório: ' + data.message);
                     }
@@ -1163,13 +882,15 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            loadRelatoriosRotas();
+            loadRelatorios();
 
-            document.getElementById('relatorio-rotas-form').addEventListener('submit', function (e) {
+            // Cadastro de novo relatório
+            document.getElementById('relatorio-form').addEventListener('submit', function (e) {
                 e.preventDefault();
-                const formData = new FormData(this);
+                const form = e.target;
+                const formData = new FormData(form);
 
-                fetch('/api/relatorios-rotas/cadastrar', {
+                fetch('/api/relatorios/cadastrar', {
                     method: 'POST',
                     body: formData
                 })
@@ -1182,9 +903,9 @@
                     .then(data => {
                         if (data.success) {
                             showNotification('success', 'Relatório criado com sucesso!');
-                            document.getElementById('relatorio-rotas-form').reset();
+                            form.reset();
                             $('#modalNovoRelatorio').modal('hide');
-                            loadRelatoriosRotas();
+                            loadRelatorios();
                         } else {
                             showNotification('danger', 'Erro ao criar relatório: ' + data.message);
                         }
@@ -1195,15 +916,16 @@
                     });
             });
 
-            document.getElementById('editar-relatorio-rotas-form').addEventListener('submit', function (e) {
+            // Edição de relatório
+            document.getElementById('editar-relatorio-form').addEventListener('submit', function (e) {
                 e.preventDefault();
-
+                const form = e.target;
                 const relatorioId = document.getElementById('editar_relatorio_id').value;
-                const formData = new FormData(this);
+                const updateData = new FormData(form); // formData com possíveis anexos
 
-                fetch(`/api/relatorios-rotas/${relatorioId}`, {
+                fetch(`/api/relatorios/${relatorioId}`, {
                     method: 'PUT',
-                    body: formData
+                    body: updateData
                 })
                     .then(res => {
                         if (!res.ok) {
@@ -1215,7 +937,7 @@
                         if (data.success) {
                             showNotification('success', 'Relatório atualizado com sucesso!');
                             $('#modalEditarRelatorio').modal('hide');
-                            loadRelatoriosRotas();
+                            loadRelatorios();
                         } else {
                             showNotification('danger', 'Erro ao atualizar relatório: ' + data.message);
                         }

@@ -207,7 +207,6 @@ app.get("/logout", (req, res) => {
   });
 });
 
-
 // CONFIGURAÇÃO DE UPLOAD
 
 const uploadDir = path.join(__dirname, "uploads");
@@ -242,7 +241,21 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
-
+const storageRelatorios = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(uploadDir, "relatorios");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, "relatorio-" + uniqueSuffix + ext);
+  },
+});
+const uploadRelatorios = multer({ storage: storageRelatorios });
 const upload = multer({ dest: "uploads/" });
 const uploadFrota = multer({ storage: storage });
 const uploadMonitores = multer({ storage: storage });
@@ -301,7 +314,286 @@ app.get("/api/admin/users", async (req, res) => {
     return res.status(500).json({ error: "Erro interno ao buscar usuários." });
   }
 });
+// ----------------------------------------------------------------------
+// ROTAS PARA RELATÓRIOS DE OCORRÊNCIA
+// ----------------------------------------------------------------------
 
+/**
+ * [GET] Listar todos os relatórios
+ * Rota: /api/relatorios
+ */
+app.get("/api/relatorios", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM relatorios_ocorrencias ORDER BY id DESC");
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Erro ao obter relatórios:", error);
+    return res.status(500).json({ success: false, message: "Erro ao obter relatórios." });
+  }
+});
+
+/**
+ * [POST] Cadastrar um novo relatório
+ * Rota: /api/relatorios/cadastrar
+ * Faz upload de 1 arquivo (campo "anexo") opcional
+ */
+app.post("/api/relatorios/cadastrar", uploadRelatorios.single("anexo"), async (req, res) => {
+  try {
+    const {
+      tipo_relatorio,
+      rota_id,
+      data_ocorrido,
+      corpo
+    } = req.body;
+
+    // Se houve arquivo enviado, obtem caminho
+    let caminho_anexo = null;
+    if (req.file) {
+      // caminho relativo para acessar o arquivo se quiser servir por rota estática
+      caminho_anexo = "/uploads/relatorios/" + req.file.filename;
+    }
+
+    const query = `
+      INSERT INTO relatorios_ocorrencias (
+        tipo_relatorio, rota_id, data_ocorrido, corpo, caminho_anexo
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `;
+    const values = [tipo_relatorio, rota_id, data_ocorrido, corpo, caminho_anexo];
+    const result = await pool.query(query, values);
+    return res.json({ success: true, newId: result.rows[0].id });
+  } catch (error) {
+    console.error("Erro ao cadastrar relatório:", error);
+    return res.status(500).json({ success: false, message: "Erro ao cadastrar relatório." });
+  }
+});
+
+/**
+ * [PUT] Editar relatório existente
+ * Rota: /api/relatorios/:id
+ * Faz upload de 1 arquivo (campo "editar_anexo") opcional
+ */
+app.put("/api/relatorios/:id", uploadRelatorios.single("editar_anexo"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Os dados podem vir em FormData, então pegamos do body
+    const tipo_relatorio = req.body.editar_tipo_relatorio;
+    const rota_id = req.body.editar_rota_id;
+    const data_ocorrido = req.body.editar_data_ocorrido;
+    const corpo = req.body.editar_corpo;
+
+    // Checa se existe
+    const check = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
+    }
+
+    // Se houve arquivo enviado, obtem caminho. Caso não haja, preserva o existente
+    let caminho_anexo = check.rows[0].caminho_anexo;
+    if (req.file) {
+      caminho_anexo = "/uploads/relatorios/" + req.file.filename;
+      // (Opcional) Excluir anexo antigo se quiser
+      // const oldPath = check.rows[0].caminho_anexo;
+      // if (oldPath) {
+      //   fs.unlink(path.join(__dirname, oldPath), (err) => { /* se quiser excluir o antigo */ });
+      // }
+    }
+
+    const updateQuery = `
+      UPDATE relatorios_ocorrencias
+      SET tipo_relatorio = $1,
+          rota_id = $2,
+          data_ocorrido = $3,
+          corpo = $4,
+          caminho_anexo = $5
+      WHERE id = $6
+    `;
+    const values = [tipo_relatorio, rota_id, data_ocorrido, corpo, caminho_anexo, id];
+    await pool.query(updateQuery, values);
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao editar relatório:", error);
+    return res.status(500).json({ success: false, message: "Erro ao editar relatório." });
+  }
+});
+
+/**
+ * [DELETE] Excluir relatório
+ * Rota: /api/relatorios/:id
+ */
+app.delete("/api/relatorios/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const check = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
+    }
+
+    // (Opcional) Excluir arquivo anexo do disco
+    // if (check.rows[0].caminho_anexo) {
+    //   const absolutePath = path.join(__dirname, check.rows[0].caminho_anexo);
+    //   fs.unlink(absolutePath, (err) => { /* erro ao excluir ou sucesso */ });
+    // }
+
+    await pool.query("DELETE FROM relatorios_ocorrencias WHERE id = $1", [id]);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao excluir relatório:", error);
+    return res.status(500).json({ success: false, message: "Erro ao excluir relatório." });
+  }
+});
+
+/**
+ * [GET] Gerar PDF do relatório
+ * Rota: /api/relatorios/:id/gerar-pdf
+ * Gera um PDF contendo as informações do relatório
+ * e exibe o anexo em uma nova página (se for imagem).
+ * Caso seja PDF, apenas insere uma indicação.
+ */
+app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
+    }
+    const relatorio = result.rows[0];
+
+    // Cria documento PDF
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    const filename = `relatorio_${id}.pdf`;
+    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    // -- Cabeçalho e Logo (se desejar)
+    // Ajuste o caminho do logo se tiver
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - CANAÃ DOS CARAJÁS", 250, 20, { width: 300, align: "right" });
+
+    // -- Título
+    doc.moveDown(4);
+    doc
+      .fontSize(16)
+      .font("Helvetica-Bold")
+      .text(`RELATÓRIO DE OCORRÊNCIA N.º ${relatorio.id}`, { align: "center" })
+      .moveDown();
+
+    // -- Corpo do relatório
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "left" })
+      .moveDown(0.5)
+      .text(`Rota ID: ${relatorio.rota_id}`, { align: "left" })
+      .moveDown(0.5)
+      .text(`Data do Ocorrido: ${relatorio.data_ocorrido}`, { align: "left" })
+      .moveDown();
+
+    const corpoAjustado = relatorio.corpo.replace(/\r\n/g, "\n").replace(/\r/g, "");
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Descrição da Ocorrência:", { align: "left", underline: true })
+      .moveDown(0.5)
+      .text(corpoAjustado, { align: "justify" })
+      .moveDown(2);
+
+    // -- Assinatura fictícia
+    doc.text("Atenciosamente,").moveDown(2);
+    doc.text("_____________________________", { align: "center" });
+    doc.text("Coordenador de Transporte Escolar", { align: "center" });
+
+    // Se tiver anexo, adiciona nova página e insere a imagem ou menção ao PDF
+    if (relatorio.caminho_anexo) {
+      const absoluteAnexo = path.join(__dirname, relatorio.caminho_anexo);
+      if (fs.existsSync(absoluteAnexo)) {
+        doc.addPage();
+        doc.fontSize(14).font("Helvetica-Bold").text("Anexo:", { align: "left" }).moveDown();
+        // Verifica extensão do anexo
+        const ext = path.extname(absoluteAnexo).toLowerCase();
+        if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
+          // Exibe a imagem no PDF
+          doc.image(absoluteAnexo, {
+            fit: [500, 700],
+            align: "center",
+            valign: "top",
+          });
+        } else if (ext === ".pdf") {
+          // PDF no anexo - não há como embutir páginas de outro PDF diretamente de forma simples
+          // Então apenas informe um texto e o caminho
+          doc
+            .fontSize(12)
+            .text("O anexo é um arquivo PDF. Abra separadamente:", { align: "left" })
+            .moveDown()
+            .font("Helvetica-Bold")
+            .text(relatorio.caminho_anexo, { link: relatorio.caminho_anexo, underline: true });
+        } else {
+          // Outros formatos
+          doc
+            .fontSize(12)
+            .text("Arquivo anexo disponível em:", { align: "left" })
+            .moveDown()
+            .font("Helvetica-Bold")
+            .text(relatorio.caminho_anexo);
+        }
+      }
+    }
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar PDF.",
+    });
+  }
+});
+
+/**
+ * [GET] Gerar DOCX do relatório
+ * Rota: /api/relatorios/:id/gerar-docx
+ * Exemplo simples que retorna um DOCX gerado (pode usar bibliotecas como docx ou similar)
+ */
+app.get("/api/relatorios/:id/gerar-docx", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
+    }
+    const relatorio = result.rows[0];
+
+    // Exemplo básico: gerar um buffer .docx como placeholder
+    // Poderia usar a lib "docx" (npm i docx) para gerar de forma elaborada
+    // Aqui, vamos só mandar um arquivo docx "fake" como exemplo
+    const docxContent = `
+      RELATÓRIO DE OCORRÊNCIA
+      ID: ${relatorio.id}
+      Tipo: ${relatorio.tipo_relatorio}
+      Rota: ${relatorio.rota_id}
+      Data: ${relatorio.data_ocorrido}
+      Descrição: ${relatorio.corpo}
+    `;
+    const buffer = Buffer.from(docxContent, "utf-8");
+
+    res.setHeader("Content-Disposition", `attachment; filename="relatorio_${id}.docx"`);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    return res.send(buffer);
+  } catch (error) {
+    console.error("Erro ao gerar DOCX:", error);
+    return res.status(500).json({ success: false, message: "Erro ao gerar DOCX." });
+  }
+});
 // ====> ROTA /api/admin/update-user (PUT)
 // Atualiza permissões do usuário
 app.put("/api/admin/update-user", async (req, res) => {
