@@ -33,14 +33,15 @@ const {
 
 const PDFDocument = require("pdfkit");
 
-
 // CONFIGURAÇÃO DO EXPRESS
-
 const app = express();
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
-app.use(cors({ origin: "*" }));
 
+// Aumenta o limite padrão para o corpo JSON/urlencoded
+app.use(express.json({ limit: "200mb" }));
+app.use(express.urlencoded({ limit: "200mb", extended: true }));
+
+// Permite CORS
+app.use(cors({ origin: "*" }));
 
 // CONFIGURAÇÃO DO BANCO DE DADOS (PostgreSQL) usando .env
 
