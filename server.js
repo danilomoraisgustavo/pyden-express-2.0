@@ -461,91 +461,163 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
       return res.status(404).json({ success: false, message: "Relatório não encontrado." });
     }
     const relatorio = result.rows[0];
-
-    // Cria documento PDF
     const doc = new PDFDocument({ size: "A4", margin: 50 });
     const filename = `relatorio_${id}.pdf`;
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
 
-    // -- Cabeçalho e Logo (se desejar)
-    // Ajuste o caminho do logo se tiver
     const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
+
+    const separadorPath = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_separador.png"
+    );
+
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
-      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - CANAÃ DOS CARAJÁS", 250, 20, { width: 300, align: "right" });
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
 
-    // -- Título
-    doc.moveDown(4);
-    doc
-      .fontSize(16)
-      .font("Helvetica-Bold")
-      .text(`RELATÓRIO DE OCORRÊNCIA N.º ${relatorio.id}`, { align: "center" })
-      .moveDown();
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
 
-    // -- Corpo do relatório
+    doc.y = 130;
+    doc.x = 50;
+
     doc
       .fontSize(12)
-      .font("Helvetica")
-      .text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "left" })
-      .moveDown(0.5)
-      .text(`Rota ID: ${relatorio.rota_id}`, { align: "left" })
-      .moveDown(0.5)
-      .text(`Data do Ocorrido: ${relatorio.data_ocorrido}`, { align: "left" })
+      .font("Helvetica-Bold")
+      .text(`RELATÓRIO DE OCORRÊNCIA N.º ${relatorio.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, {
+        align: "justify",
+      })
       .moveDown();
 
     const corpoAjustado = relatorio.corpo.replace(/\r\n/g, "\n").replace(/\r/g, "");
+
     doc
       .fontSize(12)
       .font("Helvetica")
-      .text("Descrição da Ocorrência:", { align: "left", underline: true })
+      .text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "justify" })
+      .text(`Rota ID: ${relatorio.rota_id}`, { align: "justify" })
+      .text(`Data do Ocorrido: ${relatorio.data_ocorrido}`, { align: "justify" })
+      .moveDown()
+      .text("Prezados(as),", { align: "justify" })
+      .moveDown()
+      .text("Descrição da Ocorrência:", { align: "justify", underline: true })
       .moveDown(0.5)
       .text(corpoAjustado, { align: "justify" })
-      .moveDown(2);
+      .moveDown();
 
-    // -- Assinatura fictícia
-    doc.text("Atenciosamente,").moveDown(2);
-    doc.text("_____________________________", { align: "center" });
-    doc.text("Coordenador de Transporte Escolar", { align: "center" });
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
 
-    // Se tiver anexo, adiciona nova página e insere a imagem ou menção ao PDF
-    if (relatorio.caminho_anexo) {
-      const absoluteAnexo = path.join(__dirname, relatorio.caminho_anexo);
-      if (fs.existsSync(absoluteAnexo)) {
-        doc.addPage();
-        doc.fontSize(14).font("Helvetica-Bold").text("Anexo:", { align: "left" }).moveDown();
-        // Verifica extensão do anexo
-        const ext = path.extname(absoluteAnexo).toLowerCase();
-        if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
-          // Exibe a imagem no PDF
-          doc.image(absoluteAnexo, {
-            fit: [500, 700],
-            align: "center",
-            valign: "top",
-          });
-        } else if (ext === ".pdf") {
-          // PDF no anexo - não há como embutir páginas de outro PDF diretamente de forma simples
-          // Então apenas informe um texto e o caminho
-          doc
-            .fontSize(12)
-            .text("O anexo é um arquivo PDF. Abra separadamente:", { align: "left" })
-            .moveDown()
-            .font("Helvetica-Bold")
-            .text(relatorio.caminho_anexo, { link: relatorio.caminho_anexo, underline: true });
-        } else {
-          // Outros formatos
-          doc
-            .fontSize(12)
-            .text("Arquivo anexo disponível em:", { align: "left" })
-            .moveDown()
-            .font("Helvetica-Bold")
-            .text(relatorio.caminho_anexo);
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
+      .text("Gestor de Transporte Escolar", { align: "center" })
+      .text("Portaria 118/2023 - GP", { align: "center" });
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+
+    const logo2Path = path.join(
+      __dirname,
+      "public",
+      "assets",
+      "img",
+      "memorando_logo2.png"
+    );
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text(
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED",
+        50,
+        doc.page.height - 85,
+        {
+          width: doc.page.width - 100,
+          align: "center",
         }
+      )
+      .text(
+        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
+        {
+          align: "center",
+        }
+      )
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    if (relatorio.caminho_anexo) {
+      let anexos = [];
+      try {
+        anexos = JSON.parse(relatorio.caminho_anexo);
+      } catch (e) {
+        anexos = [];
+      }
+      if (anexos.length > 0) {
+        anexos.forEach((anexo, idx) => {
+          const absoluteAnexo = path.join(__dirname, anexo);
+          if (fs.existsSync(absoluteAnexo)) {
+            doc.addPage();
+            doc.fontSize(14).font("Helvetica-Bold").text(`Anexo ${idx + 1}:`, { align: "left" }).moveDown();
+            const ext = path.extname(absoluteAnexo).toLowerCase();
+            if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
+              doc.image(absoluteAnexo, {
+                fit: [500, 700],
+                align: "center",
+                valign: "top",
+              });
+            } else if (ext === ".pdf") {
+              doc
+                .fontSize(12)
+                .text("O anexo é um arquivo PDF. Abra separadamente:", { align: "left" })
+                .moveDown()
+                .font("Helvetica-Bold")
+                .text(anexo, { link: anexo, underline: true });
+            } else {
+              doc
+                .fontSize(12)
+                .text("Arquivo anexo disponível em:", { align: "left" })
+                .moveDown()
+                .font("Helvetica-Bold")
+                .text(anexo);
+            }
+          }
+        });
       }
     }
 
@@ -558,6 +630,7 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
     });
   }
 });
+
 
 /**
  * [GET] Gerar DOCX do relatório

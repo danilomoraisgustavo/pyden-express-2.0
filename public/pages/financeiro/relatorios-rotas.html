@@ -1,11 +1,5 @@
 <!-- =========================================================
      ARQUIVO: listar-relatorios-ocorrencias.html
-     DESCRIÇÃO:
-        Página para Listar Relatórios de Ocorrências em Rotas Escolares,
-        baseada no mesmo estilo de formatação da página de Memorandos.
-     OBS:
-        Ajuste os caminhos dos links e scripts de acordo com
-        sua estrutura de pastas se necessário.
      ========================================================= -->
 
 <!DOCTYPE html>
@@ -17,7 +11,6 @@
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
     <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
-    <!-- CARREGAMENTO DAS FONTES -->
     <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
     <script>
         WebFont.load({
@@ -37,7 +30,6 @@
         });
     </script>
 
-    <!-- ESTILOS E CSS -->
     <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
     <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
     <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
@@ -57,7 +49,6 @@
 
 <body>
     <div class="wrapper">
-        <!-- SIDEBAR (MESMA ESTRUTURA DO EXEMPLO FORNECIDO) -->
         <div class="sidebar" data-background-color="dark">
             <div class="sidebar-logo">
                 <div class="logo-header" data-background-color="dark">
@@ -75,11 +66,6 @@
             <div class="sidebar-wrapper scrollbar scrollbar-inner">
                 <div class="sidebar-content">
                     <ul class="nav nav-secondary">
-                        <!-- ===============================================================
-                      Exemplo de Sidebar igual à do projeto. Ajuste como precisar.
-                      Aqui estão incluídos somente alguns itens de exemplo.
-                      =============================================================== -->
-
                         <li class="nav-section">
                             <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
                             <h4 class="text-section">Transporte Escolar</h4>
@@ -108,7 +94,6 @@
                                             <span class="sub-item">Pontos de Parada</span>
                                         </a>
                                     </li>
-                                    <!-- Novo link para Relatórios de Ocorrências -->
                                     <li>
                                         <a href="../../pages/transporte-escolar/listar-relatorios-ocorrencias.html">
                                             <span class="sub-item">Relatórios de Ocorrências</span>
@@ -117,14 +102,11 @@
                                 </ul>
                             </div>
                         </li>
-                        <!-- ...continue as opções do sidebar, se necessário... -->
                     </ul>
                 </div>
             </div>
         </div>
-        <!-- END SIDEBAR -->
 
-        <!-- MAIN PANEL -->
         <div class="main-panel">
             <div class="main-header" style="top: 0;">
                 <div class="main-header-logo">
@@ -149,9 +131,7 @@
 
                 <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
                     <div class="container-fluid">
-                        <!-- Ícones de mensagens, notificações, etc. - Opcional -->
                         <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-                            <!-- Ícone Mensagens (Exemplo) -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -190,7 +170,6 @@
                                 </ul>
                             </li>
 
-                            <!-- Ícone Notificações (Exemplo) -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -218,7 +197,6 @@
                                 </ul>
                             </li>
 
-                            <!-- Ícone Ações Rápidas (Exemplo) -->
                             <li class="nav-item topbar-icon dropdown hidden-caret">
                                 <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -240,14 +218,12 @@
                                                         <span class="text">Cad. Escola</span>
                                                     </div>
                                                 </a>
-                                                <!-- Etc... Adicione mais cards de atalho se desejar -->
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </li>
 
-                            <!-- Dropdown Usuário (Exemplo) -->
                             <li class="nav-item topbar-user dropdown hidden-caret">
                                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
                                     aria-expanded="false">
@@ -289,7 +265,6 @@
                 </nav>
             </div>
 
-            <!-- CONTEÚDO PRINCIPAL -->
             <div class="container">
                 <div class="page-inner">
                     <div class="page-header">
@@ -315,7 +290,6 @@
                         </ul>
                     </div>
 
-                    <!-- Tabela de Relatórios de Ocorrências -->
                     <div class="row mt-4">
                         <div class="col-md-12">
                             <div class="card">
@@ -335,7 +309,7 @@
                                                     <th>Tipo</th>
                                                     <th>Data do Ocorrido</th>
                                                     <th>Rota ID</th>
-                                                    <th>Anexo</th>
+                                                    <th>Anexos</th>
                                                     <th>Ações</th>
                                                 </tr>
                                             </thead>
@@ -345,12 +319,11 @@
                                                     <th>Tipo</th>
                                                     <th>Data do Ocorrido</th>
                                                     <th>Rota ID</th>
-                                                    <th>Anexo</th>
+                                                    <th>Anexos</th>
                                                     <th>Ações</th>
                                                 </tr>
                                             </tfoot>
                                             <tbody>
-                                                <!-- Linhas geradas dinamicamente via JavaScript -->
                                             </tbody>
                                         </table>
                                     </div>
@@ -359,7 +332,6 @@
                         </div>
                     </div>
 
-                    <!-- Modal Novo Relatório de Ocorrência -->
                     <div class="modal fade" id="modalNovoRelatorio" tabindex="-1"
                         aria-labelledby="modalNovoRelatorioLabel" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -425,7 +397,6 @@
                                                             </label>
                                                         </div>
                                                     </div>
-                                                    <!-- Acrescente mais se precisar -->
                                                 </div>
                                             </div>
                                         </div>
@@ -458,10 +429,11 @@
 
                                         <div class="row mb-3">
                                             <div class="col-md-12">
-                                                <label for="anexo" class="form-label fw-bold">Anexo (opcional)</label>
-                                                <input type="file" id="anexo" name="anexo" class="form-control"
-                                                    accept=".jpg,.jpeg,.png,.pdf" />
-                                                <small class="text-muted">Suporta imagens (.jpg, .png) ou PDF.</small>
+                                                <label for="anexo" class="form-label fw-bold">Anexos (opcional)</label>
+                                                <input type="file" id="anexo" name="anexo[]" class="form-control"
+                                                    accept=".jpg,.jpeg,.png,.pdf" multiple />
+                                                <small class="text-muted">Selecione um ou mais arquivos
+                                                    (imagens/PDF).</small>
                                             </div>
                                         </div>
 
@@ -473,9 +445,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Fim Modal Novo Relatório -->
 
-                    <!-- Modal Editar Relatório -->
                     <div class="modal fade" id="modalEditarRelatorio" tabindex="-1"
                         aria-labelledby="modalEditarRelatorioLabel" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -577,12 +547,12 @@
 
                                         <div class="row mb-3">
                                             <div class="col-md-12">
-                                                <label for="editar_anexo" class="form-label fw-bold">Atualizar Anexo
+                                                <label for="editar_anexo" class="form-label fw-bold">Atualizar Anexos
                                                     (opcional)</label>
-                                                <input type="file" id="editar_anexo" name="editar_anexo"
-                                                    class="form-control" accept=".jpg,.jpeg,.png,.pdf" />
-                                                <small class="text-muted">Deixe em branco se não quiser alterar o
-                                                    anexo.</small>
+                                                <input type="file" id="editar_anexo" name="editar_anexo[]"
+                                                    class="form-control" accept=".jpg,.jpeg,.png,.pdf" multiple />
+                                                <small class="text-muted">Deixe em branco se não quiser alterar os
+                                                    anexos.</small>
                                             </div>
                                         </div>
 
@@ -594,12 +564,10 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Fim Modal Editar Relatório -->
                 </div>
             </div>
-            <!-- /CONTEÚDO PRINCIPAL -->
 
-            <!-- FOOTER -->
+
             <footer class="footer">
                 <div class="container-fluid d-flex justify-content-between">
                     <nav class="pull-left">
@@ -627,12 +595,9 @@
                     </div>
                 </div>
             </footer>
-            <!-- /FOOTER -->
         </div>
-        <!-- /MAIN PANEL -->
     </div>
 
-    <!-- SCRIPTS -->
     <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="../../assets/js/core/popper.min.js"></script>
     <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -675,11 +640,8 @@
 
         function formatDate(dateStr) {
             if (!dateStr) return '';
-            // Caso venha formato YYYY-MM-DD, apenas reorganize
-            // Se vier com time, ajuste conforme necessidade
             const d = new Date(dateStr);
             if (isNaN(d)) {
-                // Tenta quando vier no formato (YYYY-MM-DD sem time)
                 return dateStr;
             }
             const day = String(d.getDate()).padStart(2, '0');
@@ -688,7 +650,6 @@
             return `${day}/${month}/${year}`;
         }
 
-        // Carregar relatórios do back-end
         function loadRelatorios() {
             fetch('/api/relatorios')
                 .then(res => {
@@ -713,48 +674,51 @@
 
             relatorios.forEach(r => {
                 const dataFormatada = formatDate(r.data_ocorrido);
-                const anexoLabel = r.caminho_anexo
-                    ? `<a href="${r.caminho_anexo}" target="_blank">Ver Anexo</a>`
-                    : 'Sem Anexo';
+                let anexoLabel = 'Sem Anexo';
+                if (r.caminho_anexo && Array.isArray(r.caminho_anexo) && r.caminho_anexo.length > 0) {
+                    anexoLabel = r.caminho_anexo.map((item, idx) => {
+                        return `<a href="${item}" target="_blank">Anexo ${idx + 1}</a>`;
+                    }).join("<br>");
+                }
 
                 const row = `
-               <tr>
-                 <td>${r.id}</td>
-                 <td>${r.tipo_relatorio}</td>
-                 <td>${dataFormatada}</td>
-                 <td>${r.rota_id}</td>
-                 <td>${anexoLabel}</td>
-                 <td>
-                   <div class="form-button-action">
-                     <button type="button" class="btn btn-link btn-dark btn-lg"
-                       onclick="visualizarRelatorioEmPdf('${r.id}')"
-                       data-bs-toggle="tooltip" title="Visualizar PDF">
-                       <i class="fa fa-eye"></i>
-                     </button>
-                     <button type="button" class="btn btn-link btn-secondary btn-lg"
-                       onclick="gerarPdf('${r.id}')"
-                       data-bs-toggle="tooltip" title="Baixar PDF">
-                       <i class="fa fa-file-pdf"></i>
-                     </button>
-                     <button type="button" class="btn btn-link btn-info btn-lg"
-                       onclick="gerarDocx('${r.id}')"
-                       data-bs-toggle="tooltip" title="Baixar .docx">
-                       <i class="fa fa-file-word"></i>
-                     </button>
-                     <button type="button" class="btn btn-link btn-warning btn-lg"
-                       onclick="abrirModalEditarRelatorio('${r.id}')"
-                       data-bs-toggle="tooltip" title="Editar">
-                       <i class="fa fa-edit"></i>
-                     </button>
-                     <button type="button" class="btn btn-link btn-danger btn-lg"
-                       onclick="excluirRelatorio('${r.id}')"
-                       data-bs-toggle="tooltip" title="Excluir">
-                       <i class="fa fa-trash-alt"></i>
-                     </button>
-                   </div>
-                 </td>
-               </tr>
-             `;
+                         <tr>
+                             <td>${r.id}</td>
+                             <td>${r.tipo_relatorio}</td>
+                             <td>${dataFormatada}</td>
+                             <td>${r.rota_id}</td>
+                             <td>${anexoLabel}</td>
+                             <td>
+                                 <div class="form-button-action">
+                                     <button type="button" class="btn btn-link btn-dark btn-lg"
+                                         onclick="visualizarRelatorioEmPdf('${r.id}')"
+                                         data-bs-toggle="tooltip" title="Visualizar PDF">
+                                         <i class="fa fa-eye"></i>
+                                     </button>
+                                     <button type="button" class="btn btn-link btn-secondary btn-lg"
+                                         onclick="gerarPdf('${r.id}')"
+                                         data-bs-toggle="tooltip" title="Baixar PDF">
+                                         <i class="fa fa-file-pdf"></i>
+                                     </button>
+                                     <button type="button" class="btn btn-link btn-info btn-lg"
+                                         onclick="gerarDocx('${r.id}')"
+                                         data-bs-toggle="tooltip" title="Baixar .docx">
+                                         <i class="fa fa-file-word"></i>
+                                     </button>
+                                     <button type="button" class="btn btn-link btn-warning btn-lg"
+                                         onclick="abrirModalEditarRelatorio('${r.id}')"
+                                         data-bs-toggle="tooltip" title="Editar">
+                                         <i class="fa fa-edit"></i>
+                                     </button>
+                                     <button type="button" class="btn btn-link btn-danger btn-lg"
+                                         onclick="excluirRelatorio('${r.id}')"
+                                         data-bs-toggle="tooltip" title="Excluir">
+                                         <i class="fa fa-trash-alt"></i>
+                                     </button>
+                                 </div>
+                             </td>
+                         </tr>
+                     `;
                 tableBody.append(row);
             });
 
@@ -847,10 +811,7 @@
             document.getElementById('editar_rota_id').value = rel.rota_id;
             document.getElementById('editar_data_ocorrido').value =
                 rel.data_ocorrido ? rel.data_ocorrido.split('T')[0] : '';
-
             document.getElementById('editar_corpo').value = rel.corpo;
-
-            // Marcar o radio correspondente ao tipo
             const radios = document.getElementsByName('editar_tipo_relatorio');
             for (let i = 0; i < radios.length; i++) {
                 radios[i].checked = (radios[i].value === rel.tipo_relatorio);
@@ -884,7 +845,6 @@
         document.addEventListener('DOMContentLoaded', function () {
             loadRelatorios();
 
-            // Cadastro de novo relatório
             document.getElementById('relatorio-form').addEventListener('submit', function (e) {
                 e.preventDefault();
                 const form = e.target;
@@ -916,12 +876,11 @@
                     });
             });
 
-            // Edição de relatório
             document.getElementById('editar-relatorio-form').addEventListener('submit', function (e) {
                 e.preventDefault();
                 const form = e.target;
                 const relatorioId = document.getElementById('editar_relatorio_id').value;
-                const updateData = new FormData(form); // formData com possíveis anexos
+                const updateData = new FormData(form);
 
                 fetch(`/api/relatorios/${relatorioId}`, {
                     method: 'PUT',
