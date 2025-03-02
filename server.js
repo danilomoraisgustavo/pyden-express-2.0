@@ -256,6 +256,9 @@ const storageRelatorios = multer.diskStorage({
   },
 });
 const uploadRelatorios = multer({ storage: storageRelatorios });
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 const upload = multer({ dest: "uploads/" });
 const uploadFrota = multer({ storage: storage });
 const uploadMonitores = multer({ storage: storage });
@@ -317,11 +320,6 @@ app.get("/api/admin/users", async (req, res) => {
 // ----------------------------------------------------------------------
 // ROTAS PARA RELATÓRIOS DE OCORRÊNCIA
 // ----------------------------------------------------------------------
-
-/**
- * [GET] Listar todos os relatórios
- * Rota: /api/relatorios
- */
 app.get("/api/relatorios", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM relatorios_ocorrencias ORDER BY id DESC");
@@ -332,27 +330,16 @@ app.get("/api/relatorios", async (req, res) => {
   }
 });
 
-/**
- * [POST] Cadastrar um novo relatório
- * Rota: /api/relatorios/cadastrar
- * Faz upload de 1 arquivo (campo "anexo") opcional
- */
-app.post("/api/relatorios/cadastrar", uploadRelatorios.single("anexo"), async (req, res) => {
+app.post("/api/relatorios/cadastrar", uploadRelatorios.array("anexo[]"), async (req, res) => {
   try {
-    const {
-      tipo_relatorio,
-      rota_id,
-      data_ocorrido,
-      corpo
-    } = req.body;
-
-    // Se houve arquivo enviado, obtem caminho
-    let caminho_anexo = null;
-    if (req.file) {
-      // caminho relativo para acessar o arquivo se quiser servir por rota estática
-      caminho_anexo = "/uploads/relatorios/" + req.file.filename;
+    const { tipo_relatorio, rota_id, data_ocorrido, corpo } = req.body;
+    let caminhos = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((f) => {
+        const relPath = "/uploads/relatorios/" + f.filename;
+        caminhos.push(relPath);
+      });
     }
-
     const query = `
       INSERT INTO relatorios_ocorrencias (
         tipo_relatorio, rota_id, data_ocorrido, corpo, caminho_anexo
@@ -360,7 +347,7 @@ app.post("/api/relatorios/cadastrar", uploadRelatorios.single("anexo"), async (r
       VALUES ($1, $2, $3, $4, $5)
       RETURNING id
     `;
-    const values = [tipo_relatorio, rota_id, data_ocorrido, corpo, caminho_anexo];
+    const values = [tipo_relatorio, rota_id, data_ocorrido, corpo, JSON.stringify(caminhos)];
     const result = await pool.query(query, values);
     return res.json({ success: true, newId: result.rows[0].id });
   } catch (error) {
@@ -369,36 +356,35 @@ app.post("/api/relatorios/cadastrar", uploadRelatorios.single("anexo"), async (r
   }
 });
 
-/**
- * [PUT] Editar relatório existente
- * Rota: /api/relatorios/:id
- * Faz upload de 1 arquivo (campo "editar_anexo") opcional
- */
-app.put("/api/relatorios/:id", uploadRelatorios.single("editar_anexo"), async (req, res) => {
+app.put("/api/relatorios/:id", uploadRelatorios.array("editar_anexo[]"), async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Os dados podem vir em FormData, então pegamos do body
     const tipo_relatorio = req.body.editar_tipo_relatorio;
     const rota_id = req.body.editar_rota_id;
     const data_ocorrido = req.body.editar_data_ocorrido;
     const corpo = req.body.editar_corpo;
 
-    // Checa se existe
     const check = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
     if (check.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Relatório não encontrado." });
     }
 
-    // Se houve arquivo enviado, obtem caminho. Caso não haja, preserva o existente
-    let caminho_anexo = check.rows[0].caminho_anexo;
-    if (req.file) {
-      caminho_anexo = "/uploads/relatorios/" + req.file.filename;
-      // (Opcional) Excluir anexo antigo se quiser
-      // const oldPath = check.rows[0].caminho_anexo;
-      // if (oldPath) {
-      //   fs.unlink(path.join(__dirname, oldPath), (err) => { /* se quiser excluir o antigo */ });
-      // }
+    let existingPaths = [];
+    if (check.rows[0].caminho_anexo) {
+      try {
+        existingPaths = JSON.parse(check.rows[0].caminho_anexo);
+      } catch (e) {
+        existingPaths = [];
+      }
+    }
+
+    let newPaths = existingPaths;
+    if (req.files && req.files.length > 0) {
+      newPaths = [];
+      req.files.forEach((f) => {
+        const relPath = "/uploads/relatorios/" + f.filename;
+        newPaths.push(relPath);
+      });
     }
 
     const updateQuery = `
@@ -410,8 +396,14 @@ app.put("/api/relatorios/:id", uploadRelatorios.single("editar_anexo"), async (r
           caminho_anexo = $5
       WHERE id = $6
     `;
-    const values = [tipo_relatorio, rota_id, data_ocorrido, corpo, caminho_anexo, id];
-    await pool.query(updateQuery, values);
+    await pool.query(updateQuery, [
+      tipo_relatorio,
+      rota_id,
+      data_ocorrido,
+      corpo,
+      JSON.stringify(newPaths),
+      id,
+    ]);
 
     return res.json({ success: true });
   } catch (error) {
@@ -420,10 +412,6 @@ app.put("/api/relatorios/:id", uploadRelatorios.single("editar_anexo"), async (r
   }
 });
 
-/**
- * [DELETE] Excluir relatório
- * Rota: /api/relatorios/:id
- */
 app.delete("/api/relatorios/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -431,12 +419,6 @@ app.delete("/api/relatorios/:id", async (req, res) => {
     if (check.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Relatório não encontrado." });
     }
-
-    // (Opcional) Excluir arquivo anexo do disco
-    // if (check.rows[0].caminho_anexo) {
-    //   const absolutePath = path.join(__dirname, check.rows[0].caminho_anexo);
-    //   fs.unlink(absolutePath, (err) => { /* erro ao excluir ou sucesso */ });
-    // }
 
     await pool.query("DELETE FROM relatorios_ocorrencias WHERE id = $1", [id]);
     return res.json({ success: true });
@@ -446,13 +428,6 @@ app.delete("/api/relatorios/:id", async (req, res) => {
   }
 });
 
-/**
- * [GET] Gerar PDF do relatório
- * Rota: /api/relatorios/:id/gerar-pdf
- * Gera um PDF contendo as informações do relatório
- * e exibe o anexo em uma nova página (se for imagem).
- * Caso seja PDF, apenas insere uma indicação.
- */
 app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
@@ -632,23 +607,14 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
 });
 
 
-/**
- * [GET] Gerar DOCX do relatório
- * Rota: /api/relatorios/:id/gerar-docx
- * Exemplo simples que retorna um DOCX gerado (pode usar bibliotecas como docx ou similar)
- */
 app.get("/api/relatorios/:id/gerar-docx", async (req, res) => {
-  const { id } = req.params;
   try {
+    const { id } = req.params;
     const result = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Relatório não encontrado." });
     }
     const relatorio = result.rows[0];
-
-    // Exemplo básico: gerar um buffer .docx como placeholder
-    // Poderia usar a lib "docx" (npm i docx) para gerar de forma elaborada
-    // Aqui, vamos só mandar um arquivo docx "fake" como exemplo
     const docxContent = `
       RELATÓRIO DE OCORRÊNCIA
       ID: ${relatorio.id}
@@ -658,7 +624,6 @@ app.get("/api/relatorios/:id/gerar-docx", async (req, res) => {
       Descrição: ${relatorio.corpo}
     `;
     const buffer = Buffer.from(docxContent, "utf-8");
-
     res.setHeader("Content-Disposition", `attachment; filename="relatorio_${id}.docx"`);
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     return res.send(buffer);
@@ -667,6 +632,7 @@ app.get("/api/relatorios/:id/gerar-docx", async (req, res) => {
     return res.status(500).json({ success: false, message: "Erro ao gerar DOCX." });
   }
 });
+
 // ====> ROTA /api/admin/update-user (PUT)
 // Atualiza permissões do usuário
 app.put("/api/admin/update-user", async (req, res) => {
