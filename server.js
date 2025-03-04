@@ -9118,6 +9118,9 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 });
 
 // Rotas (exemplo) - Ajustando para permitir filtros na query
+// NOVO ENDPOINT PARA FILTRAR ALUNOS DIRETAMENTE NO BANCO (RELAÇÃO ALUNOS_ATIVOS)
+// Ajuste conforme precisar. Este endpoint receberá as queries e realizará o filtro diretamente na base.
+
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
     let {
@@ -9130,8 +9133,11 @@ app.get("/api/alunos-ativos", async (req, res) => {
       idade = ""
     } = req.query;
 
+    // Array que vai receber as partes "field ILIKE $X" e afins.
     const whereClauses = [];
 
+    // Você também pode usar parâmetros (usando $1, $2, etc.) para evitar SQL injection e melhorar a performance.
+    // Aqui, para simplificar, mostramos direto na string. Em produção, utilize parâmetros vinculados.
     if (escola) {
       whereClauses.push(`e.nome ILIKE '%${escola}%'`);
     }
@@ -9148,22 +9154,21 @@ app.get("/api/alunos-ativos", async (req, res) => {
          OR a.cpf ILIKE '%${search}%')
       `);
     }
-
     if (transporte) {
-      // Exemplo: filtra por 'municipal' ou 'estadual'
+      // Ex: 'municipal' ou 'estadual'
       whereClauses.push(`a.transporte_escolar_poder_publico ILIKE '%${transporte}%'`);
     }
 
     if (deficiencia.toLowerCase() === "sim") {
-      // Exemplo: deficiencia é JSON ou texto - ajuste conforme sua lógica
+      // Supondo que 'deficiencia' seja salvo como JSON ou array
       whereClauses.push(`(a.deficiencia IS NOT NULL AND a.deficiencia <> '[]')`);
     } else if (deficiencia.toLowerCase() === "nao") {
       whereClauses.push(`(a.deficiencia IS NULL OR a.deficiencia = '[]')`);
     }
 
     if (idade) {
-      // Exemplo: filtrar pela idade exata usando data_nascimento
-      // Ajuste conforme precisar (>=, <=, etc.)
+      // Exemplo para idade exata (ano atual - ano de data_nascimento).
+      // Ajuste conforme precisar (>=, <= etc.)
       whereClauses.push(`
         EXTRACT(YEAR FROM AGE(CURRENT_DATE, a.data_nascimento::date)) = ${idade}
       `);
@@ -9184,12 +9189,11 @@ app.get("/api/alunos-ativos", async (req, res) => {
     `;
     const result = await pool.query(query);
     return res.json(result.rows);
-
   } catch (err) {
     console.error(err);
     return res.status(500).json({
       success: false,
-      message: "Erro ao buscar alunos.",
+      message: "Erro ao buscar alunos (filtro).",
     });
   }
 });
