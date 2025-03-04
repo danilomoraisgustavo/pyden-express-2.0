@@ -6338,6 +6338,7 @@ app.get("/api/alunos-mapa", async (req, res) => {
     });
   }
 });
+
 app.get("/api/zoneamentos/detect", async (req, res) => {
   const client = await pool.connect();
   try {
@@ -9119,15 +9120,18 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 // Rotas (exemplo) - Ajustando para permitir filtros na query
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
-    let { escola, bairro, cep, search } = req.query;
-    escola = escola || "";
-    bairro = bairro || "";
-    cep = cep || "";
-    search = search || "";
+    let {
+      escola = "",
+      bairro = "",
+      cep = "",
+      search = "",
+      transporte = "",
+      deficiencia = "",
+      idade = ""
+    } = req.query;
 
-    // Ajuste ou substitua conforme sua lógica de WHERE
-    // Exemplo simples:
-    let whereClauses = [];
+    const whereClauses = [];
+
     if (escola) {
       whereClauses.push(`e.nome ILIKE '%${escola}%'`);
     }
@@ -9140,10 +9144,31 @@ app.get("/api/alunos-ativos", async (req, res) => {
     if (search) {
       whereClauses.push(`
         (a.pessoa_nome ILIKE '%${search}%'
-         OR a.id_matricula ILIKE '%${search}%'
+         OR CAST(a.id_matricula AS TEXT) ILIKE '%${search}%'
          OR a.cpf ILIKE '%${search}%')
       `);
     }
+
+    if (transporte) {
+      // Exemplo: filtra por 'municipal' ou 'estadual'
+      whereClauses.push(`a.transporte_escolar_poder_publico ILIKE '%${transporte}%'`);
+    }
+
+    if (deficiencia.toLowerCase() === "sim") {
+      // Exemplo: deficiencia é JSON ou texto - ajuste conforme sua lógica
+      whereClauses.push(`(a.deficiencia IS NOT NULL AND a.deficiencia <> '[]')`);
+    } else if (deficiencia.toLowerCase() === "nao") {
+      whereClauses.push(`(a.deficiencia IS NULL OR a.deficiencia = '[]')`);
+    }
+
+    if (idade) {
+      // Exemplo: filtrar pela idade exata usando data_nascimento
+      // Ajuste conforme precisar (>=, <=, etc.)
+      whereClauses.push(`
+        EXTRACT(YEAR FROM AGE(CURRENT_DATE, a.data_nascimento::date)) = ${idade}
+      `);
+    }
+
     let whereStr = "";
     if (whereClauses.length) {
       whereStr = "WHERE " + whereClauses.join(" AND ");
@@ -9159,6 +9184,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
     `;
     const result = await pool.query(query);
     return res.json(result.rows);
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({
@@ -9167,6 +9193,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
     });
   }
 });
+
 
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
   try {
