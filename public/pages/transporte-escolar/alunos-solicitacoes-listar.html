@@ -1312,6 +1312,7 @@
             showNotification('success', data.message || 'Reavaliação aprovada com sucesso!');
             window.open(`/api/comprovante-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
             loadReavaliacoes();
+            location.reload();
           } else {
             showNotification('danger', data.message || 'Não foi possível aprovar.');
           }
@@ -1334,6 +1335,7 @@
             showNotification('success', data.message || 'Reavaliação reprovada.');
             window.open(`/api/comprovante-nao-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
             loadReavaliacoes();
+            location.reload();
           } else {
             showNotification('danger', data.message || 'Não foi possível reprovar.');
           }
