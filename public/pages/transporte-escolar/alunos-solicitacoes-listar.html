@@ -3,7 +3,7 @@
 
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Listar Solicitações de Rota </title>
+  <title>Listar Solicitações de Rota</title>
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
@@ -182,7 +182,6 @@
                 </ul>
               </div>
             </li>
-
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
                 <i class="fas fa-school"></i>
@@ -252,7 +251,6 @@
                 <p>Dashboard Administrativo</p>
               </a>
             </li>
-
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
                 <i class="fas fa-id-card"></i>
@@ -279,7 +277,6 @@
                 </ul>
               </div>
             </li>
-
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
                 <i class="fas fa-warehouse"></i>
@@ -359,7 +356,6 @@
               </div>
             </li>
 
-
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Financeiro</h4>
@@ -416,7 +412,6 @@
         </div>
       </div>
     </div>
-
 
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
@@ -598,7 +593,6 @@
           </div>
         </nav>
       </div>
-
 
       <div class="container">
         <div class="page-inner">
@@ -915,7 +909,7 @@
     }
 
     function loadSolicitacoes() {
-      fetch('/api/cocessao-rota')
+      fetch('/api/cocessao-rota?status=pendente')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar solicitações');
           return res.json();
@@ -1193,7 +1187,7 @@
     }
 
     function loadReavaliacoes() {
-      fetch('/api/reavaliacoes')
+      fetch('/api/reavaliacoes?status=pendente')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar reavaliações');
           return res.json();
@@ -1292,7 +1286,7 @@
     }
 
     function aprovarReavaliacao(reavId, cpfAluno) {
-      if (!confirm('Confirmar aprovação? A ação setará o fluxo para MUNICIPAL e gerará comprovante de aprovação.')) return;
+      if (!confirm('Confirmar aprovação? A ação setará o transporte_escolar_poder_publico para MUNICIPAL e gerará comprovante de aprovação.')) return;
 
       fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
         method: 'POST',

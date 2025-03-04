@@ -7249,38 +7249,73 @@ app.post('/api/reavaliacoes', async (req, res) => {
 // Ajuste nomes de campos/tabelas conforme seu banco de dados e estrutura
 // Exemplo de endpoints para aprovar/reprovar a reavaliação
 
-// Aprovar - muda status_reavaliacao para 'APROVADO' e define fluxo do aluno
+// Aprovar - muda status_reavaliacao para 'APROVADO',
+// atualiza alunos_ativos transporte_escolar_poder_publico = 'MUNICIPAL'
 app.post("/api/reavaliacoes/:id/aprovar", async (req, res) => {
   try {
     const { id } = req.params;
     const { cpf_aluno } = req.body;
 
-    // Atualiza na tabela reavaliacoes
+    // Atualiza status da reavaliação
     await pool.query(
       "UPDATE reavaliacoes SET status_reavaliacao = 'APROVADO' WHERE id = $1",
       [id]
     );
 
-    // Ajusta o fluxo do aluno (exemplo: no campo fluxo_tipo = 'MUNICIPAL')
-    await pool.query(
-      "UPDATE alunos_ativos SET fluxo_tipo = 'MUNICIPAL' WHERE cpf = $1",
+    // Atualiza transporte_escolar_poder_publico = 'MUNICIPAL'
+    const updateAluno = await pool.query(
+      "UPDATE alunos_ativos SET transporte_escolar_poder_publico = 'MUNICIPAL' WHERE cpf = $1 RETURNING id",
       [cpf_aluno]
     );
 
+    if (updateAluno.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Nenhum aluno encontrado para atualizar."
+      });
+    }
+
+    const alunoId = updateAluno.rows[0].id;
+
     return res.json({
       success: true,
-      message: "Reavaliação aprovada e fluxo do aluno definido como MUNICIPAL."
+      message: "Reavaliação aprovada. Campo transporte_escolar_poder_publico = MUNICIPAL.",
+      alunoId: alunoId
     });
   } catch (err) {
     console.error("Erro ao aprovar reavaliação:", err);
-    return res.status(500).json({ success: false, message: "Erro ao aprovar reavaliação." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao aprovar reavaliação." });
   }
 });
 
-// Reprovar - muda status_reavaliacao para 'REPROVADO' e não faz mais nada
+// Reprovar - muda status_reavaliacao para 'REPROVADO'
 app.post("/api/reavaliacoes/:id/reprovar", async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Obter o reav para pegar o cpf e retornar o ID do aluno
+    const reavResult = await pool.query(
+      "SELECT cpf_aluno FROM reavaliacoes WHERE id = $1",
+      [id]
+    );
+    if (reavResult.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Reavaliação não encontrada." });
+    }
+    const cpfAluno = reavResult.rows[0].cpf_aluno;
+
+    // Localiza o aluno_ativo
+    const alunoResult = await pool.query(
+      "SELECT id FROM alunos_ativos WHERE cpf = $1",
+      [cpfAluno]
+    );
+    let alunoId = null;
+    if (alunoResult.rows.length > 0) {
+      alunoId = alunoResult.rows[0].id;
+    }
 
     await pool.query(
       "UPDATE reavaliacoes SET status_reavaliacao = 'REPROVADO' WHERE id = $1",
@@ -7289,13 +7324,17 @@ app.post("/api/reavaliacoes/:id/reprovar", async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Reavaliação reprovada."
+      message: "Reavaliação reprovada.",
+      alunoId: alunoId
     });
   } catch (err) {
     console.error("Erro ao reprovar reavaliação:", err);
-    return res.status(500).json({ success: false, message: "Erro ao reprovar reavaliação." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro ao reprovar reavaliação." });
   }
 });
+
 
 app.get("/api/reavaliacoes", async (req, res) => {
   try {
