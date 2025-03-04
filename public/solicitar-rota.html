@@ -1553,8 +1553,10 @@
             "municipal",
             null
           );
+          // Sempre chama o comprovante de não aprovado
           window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-          // Se havia reavaliação, gera segundo comprovante
+
+          // Se marcou atenuantes, chama também o comprovante de reavaliação
           if (atenuantesReavaliacao) {
             window.open(`/api/comprovante-reavaliacao/${alunoIdMunicipal}/gerar-pdf`, "_blank");
           }
@@ -1566,7 +1568,10 @@
             "estadual",
             null
           );
+          // Sempre chama o comprovante de não aprovado (versão estadual)
           window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+
+          // Se marcou atenuantes, chama também o comprovante de reavaliação (versão estadual)
           if (atenuantesReavaliacao) {
             window.open(`/api/comprovante-reavaliacao-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
           }
