@@ -697,6 +697,7 @@
                           <th>Status</th>
                           <th>Latitude</th>
                           <th>Longitude</th>
+                          <th>Ações</th>
                         </tr>
                       </thead>
                       <tfoot>
@@ -714,6 +715,7 @@
                           <th>Status</th>
                           <th>Latitude</th>
                           <th>Longitude</th>
+                          <th>Ações</th>
                         </tr>
                       </tfoot>
                       <tbody></tbody>
@@ -861,6 +863,7 @@
     </div>
   </div>
 
+  <!-- BIBLIOTECAS JS -->
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -1187,7 +1190,6 @@
         });
     }
 
-    // CARREGAR REAVALIAÇÕES
     function loadReavaliacoes() {
       fetch('/api/reavaliacoes')
         .then(res => {
@@ -1224,6 +1226,10 @@
             <td>${r.status_reavaliacao || 'PENDENTE'}</td>
             <td>${r.latitude || ''}</td>
             <td>${r.longitude || ''}</td>
+            <td>
+              <button class="btn btn-sm btn-success" onclick="aprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Aprovar</button>
+              <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id})">Reprovar</button>
+            </td>
           </tr>
         `;
         tableBody.append(row);
@@ -1255,6 +1261,50 @@
           emptyTable: "Nenhum dado disponível na tabela"
         }
       });
+    }
+
+    function aprovarReavaliacao(reavId, cpfAluno) {
+      if (!confirm('Confirmar aprovação? Essa ação definirá o fluxo para MUNICIPAL.')) return;
+
+      fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cpf_aluno: cpfAluno })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('success', data.message || 'Reavaliação aprovada com sucesso!');
+            loadReavaliacoes();
+          } else {
+            showNotification('danger', data.message || 'Não foi possível aprovar.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao aprovar reavaliação.');
+        });
+    }
+
+    function reprovarReavaliacao(reavId) {
+      if (!confirm('Tem certeza que deseja reprovar?')) return;
+
+      fetch(`/api/reavaliacoes/${reavId}/reprovar`, {
+        method: 'POST'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('success', data.message || 'Reavaliação reprovada.');
+            loadReavaliacoes();
+          } else {
+            showNotification('danger', data.message || 'Não foi possível reprovar.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao reprovar reavaliação.');
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
