@@ -77,6 +77,7 @@
         <h3 class="fw-bold mb-12 text-center">Cadastro de Alunos</h3>
       </div>
 
+      <!-- SELEÇÃO DO TIPO DE FLUXO -->
       <div class="card wizard-step active" id="etapaSelecaoFluxo">
         <div class="card-header">
           <div class="card-title">Selecione o tipo de cadastro</div>
@@ -95,7 +96,9 @@
           </div>
         </div>
       </div>
+      <!-- FIM DA SELEÇÃO DO TIPO DE FLUXO -->
 
+      <!-- ETAPA 1 - MUNICIPAL -->
       <div class="card wizard-step" id="etapa1Municipal">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Municipal): Dados do Aluno</div>
@@ -213,7 +216,9 @@
           </div>
         </div>
       </div>
+      <!-- FIM DA ETAPA 1 - MUNICIPAL -->
 
+      <!-- ETAPA 1 - ESTADUAL -->
       <div class="card wizard-step" id="etapa1Estadual">
         <div class="card-header">
           <div class="card-title">Etapa 1 (Estadual): Dados do Aluno</div>
@@ -330,7 +335,9 @@
           </div>
         </div>
       </div>
+      <!-- FIM DA ETAPA 1 - ESTADUAL -->
 
+      <!-- ETAPA 2 - MAPA E CRITÉRIOS -->
       <div class="card wizard-step" id="etapa2">
         <div class="card-header">
           <div class="card-title">Etapa 2: Verificar Critérios (Mapa)</div>
@@ -381,7 +388,9 @@
           </div>
         </div>
       </div>
+      <!-- FIM DA ETAPA 2 - MAPA E CRITÉRIOS -->
 
+      <!-- ETAPA 3 - RESULTADO FINAL -->
       <div class="card wizard-step" id="etapa3">
         <div class="card-header">
           <div class="card-title">Etapa 3: Resultado</div>
@@ -394,10 +403,11 @@
           </div>
         </div>
       </div>
+      <!-- FIM DA ETAPA 3 - RESULTADO FINAL -->
     </div>
   </div>
 
-  <!-- Modal Menores de 10 anos -->
+  <!-- MODAL PARA MENORES DE 10 ANOS -->
   <div class="modal fade" id="modalMenores10" tabindex="-1" aria-labelledby="modalMenores10Label" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -431,8 +441,9 @@
       </div>
     </div>
   </div>
+  <!-- FIM DO MODAL PARA MENORES DE 10 ANOS -->
 
-  <!-- Modal Desembarque 10 a 12 anos -->
+  <!-- MODAL PARA ALUNOS DE 10 A 12 ANOS -->
   <div class="modal fade" id="modalDesembarque10a12" tabindex="-1" aria-labelledby="modalDesembarque10a12Label"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -460,8 +471,9 @@
       </div>
     </div>
   </div>
+  <!-- FIM DO MODAL PARA ALUNOS DE 10 A 12 ANOS -->
 
-  <!-- Modal Responsáveis não parentes (10 a 12 anos) -->
+  <!-- MODAL PARA RESPONSÁVEIS NÃO PARENTES (10 a 12 anos) -->
   <div class="modal fade" id="modalOutrosResponsaveis10a12" tabindex="-1"
     aria-labelledby="modalOutrosResponsaveis10a12Label" aria-hidden="true">
     <div class="modal-dialog">
@@ -494,8 +506,9 @@
       </div>
     </div>
   </div>
+  <!-- FIM DO MODAL PARA RESPONSÁVEIS NÃO PARENTES (10 a 12 anos) -->
 
-  <!-- Modal Escolher Assinatura -->
+  <!-- MODAL ESCOLHER ASSINATURA -->
   <div class="modal fade" id="modalEscolherAssinatura" tabindex="-1" aria-labelledby="modalEscolherAssinaturaLabel"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -529,8 +542,9 @@
       </div>
     </div>
   </div>
+  <!-- FIM DO MODAL ESCOLHER ASSINATURA -->
 
-  <!-- Modal Reavaliação para Situações Atenuantes -->
+  <!-- MODAL REAVALIAÇÃO (SITUAÇÕES ATENUANTES) -->
   <div class="modal fade" id="modalReavaliacao" tabindex="-1" aria-labelledby="modalReavaliacaoLabel"
     aria-hidden="true">
     <div class="modal-dialog">
@@ -569,10 +583,13 @@
       </div>
     </div>
   </div>
+  <!-- FIM DO MODAL REAVALIAÇÃO -->
 
+  <!-- Google Maps API -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry">
     </script>
+
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -602,6 +619,9 @@
     let resultadoFinal = null;
     let outrosResponsaveis10a12 = [];
     let signerChoice = null;
+
+    // NOVA VARIÁVEL PARA CONTROLAR SITUAÇÕES ATENUANTES
+    let atenuantesMarcadas = false;
 
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
@@ -714,6 +734,7 @@
     const chkAreaDeRisco = document.getElementById("chkAreaDeRisco");
     const chkAnimaisPerigosos = document.getElementById("chkAnimaisPerigosos");
 
+    // AO ESCOLHER O TIPO DE FLUXO
     btnContinuarFluxo.addEventListener("click", async () => {
       if (fluxoMunicipal.checked) {
         tipoFluxoSelecionado = "municipal";
@@ -729,6 +750,7 @@
       }
     });
 
+    // CARREGAR ESCOLAS (EXEMPLO)
     async function carregarEscolasEstaduais() {
       try {
         const response = await fetch("/api/escolas");
@@ -747,6 +769,7 @@
       }
     }
 
+    // BUSCAR ALUNO MUNICIPAL
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
@@ -804,6 +827,7 @@
       }
     });
 
+    // CALCULAR IDADE (MUNICIPAL)
     function calcularIdadeMunicipal(dataNasc) {
       const hoje = new Date();
       let anos = hoje.getFullYear() - dataNasc.getFullYear();
@@ -834,6 +858,7 @@
       }
     }
 
+    // CONVERTER CEP - MUNICIPAL
     btnConverterCepMunicipal.addEventListener("click", async () => {
       const cepLimpo = campoCepMunicipal.value.replace(/\D/g, "");
       if (!cepLimpo) {
@@ -859,6 +884,7 @@
       }
     });
 
+    // SALVAR ALTERAÇÕES (MUNICIPAL)
     btnSalvarAlteracoesMunicipal.addEventListener("click", async () => {
       const ok = await salvarAlteracoesMunicipal();
       if (ok) {
@@ -903,6 +929,7 @@
       }
     }
 
+    // IMPRIMIR CONFIRMAÇÃO (MUNICIPAL)
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
         alert("Nenhum aluno carregado para gerar termo.");
@@ -912,6 +939,7 @@
       modalEscolherAssinatura.show();
     });
 
+    // CONFIRMA QUEM ASSINA O TERMO (MUNICIPAL)
     btnConfirmarAssinatura.addEventListener("click", () => {
       if (radioAssinaturaFiliacao1.checked) {
         signerChoice = "filiacao1";
@@ -927,6 +955,7 @@
       btnProximoMunicipal.disabled = false;
     });
 
+    // PRÓXIMO (MUNICIPAL)
     btnProximoMunicipal.addEventListener("click", () => {
       if (!originalData) {
         alert("Nenhum aluno carregado.");
@@ -939,6 +968,7 @@
       }, 300);
     });
 
+    // BUSCAR ALUNO ESTADUAL
     btnBuscarEstadual.addEventListener("click", async () => {
       const valorBuscaEst = inputBuscaEstadual.value.trim();
       if (!valorBuscaEst) {
@@ -995,6 +1025,7 @@
       }
     });
 
+    // CALCULAR IDADE (ESTADUAL)
     campoDataNascimentoEstadual.addEventListener("change", () => {
       if (campoDataNascimentoEstadual.value) {
         calcularIdadeEstadual(new Date(campoDataNascimentoEstadual.value));
@@ -1032,6 +1063,7 @@
       }
     }
 
+    // CONVERTER CEP - ESTADUAL
     btnConverterCepEstadual.addEventListener("click", async () => {
       const cepLimpoEst = campoCepEstadual.value.replace(/\D/g, "");
       if (!cepLimpoEst) {
@@ -1056,6 +1088,7 @@
       }
     });
 
+    // PRÓXIMO (ESTADUAL)
     btnProximoEstadual.addEventListener("click", async () => {
       const defValueEst = campoDeficienciaEstadual.value;
       const defArrayEst = defValueEst ? [defValueEst] : null;
@@ -1102,6 +1135,7 @@
       }
     });
 
+    // VOLTAR PARA ETAPA 1
     btnVoltarEtapa1.addEventListener("click", () => {
       etapa2.classList.remove("active");
       if (tipoFluxoSelecionado === "municipal") {
@@ -1111,6 +1145,7 @@
       }
     });
 
+    // MEDIR DISTÂNCIA MANUAL
     btnMeasure.addEventListener("click", () => {
       measureActive = !measureActive;
       if (measureActive) {
@@ -1170,6 +1205,7 @@
       }
     }
 
+    // VERIFICAR CRITÉRIOS
     btnVerificarCriterios.addEventListener("click", () => {
       const nivel = selectNivelEnsino.value;
       if (!nivel) {
@@ -1184,9 +1220,9 @@
       } else {
         defValue = (campoDeficienciaEstadual.value || "").trim().toUpperCase();
       }
+
       if (defValue !== "" && defValue !== "NADA INFORMADO") {
         // Se há deficiência informada, a avaliação deve ser manual.
-        // Define o resultado como avaliação manual e vai para a etapa 3.
         resultadoFinal = "AVALIACAO_MANUAL";
         etapa2.classList.remove("active");
         etapa3.classList.add("active");
@@ -1198,58 +1234,42 @@
 
       const distKm = parseFloat(distanciaRota.textContent) || 0;
       let idadeMinimaOk = false;
-      let distanciaMinimaOk = false;
 
       if (idadeAlunoAnos >= 4) {
         idadeMinimaOk = true;
       }
 
-      // Critérios antigos:
-      // Infantil > 1.5km
-      // Fundamental > 2.0km
-      // Agora incluímos a possibilidade de reavaliação se estiver entre 0.8 e 1.5 (infantil) ou entre 1.3 e 2.0 (fundamental).
-      // Se for abaixo de 0.8 (infantil) ou 1.3 (fundamental), reprova direto, sem chance de reavaliação.
-
-      let limPrincipal = 1.5; // infantil
-      let limReavaliacao = 0.8; // infantil
+      let limPrincipal = 1.5; // para infantil
+      let limReavaliacao = 0.8; // para infantil
       if (nivel === "fundamental") {
         limPrincipal = 2.0;
         limReavaliacao = 1.3;
       }
 
-      // Primeiro verifica se atende idade
       if (!idadeMinimaOk) {
-        // Se não atende idade mínima, reprovado direto
+        // não atende idade mínima
         btnNaoAprovado.click();
         return;
       }
 
       if (distKm > limPrincipal) {
-        // Aprovado automático
-        distanciaMinimaOk = true;
+        // Aprovado automático (critério distância) - chama fluxo
+        checkFluxoIntermediario();
       } else {
-        // Se não atingiu a distância principal, verifica se ao menos passou do limite de reavaliação
+        // Se não atingiu a distância principal, verifica a faixa de reavaliação
         if (distKm >= limReavaliacao && distKm <= limPrincipal) {
-          // Dispara modal de reavaliação para verificar condições atenuantes
+          // MODAL reavaliação
           modalReavaliacao.show();
           return;
         } else {
-          // Se dist < limReavaliacao, reprova direto
+          // Abaixo do limite de reavaliação => reprova direto
           btnNaoAprovado.click();
-          return;
         }
-      }
-
-      if (!distanciaMinimaOk) {
-        btnNaoAprovado.click();
-      } else {
-        // Se chegou aqui, aprovou no critério de distância
-        checkFluxoIntermediario();
       }
     });
 
-    // Confirma reavaliação
-    btnConfirmarReavaliacao.addEventListener("click", () => {
+    // CONFIRMAR REAVALIAÇÃO (SITUAÇÕES ATENUANTES)
+    btnConfirmarReavaliacao.addEventListener("click", async () => {
       const atenuantesSelecionadas = [
         chkCalcadasAusentes.checked,
         chkPavimentacaoAusente.checked,
@@ -1259,17 +1279,59 @@
       ].some(x => x === true);
 
       modalReavaliacao.hide();
+
+      // Se marcou alguma atenuante, NÃO queremos aprovar direto.
+      // Precisamos salvar no BD e seguir fluxo normal, mas forçar "Não Aprovado" ao final.
+      // Se não marcou nada, reprova direto.
       if (atenuantesSelecionadas) {
-        // Se o responsável marcou alguma das situações atenuantes, vamos aprovar
+        atenuantesMarcadas = true;
+        // SALVAR AS ATENUANTES E DADOS DO ALUNO EM UMA TABELA (EXEMPLO)
+        await salvarAtenuantesNoBanco();
+        // Agora segue o fluxo normal de idade (para exibir modais de menores),
+        // mas ao final será travado (força "Nao Aprovado").
         checkFluxoIntermediario();
       } else {
-        // Se não marcou nada, reprova
+        // Se não marcou atenuante, reprova
         btnNaoAprovado.click();
       }
     });
 
+    // FUNÇÃO PARA SALVAR ATENUANTES NO BANCO
+    async function salvarAtenuantesNoBanco() {
+      // Montar dados do aluno + atenuantes
+      const dadosAtenuantes = {
+        aluno_id: tipoFluxoSelecionado === "municipal" ? alunoIdMunicipal : alunoIdEstadual,
+        tipo_fluxo: tipoFluxoSelecionado,
+        calcadasAusentes: chkCalcadasAusentes.checked,
+        pavimentacaoAusente: chkPavimentacaoAusente.checked,
+        iluminacaoPrecaria: chkIluminacaoPrecaria.checked,
+        areaDeRisco: chkAreaDeRisco.checked,
+        animaisPerigosos: chkAnimaisPerigosos.checked
+      };
+
+      // Exemplo de fetch para salvar:
+      try {
+        const resp = await fetch("/api/reavaliacoes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dadosAtenuantes),
+        });
+        if (!resp.ok) {
+          const dataErr = await resp.json();
+          console.error("Erro ao salvar reavaliação:", dataErr);
+        }
+      } catch (err) {
+        console.error("Erro ao tentar salvar reavaliação:", err);
+      }
+    }
+
+    // VERIFICA FAIXA ETÁRIA E ABRE MODAIS DE MENORES OU APROVA DIRETO
     function checkFluxoIntermediario() {
-      // Fluxo para menor de 10 e entre 10 e 12
+      // Se atenuantes foram marcadas, forçar reprovação ao final.
+      // Ainda assim, exibir modais de menor 10 e 10-12 para coletar info, se for o caso.
+      // Ao final do fluxo, iremos para "btnAprovado" ou "btnNaoAprovado" - mas se atenuantes=true,
+      // forçaremos "Nao Aprovado" no 'btnAprovado' (override).
+
       if (idadeAlunoAnos < 10) {
         responsaveisExtras = [];
         menor10_acompanhado = false;
@@ -1282,10 +1344,12 @@
         modal10a12_radioNao.checked = true;
         modalDesembarque10a12.show();
       } else {
+        // Maior ou igual a 13
         btnAprovado.click();
       }
     }
 
+    // EVENTO MENOR DE 10 ANOS
     radioAcompanhamentoSim.addEventListener("change", () => {
       containerResponsaveisExtras.classList.remove("d-none");
     });
@@ -1369,6 +1433,7 @@
       btnAprovado.click();
     });
 
+    // EVENTO ALUNO 10 a 12
     btnConfirmar10a12.addEventListener("click", () => {
       if (modal10a12_radioSim.checked) {
         desembarqueSozinho10a12 = true;
@@ -1388,6 +1453,7 @@
       }
     });
 
+    // RESPONSÁVEIS ADICIONAIS 10 a 12
     radioOutrosRespSim.addEventListener("change", () => {
       containerOutrosResponsaveis10a12.classList.remove("d-none");
     });
@@ -1472,6 +1538,7 @@
       btnAprovado.click();
     });
 
+    // SE O USUÁRIO CLICAR NO BOTÃO "NÃO APROVADO" MANUALMENTE
     btnNaoAprovado.addEventListener("click", () => {
       resultadoFinal = "NAO_APROVADO";
       etapa2.classList.remove("active");
@@ -1481,7 +1548,13 @@
       resultadoDescricao.innerText = "O aluno não atende aos critérios estabelecidos.";
     });
 
+    // SE O USUÁRIO CLICAR NO BOTÃO "APROVADO"
     btnAprovado.addEventListener("click", () => {
+      // Se existirem atenuantes marcadas, forçar não aprovado.
+      if (atenuantesMarcadas) {
+        btnNaoAprovado.click();
+        return;
+      }
       resultadoFinal = "APROVADO";
       etapa2.classList.remove("active");
       etapa3.classList.add("active");
@@ -1490,10 +1563,10 @@
       resultadoDescricao.innerText = "O aluno atende aos critérios e foi aprovado.";
     });
 
+    // FINALIZAR TODO PROCESSO
     btnFinalizar.addEventListener("click", async () => {
       if (resultadoFinal === "APROVADO") {
         await salvarLocalizacaoFinal();
-
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
           await criarSolicitacaoTransporte(
             alunoIdMunicipal,
@@ -1530,7 +1603,12 @@
             "municipal",
             null
           );
+          // Comprovante de não aprovado
           window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+          // Se havia atenuantes marcadas, gerar segundo comprovante de reavaliação
+          if (atenuantesMarcadas) {
+            window.open(`/api/comprovante-reavaliacao/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+          }
         } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
           await criarSolicitacaoTransporte(
             alunoIdEstadual,
@@ -1539,10 +1617,15 @@
             "estadual",
             null
           );
+          // Comprovante de não aprovado
           window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+          // Segundo comprovante se havia atenuantes
+          if (atenuantesMarcadas) {
+            window.open(`/api/comprovante-reavaliacao-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+          }
         }
       } else if (resultadoFinal === "AVALIACAO_MANUAL") {
-        // Se for avaliação manual, apenas registra a solicitação com status de pendência/avaliação manual
+        // Pendência de avaliação manual
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
           await criarSolicitacaoTransporte(
             alunoIdMunicipal,
@@ -1561,11 +1644,11 @@
           );
         }
       }
-
       alert("Atendimento finalizado!");
       location.reload();
     });
 
+    // SALVAR LOCALIZAÇÃO FINAL
     async function salvarLocalizacaoFinal() {
       if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
         const defValue = campoDeficienciaMunicipal.value;
@@ -1614,6 +1697,7 @@
       }
     }
 
+    // CRIAR SOLICITAÇÃO DE TRANSPORTE NO BANCO
     async function criarSolicitacaoTransporte(alunoId, status, motivo, fluxo, extraData) {
       try {
         const bodyReq = {
@@ -1640,6 +1724,7 @@
       }
     }
 
+    // INICIAR MAPA GOOGLE
     async function initMap() {
       if (!map) {
         map = new google.maps.Map(document.getElementById("mapCriterios"), {
