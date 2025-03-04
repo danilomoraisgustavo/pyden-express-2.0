@@ -9222,10 +9222,6 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
-// PUT /api/alunos-recadastro/:id
-// Exemplo de ajuste para evitar erro de array malformado quando o valor for "NADA INFORMADO":
-// Dentro do PUT /api/alunos-recadastro/:id
-
 app.put("/api/alunos-recadastro/:id", async (req, res) => {
   try {
     const { id } = req.params;

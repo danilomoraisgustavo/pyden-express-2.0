@@ -1231,16 +1231,18 @@
       const cepVal = $("#filtroCep").val();
       const searchVal = $("#searchInput").val();
 
+      // Montamos os parâmetros de consulta
       const queryParams = new URLSearchParams();
       if (escolaVal) queryParams.append("escola", escolaVal);
       if (bairroVal) queryParams.append("bairro", bairroVal);
-      if (cepVal) queryParams.append("cep", cepVal);
-      if (searchVal) queryParams.append("search", searchVal);
       if (transporteVal) queryParams.append("transporte", transporteVal);
       if (deficienciaVal) queryParams.append("deficiencia", deficienciaVal);
       if (idadeVal) queryParams.append("idade", idadeVal);
+      if (cepVal) queryParams.append("cep", cepVal);
+      if (searchVal) queryParams.append("search", searchVal);
 
       showLoader();
+      // Chamamos diretamente o endpoint que filtra no banco de dados (alunos_ativos)
       fetch("/api/alunos-ativos?" + queryParams.toString())
         .then((res) => res.json())
         .then((data) => {
