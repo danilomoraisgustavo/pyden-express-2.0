@@ -9118,26 +9118,17 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 });
 
 // Rotas (exemplo) - Ajustando para permitir filtros na query
-// NOVO ENDPOINT PARA FILTRAR ALUNOS DIRETAMENTE NO BANCO (RELAÇÃO ALUNOS_ATIVOS)
-// Ajuste conforme precisar. Este endpoint receberá as queries e realizará o filtro diretamente na base.
-
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
-    let {
-      escola = "",
-      bairro = "",
-      cep = "",
-      search = "",
-      transporte = "",
-      deficiencia = "",
-      idade = ""
-    } = req.query;
+    let { escola, bairro, cep, search } = req.query;
+    escola = escola || "";
+    bairro = bairro || "";
+    cep = cep || "";
+    search = search || "";
 
-    // Array que vai receber as partes "field ILIKE $X" e afins.
-    const whereClauses = [];
-
-    // Você também pode usar parâmetros (usando $1, $2, etc.) para evitar SQL injection e melhorar a performance.
-    // Aqui, para simplificar, mostramos direto na string. Em produção, utilize parâmetros vinculados.
+    // Ajuste ou substitua conforme sua lógica de WHERE
+    // Exemplo simples:
+    let whereClauses = [];
     if (escola) {
       whereClauses.push(`e.nome ILIKE '%${escola}%'`);
     }
@@ -9150,30 +9141,10 @@ app.get("/api/alunos-ativos", async (req, res) => {
     if (search) {
       whereClauses.push(`
         (a.pessoa_nome ILIKE '%${search}%'
-         OR CAST(a.id_matricula AS TEXT) ILIKE '%${search}%'
+         OR a.id_matricula ILIKE '%${search}%'
          OR a.cpf ILIKE '%${search}%')
       `);
     }
-    if (transporte) {
-      // Ex: 'municipal' ou 'estadual'
-      whereClauses.push(`a.transporte_escolar_poder_publico ILIKE '%${transporte}%'`);
-    }
-
-    if (deficiencia.toLowerCase() === "sim") {
-      // Supondo que 'deficiencia' seja salvo como JSON ou array
-      whereClauses.push(`(a.deficiencia IS NOT NULL AND a.deficiencia <> '[]')`);
-    } else if (deficiencia.toLowerCase() === "nao") {
-      whereClauses.push(`(a.deficiencia IS NULL OR a.deficiencia = '[]')`);
-    }
-
-    if (idade) {
-      // Exemplo para idade exata (ano atual - ano de data_nascimento).
-      // Ajuste conforme precisar (>=, <= etc.)
-      whereClauses.push(`
-        EXTRACT(YEAR FROM AGE(CURRENT_DATE, a.data_nascimento::date)) = ${idade}
-      `);
-    }
-
     let whereStr = "";
     if (whereClauses.length) {
       whereStr = "WHERE " + whereClauses.join(" AND ");
@@ -9193,11 +9164,10 @@ app.get("/api/alunos-ativos", async (req, res) => {
     console.error(err);
     return res.status(500).json({
       success: false,
-      message: "Erro ao buscar alunos (filtro).",
+      message: "Erro ao buscar alunos.",
     });
   }
 });
-
 
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
   try {
@@ -9221,6 +9191,10 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
     });
   }
 });
+
+// PUT /api/alunos-recadastro/:id
+// Exemplo de ajuste para evitar erro de array malformado quando o valor for "NADA INFORMADO":
+// Dentro do PUT /api/alunos-recadastro/:id
 
 app.put("/api/alunos-recadastro/:id", async (req, res) => {
   try {

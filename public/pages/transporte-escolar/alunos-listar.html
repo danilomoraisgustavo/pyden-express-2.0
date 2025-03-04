@@ -1,10 +1,11 @@
-<!-- ARQUIVO: importar-alunos-ativos.html -->
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Importar Alunos Ativos</title>
+  <title>
+    Importar Alunos Ativos
+  </title>
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="public/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
   <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
@@ -16,13 +17,13 @@
           "Font Awesome 5 Solid",
           "Font Awesome 5 Regular",
           "Font Awesome 5 Brands",
-          "simple-line-icons"
+          "simple-line-icons",
         ],
-        urls: ["../../assets/css/fonts.min.css"]
+        urls: ["../../assets/css/fonts.min.css"],
       },
       active: function () {
         sessionStorage.fonts = true;
-      }
+      },
     });
   </script>
   <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
@@ -93,6 +94,7 @@
 
 <body>
   <div class="wrapper">
+    <!-- SIDEBAR -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
@@ -224,6 +226,7 @@
                 </ul>
               </div>
             </li>
+
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
                 <i class="fas fa-school"></i>
@@ -293,6 +296,7 @@
                 <p>Dashboard Administrativo</p>
               </a>
             </li>
+
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
                 <i class="fas fa-id-card"></i>
@@ -319,6 +323,7 @@
                 </ul>
               </div>
             </li>
+
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
                 <i class="fas fa-warehouse"></i>
@@ -430,6 +435,7 @@
               </div>
             </li>
 
+            <!-- Novo item de Relatórios dentro de Financeiro -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
                 <i class="fas fa-chart-line"></i>
@@ -455,6 +461,8 @@
         </div>
       </div>
     </div>
+    <!-- END SIDEBAR -->
+
 
     <div class="main-panel">
       <div class="main-header" style="top: 0">
@@ -611,7 +619,9 @@
                         </div>
                         <div class="u-text">
                           <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
-                          <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
+                          <p class="text-muted" id="dropdownUserEmail">
+                            email@exemplo.com
+                          </p>
                           <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
                             Perfil</a>
                         </div>
@@ -662,6 +672,11 @@
                 Mapear Alunos
               </button>
             </div>
+            <div>
+              <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCompletarLocalizacao">
+                Completar Localização Municipal/Estadual
+              </button>
+            </div>
           </div>
 
           <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel"
@@ -669,23 +684,35 @@
             <div class="modal-dialog modal-lg">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="modalImportarLabel">Importar Arquivo XLSX</h5>
+                  <h5 class="modal-title" id="modalImportarLabel">
+                    Importar Arquivo XLSX
+                  </h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                  <p>1. Selecione a escola referente a todos os alunos que serão importados.</p>
+                  <p>
+                    1. Selecione a escola referente a todos os alunos que
+                    serão importados.
+                  </p>
                   <div class="mb-3">
                     <label for="escolaSelect" class="form-label required-label">Escola</label>
                     <select class="form-select" id="escolaSelect">
                       <option value="">Selecione a Escola</option>
                     </select>
                   </div>
-                  <p>2. Selecione o arquivo XLSX conforme o formato especificado.</p>
+                  <p>
+                    2. Selecione o arquivo XLSX conforme o formato
+                    especificado.
+                  </p>
                   <input type="file" id="fileInput" accept=".xlsx, .xls" class="form-control mb-3" />
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                  <button id="importarBtn" type="button" class="btn btn-primary">Importar</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fechar
+                  </button>
+                  <button id="importarBtn" type="button" class="btn btn-primary">
+                    Importar
+                  </button>
                 </div>
               </div>
             </div>
@@ -695,7 +722,9 @@
             <div class="modal-dialog modal-lg">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="modalMapearLabel">Mapa de Alunos</h5>
+                  <h5 class="modal-title" id="modalMapearLabel">
+                    Mapa de Alunos
+                  </h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -713,12 +742,46 @@
                     </div>
                   </div>
                   <div class="mb-3">
-                    <button id="btnFiltrarMapa" class="btn btn-primary">Buscar/Filtrar</button>
+                    <button id="btnFiltrarMapa" class="btn btn-primary">
+                      Buscar/Filtrar
+                    </button>
                   </div>
                   <div id="map"></div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal fade" id="modalCompletarLocalizacao" tabindex="-1"
+            aria-labelledby="modalCompletarLocalizacaoLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalCompletarLocalizacaoLabel">
+                    Completar Localização Municipal/Estadual
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label for="selectEscolaCompletarLocalizacao" class="form-label">Selecione a Escola</label>
+                    <select class="form-select" id="selectEscolaCompletarLocalizacao">
+                      <option value="">Todas as Escolas</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fechar
+                  </button>
+                  <button type="button" class="btn btn-success" id="btnConfirmarCompletarLocalizacao">
+                    Completar Localização
+                  </button>
                 </div>
               </div>
             </div>
@@ -740,36 +803,18 @@
                   </select>
                 </div>
                 <div class="col-md-3">
-                  <label for="filtroTransporte" class="form-label">Transporte Escolar</label>
-                  <select id="filtroTransporte" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="municipal">Municipal</option>
-                    <option value="estadual">Estadual</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label for="filtroDeficiencia" class="form-label">Deficiência</label>
-                  <select id="filtroDeficiencia" class="form-select">
-                    <option value="">Todas</option>
-                    <option value="sim">Sim</option>
-                    <option value="nao">Não</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label for="filtroIdade" class="form-label">Filtrar por Idade</label>
-                  <input type="number" min="0" class="form-control" id="filtroIdade" placeholder="Ex: 10" />
-                </div>
-                <div class="col-md-3">
                   <label for="filtroCep" class="form-label">Filtrar por CEP</label>
-                  <input type="text" class="form-control" id="filtroCep" placeholder="Digite o CEP" />
+                  <select id="filtroCep" class="form-select">
+                    <option value="">Todos</option>
+                  </select>
                 </div>
                 <div class="col-md-3">
                   <label for="searchInput" class="form-label">Pesquisa Geral</label>
                   <input type="text" id="searchInput" class="form-control" placeholder="Digite para pesquisar..." />
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                  <button id="btnBuscarAlunos" class="btn btn-primary w-100">Filtrar Alunos</button>
-                </div>
+              </div>
+              <div class="mt-3">
+                <button id="btnBuscarAlunos" class="btn btn-primary">Filtrar Alunos</button>
               </div>
             </div>
           </div>
@@ -848,7 +893,8 @@
           <nav class="pull-left">
             <ul class="nav">
               <li class="nav-item"><a class="nav-link" target="_blank" href="https://pydenexpress.com/">PyDen
-                  Express</a></li>
+                  Express</a>
+              </li>
               <li class="nav-item"><a class="nav-link" href="#">Ajuda</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Termos de Uso</a></li>
             </ul>
@@ -956,8 +1002,12 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-          <button type="button" class="btn btn-primary" id="btnSalvarEdicao">Salvar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Fechar
+          </button>
+          <button type="button" class="btn btn-primary" id="btnSalvarEdicao">
+            Salvar
+          </button>
         </div>
       </div>
     </div>
@@ -968,11 +1018,15 @@
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="modalLocalizarAlunoLabel">Localizar Aluno</h5>
+          <h5 class="modal-title" id="modalLocalizarAlunoLabel">
+            Localizar Aluno
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p>Clique no mapa para alterar a Latitude/Longitude do aluno.</p>
+          <p>
+            Clique no mapa para alterar a Latitude/Longitude do aluno.
+          </p>
           <div class="row g-2 mb-3">
             <div class="col">
               <label for="localizarAlunoLat" class="form-label">Latitude</label>
@@ -986,8 +1040,12 @@
           <div id="mapAluno" style="width: 100%; height: 500px; border: 1px solid #ccc;"></div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-          <button type="button" class="btn btn-success" id="btnSalvarLocalizacao">Salvar Localização</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Fechar
+          </button>
+          <button type="button" class="btn btn-success" id="btnSalvarLocalizacao">
+            Salvar Localização
+          </button>
         </div>
       </div>
     </div>
@@ -1004,6 +1062,7 @@
   <script src="../../assets/js/setting-demo2.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&v=beta"></script>
+
   <script>
     let dadosXLSX = [];
     let escolasLista = [];
@@ -1018,32 +1077,36 @@
     function showLoader() {
       document.getElementById("globalLoader").style.display = "flex";
     }
+
     function hideLoader() {
       document.getElementById("globalLoader").style.display = "none";
     }
 
     function showNotification(type, message) {
-      $.notify({
-        message: message,
-        icon:
-          type === "success"
-            ? "fa fa-check-circle"
-            : type === "danger"
-              ? "fa fa-exclamation-circle"
-              : "fa fa-info-circle"
-      }, {
-        type: type,
-        placement: { from: "top", align: "right" },
-        offset: 20,
-        spacing: 10,
-        z_index: 1031,
-        delay: 3000,
-        timer: 1000,
-        animate: {
-          enter: "animated fadeInDown",
-          exit: "animated fadeOutUp"
+      $.notify(
+        {
+          message: message,
+          icon:
+            type === "success"
+              ? "fa fa-check-circle"
+              : type === "danger"
+                ? "fa fa-exclamation-circle"
+                : "fa fa-info-circle",
+        },
+        {
+          type: type,
+          placement: { from: "top", align: "right" },
+          offset: 20,
+          spacing: 10,
+          z_index: 1031,
+          delay: 3000,
+          timer: 1000,
+          animate: {
+            enter: "animated fadeInDown",
+            exit: "animated fadeOutUp",
+          },
         }
-      });
+      );
     }
 
     function carregarEscolas() {
@@ -1054,6 +1117,7 @@
           escolasLista = data;
           popularSelectEscolas();
           popularSelectEscolasMap();
+          popularSelectEscolasCompletarLocalizacao();
         })
         .catch(() => {
           showNotification("danger", "Erro ao carregar lista de escolas.");
@@ -1083,6 +1147,17 @@
       });
     }
 
+    function popularSelectEscolasCompletarLocalizacao() {
+      const select = document.getElementById("selectEscolaCompletarLocalizacao");
+      select.innerHTML = '<option value="">Todas as Escolas</option>';
+      escolasLista.forEach((escola) => {
+        const option = document.createElement("option");
+        option.value = escola.id;
+        option.textContent = `${escola.nome} (ID: ${escola.id})`;
+        select.appendChild(option);
+      });
+    }
+
     function handleFileImport(evt) {
       const file = evt.target.files[0];
       if (!file) return;
@@ -1109,7 +1184,10 @@
         return;
       }
       showLoader();
-      const body = { escolaId: escolaIdSelecionada, alunos: dadosXLSX };
+      const body = {
+        escolaId: escolaIdSelecionada,
+        alunos: dadosXLSX, // dadosXLSX já conterá 'data_nascimento' caso exista na planilha
+      };
       fetch("/api/import-alunos-ativos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1118,10 +1196,16 @@
         .then((res) => res.json())
         .then((resp) => {
           if (resp.success) {
-            showNotification("success", resp.message || "Importação realizada com sucesso!");
+            showNotification(
+              "success",
+              resp.message || "Importação realizada com sucesso!"
+            );
             $("#modalImportar").modal("hide");
           } else {
-            showNotification("danger", resp.message || "Ocorreu um erro na importação.");
+            showNotification(
+              "danger",
+              resp.message || "Ocorreu um erro na importação."
+            );
           }
         })
         .catch(() => {
@@ -1199,7 +1283,10 @@
 
       alunos.forEach((al) => {
         if (al.latitude && al.longitude) {
-          const pos = new google.maps.LatLng(parseFloat(al.latitude), parseFloat(al.longitude));
+          const pos = new google.maps.LatLng(
+            parseFloat(al.latitude),
+            parseFloat(al.longitude)
+          );
           const marker = new google.maps.Marker({
             map,
             position: pos,
@@ -1209,7 +1296,8 @@
             content: `<strong>${al.pessoa_nome || ""}</strong><br>
                 CPF: ${al.cpf || ""}<br>
                 Matrícula: ${al.id_matricula || ""}<br>
-                Lat: ${al.latitude} / Lng: ${al.longitude}`,
+                Lat: ${al.latitude} / Lng: ${al.longitude}
+              `,
           });
           marker.addListener("click", () => {
             infowindow.open(map, marker);
@@ -1217,6 +1305,7 @@
           bounds.extend(pos);
         }
       });
+
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds);
       }
@@ -1225,24 +1314,16 @@
     function buscarAlunosComFiltros() {
       const escolaVal = $("#filtroEscola").val();
       const bairroVal = $("#filtroBairro").val();
-      const transporteVal = $("#filtroTransporte").val();
-      const deficienciaVal = $("#filtroDeficiencia").val();
-      const idadeVal = $("#filtroIdade").val();
       const cepVal = $("#filtroCep").val();
       const searchVal = $("#searchInput").val();
 
-      // Montamos os parâmetros de consulta
       const queryParams = new URLSearchParams();
       if (escolaVal) queryParams.append("escola", escolaVal);
       if (bairroVal) queryParams.append("bairro", bairroVal);
-      if (transporteVal) queryParams.append("transporte", transporteVal);
-      if (deficienciaVal) queryParams.append("deficiencia", deficienciaVal);
-      if (idadeVal) queryParams.append("idade", idadeVal);
       if (cepVal) queryParams.append("cep", cepVal);
       if (searchVal) queryParams.append("search", searchVal);
 
       showLoader();
-      // Chamamos diretamente o endpoint que filtra no banco de dados (alunos_ativos)
       fetch("/api/alunos-ativos?" + queryParams.toString())
         .then((res) => res.json())
         .then((data) => {
@@ -1259,39 +1340,17 @@
     function popularTabela(alunos) {
       const tbody = $("#alunos-table tbody");
       tbody.empty();
+
       if (dataTable) {
         dataTable.clear().destroy();
       }
-      if (!alunos.length) {
-        dataTable = $("#alunos-table").DataTable({
-          pageLength: 10,
-          language: {
-            decimal: ",",
-            thousands: ".",
-            info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-            infoEmpty: "Mostrando 0 até 0 de 0 registros",
-            infoFiltered: "(filtrado de _MAX_ registros no total)",
-            lengthMenu: "Mostrar _MENU_ registros",
-            loadingRecords: "Carregando...",
-            processing: "Processando...",
-            search: "Pesquisar:",
-            zeroRecords: "Nenhum registro encontrado",
-            paginate: {
-              first: "Primeiro",
-              last: "Último",
-              next: "Próximo",
-              previous: "Anterior",
-            },
-            emptyTable: "Nenhum dado disponível na tabela",
-          },
-        });
-        return;
-      }
+
       alunos.forEach((item) => {
         const defString =
           item.deficiencia && Array.isArray(item.deficiencia)
             ? JSON.stringify(item.deficiencia)
             : item.deficiencia || "";
+
         const row = `
           <tr data-id="${item.id}" data-obj='${JSON.stringify(item)}'>
             <td>${item.id_matricula || ""}</td>
@@ -1325,9 +1384,11 @@
                 <i class="fa fa-trash"></i>
               </button>
             </td>
-          </tr>`;
+          </tr>
+        `;
         tbody.append(row);
       });
+
       dataTable = $("#alunos-table").DataTable({
         pageLength: 10,
         language: {
@@ -1355,8 +1416,12 @@
     function popularFiltros(alunos) {
       const filtroEscola = $("#filtroEscola");
       const filtroBairro = $("#filtroBairro");
+      const filtroCep = $("#filtroCep");
+
       const distinctEscolas = new Set();
       const distinctBairros = new Set();
+      const distinctCeps = new Set();
+
       alunos.forEach((al) => {
         if (al.escola_nome) {
           distinctEscolas.add(al.escola_nome);
@@ -1364,25 +1429,41 @@
         if (al.bairro) {
           distinctBairros.add(al.bairro);
         }
+        if (al.cep) {
+          distinctCeps.add(al.cep);
+        }
       });
+
       const currentSelectedEscola = filtroEscola.val();
       const currentSelectedBairro = filtroBairro.val();
+      const currentSelectedCep = filtroCep.val();
+
       filtroEscola.empty().append('<option value="">Todas</option>');
       distinctEscolas.forEach((esc) => {
         filtroEscola.append(`<option value="${esc}">${esc}</option>`);
       });
       filtroEscola.val(currentSelectedEscola);
+
       filtroBairro.empty().append('<option value="">Todos</option>');
       distinctBairros.forEach((b) => {
         filtroBairro.append(`<option value="${b}">${b}</option>`);
       });
       filtroBairro.val(currentSelectedBairro);
+
+      filtroCep.empty().append('<option value="">Todos</option>');
+      distinctCeps.forEach((c) => {
+        filtroCep.append(`<option value="${c}">${c}</option>`);
+      });
+      filtroCep.val(currentSelectedCep);
     }
 
     $(document).ready(function () {
       carregarEscolas();
+      buscarAlunosComFiltros(); // Carregar inicialmente e popular filtros
+
       $("#fileInput").on("change", handleFileImport);
       $("#importarBtn").on("click", enviarImportacao);
+
       $("#btnBuscarAlunos").on("click", buscarAlunosComFiltros);
 
       $(document).on("click", ".btn-editar", function () {
@@ -1399,7 +1480,9 @@
         $("#editarNomeAluno").val(dataObj.pessoa_nome || "");
         $("#editarCpf").val(dataObj.cpf || "");
         $("#editarDataNascimento").val(dataObj.data_nascimento || "");
-        $("#editarTransporte").val(dataObj.transporte_escolar_poder_publico || "");
+        $("#editarTransporte").val(
+          dataObj.transporte_escolar_poder_publico || ""
+        );
         $("#editarCep").val(dataObj.cep || "");
         $("#editarBairro").val(dataObj.bairro || "");
         $("#editarNumeroEndereco").val(dataObj.numero_pessoa_endereco || "");
@@ -1466,6 +1549,7 @@
         $("#localizarAlunoLat").val(dataObj.latitude || "");
         $("#localizarAlunoLng").val(dataObj.longitude || "");
         $("#modalLocalizarAluno").modal("show");
+
         setTimeout(() => {
           initMapAluno(dataObj);
         }, 500);
@@ -1518,13 +1602,24 @@
               $("#modalLocalizarAluno").modal("hide");
               buscarAlunosComFiltros();
             } else {
-              showNotification("danger", resp.message || "Erro ao salvar localização.");
+              showNotification(
+                "danger",
+                resp.message || "Erro ao salvar localização."
+              );
             }
           })
           .catch(() => {
             showNotification("danger", "Erro ao salvar localização.");
           })
           .finally(() => hideLoader());
+      });
+
+      $("#btnConfirmarCompletarLocalizacao").on("click", function () {
+        showNotification(
+          "info",
+          "Processo de localização completado (exemplo)."
+        );
+        $("#modalCompletarLocalizacao").modal("hide");
       });
     });
 
@@ -1537,6 +1632,7 @@
         zoom: aluno.latitude && aluno.longitude ? 15 : 4,
         mapId: "ca7a0e55f44be727",
       });
+
       if (aluno.latitude && aluno.longitude) {
         currentAlunoPosition = new google.maps.LatLng(
           parseFloat(aluno.latitude),
@@ -1548,6 +1644,7 @@
           title: "Aluno",
         });
       }
+
       mapAluno.addListener("click", (e) => {
         if (currentAlunoMarker) {
           currentAlunoMarker.setMap(null);
