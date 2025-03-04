@@ -867,7 +867,6 @@
   <script async
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=geometry,places&callback=initLocalizarMap">
     </script>
-
   <script>
     let solicitacoes = [];
     let escolasList = [];
@@ -909,14 +908,20 @@
     }
 
     function loadSolicitacoes() {
-      // Busca apenas solicitações com status 'pendente'
+      // Se o endpoint /api/cocessao-rota?status=pendente não estiver filtrando corretamente,
+      // podemos simplesmente remover o parâmetro e filtrar no front-end:
       fetch('/api/cocessao-rota?status=pendente')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar solicitações');
           return res.json();
         })
         .then(data => {
-          solicitacoes = data;
+          // Faz um filtro extra no front-end para garantir que só
+          // apareçam solicitações com status "pendente".
+          solicitacoes = data.filter(s => {
+            // Ajuste conforme a propriedade que vem da API (ex.: s.status, s.status_concessao etc.)
+            return (s.status || '').toLowerCase() === 'pendente';
+          });
           populateTable();
         })
         .catch(err => {
@@ -931,24 +936,24 @@
 
       solicitacoes.forEach(s => {
         const row = `
-          <tr>
-            <td>${s.id}</td>
-            <td>${s.nome_responsavel}</td>
-            <td>${s.cpf_responsavel}</td>
-            <td>${s.celular_responsavel}</td>
-            <td>${s.id_matricula_aluno}</td>
-            <td>${s.escola_nome || s.escola_id}</td>
-            <td>${s.zoneamento ? 'Sim' : 'Não'}</td>
-            <td>${s.deficiencia ? 'Sim' : 'Não'}</td>
-            <td>${s.criterio_direito || ''}</td>
-            <td>${s.observacoes || ''}</td>
-            <td>
-              <button class="btn btn-sm btn-info" onclick="abrirModalLocalizar(${s.id})">Localizar</button>
-              <button class="btn btn-sm btn-warning" onclick="abrirModalEditar(${s.id})">Editar</button>
-              <button class="btn btn-sm btn-danger" onclick="excluirSolicitacao(${s.id})">Excluir</button>
-            </td>
-          </tr>
-        `;
+        <tr>
+          <td>${s.id}</td>
+          <td>${s.nome_responsavel}</td>
+          <td>${s.cpf_responsavel}</td>
+          <td>${s.celular_responsavel}</td>
+          <td>${s.id_matricula_aluno}</td>
+          <td>${s.escola_nome || s.escola_id}</td>
+          <td>${s.zoneamento ? 'Sim' : 'Não'}</td>
+          <td>${s.deficiencia ? 'Sim' : 'Não'}</td>
+          <td>${s.criterio_direito || ''}</td>
+          <td>${s.observacoes || ''}</td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="abrirModalLocalizar(${s.id})">Localizar</button>
+            <button class="btn btn-sm btn-warning" onclick="abrirModalEditar(${s.id})">Editar</button>
+            <button class="btn btn-sm btn-danger" onclick="excluirSolicitacao(${s.id})">Excluir</button>
+          </td>
+        </tr>
+      `;
         tableBody.append(row);
       });
 
@@ -1111,6 +1116,7 @@
         $('#edit-deficiencia').val('nao');
       }
 
+      // Preenche a lista de escolas
       $('#edit-escola-id').empty();
       escolasList.forEach(e => {
         $('#edit-escola-id').append(`<option value="${e.id}">${e.nome}</option>`);
@@ -1164,181 +1170,187 @@
           console.error(err);
           showNotification('danger', 'Erro ao atualizar solicitação.');
         });
-    },
+    });
 
-      function excluirSolicitacao(id) {
-        if (!confirm('Tem certeza que deseja excluir esta solicitação?')) return;
+    function excluirSolicitacao(id) {
+      if (!confirm('Tem certeza que deseja excluir esta solicitação?')) return;
 
-        fetch(`/api/cocessao-rota/${id}`, {
-          method: 'DELETE'
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              showNotification('success', data.message || 'Solicitação excluída!');
-              loadSolicitacoes();
-            } else {
-              showNotification('danger', data.message || 'Não foi possível excluir.');
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            showNotification('danger', 'Erro ao excluir solicitação.');
-          });
-      },
-
-      function loadReavaliacoes() {
-        // Busca apenas reavaliações com status 'PENDENTE'
-        fetch('/api/reavaliacoes?status=pendente')
-          .then(res => {
-            if (!res.ok) throw new Error('Erro ao carregar reavaliações');
-            return res.json();
-          })
-          .then(data => {
-            reavaliacoes = data;
-            populateReavaliacoes();
-          })
-          .catch(err => {
-            console.error(err);
-            showNotification('danger', 'Não foi possível carregar as reavaliações.');
-          });
-      },
-
-      function populateReavaliacoes() {
-        const tableBody = $('#reavaliacoes-table tbody');
-        tableBody.empty();
-
-        reavaliacoes.forEach(r => {
-          const row = `
-          <tr>
-            <td>${r.id}</td>
-            <td>${r.data_solicitacao || ''}</td>
-            <td>${r.nome_aluno || ''}</td>
-            <td>${r.cpf_aluno || ''}</td>
-            <td>${r.responsavel_aluno || ''}</td>
-            <td>${r.calcadas_ausentes ? 'Sim' : 'Não'}</td>
-            <td>${r.pavimentacao_ausente ? 'Sim' : 'Não'}</td>
-            <td>${r.iluminacao_precaria ? 'Sim' : 'Não'}</td>
-            <td>${r.area_de_risco ? 'Sim' : 'Não'}</td>
-            <td>${r.animais_perigosos ? 'Sim' : 'Não'}</td>
-            <td>${r.status_reavaliacao || 'PENDENTE'}</td>
-            <td>${r.latitude || ''}</td>
-            <td>${r.longitude || ''}</td>
-            <td>
-              <button class="btn btn-sm btn-info" onclick="localizarReavaliacao(${r.id})">Localizar</button>
-              <button class="btn btn-sm btn-success" onclick="aprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Aprovar</button>
-              <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Reprovar</button>
-            </td>
-          </tr>
-        `;
-          tableBody.append(row);
-        });
-
-        if ($.fn.DataTable.isDataTable('#reavaliacoes-table')) {
-          $('#reavaliacoes-table').DataTable().clear().destroy();
-        }
-
-        $('#reavaliacoes-table').DataTable({
-          pageLength: 10,
-          language: {
-            decimal: ",",
-            thousands: ".",
-            info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-            infoEmpty: "Mostrando 0 até 0 de 0 registros",
-            infoFiltered: "(filtrado de _MAX_ registros no total)",
-            lengthMenu: "Mostrar _MENU_ registros",
-            loadingRecords: "Carregando...",
-            processing: "Processando...",
-            search: "Pesquisar:",
-            zeroRecords: "Nenhum registro encontrado",
-            paginate: {
-              first: "Primeiro",
-              last: "Último",
-              next: "Próximo",
-              previous: "Anterior"
-            },
-            emptyTable: "Nenhum dado disponível na tabela"
+      fetch(`/api/cocessao-rota/${id}`, {
+        method: 'DELETE'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('success', data.message || 'Solicitação excluída!');
+            loadSolicitacoes();
+          } else {
+            showNotification('danger', data.message || 'Não foi possível excluir.');
           }
-        });
-      },
-
-      function localizarReavaliacao(reavId) {
-        const revItem = reavaliacoes.find(r => r.id === reavId);
-        if (!revItem) return;
-
-        $('#distanciaLocalizar').text('');
-        if (markerCasa) markerCasa.setMap(null);
-        if (markerEscola) markerEscola.setMap(null);
-        directionsRenderer.set('directions', null);
-
-        const latCasa = parseFloat(revItem.latitude) || 0;
-        const lngCasa = parseFloat(revItem.longitude) || 0;
-
-        mapLocalizar.setCenter({ lat: latCasa, lng: lngCasa });
-        mapLocalizar.setZoom(15);
-        mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
-
-        markerCasa = new google.maps.Marker({
-          position: { lat: latCasa, lng: lngCasa },
-          map: mapLocalizar,
-          title: 'Casa do Aluno'
-        });
-
-        $('#modalLocalizar').modal('show');
-      },
-
-      function aprovarReavaliacao(reavId, cpfAluno) {
-        if (!confirm('Confirmar aprovação? A ação setará o transporte_escolar_poder_publico para MUNICIPAL e gerará comprovante de aprovação.')) return;
-
-        fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cpf_aluno: cpfAluno })
         })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              showNotification('success', data.message || 'Reavaliação aprovada com sucesso!');
-              window.open(`/api/comprovante-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
-              loadReavaliacoes();
-            } else {
-              showNotification('danger', data.message || 'Não foi possível aprovar.');
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            showNotification('danger', 'Erro ao aprovar reavaliação.');
-          });
-      },
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao excluir solicitação.');
+        });
+    }
 
-      function reprovarReavaliacao(reavId, cpfAluno) {
-        if (!confirm('Tem certeza que deseja reprovar? Isso gerará um comprovante de não aprovação.')) return;
-
-        fetch(`/api/reavaliacoes/${reavId}/reprovar`, {
-          method: 'POST'
+    function loadReavaliacoes() {
+      // Da mesma forma, garantir que só venham reavaliações pendentes
+      fetch('/api/reavaliacoes?status=pendente')
+        .then(res => {
+          if (!res.ok) throw new Error('Erro ao carregar reavaliações');
+          return res.json();
         })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              showNotification('success', data.message || 'Reavaliação reprovada.');
-              window.open(`/api/comprovante-nao-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
-              loadReavaliacoes();
-            } else {
-              showNotification('danger', data.message || 'Não foi possível reprovar.');
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            showNotification('danger', 'Erro ao reprovar reavaliação.');
+        .then(data => {
+          // Filtrar localmente, caso o backend não faça o filtro:
+          reavaliacoes = data.filter(r => {
+            // Aqui, cada item tem 'r.status_reavaliacao' ou algo similar
+            // Ajuste conforme necessário
+            return (r.status_reavaliacao || '').toLowerCase() === 'pendente';
           });
-      },
+          populateReavaliacoes();
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Não foi possível carregar as reavaliações.');
+        });
+    }
 
-      document.addEventListener('DOMContentLoaded', function () {
-        loadSolicitacoes();
-        loadEscolas();
-        loadReavaliacoes();
-      }));
+    function populateReavaliacoes() {
+      const tableBody = $('#reavaliacoes-table tbody');
+      tableBody.empty();
+
+      reavaliacoes.forEach(r => {
+        const row = `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.data_solicitacao || ''}</td>
+          <td>${r.nome_aluno || ''}</td>
+          <td>${r.cpf_aluno || ''}</td>
+          <td>${r.responsavel_aluno || ''}</td>
+          <td>${r.calcadas_ausentes ? 'Sim' : 'Não'}</td>
+          <td>${r.pavimentacao_ausente ? 'Sim' : 'Não'}</td>
+          <td>${r.iluminacao_precaria ? 'Sim' : 'Não'}</td>
+          <td>${r.area_de_risco ? 'Sim' : 'Não'}</td>
+          <td>${r.animais_perigosos ? 'Sim' : 'Não'}</td>
+          <td>${r.status_reavaliacao || 'PENDENTE'}</td>
+          <td>${r.latitude || ''}</td>
+          <td>${r.longitude || ''}</td>
+          <td>
+            <button class="btn btn-sm btn-info" onclick="localizarReavaliacao(${r.id})">Localizar</button>
+            <button class="btn btn-sm btn-success" onclick="aprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Aprovar</button>
+            <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Reprovar</button>
+          </td>
+        </tr>
+      `;
+        tableBody.append(row);
+      });
+
+      if ($.fn.DataTable.isDataTable('#reavaliacoes-table')) {
+        $('#reavaliacoes-table').DataTable().clear().destroy();
+      }
+
+      $('#reavaliacoes-table').DataTable({
+        pageLength: 10,
+        language: {
+          decimal: ",",
+          thousands: ".",
+          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+          infoEmpty: "Mostrando 0 até 0 de 0 registros",
+          infoFiltered: "(filtrado de _MAX_ registros no total)",
+          lengthMenu: "Mostrar _MENU_ registros",
+          loadingRecords: "Carregando...",
+          processing: "Processando...",
+          search: "Pesquisar:",
+          zeroRecords: "Nenhum registro encontrado",
+          paginate: {
+            first: "Primeiro",
+            last: "Último",
+            next: "Próximo",
+            previous: "Anterior"
+          },
+          emptyTable: "Nenhum dado disponível na tabela"
+        }
+      });
+    }
+
+    function localizarReavaliacao(reavId) {
+      const revItem = reavaliacoes.find(r => r.id === reavId);
+      if (!revItem) return;
+
+      $('#distanciaLocalizar').text('');
+      if (markerCasa) markerCasa.setMap(null);
+      if (markerEscola) markerEscola.setMap(null);
+      directionsRenderer.set('directions', null);
+
+      const latCasa = parseFloat(revItem.latitude) || 0;
+      const lngCasa = parseFloat(revItem.longitude) || 0;
+
+      mapLocalizar.setCenter({ lat: latCasa, lng: lngCasa });
+      mapLocalizar.setZoom(15);
+      mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+
+      markerCasa = new google.maps.Marker({
+        position: { lat: latCasa, lng: lngCasa },
+        map: mapLocalizar,
+        title: 'Casa do Aluno'
+      });
+
+      $('#modalLocalizar').modal('show');
+    }
+
+    function aprovarReavaliacao(reavId, cpfAluno) {
+      if (!confirm('Confirmar aprovação? A ação setará o transporte_escolar_poder_publico para MUNICIPAL e gerará comprovante de aprovação.')) return;
+
+      fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cpf_aluno: cpfAluno })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('success', data.message || 'Reavaliação aprovada com sucesso!');
+            window.open(`/api/comprovante-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
+            loadReavaliacoes();
+          } else {
+            showNotification('danger', data.message || 'Não foi possível aprovar.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao aprovar reavaliação.');
+        });
+    }
+
+    function reprovarReavaliacao(reavId, cpfAluno) {
+      if (!confirm('Tem certeza que deseja reprovar? Isso gerará um comprovante de não aprovação.')) return;
+
+      fetch(`/api/reavaliacoes/${reavId}/reprovar`, {
+        method: 'POST'
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('success', data.message || 'Reavaliação reprovada.');
+            window.open(`/api/comprovante-nao-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
+            loadReavaliacoes();
+          } else {
+            showNotification('danger', data.message || 'Não foi possível reprovar.');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Erro ao reprovar reavaliação.');
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      loadSolicitacoes();
+      loadEscolas();
+      loadReavaliacoes();
+    });
   </script>
+
 </body>
 
 </html>
