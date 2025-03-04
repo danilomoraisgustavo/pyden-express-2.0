@@ -602,8 +602,6 @@
     let resultadoFinal = null;
     let outrosResponsaveis10a12 = [];
     let signerChoice = null;
-
-    // Sinaliza se o usuário marcou atenuantes para gerarmos o segundo comprovante
     let atenuantesReavaliacao = false;
 
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
@@ -1233,7 +1231,6 @@
       }
     });
 
-    // Altera o fluxo para armazenar reavaliação no banco e não aprovar automaticamente
     btnConfirmarReavaliacao.addEventListener("click", async () => {
       const atenuantesSelecionadas = [
         chkCalcadasAusentes.checked,
@@ -1251,7 +1248,6 @@
         return;
       }
 
-      // Monta objeto para envio da reavaliação
       const reavBody = {
         aluno_id: currentAlunoId,
         tipo_fluxo: tipoFluxoSelecionado,
@@ -1273,7 +1269,6 @@
         animais_perigosos: chkAnimaisPerigosos.checked
       };
 
-      // Salva a reavaliação no banco
       try {
         await fetch("/api/reavaliacoes", {
           method: "POST",
@@ -1284,12 +1279,10 @@
         console.error("Falha ao salvar reavaliacao:", err);
       }
 
-      // Se marcou algo, gera segundo comprovante (reavaliação)
       if (atenuantesSelecionadas) {
         atenuantesReavaliacao = true;
       }
 
-      // Independente de atenuantes ou não, segue para "não aprovado" no fluxo
       btnNaoAprovado.click();
     });
 
@@ -1553,10 +1546,7 @@
             "municipal",
             null
           );
-          // Sempre chama o comprovante de não aprovado
           window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
-
-          // Se marcou atenuantes, chama também o comprovante de reavaliação
           if (atenuantesReavaliacao) {
             window.open(`/api/comprovante-reavaliacao/${alunoIdMunicipal}/gerar-pdf`, "_blank");
           }
@@ -1568,10 +1558,7 @@
             "estadual",
             null
           );
-          // Sempre chama o comprovante de não aprovado (versão estadual)
           window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
-
-          // Se marcou atenuantes, chama também o comprovante de reavaliação (versão estadual)
           if (atenuantesReavaliacao) {
             window.open(`/api/comprovante-reavaliacao-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
           }
