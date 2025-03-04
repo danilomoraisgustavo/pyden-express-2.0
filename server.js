@@ -7186,7 +7186,261 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
   }
 });
 
-// EXEMPLO COMPLETO DAS APIS ATUALIZADAS SEM EXPLICAÇÕES ADICIONAIS
+app.post('/api/reavaliacoes', async (req, res) => {
+  try {
+    const {
+      aluno_id,
+      tipo_fluxo,
+      nome_aluno,
+      cpf_aluno,
+      responsavel_aluno,
+      latitude,
+      longitude,
+      calcadas_ausentes,
+      pavimentacao_ausente,
+      iluminacao_precaria,
+      area_de_risco,
+      animais_perigosos
+    } = req.body;
+
+    // Exemplo de insert no Postgres usando pool (ajuste conforme seu código):
+    // Usando async/await (com pool.query)
+    const query = `
+      INSERT INTO reavaliacoes (
+        aluno_id,
+        tipo_fluxo,
+        nome_aluno,
+        cpf_aluno,
+        responsavel_aluno,
+        latitude,
+        longitude,
+        calcadas_ausentes,
+        pavimentacao_ausente,
+        iluminacao_precaria,
+        area_de_risco,
+        animais_perigosos
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+      RETURNING id
+    `;
+    const values = [
+      aluno_id,
+      tipo_fluxo,
+      nome_aluno || null,
+      cpf_aluno || null,
+      responsavel_aluno || null,
+      latitude,
+      longitude,
+      calcadas_ausentes || false,
+      pavimentacao_ausente || false,
+      iluminacao_precaria || false,
+      area_de_risco || false,
+      animais_perigosos || false
+    ];
+
+    const result = await pool.query(query, values);
+    return res.status(201).json({ success: true, reavaliacao_id: result.rows[0].id });
+  } catch (error) {
+    console.error('Erro ao salvar reavaliação:', error);
+    return res.status(500).json({ message: 'Erro interno ao salvar reavaliação.' });
+  }
+});
+
+app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  // Recebe quem assina pelo query param (opcional)
+  const signer = req.query.signer || "filiacao1";
+
+  try {
+    // Consulta do aluno (ajuste conforme sua tabela)
+    const queryAluno = `
+      SELECT
+        a.id,
+        a.pessoa_nome       AS aluno_nome,
+        a.cpf,
+        e.nome             AS escola_nome,
+        a.turma,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const resultAluno = await pool.query(queryAluno, [alunoId]);
+    if (resultAluno.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+    }
+    const aluno = resultAluno.rows[0];
+
+    // Consulta da reavaliação mais recente do aluno
+    // (ajuste conforme a forma que você armazena; ex: pega a última reavaliação via ORDER BY id DESC)
+    const queryReavaliacao = `
+      SELECT
+        id AS reavaliacao_id,
+        data_solicitacao,
+        calcadas_ausentes,
+        pavimentacao_ausente,
+        iluminacao_precaria,
+        area_de_risco,
+        animais_perigosos
+      FROM reavaliacoes
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const resultReav = await pool.query(queryReavaliacao, [alunoId]);
+    if (resultReav.rows.length === 0) {
+      // Se não encontrar reavaliação, retornar ou gerar PDF de aviso.
+      return res.status(404).json({ success: false, message: "Nenhuma reavaliação encontrada para este aluno." });
+    }
+    const reav = resultReav.rows[0];
+
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    // Monta a lista de atenuantes que foram marcadas
+    const atenuantes = [];
+    if (reav.calcadas_ausentes) {
+      atenuantes.push("• Ausência de calçadas");
+    }
+    if (reav.pavimentacao_ausente) {
+      atenuantes.push("• Rua não pavimentada");
+    }
+    if (reav.iluminacao_precaria) {
+      atenuantes.push("• Falta de iluminação pública");
+    }
+    if (reav.area_de_risco) {
+      atenuantes.push("• Área de risco com crimes ou assaltos");
+    }
+    if (reav.animais_perigosos) {
+      atenuantes.push("• Presença de animais perigosos (rural)");
+    }
+    let atenuantesTexto = atenuantes.length > 0 ? atenuantes.join("\n") : "Nenhuma situação atenuante marcada.";
+
+    // Gera PDF usando PDFDocument
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=reavaliacao_${alunoId}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    // Cabeçalho com logo e textos
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    // Separador logo abaixo
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("COMPROVANTE DE REAVALIAÇÃO Nº 2025", { align: "justify" })
+      .moveDown();
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        "Foi solicitada reavaliação para o(a) aluno(a) acima mencionado, considerando possíveis situações atenuantes que possam justificar a concessão do transporte escolar, mesmo sem cumprimento integral dos critérios regulares.",
+        { align: "justify" }
+      )
+      .moveDown()
+      .text("Situações atenuantes indicadas:", { align: "justify", underline: true })
+      .text(atenuantesTexto, { align: "justify" })
+      .moveDown()
+      .text(
+        `Data da Solicitação de Reavaliação: ${new Date(reav.data_solicitacao).toLocaleString("pt-BR")}`,
+        { align: "justify" }
+      )
+      .moveDown()
+      .text(
+        `Eu, ${signerName}, declaro ter ciência do processo de reavaliação e confirmo as informações apresentadas.`,
+        { align: "justify" }
+      )
+      .moveDown();
+
+    const spaceNeededForSignature = 100;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+
+    const signatureY = doc.page.height - 270;
+    doc.y = signatureY;
+    doc.x = 50;
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
+      .text("Gestor de Transporte Escolar", { align: "center" })
+      .text("Portaria 118/2023 - GP", { align: "center" });
+
+    // Rodapé com separador e segunda logo se existir
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center",
+      })
+      .text("Telefone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF (Reavaliação):", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de reavaliação.",
+    });
+  }
+});
 
 // ============================================================================
 // COMPROVANTE NÃO APROVADO - MUNICIPAL

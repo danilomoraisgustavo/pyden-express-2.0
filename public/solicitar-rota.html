@@ -603,6 +603,9 @@
     let outrosResponsaveis10a12 = [];
     let signerChoice = null;
 
+    // Sinaliza se o usuário marcou atenuantes para gerarmos o segundo comprovante
+    let atenuantesReavaliacao = false;
+
     const etapaSelecaoFluxo = document.getElementById("etapaSelecaoFluxo");
     const etapa1Municipal = document.getElementById("etapa1Municipal");
     const etapa1Estadual = document.getElementById("etapa1Estadual");
@@ -705,7 +708,6 @@
     const radioAssinaturaFiliacao2 = document.getElementById("radioAssinaturaFiliacao2");
     const radioAssinaturaResponsavel = document.getElementById("radioAssinaturaResponsavel");
 
-    // Modal Reavaliação
     const modalReavaliacao = new bootstrap.Modal(document.getElementById("modalReavaliacao"), { backdrop: 'static', keyboard: false });
     const btnConfirmarReavaliacao = document.getElementById("btnConfirmarReavaliacao");
     const chkCalcadasAusentes = document.getElementById("chkCalcadasAusentes");
@@ -1177,7 +1179,6 @@
         return;
       }
 
-      // Verifica se existe algum valor de deficiência informado (diferente de 'NADA INFORMADO' e não vazio)
       let defValue = "";
       if (tipoFluxoSelecionado === "municipal") {
         defValue = (campoDeficienciaMunicipal.value || "").trim().toUpperCase();
@@ -1185,8 +1186,6 @@
         defValue = (campoDeficienciaEstadual.value || "").trim().toUpperCase();
       }
       if (defValue !== "" && defValue !== "NADA INFORMADO") {
-        // Se há deficiência informada, a avaliação deve ser manual.
-        // Define o resultado como avaliação manual e vai para a etapa 3.
         resultadoFinal = "AVALIACAO_MANUAL";
         etapa2.classList.remove("active");
         etapa3.classList.add("active");
@@ -1198,43 +1197,30 @@
 
       const distKm = parseFloat(distanciaRota.textContent) || 0;
       let idadeMinimaOk = false;
-      let distanciaMinimaOk = false;
-
       if (idadeAlunoAnos >= 4) {
         idadeMinimaOk = true;
       }
 
-      // Critérios antigos:
-      // Infantil > 1.5km
-      // Fundamental > 2.0km
-      // Agora incluímos a possibilidade de reavaliação se estiver entre 0.8 e 1.5 (infantil) ou entre 1.3 e 2.0 (fundamental).
-      // Se for abaixo de 0.8 (infantil) ou 1.3 (fundamental), reprova direto, sem chance de reavaliação.
-
-      let limPrincipal = 1.5; // infantil
-      let limReavaliacao = 0.8; // infantil
+      let limPrincipal = 1.5;
+      let limReavaliacao = 0.8;
       if (nivel === "fundamental") {
         limPrincipal = 2.0;
         limReavaliacao = 1.3;
       }
 
-      // Primeiro verifica se atende idade
       if (!idadeMinimaOk) {
-        // Se não atende idade mínima, reprovado direto
         btnNaoAprovado.click();
         return;
       }
 
+      let distanciaMinimaOk = false;
       if (distKm > limPrincipal) {
-        // Aprovado automático
         distanciaMinimaOk = true;
       } else {
-        // Se não atingiu a distância principal, verifica se ao menos passou do limite de reavaliação
         if (distKm >= limReavaliacao && distKm <= limPrincipal) {
-          // Dispara modal de reavaliação para verificar condições atenuantes
           modalReavaliacao.show();
           return;
         } else {
-          // Se dist < limReavaliacao, reprova direto
           btnNaoAprovado.click();
           return;
         }
@@ -1243,13 +1229,12 @@
       if (!distanciaMinimaOk) {
         btnNaoAprovado.click();
       } else {
-        // Se chegou aqui, aprovou no critério de distância
         checkFluxoIntermediario();
       }
     });
 
-    // Confirma reavaliação
-    btnConfirmarReavaliacao.addEventListener("click", () => {
+    // Altera o fluxo para armazenar reavaliação no banco e não aprovar automaticamente
+    btnConfirmarReavaliacao.addEventListener("click", async () => {
       const atenuantesSelecionadas = [
         chkCalcadasAusentes.checked,
         chkPavimentacaoAusente.checked,
@@ -1259,17 +1244,56 @@
       ].some(x => x === true);
 
       modalReavaliacao.hide();
-      if (atenuantesSelecionadas) {
-        // Se o responsável marcou alguma das situações atenuantes, vamos aprovar
-        checkFluxoIntermediario();
-      } else {
-        // Se não marcou nada, reprova
+
+      const currentAlunoId = (tipoFluxoSelecionado === "municipal") ? alunoIdMunicipal : alunoIdEstadual;
+      if (!currentAlunoId) {
         btnNaoAprovado.click();
+        return;
       }
+
+      // Monta objeto para envio da reavaliação
+      const reavBody = {
+        aluno_id: currentAlunoId,
+        tipo_fluxo: tipoFluxoSelecionado,
+        nome_aluno: (tipoFluxoSelecionado === "municipal")
+          ? campoNomeAlunoMunicipal.value
+          : campoNomeAlunoEstadual.value,
+        cpf_aluno: (tipoFluxoSelecionado === "municipal")
+          ? campoCpfMunicipal.value
+          : campoCpfEstadual.value,
+        responsavel_aluno: (tipoFluxoSelecionado === "municipal")
+          ? campoResponsavelMunicipal.value
+          : campoResponsavelEstadual.value,
+        latitude: parseFloat(campoLatitude.value) || null,
+        longitude: parseFloat(campoLongitude.value) || null,
+        calcadas_ausentes: chkCalcadasAusentes.checked,
+        pavimentacao_ausente: chkPavimentacaoAusente.checked,
+        iluminacao_precaria: chkIluminacaoPrecaria.checked,
+        area_de_risco: chkAreaDeRisco.checked,
+        animais_perigosos: chkAnimaisPerigosos.checked
+      };
+
+      // Salva a reavaliação no banco
+      try {
+        await fetch("/api/reavaliacoes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(reavBody)
+        });
+      } catch (err) {
+        console.error("Falha ao salvar reavaliacao:", err);
+      }
+
+      // Se marcou algo, gera segundo comprovante (reavaliação)
+      if (atenuantesSelecionadas) {
+        atenuantesReavaliacao = true;
+      }
+
+      // Independente de atenuantes ou não, segue para "não aprovado" no fluxo
+      btnNaoAprovado.click();
     });
 
     function checkFluxoIntermediario() {
-      // Fluxo para menor de 10 e entre 10 e 12
       if (idadeAlunoAnos < 10) {
         responsaveisExtras = [];
         menor10_acompanhado = false;
@@ -1493,7 +1517,6 @@
     btnFinalizar.addEventListener("click", async () => {
       if (resultadoFinal === "APROVADO") {
         await salvarLocalizacaoFinal();
-
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
           await criarSolicitacaoTransporte(
             alunoIdMunicipal,
@@ -1531,6 +1554,10 @@
             null
           );
           window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+          // Se havia reavaliação, gera segundo comprovante
+          if (atenuantesReavaliacao) {
+            window.open(`/api/comprovante-reavaliacao/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+          }
         } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
           await criarSolicitacaoTransporte(
             alunoIdEstadual,
@@ -1540,9 +1567,11 @@
             null
           );
           window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+          if (atenuantesReavaliacao) {
+            window.open(`/api/comprovante-reavaliacao-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+          }
         }
       } else if (resultadoFinal === "AVALIACAO_MANUAL") {
-        // Se for avaliação manual, apenas registra a solicitação com status de pendência/avaliação manual
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
           await criarSolicitacaoTransporte(
             alunoIdMunicipal,
