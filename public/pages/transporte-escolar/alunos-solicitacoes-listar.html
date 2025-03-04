@@ -16,13 +16,13 @@
           "Font Awesome 5 Solid",
           "Font Awesome 5 Regular",
           "Font Awesome 5 Brands",
-          "simple-line-icons",
+          "simple-line-icons"
         ],
-        urls: ["../../assets/css/fonts.min.css"],
+        urls: ["../../assets/css/fonts.min.css"]
       },
       active: function () {
         sessionStorage.fonts = true;
-      },
+      }
     });
   </script>
 
@@ -672,7 +672,6 @@
             </div>
           </div>
 
-          <!-- SEGUNDA TABELA PARA REAVALIAÇÕES -->
           <div class="row mt-4">
             <div class="col-md-12">
               <div class="card">
@@ -725,8 +724,6 @@
               </div>
             </div>
           </div>
-          <!-- FIM SEGUNDA TABELA -->
-
 
         </div>
       </div>
@@ -863,7 +860,6 @@
     </div>
   </div>
 
-  <!-- BIBLIOTECAS JS -->
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -1000,16 +996,20 @@
 
     function initLocalizarMap() {
       directionsService = new google.maps.DirectionsService();
-      directionsRenderer = new google.maps.DirectionsRenderer();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        mapTypeId: google.maps.MapTypeId.SATELLITE
+      });
       mapLocalizar = new google.maps.Map(document.getElementById('map-localizar'), {
         center: { lat: -15.795, lng: -47.882 },
-        zoom: 5
+        zoom: 5,
+        mapTypeId: google.maps.MapTypeId.SATELLITE
       });
       directionsRenderer.setMap(mapLocalizar);
 
       mapEditar = new google.maps.Map(document.getElementById('map-editar'), {
         center: { lat: -15.795, lng: -47.882 },
-        zoom: 5
+        zoom: 5,
+        mapTypeId: google.maps.MapTypeId.SATELLITE
       });
 
       google.maps.event.addListener(mapEditar, 'click', function (event) {
@@ -1057,6 +1057,7 @@
       const centerLng = (lngCasa + lngEscola) / 2 || -47.882;
       mapLocalizar.setCenter({ lat: centerLat, lng: centerLng });
       mapLocalizar.setZoom(12);
+      mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
 
       markerCasa = new google.maps.Marker({
         position: { lat: latCasa, lng: lngCasa },
@@ -1125,6 +1126,7 @@
       const lng = parseFloat(solicitacao.longitude) || -47.882;
       mapEditar.setCenter({ lat, lng });
       mapEditar.setZoom(14);
+      mapEditar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
 
       if (markerEditar) {
         markerEditar.setMap(null);
@@ -1227,8 +1229,9 @@
             <td>${r.latitude || ''}</td>
             <td>${r.longitude || ''}</td>
             <td>
+              <button class="btn btn-sm btn-info" onclick="localizarReavaliacao(${r.id})">Localizar</button>
               <button class="btn btn-sm btn-success" onclick="aprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Aprovar</button>
-              <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id})">Reprovar</button>
+              <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Reprovar</button>
             </td>
           </tr>
         `;
@@ -1263,8 +1266,33 @@
       });
     }
 
+    function localizarReavaliacao(reavId) {
+      const revItem = reavaliacoes.find(r => r.id === reavId);
+      if (!revItem) return;
+
+      $('#distanciaLocalizar').text('');
+      if (markerCasa) markerCasa.setMap(null);
+      if (markerEscola) markerEscola.setMap(null);
+      directionsRenderer.set('directions', null);
+
+      const latCasa = parseFloat(revItem.latitude) || 0;
+      const lngCasa = parseFloat(revItem.longitude) || 0;
+
+      mapLocalizar.setCenter({ lat: latCasa, lng: lngCasa });
+      mapLocalizar.setZoom(15);
+      mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+
+      markerCasa = new google.maps.Marker({
+        position: { lat: latCasa, lng: lngCasa },
+        map: mapLocalizar,
+        title: 'Casa do Aluno'
+      });
+
+      $('#modalLocalizar').modal('show');
+    }
+
     function aprovarReavaliacao(reavId, cpfAluno) {
-      if (!confirm('Confirmar aprovação? Essa ação definirá o fluxo para MUNICIPAL.')) return;
+      if (!confirm('Confirmar aprovação? A ação setará o fluxo para MUNICIPAL e gerará comprovante de aprovação.')) return;
 
       fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
         method: 'POST',
@@ -1275,6 +1303,7 @@
         .then(data => {
           if (data.success) {
             showNotification('success', data.message || 'Reavaliação aprovada com sucesso!');
+            window.open(`/api/comprovante-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
             loadReavaliacoes();
           } else {
             showNotification('danger', data.message || 'Não foi possível aprovar.');
@@ -1286,8 +1315,8 @@
         });
     }
 
-    function reprovarReavaliacao(reavId) {
-      if (!confirm('Tem certeza que deseja reprovar?')) return;
+    function reprovarReavaliacao(reavId, cpfAluno) {
+      if (!confirm('Tem certeza que deseja reprovar? Isso gerará um comprovante de não aprovação.')) return;
 
       fetch(`/api/reavaliacoes/${reavId}/reprovar`, {
         method: 'POST'
@@ -1296,6 +1325,7 @@
         .then(data => {
           if (data.success) {
             showNotification('success', data.message || 'Reavaliação reprovada.');
+            window.open(`/api/comprovante-nao-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
             loadReavaliacoes();
           } else {
             showNotification('danger', data.message || 'Não foi possível reprovar.');
