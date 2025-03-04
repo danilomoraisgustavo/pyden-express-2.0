@@ -1546,9 +1546,10 @@
             "municipal",
             null
           );
-          window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
           if (atenuantesReavaliacao) {
             window.open(`/api/comprovante-reavaliacao/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+          } else {
+            window.open(`/api/comprovante-nao-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
           }
         } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
           await criarSolicitacaoTransporte(
@@ -1558,9 +1559,10 @@
             "estadual",
             null
           );
-          window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
           if (atenuantesReavaliacao) {
             window.open(`/api/comprovante-reavaliacao-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+          } else {
+            window.open(`/api/comprovante-nao-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
           }
         }
       } else if (resultadoFinal === "AVALIACAO_MANUAL") {
