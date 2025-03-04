@@ -447,6 +447,31 @@ CREATE TABLE IF NOT EXISTS notificacoes (
     is_read BOOLEAN DEFAULT FALSE
 );
 
+-- Exemplo de criação da tabela "reavaliacoes" para armazenar os dados das situações atenuantes:
+-- Ajuste conforme sua modelagem e campos já existentes.
+
+CREATE TABLE IF NOT EXISTS reavaliacoes (
+  id SERIAL PRIMARY KEY,
+  aluno_id INT NOT NULL,
+  tipo_fluxo VARCHAR(50) NOT NULL,
+  data_solicitacao TIMESTAMP DEFAULT NOW(),
+  nome_aluno TEXT,
+  cpf_aluno TEXT,
+  responsavel_aluno TEXT,
+  latitude NUMERIC(9,6),
+  longitude NUMERIC(9,6),
+  calcadas_ausentes BOOLEAN DEFAULT false,
+  pavimentacao_ausente BOOLEAN DEFAULT false,
+  iluminacao_precaria BOOLEAN DEFAULT false,
+  area_de_risco BOOLEAN DEFAULT false,
+  animais_perigosos BOOLEAN DEFAULT false,
+  status_reavaliacao VARCHAR(50) DEFAULT 'PENDENTE'
+);
+
+-- Caso queira criar índice para aluno_id, por exemplo:
+CREATE INDEX IF NOT EXISTS idx_reavaliacoes_aluno_id ON reavaliacoes(aluno_id);
+
+
 
 -- ==========================================
 -- CONEXÃO COM O BANCO DE DADOS VIA PSQL

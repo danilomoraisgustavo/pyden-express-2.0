@@ -7245,6 +7245,42 @@ app.post('/api/reavaliacoes', async (req, res) => {
     return res.status(500).json({ message: 'Erro interno ao salvar reavaliação.' });
   }
 });
+// Exemplo de endpoint para buscar todas as reavaliações
+// Ajuste nomes de campos/tabelas conforme seu banco de dados e estrutura
+
+app.get("/api/reavaliacoes", async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        id,
+        aluno_id,
+        tipo_fluxo,
+        data_solicitacao,
+        nome_aluno,
+        cpf_aluno,
+        responsavel_aluno,
+        latitude,
+        longitude,
+        calcadas_ausentes,
+        pavimentacao_ausente,
+        iluminacao_precaria,
+        area_de_risco,
+        animais_perigosos,
+        status_reavaliacao
+      FROM reavaliacoes
+      ORDER BY id DESC
+    `;
+    const result = await pool.query(query);
+
+    return res.json(result.rows);
+  } catch (err) {
+    console.error("Erro ao buscar reavaliações:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao buscar reavaliações."
+    });
+  }
+});
 
 app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
