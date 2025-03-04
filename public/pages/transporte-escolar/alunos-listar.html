@@ -672,11 +672,6 @@
                 Mapear Alunos
               </button>
             </div>
-            <div>
-              <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCompletarLocalizacao">
-                Completar Localização Municipal/Estadual
-              </button>
-            </div>
           </div>
 
           <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel"
@@ -757,36 +752,6 @@
             </div>
           </div>
 
-          <div class="modal fade" id="modalCompletarLocalizacao" tabindex="-1"
-            aria-labelledby="modalCompletarLocalizacaoLabel" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="modalCompletarLocalizacaoLabel">
-                    Completar Localização Municipal/Estadual
-                  </h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="mb-3">
-                    <label for="selectEscolaCompletarLocalizacao" class="form-label">Selecione a Escola</label>
-                    <select class="form-select" id="selectEscolaCompletarLocalizacao">
-                      <option value="">Todas as Escolas</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    Fechar
-                  </button>
-                  <button type="button" class="btn btn-success" id="btnConfirmarCompletarLocalizacao">
-                    Completar Localização
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div class="card mb-4">
             <div class="card-body">
               <div class="row g-3">
@@ -803,18 +768,36 @@
                   </select>
                 </div>
                 <div class="col-md-3">
-                  <label for="filtroCep" class="form-label">Filtrar por CEP</label>
-                  <select id="filtroCep" class="form-select">
+                  <label for="filtroTransporte" class="form-label">Transporte Escolar</label>
+                  <select id="filtroTransporte" class="form-select">
                     <option value="">Todos</option>
+                    <option value="municipal">Municipal</option>
+                    <option value="estadual">Estadual</option>
                   </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="filtroDeficiencia" class="form-label">Deficiência</label>
+                  <select id="filtroDeficiencia" class="form-select">
+                    <option value="">Todas</option>
+                    <option value="sim">Sim</option>
+                    <option value="nao">Não</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="filtroIdade" class="form-label">Filtrar por Idade</label>
+                  <input type="number" min="0" class="form-control" id="filtroIdade" placeholder="Ex: 10" />
+                </div>
+                <div class="col-md-3">
+                  <label for="filtroCep" class="form-label">Filtrar por CEP</label>
+                  <input type="text" class="form-control" id="filtroCep" placeholder="Digite o CEP" />
                 </div>
                 <div class="col-md-3">
                   <label for="searchInput" class="form-label">Pesquisa Geral</label>
                   <input type="text" id="searchInput" class="form-control" placeholder="Digite para pesquisar..." />
                 </div>
-              </div>
-              <div class="mt-3">
-                <button id="btnBuscarAlunos" class="btn btn-primary">Filtrar Alunos</button>
+                <div class="col-md-3 d-flex align-items-end">
+                  <button id="btnBuscarAlunos" class="btn btn-primary w-100">Filtrar Alunos</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1117,7 +1100,6 @@
           escolasLista = data;
           popularSelectEscolas();
           popularSelectEscolasMap();
-          popularSelectEscolasCompletarLocalizacao();
         })
         .catch(() => {
           showNotification("danger", "Erro ao carregar lista de escolas.");
@@ -1144,17 +1126,6 @@
         option.value = escola.id;
         option.textContent = `${escola.nome} (ID: ${escola.id})`;
         selectMap.appendChild(option);
-      });
-    }
-
-    function popularSelectEscolasCompletarLocalizacao() {
-      const select = document.getElementById("selectEscolaCompletarLocalizacao");
-      select.innerHTML = '<option value="">Todas as Escolas</option>';
-      escolasLista.forEach((escola) => {
-        const option = document.createElement("option");
-        option.value = escola.id;
-        option.textContent = `${escola.nome} (ID: ${escola.id})`;
-        select.appendChild(option);
       });
     }
 
@@ -1186,7 +1157,7 @@
       showLoader();
       const body = {
         escolaId: escolaIdSelecionada,
-        alunos: dadosXLSX, // dadosXLSX já conterá 'data_nascimento' caso exista na planilha
+        alunos: dadosXLSX,
       };
       fetch("/api/import-alunos-ativos", {
         method: "POST",
@@ -1314,6 +1285,9 @@
     function buscarAlunosComFiltros() {
       const escolaVal = $("#filtroEscola").val();
       const bairroVal = $("#filtroBairro").val();
+      const transporteVal = $("#filtroTransporte").val();
+      const deficienciaVal = $("#filtroDeficiencia").val();
+      const idadeVal = $("#filtroIdade").val();
       const cepVal = $("#filtroCep").val();
       const searchVal = $("#searchInput").val();
 
@@ -1322,6 +1296,14 @@
       if (bairroVal) queryParams.append("bairro", bairroVal);
       if (cepVal) queryParams.append("cep", cepVal);
       if (searchVal) queryParams.append("search", searchVal);
+
+      // Aqui adicionamos transporte, deficiencia e idade se quisermos
+      if (transporteVal) queryParams.append("transporte", transporteVal);
+      if (deficienciaVal) queryParams.append("deficiencia", deficienciaVal);
+      if (idadeVal) queryParams.append("idade", idadeVal);
+
+      // Não chamar se tudo estiver vazio? Pode chamar, mas não retornará nada do server a não ser
+      // que ele ignore. Exemplo: se a API não suporta, basta ignorar. Mantemos no query, sem problemas.
 
       showLoader();
       fetch("/api/alunos-ativos?" + queryParams.toString())
@@ -1343,6 +1325,33 @@
 
       if (dataTable) {
         dataTable.clear().destroy();
+      }
+
+      // Caso não queira nada se estiver vazio:
+      if (!alunos.length) {
+        dataTable = $("#alunos-table").DataTable({
+          pageLength: 10,
+          language: {
+            decimal: ",",
+            thousands: ".",
+            info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+            infoEmpty: "Mostrando 0 até 0 de 0 registros",
+            infoFiltered: "(filtrado de _MAX_ registros no total)",
+            lengthMenu: "Mostrar _MENU_ registros",
+            loadingRecords: "Carregando...",
+            processing: "Processando...",
+            search: "Pesquisar:",
+            zeroRecords: "Nenhum registro encontrado",
+            paginate: {
+              first: "Primeiro",
+              last: "Último",
+              next: "Próximo",
+              previous: "Anterior",
+            },
+            emptyTable: "Nenhum dado disponível na tabela",
+          },
+        });
+        return;
       }
 
       alunos.forEach((item) => {
@@ -1416,11 +1425,12 @@
     function popularFiltros(alunos) {
       const filtroEscola = $("#filtroEscola");
       const filtroBairro = $("#filtroBairro");
-      const filtroCep = $("#filtroCep");
+
+      // Vamos manter atual apenas o que existia: a gente setou CEP para texto, então não populamos select
+      // pois o usuário digitará. Transporte e Deficiência também são selects fixos, Idade é input.
 
       const distinctEscolas = new Set();
       const distinctBairros = new Set();
-      const distinctCeps = new Set();
 
       alunos.forEach((al) => {
         if (al.escola_nome) {
@@ -1429,14 +1439,10 @@
         if (al.bairro) {
           distinctBairros.add(al.bairro);
         }
-        if (al.cep) {
-          distinctCeps.add(al.cep);
-        }
       });
 
       const currentSelectedEscola = filtroEscola.val();
       const currentSelectedBairro = filtroBairro.val();
-      const currentSelectedCep = filtroCep.val();
 
       filtroEscola.empty().append('<option value="">Todas</option>');
       distinctEscolas.forEach((esc) => {
@@ -1449,17 +1455,11 @@
         filtroBairro.append(`<option value="${b}">${b}</option>`);
       });
       filtroBairro.val(currentSelectedBairro);
-
-      filtroCep.empty().append('<option value="">Todos</option>');
-      distinctCeps.forEach((c) => {
-        filtroCep.append(`<option value="${c}">${c}</option>`);
-      });
-      filtroCep.val(currentSelectedCep);
     }
 
     $(document).ready(function () {
+      // Não chamamos buscarAlunosComFiltros automaticamente, para a tabela iniciar vazia
       carregarEscolas();
-      buscarAlunosComFiltros(); // Carregar inicialmente e popular filtros
 
       $("#fileInput").on("change", handleFileImport);
       $("#importarBtn").on("click", enviarImportacao);
@@ -1531,6 +1531,7 @@
             if (resp.success) {
               showNotification("success", "Aluno atualizado com sucesso!");
               $("#modalEditarAluno").modal("hide");
+              // Recarrega tabela após editar
               buscarAlunosComFiltros();
             } else {
               showNotification("danger", resp.message || "Erro ao atualizar.");
@@ -1612,14 +1613,6 @@
             showNotification("danger", "Erro ao salvar localização.");
           })
           .finally(() => hideLoader());
-      });
-
-      $("#btnConfirmarCompletarLocalizacao").on("click", function () {
-        showNotification(
-          "info",
-          "Processo de localização completado (exemplo)."
-        );
-        $("#modalCompletarLocalizacao").modal("hide");
       });
     });
 
