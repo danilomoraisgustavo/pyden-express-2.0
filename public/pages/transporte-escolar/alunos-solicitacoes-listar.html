@@ -909,6 +909,7 @@
     }
 
     function loadSolicitacoes() {
+      // Busca apenas solicitações com status 'pendente'
       fetch('/api/cocessao-rota?status=pendente')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar solicitações');
@@ -1163,51 +1164,52 @@
           console.error(err);
           showNotification('danger', 'Erro ao atualizar solicitação.');
         });
-    });
+    },
 
-    function excluirSolicitacao(id) {
-      if (!confirm('Tem certeza que deseja excluir esta solicitação?')) return;
+      function excluirSolicitacao(id) {
+        if (!confirm('Tem certeza que deseja excluir esta solicitação?')) return;
 
-      fetch(`/api/cocessao-rota/${id}`, {
-        method: 'DELETE'
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            showNotification('success', data.message || 'Solicitação excluída!');
-            loadSolicitacoes();
-          } else {
-            showNotification('danger', data.message || 'Não foi possível excluir.');
-          }
+        fetch(`/api/cocessao-rota/${id}`, {
+          method: 'DELETE'
         })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Erro ao excluir solicitação.');
-        });
-    }
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showNotification('success', data.message || 'Solicitação excluída!');
+              loadSolicitacoes();
+            } else {
+              showNotification('danger', data.message || 'Não foi possível excluir.');
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            showNotification('danger', 'Erro ao excluir solicitação.');
+          });
+      },
 
-    function loadReavaliacoes() {
-      fetch('/api/reavaliacoes?status=pendente')
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar reavaliações');
-          return res.json();
-        })
-        .then(data => {
-          reavaliacoes = data;
-          populateReavaliacoes();
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Não foi possível carregar as reavaliações.');
-        });
-    }
+      function loadReavaliacoes() {
+        // Busca apenas reavaliações com status 'PENDENTE'
+        fetch('/api/reavaliacoes?status=pendente')
+          .then(res => {
+            if (!res.ok) throw new Error('Erro ao carregar reavaliações');
+            return res.json();
+          })
+          .then(data => {
+            reavaliacoes = data;
+            populateReavaliacoes();
+          })
+          .catch(err => {
+            console.error(err);
+            showNotification('danger', 'Não foi possível carregar as reavaliações.');
+          });
+      },
 
-    function populateReavaliacoes() {
-      const tableBody = $('#reavaliacoes-table tbody');
-      tableBody.empty();
+      function populateReavaliacoes() {
+        const tableBody = $('#reavaliacoes-table tbody');
+        tableBody.empty();
 
-      reavaliacoes.forEach(r => {
-        const row = `
+        reavaliacoes.forEach(r => {
+          const row = `
           <tr>
             <td>${r.id}</td>
             <td>${r.data_solicitacao || ''}</td>
@@ -1229,113 +1231,113 @@
             </td>
           </tr>
         `;
-        tableBody.append(row);
-      });
+          tableBody.append(row);
+        });
 
-      if ($.fn.DataTable.isDataTable('#reavaliacoes-table')) {
-        $('#reavaliacoes-table').DataTable().clear().destroy();
-      }
-
-      $('#reavaliacoes-table').DataTable({
-        pageLength: 10,
-        language: {
-          decimal: ",",
-          thousands: ".",
-          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-          infoEmpty: "Mostrando 0 até 0 de 0 registros",
-          infoFiltered: "(filtrado de _MAX_ registros no total)",
-          lengthMenu: "Mostrar _MENU_ registros",
-          loadingRecords: "Carregando...",
-          processing: "Processando...",
-          search: "Pesquisar:",
-          zeroRecords: "Nenhum registro encontrado",
-          paginate: {
-            first: "Primeiro",
-            last: "Último",
-            next: "Próximo",
-            previous: "Anterior"
-          },
-          emptyTable: "Nenhum dado disponível na tabela"
+        if ($.fn.DataTable.isDataTable('#reavaliacoes-table')) {
+          $('#reavaliacoes-table').DataTable().clear().destroy();
         }
-      });
-    }
 
-    function localizarReavaliacao(reavId) {
-      const revItem = reavaliacoes.find(r => r.id === reavId);
-      if (!revItem) return;
-
-      $('#distanciaLocalizar').text('');
-      if (markerCasa) markerCasa.setMap(null);
-      if (markerEscola) markerEscola.setMap(null);
-      directionsRenderer.set('directions', null);
-
-      const latCasa = parseFloat(revItem.latitude) || 0;
-      const lngCasa = parseFloat(revItem.longitude) || 0;
-
-      mapLocalizar.setCenter({ lat: latCasa, lng: lngCasa });
-      mapLocalizar.setZoom(15);
-      mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
-
-      markerCasa = new google.maps.Marker({
-        position: { lat: latCasa, lng: lngCasa },
-        map: mapLocalizar,
-        title: 'Casa do Aluno'
-      });
-
-      $('#modalLocalizar').modal('show');
-    }
-
-    function aprovarReavaliacao(reavId, cpfAluno) {
-      if (!confirm('Confirmar aprovação? A ação setará o transporte_escolar_poder_publico para MUNICIPAL e gerará comprovante de aprovação.')) return;
-
-      fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cpf_aluno: cpfAluno })
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            showNotification('success', data.message || 'Reavaliação aprovada com sucesso!');
-            window.open(`/api/comprovante-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
-            loadReavaliacoes();
-          } else {
-            showNotification('danger', data.message || 'Não foi possível aprovar.');
+        $('#reavaliacoes-table').DataTable({
+          pageLength: 10,
+          language: {
+            decimal: ",",
+            thousands: ".",
+            info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+            infoEmpty: "Mostrando 0 até 0 de 0 registros",
+            infoFiltered: "(filtrado de _MAX_ registros no total)",
+            lengthMenu: "Mostrar _MENU_ registros",
+            loadingRecords: "Carregando...",
+            processing: "Processando...",
+            search: "Pesquisar:",
+            zeroRecords: "Nenhum registro encontrado",
+            paginate: {
+              first: "Primeiro",
+              last: "Último",
+              next: "Próximo",
+              previous: "Anterior"
+            },
+            emptyTable: "Nenhum dado disponível na tabela"
           }
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Erro ao aprovar reavaliação.');
         });
-    }
+      },
 
-    function reprovarReavaliacao(reavId, cpfAluno) {
-      if (!confirm('Tem certeza que deseja reprovar? Isso gerará um comprovante de não aprovação.')) return;
+      function localizarReavaliacao(reavId) {
+        const revItem = reavaliacoes.find(r => r.id === reavId);
+        if (!revItem) return;
 
-      fetch(`/api/reavaliacoes/${reavId}/reprovar`, {
-        method: 'POST'
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            showNotification('success', data.message || 'Reavaliação reprovada.');
-            window.open(`/api/comprovante-nao-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
-            loadReavaliacoes();
-          } else {
-            showNotification('danger', data.message || 'Não foi possível reprovar.');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Erro ao reprovar reavaliação.');
+        $('#distanciaLocalizar').text('');
+        if (markerCasa) markerCasa.setMap(null);
+        if (markerEscola) markerEscola.setMap(null);
+        directionsRenderer.set('directions', null);
+
+        const latCasa = parseFloat(revItem.latitude) || 0;
+        const lngCasa = parseFloat(revItem.longitude) || 0;
+
+        mapLocalizar.setCenter({ lat: latCasa, lng: lngCasa });
+        mapLocalizar.setZoom(15);
+        mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+
+        markerCasa = new google.maps.Marker({
+          position: { lat: latCasa, lng: lngCasa },
+          map: mapLocalizar,
+          title: 'Casa do Aluno'
         });
-    }
 
-    document.addEventListener('DOMContentLoaded', function () {
-      loadSolicitacoes();
-      loadEscolas();
-      loadReavaliacoes();
-    });
+        $('#modalLocalizar').modal('show');
+      },
+
+      function aprovarReavaliacao(reavId, cpfAluno) {
+        if (!confirm('Confirmar aprovação? A ação setará o transporte_escolar_poder_publico para MUNICIPAL e gerará comprovante de aprovação.')) return;
+
+        fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cpf_aluno: cpfAluno })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showNotification('success', data.message || 'Reavaliação aprovada com sucesso!');
+              window.open(`/api/comprovante-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
+              loadReavaliacoes();
+            } else {
+              showNotification('danger', data.message || 'Não foi possível aprovar.');
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            showNotification('danger', 'Erro ao aprovar reavaliação.');
+          });
+      },
+
+      function reprovarReavaliacao(reavId, cpfAluno) {
+        if (!confirm('Tem certeza que deseja reprovar? Isso gerará um comprovante de não aprovação.')) return;
+
+        fetch(`/api/reavaliacoes/${reavId}/reprovar`, {
+          method: 'POST'
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              showNotification('success', data.message || 'Reavaliação reprovada.');
+              window.open(`/api/comprovante-nao-aprovado/${data.alunoId}/gerar-pdf`, "_blank");
+              loadReavaliacoes();
+            } else {
+              showNotification('danger', data.message || 'Não foi possível reprovar.');
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            showNotification('danger', 'Erro ao reprovar reavaliação.');
+          });
+      },
+
+      document.addEventListener('DOMContentLoaded', function () {
+        loadSolicitacoes();
+        loadEscolas();
+        loadReavaliacoes();
+      }));
   </script>
 </body>
 
