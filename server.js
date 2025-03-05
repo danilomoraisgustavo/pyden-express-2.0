@@ -428,100 +428,59 @@ app.delete("/api/relatorios/:id", async (req, res) => {
     return res.status(500).json({ success: false, message: "Erro ao excluir relatório." });
   }
 });
-app.get("/api/relatorios/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
-    }
-    res.json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Erro ao buscar relatório." });
-  }
-});
 
-app.post("/api/relatorios/cadastrar", uploadRelatorios.array("anexo"), async (req, res) => {
-  const { tipo_relatorio, data_ocorrido, rota_id, corpo } = req.body;
-  let caminhos = [];
-  if (req.files && req.files.length > 0) {
-    caminhos = req.files.map((file) => path.join("uploads", "relatorios", file.filename));
-  }
+app.get("/api/relatorios-gerais", async (req, res) => {
   try {
-    const result = await pool.query(
-      "INSERT INTO relatorios_ocorrencias (tipo_relatorio, data_ocorrido, rota_id, corpo, caminho_anexo) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-      [
-        tipo_relatorio,
-        data_ocorrido,
-        rota_id || null,
-        corpo,
-        JSON.stringify(caminhos),
-      ]
-    );
-    res.json({ success: true, id: result.rows[0].id });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Erro ao cadastrar relatório." });
-  }
-});
-
-app.put("/api/relatorios/:id", uploadRelatorios.array("editar_anexo"), async (req, res) => {
-  const { id } = req.params;
-  const { editar_tipo_relatorio, editar_data_ocorrido, editar_rota_id, editar_corpo } = req.body;
-  let caminhosNovos = [];
-  if (req.files && req.files.length > 0) {
-    caminhosNovos = req.files.map((file) => path.join("uploads", "relatorios", file.filename));
-  }
-  try {
-    const resultadoAtual = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
-    if (resultadoAtual.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
-    }
-    let caminhosAntigos = [];
-    if (resultadoAtual.rows[0].caminho_anexo) {
-      try {
-        caminhosAntigos = JSON.parse(resultadoAtual.rows[0].caminho_anexo);
-      } catch (e) {
-        caminhosAntigos = [];
+    const result = await pool.query("SELECT * FROM relatorios_gerais ORDER BY id DESC");
+    let data = result.rows.map(r => {
+      let anexos = [];
+      if (r.caminho_anexo) {
+        try {
+          anexos = JSON.parse(r.caminho_anexo);
+        } catch { }
       }
+      return {
+        id: r.id,
+        tipo_relatorio: r.tipo_relatorio,
+        data_relatorio: r.data_relatorio,
+        corpo: r.corpo,
+        caminho_anexo: anexos,
+        created_at: r.created_at,
+        updated_at: r.updated_at
+      };
+    });
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Erro ao listar relatórios." });
+  }
+});
+
+app.post("/api/relatorios-gerais/cadastrar", uploadRelatorios.array("anexo"), async (req, res) => {
+  try {
+    let arquivos = [];
+    if (req.files && req.files.length > 0) {
+      arquivos = req.files.map(file => {
+        return path.relative(__dirname, file.path).replace(/\\/g, "/");
+      });
     }
-    let caminhosFinais = caminhosAntigos;
-    if (caminhosNovos.length > 0) {
-      caminhosFinais = caminhosNovos;
-    }
+    const tipo_relatorio = req.body.tipo_relatorio || "";
+    const data_relatorio = req.body.data_relatorio || "";
+    const corpo = req.body.corpo || "";
+    const caminho_anexo = arquivos.length > 0 ? JSON.stringify(arquivos) : null;
     await pool.query(
-      "UPDATE relatorios_ocorrencias SET tipo_relatorio = $1, data_ocorrido = $2, rota_id = $3, corpo = $4, caminho_anexo = $5, updated_at = NOW() WHERE id = $6",
-      [
-        editar_tipo_relatorio,
-        editar_data_ocorrido,
-        editar_rota_id || null,
-        editar_corpo,
-        JSON.stringify(caminhosFinais),
-        id,
-      ]
+      "INSERT INTO relatorios_gerais (tipo_relatorio, data_relatorio, corpo, caminho_anexo) VALUES ($1, $2, $3, $4)",
+      [tipo_relatorio, data_relatorio, corpo, caminho_anexo]
     );
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Erro ao atualizar relatório." });
+    res.status(500).json({ success: false, message: "Erro ao criar relatório." });
   }
 });
 
-app.delete("/api/relatorios/:id", async (req, res) => {
+app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query("DELETE FROM relatorios_ocorrencias WHERE id = $1 RETURNING *", [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
-    }
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Erro ao excluir relatório." });
-  }
-});
-
-app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
+    const result = await pool.query("SELECT * FROM relatorios_gerais WHERE id = $1", [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Relatório não encontrado." });
     }
@@ -536,15 +495,7 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
     const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-    doc
-      .fontSize(11)
-      .font("Helvetica-Bold")
-      .text(
-        "ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO",
-        250,
-        20,
-        { width: 300, align: "right" }
-      );
+    doc.fontSize(11).font("Helvetica-Bold").text("ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO", 250, 20, { width: 300, align: "right" });
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
@@ -552,27 +503,9 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
     }
     doc.y = 130;
     doc.x = 50;
-    doc
-      .fontSize(12)
-      .font("Helvetica-Bold")
-      .text(`RELATÓRIO DE OCORRÊNCIA N.º ${relatorio.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, {
-        align: "justify",
-      })
-      .moveDown();
+    doc.fontSize(12).font("Helvetica-Bold").text(`RELATÓRIO GERAL N.º ${relatorio.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, { align: "justify" }).moveDown();
     const corpoAjustado = relatorio.corpo.replace(/\r\n/g, "\n").replace(/\r/g, "");
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "justify" })
-      .text(`Rota ID: ${relatorio.rota_id}`, { align: "justify" })
-      .text(`Data do Ocorrido: ${relatorio.data_ocorrido}`, { align: "justify" })
-      .moveDown()
-      .text("Prezados(as),", { align: "justify" })
-      .moveDown()
-      .text("Descrição da Ocorrência:", { align: "justify", underline: true })
-      .moveDown(0.5)
-      .text(corpoAjustado, { align: "justify" })
-      .moveDown();
+    doc.fontSize(12).font("Helvetica").text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "justify" }).text(`Data do Relatório: ${relatorio.data_relatorio}`, { align: "justify" }).moveDown().text("Prezados(as),", { align: "justify" }).moveDown().text("Descrição:", { align: "justify", underline: true }).moveDown(0.5).text(corpoAjustado, { align: "justify" }).moveDown();
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -580,14 +513,7 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
     const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
-      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
-      .text("Gestor de Transporte Escolar", { align: "center" })
-      .text("Portaria 118/2023 - GP", { align: "center" });
+    doc.fontSize(12).font("Helvetica").text("Atenciosamente,", { align: "justify" }).moveDown(2).text("DANILO DE MORAIS GUSTAVO", { align: "center" }).text("Gestor de Transporte Escolar", { align: "center" }).text("Portaria 118/2023 - GP", { align: "center" });
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -599,65 +525,134 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
       const logo2Y = doc.page.height - 150;
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
-    doc
-      .fontSize(10)
-      .font("Helvetica")
-      .text(
-        "SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED",
-        50,
-        doc.page.height - 85,
-        {
-          width: doc.page.width - 100,
-          align: "center",
-        }
-      )
-      .text(
-        "Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA",
-        {
-          align: "center",
-        }
-      )
-      .text("Telefone: (94) 99293-4500", { align: "center" });
+    doc.fontSize(10).font("Helvetica").text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, { width: doc.page.width - 100, align: "center" }).text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", { align: "center" }).text("Telefone: (94) 99293-4500", { align: "center" });
+    let anexos = [];
     if (relatorio.caminho_anexo) {
-      let anexos = [];
       try {
         anexos = JSON.parse(relatorio.caminho_anexo);
-      } catch (e) {
-        anexos = [];
-      }
-      if (anexos.length > 0) {
-        anexos.forEach((anexo, idx) => {
-          const absoluteAnexo = path.join(__dirname, anexo);
-          if (fs.existsSync(absoluteAnexo)) {
-            doc.addPage();
-            doc.fontSize(14).font("Helvetica-Bold").text(`Anexo ${idx + 1}:`, { align: "left" }).moveDown();
-            const ext = path.extname(absoluteAnexo).toLowerCase();
-            if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
-              doc.image(absoluteAnexo, { fit: [500, 700], align: "center", valign: "top" });
-            } else if (ext === ".pdf") {
-              doc
-                .fontSize(12)
-                .text("O anexo é um arquivo PDF. Abra separadamente:", { align: "left" })
-                .moveDown()
-                .font("Helvetica-Bold")
-                .text(anexo, { link: anexo, underline: true });
-            } else {
-              doc
-                .fontSize(12)
-                .text("Arquivo anexo disponível em:", { align: "left" })
-                .moveDown()
-                .font("Helvetica-Bold")
-                .text(anexo);
-            }
+      } catch { }
+    }
+    if (anexos.length > 0) {
+      anexos.forEach((anexo, idx) => {
+        const absoluteAnexo = path.join(__dirname, anexo);
+        if (fs.existsSync(absoluteAnexo)) {
+          doc.addPage();
+          doc.fontSize(14).font("Helvetica-Bold").text(`Anexo ${idx + 1}:`, { align: "left" }).moveDown();
+          const ext = path.extname(absoluteAnexo).toLowerCase();
+          if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
+            doc.image(absoluteAnexo, { fit: [500, 700], align: "center", valign: "top" });
+          } else if (ext === ".pdf") {
+            doc.fontSize(12).text("O anexo é um arquivo PDF. Abra separadamente:", { align: "left" }).moveDown().font("Helvetica-Bold").text(anexo, { link: anexo, underline: true });
+          } else {
+            doc.fontSize(12).text("Arquivo anexo disponível em:", { align: "left" }).moveDown().font("Helvetica-Bold").text(anexo);
           }
-        });
-      }
+        }
+      });
     }
     doc.end();
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Erro ao gerar PDF." });
+    res.status(500).json({ success: false, message: "Erro ao gerar PDF." });
   }
 });
+
+app.get("/api/relatorios-gerais/:id/gerar-docx", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM relatorios_gerais WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
+    }
+    const relatorio = result.rows[0];
+    const doc = new Document({
+      sections: [
+        {
+          children: [
+            new Paragraph({
+              text: `RELATÓRIO GERAL N.º ${relatorio.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`,
+              heading: HeadingLevel.HEADING1,
+              alignment: AlignmentType.CENTER
+            }),
+            new Paragraph({ text: "", spacing: { after: 200 } }),
+            new Paragraph({
+              text: `Tipo de Relatório: ${relatorio.tipo_relatorio}`,
+              spacing: { after: 200 }
+            }),
+            new Paragraph({
+              text: `Data do Relatório: ${relatorio.data_relatorio}`,
+              spacing: { after: 200 }
+            }),
+            new Paragraph({ text: "Prezados(as),", spacing: { after: 200 } }),
+            new Paragraph({ text: "Descrição:", bold: true, underline: {}, spacing: { after: 100 } }),
+            new Paragraph({ text: relatorio.corpo, spacing: { after: 400 } }),
+            new Paragraph({ text: "Atenciosamente,", spacing: { after: 400 } }),
+            new Paragraph({ text: "DANILO DE MORAIS GUSTAVO", alignment: AlignmentType.CENTER }),
+            new Paragraph({ text: "Gestor de Transporte Escolar", alignment: AlignmentType.CENTER }),
+            new Paragraph({ text: "Portaria 118/2023 - GP", alignment: AlignmentType.CENTER })
+          ]
+        }
+      ]
+    });
+    const buffer = await Packer.toBuffer(doc);
+    const filename = `relatorio_${id}.docx`;
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    res.send(buffer);
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Erro ao gerar DOCX." });
+  }
+});
+
+app.put("/api/relatorios-gerais/:id", uploadRelatorios.array("editar_anexo"), async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM relatorios_gerais WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
+    }
+    const relatorio = result.rows[0];
+    let anexosExistentes = [];
+    if (relatorio.caminho_anexo) {
+      try {
+        anexosExistentes = JSON.parse(relatorio.caminho_anexo);
+      } catch { }
+    }
+    let arquivosNovos = [];
+    if (req.files && req.files.length > 0) {
+      arquivosNovos = req.files.map(file => {
+        return path.relative(__dirname, file.path).replace(/\\/g, "/");
+      });
+    }
+    let caminho_anexo_final = anexosExistentes;
+    if (arquivosNovos.length > 0) {
+      caminho_anexo_final = arquivosNovos;
+    }
+    const tipo_relatorio = req.body.editar_tipo_relatorio || relatorio.tipo_relatorio;
+    const data_relatorio = req.body.editar_data_relatorio || relatorio.data_relatorio;
+    const corpo = req.body.editar_corpo || relatorio.corpo;
+    await pool.query(
+      "UPDATE relatorios_gerais SET tipo_relatorio=$1, data_relatorio=$2, corpo=$3, caminho_anexo=$4, updated_at=NOW() WHERE id=$5",
+      [tipo_relatorio, data_relatorio, corpo, JSON.stringify(caminho_anexo_final), id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Erro ao atualizar relatório." });
+  }
+});
+
+app.delete("/api/relatorios-gerais/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query("SELECT * FROM relatorios_gerais WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Relatório não encontrado." });
+    }
+    await pool.query("DELETE FROM relatorios_gerais WHERE id = $1", [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Erro ao excluir relatório." });
+  }
+});
+
 app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
