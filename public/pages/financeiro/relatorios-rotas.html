@@ -722,6 +722,15 @@
                                                 <input type="date" id="data_ocorrido" name="data_ocorrido"
                                                     class="form-control" required />
                                             </div>
+                                            <div class="col-md-4">
+                                                <label for="novo_fornecedor_id"
+                                                    class="form-label required-label">Empresa
+                                                    Responsável</label>
+                                                <select id="novo_fornecedor_id" name="fornecedor_id"
+                                                    class="form-control" required>
+                                                    <option value="">Carregando...</option>
+                                                </select>
+                                            </div>
                                         </div>
 
                                         <div class="row mb-3">
@@ -840,6 +849,15 @@
                                                 <input type="date" id="editar_data_ocorrido" name="editar_data_ocorrido"
                                                     class="form-control" required />
                                             </div>
+                                            <div class="col-md-4">
+                                                <label for="editar_fornecedor_id"
+                                                    class="form-label required-label">Empresa
+                                                    Responsável</label>
+                                                <select id="editar_fornecedor_id" name="editar_fornecedor_id"
+                                                    class="form-control" required>
+                                                    <option value="">Carregando...</option>
+                                                </select>
+                                            </div>
                                         </div>
 
                                         <div class="row mb-3">
@@ -910,6 +928,7 @@
 
     <script>
         let relatorios = [];
+        let fornecedores = [];
 
         function showNotification(type, message, title = "") {
             $.notify({
@@ -950,6 +969,40 @@
             return `${day}/${month}/${year}`;
         }
 
+        function loadFornecedores() {
+            fetch('/api/fornecedores')
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error('Erro ao carregar fornecedores');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    fornecedores = data;
+                    const novoSelect = document.getElementById('novo_fornecedor_id');
+                    const editarSelect = document.getElementById('editar_fornecedor_id');
+                    if (novoSelect && editarSelect) {
+                        novoSelect.innerHTML = '<option value="">Selecione</option>';
+                        editarSelect.innerHTML = '<option value="">Selecione</option>';
+                        fornecedores.forEach(f => {
+                            const optionNovo = document.createElement('option');
+                            optionNovo.value = f.id;
+                            optionNovo.textContent = f.nome_fornecedor;
+                            novoSelect.appendChild(optionNovo);
+
+                            const optionEditar = document.createElement('option');
+                            optionEditar.value = f.id;
+                            optionEditar.textContent = f.nome_fornecedor;
+                            editarSelect.appendChild(optionEditar);
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showNotification('danger', 'Não foi possível carregar os fornecedores.');
+                });
+        }
+
         function loadRelatorios() {
             fetch('/api/relatorios')
                 .then(res => {
@@ -982,43 +1035,43 @@
                 }
 
                 const row = `
-                         <tr>
-                             <td>${r.id}</td>
-                             <td>${r.tipo_relatorio}</td>
-                             <td>${dataFormatada}</td>
-                             <td>${r.rota_id}</td>
-                             <td>${anexoLabel}</td>
-                             <td>
-                                 <div class="form-button-action">
-                                     <button type="button" class="btn btn-link btn-dark btn-lg"
-                                         onclick="visualizarRelatorioEmPdf('${r.id}')"
-                                         data-bs-toggle="tooltip" title="Visualizar PDF">
-                                         <i class="fa fa-eye"></i>
-                                     </button>
-                                     <button type="button" class="btn btn-link btn-secondary btn-lg"
-                                         onclick="gerarPdf('${r.id}')"
-                                         data-bs-toggle="tooltip" title="Baixar PDF">
-                                         <i class="fa fa-file-pdf"></i>
-                                     </button>
-                                     <button type="button" class="btn btn-link btn-info btn-lg"
-                                         onclick="gerarDocx('${r.id}')"
-                                         data-bs-toggle="tooltip" title="Baixar .docx">
-                                         <i class="fa fa-file-word"></i>
-                                     </button>
-                                     <button type="button" class="btn btn-link btn-warning btn-lg"
-                                         onclick="abrirModalEditarRelatorio('${r.id}')"
-                                         data-bs-toggle="tooltip" title="Editar">
-                                         <i class="fa fa-edit"></i>
-                                     </button>
-                                     <button type="button" class="btn btn-link btn-danger btn-lg"
-                                         onclick="excluirRelatorio('${r.id}')"
-                                         data-bs-toggle="tooltip" title="Excluir">
-                                         <i class="fa fa-trash-alt"></i>
-                                     </button>
-                                 </div>
-                             </td>
-                         </tr>
-                     `;
+                    <tr>
+                        <td>${r.id}</td>
+                        <td>${r.tipo_relatorio}</td>
+                        <td>${dataFormatada}</td>
+                        <td>${r.rota_id}</td>
+                        <td>${anexoLabel}</td>
+                        <td>
+                            <div class="form-button-action">
+                                <button type="button" class="btn btn-link btn-dark btn-lg"
+                                    onclick="visualizarRelatorioEmPdf('${r.id}')"
+                                    data-bs-toggle="tooltip" title="Visualizar PDF">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-link btn-secondary btn-lg"
+                                    onclick="gerarPdf('${r.id}')"
+                                    data-bs-toggle="tooltip" title="Baixar PDF">
+                                    <i class="fa fa-file-pdf"></i>
+                                </button>
+                                <button type="button" class="btn btn-link btn-info btn-lg"
+                                    onclick="gerarDocx('${r.id}')"
+                                    data-bs-toggle="tooltip" title="Baixar .docx">
+                                    <i class="fa fa-file-word"></i>
+                                </button>
+                                <button type="button" class="btn btn-link btn-warning btn-lg"
+                                    onclick="abrirModalEditarRelatorio('${r.id}')"
+                                    data-bs-toggle="tooltip" title="Editar">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-link btn-danger btn-lg"
+                                    onclick="excluirRelatorio('${r.id}')"
+                                    data-bs-toggle="tooltip" title="Excluir">
+                                    <i class="fa fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
                 tableBody.append(row);
             });
 
@@ -1112,9 +1165,15 @@
             document.getElementById('editar_data_ocorrido').value =
                 rel.data_ocorrido ? rel.data_ocorrido.split('T')[0] : '';
             document.getElementById('editar_corpo').value = rel.corpo;
+
             const radios = document.getElementsByName('editar_tipo_relatorio');
             for (let i = 0; i < radios.length; i++) {
                 radios[i].checked = (radios[i].value === rel.tipo_relatorio);
+            }
+
+            const editarFornecedorSelect = document.getElementById('editar_fornecedor_id');
+            if (editarFornecedorSelect) {
+                editarFornecedorSelect.value = rel.fornecedor_id ? rel.fornecedor_id : '';
             }
 
             $('#modalEditarRelatorio').modal('show');
@@ -1143,6 +1202,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
+            loadFornecedores();
             loadRelatorios();
 
             document.getElementById('relatorio-form').addEventListener('submit', function (e) {

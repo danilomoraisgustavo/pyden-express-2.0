@@ -334,7 +334,8 @@ app.get("/api/relatorios", async (req, res) => {
 app.post("/api/relatorios/cadastrar", uploadRelatorios.array("anexo[]"), async (req, res) => {
   try {
     await pool.query("ALTER TABLE relatorios_ocorrencias ALTER COLUMN rota_id TYPE VARCHAR(255)");
-    const { tipo_relatorio, rota_id, data_ocorrido, corpo } = req.body;
+    await pool.query("ALTER TABLE relatorios_ocorrencias ADD COLUMN IF NOT EXISTS fornecedor_id INT");
+    const { tipo_relatorio, rota_id, data_ocorrido, corpo, fornecedor_id } = req.body;
     let caminhos = [];
     if (req.files && req.files.length > 0) {
       req.files.forEach((f) => {
@@ -344,12 +345,19 @@ app.post("/api/relatorios/cadastrar", uploadRelatorios.array("anexo[]"), async (
     }
     const query = `
       INSERT INTO relatorios_ocorrencias (
-        tipo_relatorio, rota_id, data_ocorrido, corpo, caminho_anexo
+        tipo_relatorio, rota_id, data_ocorrido, corpo, caminho_anexo, fornecedor_id
       )
-      VALUES ($1, $2, $3, $4, $5)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
     `;
-    const values = [tipo_relatorio, rota_id, data_ocorrido, corpo, JSON.stringify(caminhos)];
+    const values = [
+      tipo_relatorio,
+      rota_id,
+      data_ocorrido,
+      corpo,
+      JSON.stringify(caminhos),
+      fornecedor_id ? parseInt(fornecedor_id, 10) : null
+    ];
     const result = await pool.query(query, values);
     return res.json({ success: true, newId: result.rows[0].id });
   } catch (error) {
@@ -357,7 +365,6 @@ app.post("/api/relatorios/cadastrar", uploadRelatorios.array("anexo[]"), async (
     return res.status(500).json({ success: false, message: "Erro ao cadastrar relatório." });
   }
 });
-
 
 app.put("/api/relatorios/:id", uploadRelatorios.array("editar_anexo[]"), async (req, res) => {
   try {
