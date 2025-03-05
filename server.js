@@ -333,6 +333,7 @@ app.get("/api/relatorios", async (req, res) => {
 
 app.post("/api/relatorios/cadastrar", uploadRelatorios.array("anexo[]"), async (req, res) => {
   try {
+    await pool.query("ALTER TABLE relatorios_ocorrencias ALTER COLUMN rota_id TYPE VARCHAR(255)");
     const { tipo_relatorio, rota_id, data_ocorrido, corpo } = req.body;
     let caminhos = [];
     if (req.files && req.files.length > 0) {
@@ -356,6 +357,7 @@ app.post("/api/relatorios/cadastrar", uploadRelatorios.array("anexo[]"), async (
     return res.status(500).json({ success: false, message: "Erro ao cadastrar relatório." });
   }
 });
+
 
 app.put("/api/relatorios/:id", uploadRelatorios.array("editar_anexo[]"), async (req, res) => {
   try {
