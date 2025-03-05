@@ -533,8 +533,6 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
       .moveDown()
       .text("Prezados(as),", { align: "justify" })
       .moveDown()
-      .text("Descrição:", { align: "justify" })
-      .moveDown(0.5)
       .text(corpoAjustado, { align: "justify" })
       .moveDown();
     const spaceNeededForSignature = 100;
