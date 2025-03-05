@@ -784,8 +784,6 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
       .moveDown()
       .text("Prezados(as),", { align: "justify" })
       .moveDown()
-      .text("Descrição da Ocorrência:", { align: "justify", underline: true })
-      .moveDown(0.5)
       .text(corpoAjustado, { align: "justify" })
       .moveDown();
 
