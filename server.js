@@ -455,27 +455,37 @@ app.get("/api/relatorios-gerais", async (req, res) => {
   }
 });
 
-app.post("/api/relatorios-gerais/cadastrar", uploadRelatorios.array("anexo"), async (req, res) => {
+app.post("/api/relatorios-gerais/cadastrar", uploadRelatorios.array("anexo[]"), async (req, res) => {
   try {
-    let arquivos = [];
+    const { tipo_relatorio, data_relatorio, corpo } = req.body;
+    let caminhos = [];
     if (req.files && req.files.length > 0) {
-      arquivos = req.files.map(file => {
-        return path.relative(__dirname, file.path).replace(/\\/g, "/");
+      req.files.forEach((f) => {
+        const relPath = "/uploads/relatorios_gerais/" + f.filename;
+        caminhos.push(relPath);
       });
     }
-    const tipo_relatorio = req.body.tipo_relatorio || "";
-    const data_relatorio = req.body.data_relatorio || "";
-    const corpo = req.body.corpo || "";
-    const caminho_anexo = arquivos.length > 0 ? JSON.stringify(arquivos) : null;
-    await pool.query(
-      "INSERT INTO relatorios_gerais (tipo_relatorio, data_relatorio, corpo, caminho_anexo) VALUES ($1, $2, $3, $4)",
-      [tipo_relatorio, data_relatorio, corpo, caminho_anexo]
-    );
-    res.json({ success: true });
+    const query = `
+      INSERT INTO relatorios_gerais (
+        tipo_relatorio, data_relatorio, corpo, caminho_anexo
+      )
+      VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `;
+    const values = [
+      tipo_relatorio,
+      data_relatorio,
+      corpo,
+      JSON.stringify(caminhos)
+    ];
+    const result = await pool.query(query, values);
+    return res.json({ success: true, newId: result.rows[0].id });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Erro ao criar relatório." });
+    console.error("Erro ao cadastrar relatório:", error);
+    return res.status(500).json({ success: false, message: "Erro ao cadastrar relatório." });
   }
 });
+
 
 app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
