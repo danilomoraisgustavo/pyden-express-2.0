@@ -505,7 +505,13 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
     const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
-    doc.fontSize(11).font("Helvetica-Bold").text("ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO", 250, 20, { width: 300, align: "right" });
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text("ESTADO DO PARÁ\nPREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\nSECRETARIA MUNICIPAL DE EDUCAÇÃO", 250, 20, {
+        width: 300,
+        align: "right"
+      });
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
@@ -513,9 +519,24 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     }
     doc.y = 130;
     doc.x = 50;
-    doc.fontSize(12).font("Helvetica-Bold").text(`RELATÓRIO GERAL N.º ${relatorio.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, { align: "justify" }).moveDown();
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text(`RELATÓRIO GERAL N.º ${relatorio.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, { align: "justify" })
+      .moveDown();
     const corpoAjustado = relatorio.corpo.replace(/\r\n/g, "\n").replace(/\r/g, "");
-    doc.fontSize(12).font("Helvetica").text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "justify" }).text(`Data do Relatório: ${relatorio.data_relatorio}`, { align: "justify" }).moveDown().text("Prezados(as),", { align: "justify" }).moveDown().text("Descrição:", { align: "justify", underline: true }).moveDown(0.5).text(corpoAjustado, { align: "justify" }).moveDown();
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "justify" })
+      .text(`Data do Relatório: ${relatorio.data_relatorio}`, { align: "justify" })
+      .moveDown()
+      .text("Prezados(as),", { align: "justify" })
+      .moveDown()
+      .text("Descrição:", { align: "justify" })
+      .moveDown(0.5)
+      .text(corpoAjustado, { align: "justify" })
+      .moveDown();
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
@@ -523,7 +544,14 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
-    doc.fontSize(12).font("Helvetica").text("Atenciosamente,", { align: "justify" }).moveDown(2).text("DANILO DE MORAIS GUSTAVO", { align: "center" }).text("Gestor de Transporte Escolar", { align: "center" }).text("Portaria 118/2023 - GP", { align: "center" });
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Atenciosamente,", { align: "justify" })
+      .moveDown(2)
+      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
+      .text("Gestor de Transporte Escolar", { align: "center" })
+      .text("Portaria 118/2023 - GP", { align: "center" });
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -535,7 +563,17 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
       const logo2Y = doc.page.height - 150;
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
-    doc.fontSize(10).font("Helvetica").text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, { width: doc.page.width - 100, align: "center" }).text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", { align: "center" }).text("Telefone: (94) 99293-4500", { align: "center" });
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+        width: doc.page.width - 100,
+        align: "center"
+      })
+      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
+        align: "center"
+      })
+      .text("Telefone: (94) 99293-4500", { align: "center" });
     let anexos = [];
     if (relatorio.caminho_anexo) {
       try {
@@ -552,9 +590,19 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
           if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
             doc.image(absoluteAnexo, { fit: [500, 700], align: "center", valign: "top" });
           } else if (ext === ".pdf") {
-            doc.fontSize(12).text("O anexo é um arquivo PDF. Abra separadamente:", { align: "left" }).moveDown().font("Helvetica-Bold").text(anexo, { link: anexo, underline: true });
+            doc
+              .fontSize(12)
+              .text("O anexo é um arquivo PDF. Abra separadamente:", { align: "left" })
+              .moveDown()
+              .font("Helvetica-Bold")
+              .text(anexo, { link: anexo, underline: true });
           } else {
-            doc.fontSize(12).text("Arquivo anexo disponível em:", { align: "left" }).moveDown().font("Helvetica-Bold").text(anexo);
+            doc
+              .fontSize(12)
+              .text("Arquivo anexo disponível em:", { align: "left" })
+              .moveDown()
+              .font("Helvetica-Bold")
+              .text(anexo);
           }
         }
       });
@@ -564,7 +612,6 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     res.status(500).json({ success: false, message: "Erro ao gerar PDF." });
   }
 });
-
 app.get("/api/relatorios-gerais/:id/gerar-docx", async (req, res) => {
   const { id } = req.params;
   try {
