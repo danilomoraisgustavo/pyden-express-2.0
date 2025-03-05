@@ -461,7 +461,7 @@ app.post("/api/relatorios-gerais/cadastrar", uploadRelatorios.array("anexo[]"), 
     let caminhos = [];
     if (req.files && req.files.length > 0) {
       req.files.forEach((f) => {
-        const relPath = "/uploads/" + f.filename;
+        const relPath = "/uploads/relatorios/" + f.filename;
         caminhos.push(relPath);
       });
     }
