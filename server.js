@@ -1497,62 +1497,59 @@ app.post("/api/login", async (req, res) => {
       WHERE email = $1
       LIMIT 1
     `;
-
     const result = await pool.query(userQuery, [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({
         success: false,
-        message: "Usuário não encontrado.",
+        message: "Usuário não encontrado."
       });
     }
-
     const usuario = result.rows[0];
     if (!usuario.init) {
       return res.status(403).json({
         success: false,
-        message: "Usuário ainda não está inicializado para acesso.",
+        message: "Usuário ainda não está inicializado para acesso."
       });
     }
-
     const match = await bcrypt.compare(senha, usuario.senha);
     if (!match) {
       return res.status(401).json({
         success: false,
-        message: "Senha incorreta.",
+        message: "Senha incorreta."
       });
     }
-
     req.session.userId = usuario.id;
-
     let redirectUrl = "/pages/transporte-escolar/dashboard-escolar.html";
-
-    // Verificação adicional de permissões
-    // Assumindo que "permissoes" é uma string ou array que contém algo como "Fornecedor: Locan", "Talismã", etc.
-    // Ajuste conforme sua estrutura real de dados.
     if (usuario.permissoes) {
-      // Caso seja string, pode verificar com includes ou regex
-      // Exemplo simples:
       if (
+        usuario.permissoes.includes("admin") ||
+        usuario.permissoes.includes("gestor")
+      ) {
+        redirectUrl = "/pages/transporte-escolar/dashboard-escolar.html";
+      } else if (
         usuario.permissoes.includes("locan") ||
-        usuario.permissoes.includes("talisma")
+        usuario.permissoes.includes("talisma") ||
+        usuario.permissoes.includes("ctl") ||
+        usuario.permissoes.includes("roma") ||
+        usuario.permissoes.includes("diamond")
       ) {
         redirectUrl = "/dashboard-fornecedor.html";
       }
     }
-
     return res.status(200).json({
       success: true,
       message: "Login bem sucedido!",
-      redirectUrl,
+      redirectUrl
     });
   } catch (error) {
     console.error("Erro ao efetuar login:", error);
     return res.status(500).json({
       success: false,
-      message: "Erro interno ao efetuar login.",
+      message: "Erro interno ao efetuar login."
     });
   }
 });
+
 // ====> api/admin-login (Node/Express) <====
 // A rota que valida se o usuário pode acessar a área administrativa
 app.post("/api/admin-login", async (req, res) => {
