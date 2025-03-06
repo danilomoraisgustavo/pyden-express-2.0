@@ -1534,7 +1534,7 @@ app.post("/api/login", async (req, res) => {
       // Exemplo simples:
       if (
         usuario.permissoes.includes("locan") ||
-        usuario.permissoes.includes("talismã")
+        usuario.permissoes.includes("talisma")
       ) {
         redirectUrl = "/dashboard-fornecedor.html";
       }
