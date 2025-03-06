@@ -204,6 +204,8 @@ app.get("/motorista-fornecedor.html", (req, res) => {
 app.get("/relatorios-fonecedor.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/fornecedores/relatorios-fonecedor.html"));
 });
+
+
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     res.clearCookie("connect.sid");
