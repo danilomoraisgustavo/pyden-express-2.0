@@ -72,7 +72,7 @@ app.use(
 
 function isAdmin(req, res, next) {
   if (!req.session || !req.session.userId) {
-    return res.redirect("/"); // ou retornar 401, conforme sua necessidade
+    return res.redirect("/");
   }
 
   pool
@@ -83,16 +83,19 @@ function isAdmin(req, res, next) {
       }
       const user = result.rows[0];
 
-      // Se for ID 1, já consideramos admin
       if (user.id === 1) {
         return next();
       }
 
-      if (user.permissoes && user.permissoes.includes("Master")) {
+      if (
+        user.permissoes &&
+        (user.permissoes.includes("master") ||
+         user.permissoes.includes("admin") ||
+         user.permissoes.includes("gestor"))
+      ) {
         return next();
       }
 
-      // Caso não atenda
       return res.status(403).send("Acesso negado: usuário não é administrador.");
     })
     .catch((error) => {
@@ -100,6 +103,7 @@ function isAdmin(req, res, next) {
       return res.status(500).send("Erro interno do servidor.");
     });
 }
+
 
 // MIDDLEWARE: isAuthenticated (protege rotas e páginas)
 
