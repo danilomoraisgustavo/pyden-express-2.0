@@ -105,17 +105,10 @@ function isAdmin(req, res, next) {
 
 async function isAuthenticated(req, res, next) {
   try {
-    // Verifica se existe sessão e userId
     if (!req.session || !req.session.userId) {
-      return res.redirect("/"); // ou res.status(401).send("Não autenticado"), etc.
+      return res.redirect("/");
     }
 
-    // Se userId for 1 (superuser), libera o acesso
-    if (req.session.userId === 1) {
-      return next();
-    }
-
-    // Senão, busca as permissões no banco
     const userQuery = `
       SELECT init, permissoes
       FROM usuarios
@@ -125,13 +118,11 @@ async function isAuthenticated(req, res, next) {
     const result = await pool.query(userQuery, [req.session.userId]);
 
     if (result.rows.length === 0) {
-      // Usuário não encontrado
       return res.redirect("/");
     }
 
     const { init, permissoes } = result.rows[0];
 
-    // Se 'init' for false, o usuário não foi "liberado" ou algo do tipo
     if (!init) {
       return res.status(403).send("Acesso negado: usuário não liberado.");
     }
@@ -139,12 +130,27 @@ async function isAuthenticated(req, res, next) {
     let listaPermissoes = [];
     if (permissoes) {
       try {
-        listaPermissoes = JSON.parse(permissoes); // se estiver em JSON
+        listaPermissoes = JSON.parse(permissoes);
       } catch (err) {
-        // se não estiver em JSON, pode tratar como CSV, etc.
         console.error("Falha ao parsear permissoes:", err);
       }
     }
+
+    if (
+      req.session.userId === 1 ||
+      listaPermissoes.includes("master") ||
+      listaPermissoes.includes("gestor") ||
+      listaPermissoes.includes("admin")
+    ) {
+      return next();
+    }
+
+    return res.status(403).send("Acesso negado: permissões insuficientes.");
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Erro interno do servidor.");
+  }
+}
 
     // Lógica de acesso: se tiver "admin" ou "gestor" na lista, prossegue
     if (listaPermissoes.includes("admin") || listaPermissoes.includes("gestor")) {
