@@ -138,13 +138,19 @@ async function isAuthenticated(req, res, next) {
     let listaPermissoes = [];
     if (permissoes) {
       try {
+        // Tenta interpretar como JSON
         listaPermissoes = JSON.parse(permissoes);
       } catch (err) {
-        console.error("Falha ao parsear permissoes:", err);
+        // Se falhar, assume que está separado por vírgulas
+        listaPermissoes = permissoes.split(",").map(p => p.trim());
       }
     }
 
-    if (listaPermissoes.includes("master") || listaPermissoes.includes("gestor") || listaPermissoes.includes("admin")) {
+    if (
+      listaPermissoes.includes("master") ||
+      listaPermissoes.includes("admin") ||
+      listaPermissoes.includes("gestor")
+    ) {
       return next();
     }
 
