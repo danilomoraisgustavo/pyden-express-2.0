@@ -109,6 +109,10 @@ async function isAuthenticated(req, res, next) {
       return res.redirect("/");
     }
 
+    if (req.session.userId === 1) {
+      return next();
+    }
+
     const userQuery = `
       SELECT init, permissoes
       FROM usuarios
@@ -136,36 +140,16 @@ async function isAuthenticated(req, res, next) {
       }
     }
 
-    if (
-      req.session.userId === 1 ||
-      listaPermissoes.includes("master") ||
-      listaPermissoes.includes("gestor") ||
-      listaPermissoes.includes("admin")
-    ) {
+    if (listaPermissoes.includes("master") || listaPermissoes.includes("gestor") || listaPermissoes.includes("admin")) {
       return next();
     }
 
     return res.status(403).send("Acesso negado: permissões insuficientes.");
-  } catch (error) {
-    console.error(error);
-    return res.status(500).send("Erro interno do servidor.");
-  }
-}
-
-    // Lógica de acesso: se tiver "admin" ou "gestor" na lista, prossegue
-    if (listaPermissoes.includes("admin") || listaPermissoes.includes("gestor")) {
-      return next();
-    }
-
-    // Caso contrário, nega o acesso
-    return res.status(403).send("Acesso negado: permissões insuficientes.");
-
   } catch (error) {
     console.error("Erro ao verificar permissões:", error);
     return res.status(500).send("Erro interno do servidor.");
   }
 }
-
 
 // ARQUIVOS ESTÁTICOS
 
