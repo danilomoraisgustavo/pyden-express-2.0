@@ -65,7 +65,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 horas
-      secure: true, // Em produção, use true se for HTTPS
+      secure: false, // Em produção, use true se for HTTPS
     },
   })
 );
