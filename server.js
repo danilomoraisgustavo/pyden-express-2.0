@@ -553,7 +553,7 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -807,7 +807,7 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -7434,7 +7434,7 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -7839,7 +7839,7 @@ app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -7999,7 +7999,7 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -8167,7 +8167,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -8343,7 +8343,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
     doc
@@ -8500,7 +8500,7 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
     doc
@@ -9045,7 +9045,7 @@ app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, 
       doc.addPage();
     }
 
-    const signatureY = doc.page.height - 200;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
     doc
