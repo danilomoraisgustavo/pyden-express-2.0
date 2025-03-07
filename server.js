@@ -553,17 +553,27 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 270;
+ const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
+
     doc
       .fontSize(12)
       .font("Helvetica")
       .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
+      .moveDown(2);
+
+    const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
+    if (fs.existsSync(signaturePath)) {
+      doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
+      doc.moveDown(3);
+    }
+
+    doc
       .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
+
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
       const footerSepY = doc.page.height - 160;
@@ -754,8 +764,8 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
       .font("Helvetica-Bold")
       .text(
         "ESTADO DO PARÁ\n" +
-        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
         250,
         20,
         { width: 300, align: "right" }
@@ -800,11 +810,20 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
     const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
+
     doc
       .fontSize(12)
       .font("Helvetica")
       .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
+      .moveDown(2);
+
+    const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
+    if (fs.existsSync(signaturePath)) {
+      doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
+      doc.moveDown(3);
+    }
+
+    doc
       .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
@@ -7415,17 +7434,27 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
-    const signatureY = doc.page.height - 270;
+ const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
+
     doc
       .fontSize(12)
       .font("Helvetica")
       .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
+      .moveDown(2);
+
+    const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
+    if (fs.existsSync(signaturePath)) {
+      doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
+      doc.moveDown(3);
+    }
+
+    doc
       .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
+
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
@@ -7810,17 +7839,27 @@ app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
-    const signatureY = doc.page.height - 270;
+ const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
+
     doc
       .fontSize(12)
       .font("Helvetica")
       .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
+      .moveDown(2);
+
+    const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
+    if (fs.existsSync(signaturePath)) {
+      doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
+      doc.moveDown(3);
+    }
+
+    doc
       .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
+
 
     // Rodapé com separador e segunda logo se existir
     if (fs.existsSync(separadorPath)) {
@@ -7960,17 +7999,27 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 270;
+ const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
+
     doc
       .fontSize(12)
       .font("Helvetica")
       .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
+      .moveDown(2);
+
+    const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
+    if (fs.existsSync(signaturePath)) {
+      doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
+      doc.moveDown(3);
+    }
+
+    doc
       .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
+
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
@@ -8118,17 +8167,27 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 270;
+ const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
+
     doc
       .fontSize(12)
       .font("Helvetica")
       .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
+      .moveDown(2);
+
+    const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
+    if (fs.existsSync(signaturePath)) {
+      doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
+      doc.moveDown(3);
+    }
+
+    doc
       .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
+
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
