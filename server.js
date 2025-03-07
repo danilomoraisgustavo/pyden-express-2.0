@@ -90,8 +90,8 @@ function isAdmin(req, res, next) {
       if (
         user.permissoes &&
         (user.permissoes.includes("master") ||
-         user.permissoes.includes("admin") ||
-         user.permissoes.includes("gestor"))
+          user.permissoes.includes("admin") ||
+          user.permissoes.includes("gestor"))
       ) {
         return next();
       }
@@ -553,7 +553,7 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
- const signatureY = doc.page.height - 270;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -566,7 +566,7 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
       doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
-      doc.moveDown(3);
+      doc.moveDown(0);
     }
 
     doc
@@ -764,8 +764,8 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
       .font("Helvetica-Bold")
       .text(
         "ESTADO DO PARÁ\n" +
-          "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
-          "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
         250,
         20,
         { width: 300, align: "right" }
@@ -820,7 +820,7 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
       doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
-      doc.moveDown(3);
+      doc.moveDown(0);
     }
 
     doc
@@ -7434,7 +7434,7 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
- const signatureY = doc.page.height - 270;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -7447,7 +7447,7 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
       doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
-      doc.moveDown(3);
+      doc.moveDown(0);
     }
 
     doc
@@ -7839,7 +7839,7 @@ app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
- const signatureY = doc.page.height - 270;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -7852,7 +7852,7 @@ app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
       doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
-      doc.moveDown(3);
+      doc.moveDown(0);
     }
 
     doc
@@ -7999,7 +7999,7 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
- const signatureY = doc.page.height - 270;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -8012,7 +8012,7 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
       doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
-      doc.moveDown(3);
+      doc.moveDown(0);
     }
 
     doc
@@ -8167,7 +8167,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
- const signatureY = doc.page.height - 270;
+    const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
 
@@ -8180,7 +8180,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
       doc.image(signaturePath, 180, signatureY - 20, { width: 150 });
-      doc.moveDown(3);
+      doc.moveDown(0);
     }
 
     doc
