@@ -500,8 +500,29 @@ app.post("/api/relatorios-gerais/cadastrar", uploadRelatorios.array("anexo[]"), 
   }
 });
 
-
 app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
+  function formatarDataPtBr(dataString) {
+    const data = new Date(dataString);
+    const meses = [
+      "janeiro",
+      "fevereiro",
+      "março",
+      "abril",
+      "maio",
+      "junho",
+      "julho",
+      "agosto",
+      "setembro",
+      "outubro",
+      "novembro",
+      "dezembro"
+    ];
+    const dia = data.getDate().toString().padStart(2, '0');
+    const mes = meses[data.getMonth()];
+    const ano = data.getFullYear();
+    return `${dia} de ${mes} de ${ano}`;
+  }
+
   const { id } = req.params;
   try {
     const result = await pool.query("SELECT * FROM relatorios_gerais WHERE id = $1", [id]);
@@ -514,10 +535,12 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     res.setHeader("Content-Type", "application/pdf");
     doc.pipe(res);
+
     const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
+
     const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
     doc
       .fontSize(11)
@@ -526,33 +549,40 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
         width: 300,
         align: "right"
       });
+
     if (fs.existsSync(separadorPath)) {
       const separadorX = (doc.page.width - 510) / 2;
       const separadorY = 90;
       doc.image(separadorPath, separadorX, separadorY, { width: 510 });
     }
+
     doc.y = 130;
     doc.x = 50;
+
     doc
       .fontSize(12)
       .font("Helvetica-Bold")
       .text(`RELATÓRIO GERAL N.º ${relatorio.id}/2025 - SECRETARIA MUNICIPAL DE EDUCAÇÃO`, { align: "justify" })
       .moveDown();
+
     const corpoAjustado = relatorio.corpo.replace(/\r\n/g, "\n").replace(/\r/g, "");
+
     doc
       .fontSize(12)
       .font("Helvetica")
       .text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "justify" })
-      .text(`Data do Relatório: ${relatorio.data_relatorio}`, { align: "justify" })
+      .text(`Data do Relatório: ${formatarDataPtBr(relatorio.data_relatorio)}`, { align: "justify" })
       .moveDown()
       .text("Prezados(as),", { align: "justify" })
       .moveDown()
       .text(corpoAjustado, { align: "justify" })
       .moveDown();
+
     const spaceNeededForSignature = 100;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
+
     const signatureY = doc.page.height - 270;
     doc.y = signatureY;
     doc.x = 50;
@@ -579,12 +609,14 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
       const footerSepY = doc.page.height - 160;
       doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
     }
+
     const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
     if (fs.existsSync(logo2Path)) {
       const logo2X = (doc.page.width - 160) / 2;
       const logo2Y = doc.page.height - 150;
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
+
     doc
       .fontSize(10)
       .font("Helvetica")
@@ -596,12 +628,14 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
         align: "center"
       })
       .text("Telefone: (94) 99293-4500", { align: "center" });
+
     let anexos = [];
     if (relatorio.caminho_anexo) {
       try {
         anexos = JSON.parse(relatorio.caminho_anexo);
-      } catch { }
+      } catch {}
     }
+
     if (anexos.length > 0) {
       anexos.forEach((anexo, idx) => {
         const absoluteAnexo = path.join(__dirname, anexo);
@@ -629,11 +663,13 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
         }
       });
     }
+
     doc.end();
   } catch (error) {
     res.status(500).json({ success: false, message: "Erro ao gerar PDF." });
   }
 });
+
 app.get("/api/relatorios-gerais/:id/gerar-docx", async (req, res) => {
   const { id } = req.params;
   try {
