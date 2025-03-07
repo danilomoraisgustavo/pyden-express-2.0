@@ -819,7 +819,7 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
 
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
-      doc.image(signaturePath, 180, signatureY - 5, { width: 150 });
+      doc.image(signaturePath, 200, signatureY - 1, { width: 150 });
       doc.moveDown(0);
     }
 
@@ -7446,7 +7446,7 @@ app.get("/api/memorandos/:id/gerar-pdf", async (req, res) => {
 
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
-      doc.image(signaturePath, 180, signatureY - 5, { width: 150 });
+      doc.image(signaturePath, 200, signatureY - 1, { width: 150 });
       doc.moveDown(0);
     }
 
@@ -7851,7 +7851,7 @@ app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
 
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
-      doc.image(signaturePath, 180, signatureY - 5, { width: 150 });
+      doc.image(signaturePath, 200, signatureY - 1, { width: 150 });
       doc.moveDown(0);
     }
 
@@ -8011,7 +8011,7 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
 
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
-      doc.image(signaturePath, 180, signatureY - 5, { width: 150 });
+      doc.image(signaturePath, 200, signatureY - 1, { width: 150 });
       doc.moveDown(0);
     }
 
@@ -8179,7 +8179,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
 
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
-      doc.image(signaturePath, 180, signatureY - 5, { width: 150 });
+      doc.image(signaturePath, 200, signatureY - 1, { width: 150 });
       doc.moveDown(0);
     }
 
