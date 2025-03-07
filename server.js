@@ -733,6 +733,27 @@ app.delete("/api/relatorios-gerais/:id", async (req, res) => {
 });
 
 app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
+  function formatarDataPtBr(dataString) {
+    const data = new Date(dataString);
+    const meses = [
+      "janeiro",
+      "fevereiro",
+      "março",
+      "abril",
+      "maio",
+      "junho",
+      "julho",
+      "agosto",
+      "setembro",
+      "outubro",
+      "novembro",
+      "dezembro"
+    ];
+    const dia = data.getDate().toString().padStart(2, '0');
+    const mes = meses[data.getMonth()];
+    const ano = data.getFullYear();
+    return `${dia} de ${mes} de ${ano}`;
+  }
   const { id } = req.params;
   try {
     const result = await pool.query("SELECT * FROM relatorios_ocorrencias WHERE id = $1", [id]);
@@ -795,7 +816,7 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
       .font("Helvetica")
       .text(`Tipo de Relatório: ${relatorio.tipo_relatorio}`, { align: "justify" })
       .text(`Rota ID: ${relatorio.rota_id}`, { align: "justify" })
-      .text(`Data do Ocorrido: ${relatorio.data_ocorrido}`, { align: "justify" })
+      .text(`Data do Ocorrido: ${formatarDataPtBr(relatorio.data_ocorrido)}`, { align: "justify" })
       .moveDown()
       .text("Prezados(as),", { align: "justify" })
       .moveDown()
@@ -909,13 +930,13 @@ app.get("/api/relatorios/:id/gerar-pdf", async (req, res) => {
 
     doc.end();
   } catch (error) {
-    console.error("Erro ao gerar PDF:", error);
     return res.status(500).json({
       success: false,
       message: "Erro ao gerar PDF.",
     });
   }
 });
+
 
 
 app.get("/api/relatorios/:id/gerar-docx", async (req, res) => {
