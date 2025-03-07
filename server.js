@@ -566,7 +566,7 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
     if (fs.existsSync(signaturePath)) {
       doc.image(signaturePath, 280, signatureY - 30, { width: 150 });
-      doc.moveDown(0);
+      doc.moveDown(-2);
     }
 
     doc
