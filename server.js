@@ -633,7 +633,7 @@ app.get("/api/relatorios-gerais/:id/gerar-pdf", async (req, res) => {
     if (relatorio.caminho_anexo) {
       try {
         anexos = JSON.parse(relatorio.caminho_anexo);
-      } catch {}
+      } catch { }
     }
 
     if (anexos.length > 0) {
