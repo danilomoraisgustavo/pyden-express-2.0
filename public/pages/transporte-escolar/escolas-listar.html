@@ -1124,7 +1124,7 @@
     let markers = [];
     let infoWindow;
     let allZoneamentos = [];
-    let displayedPolygons = [];
+    let displayedFeatures = [];
 
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
@@ -1220,7 +1220,7 @@
           hasMarkers = true;
 
           marker.addListener('click', () => {
-            clearDisplayedPolygons();
+            clearDisplayedFeatures();
             const zoneamentosList = e.zoneamentos ? e.zoneamentos.map(z => z.nome).join(', ') : 'Nenhum';
             const contentString = `
               <div>
@@ -1237,23 +1237,12 @@
               e.zoneamentos.forEach(z => {
                 const zoneamentoDetails = allZoneamentos.find(az => az.id === z.id);
                 if (zoneamentoDetails) {
-                  const coords = zoneamentoDetails.geojson.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
-                  const polygon = new google.maps.Polygon({
-                    paths: coords,
-                    strokeColor: '#FF0000',
-                    strokeOpacity: 1.0,
-                    strokeWeight: 2,
-                    fillColor: '#FF0000',
-                    fillOpacity: 0.35
-                  });
-                  polygon.setMap(map);
-                  displayedPolygons.push(polygon);
-
-                  polygon.addListener('click', () => {
-                    infoWindow.setContent('<div><strong>Zoneamento:</strong> ' + zoneamentoDetails.nome + '</div>');
-                    infoWindow.setPosition(polygon.getPath().getAt(0));
-                    infoWindow.open(map);
-                  });
+                  const geometryType = zoneamentoDetails.geojson.type;
+                  if (geometryType === 'Polygon' || geometryType === 'MultiPolygon') {
+                    drawPolygons(zoneamentoDetails);
+                  } else if (geometryType === 'LineString' || geometryType === 'MultiLineString') {
+                    drawLines(zoneamentoDetails);
+                  }
                 }
               });
             }
@@ -1270,14 +1259,65 @@
       }
     }
 
+    function drawPolygons(zoneamento) {
+      const coordsArray = zoneamento.geojson.type === 'Polygon'
+        ? [zoneamento.geojson.coordinates]
+        : zoneamento.geojson.coordinates;
+
+      coordsArray.forEach(polygonCoords => {
+        const mappedCoords = polygonCoords[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
+        const polygon = new google.maps.Polygon({
+          paths: mappedCoords,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2,
+          fillColor: '#FF0000',
+          fillOpacity: 0.35
+        });
+        polygon.setMap(map);
+        displayedFeatures.push(polygon);
+
+        polygon.addListener('click', () => {
+          infoWindow.setContent('<div><strong>Zoneamento:</strong> ' + zoneamento.nome + '</div>');
+          infoWindow.setPosition(polygon.getPath().getAt(0));
+          infoWindow.open(map);
+        });
+      });
+    }
+
+    function drawLines(zoneamento) {
+      const coordsArray = zoneamento.geojson.type === 'LineString'
+        ? [zoneamento.geojson.coordinates]
+        : zoneamento.geojson.coordinates;
+
+      coordsArray.forEach(lineCoords => {
+        const mappedCoords = lineCoords.map(coord => ({ lat: coord[1], lng: coord[0] }));
+        const polyline = new google.maps.Polyline({
+          path: mappedCoords,
+          strokeColor: '#0000FF',
+          strokeOpacity: 1.0,
+          strokeWeight: 3
+        });
+        polyline.setMap(map);
+        displayedFeatures.push(polyline);
+
+        polyline.addListener('click', (e) => {
+          if (!e.latLng) return;
+          infoWindow.setContent('<div><strong>Vicinal/Zoneamento:</strong> ' + zoneamento.nome + '</div>');
+          infoWindow.setPosition(e.latLng);
+          infoWindow.open(map);
+        });
+      });
+    }
+
     function clearMarkers() {
       markers.forEach(m => m.setMap(null));
       markers = [];
     }
 
-    function clearDisplayedPolygons() {
-      displayedPolygons.forEach(p => p.setMap(null));
-      displayedPolygons = [];
+    function clearDisplayedFeatures() {
+      displayedFeatures.forEach(f => f.setMap(null));
+      displayedFeatures = [];
     }
 
     function populateTable() {
