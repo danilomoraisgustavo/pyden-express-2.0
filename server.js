@@ -8240,7 +8240,6 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text("Manter o ônibus limpo e conservado, evitando danos ao interior, assentos ou janelas.")
       .text("Não utilizar celulares, aparelhos de som ou eletrônicos que atrapalhem a atenção do motorista ou perturbem outros.")
       .text("Abster-se de substâncias ilícitas e de condutas que prejudiquem a segurança ou a tranquilidade do ambiente.")
-      .text("Comunicar imediatamente qualquer incidente, situação de perigo ou avarias no veículo.")
       .text("Cientificar-se de que o descumprimento dos deveres poderá ocasionar advertências, notificação aos responsáveis e, em casos graves ou reincidentes, suspensão do direito ao uso do transporte.")
       .moveDown();
 
@@ -8249,10 +8248,10 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
-    doc.moveDown(2);
+    doc.moveDown(1);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
-    doc.moveDown(2);
+    doc.moveDown(1);
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
@@ -8423,7 +8422,6 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .text("Manter o ônibus limpo e conservado, evitando danos ao interior, assentos ou janelas.")
       .text("Não utilizar celulares, aparelhos de som ou eletrônicos que atrapalhem a atenção do motorista ou perturbem outros.")
       .text("Abster-se de substâncias ilícitas e de condutas que prejudiquem a segurança ou a tranquilidade do ambiente.")
-      .text("Comunicar imediatamente qualquer incidente, situação de perigo ou avarias no veículo.")
       .text("Cientificar-se de que o descumprimento dos deveres poderá ocasionar advertências, notificação aos responsáveis e, em casos graves ou reincidentes, suspensão do direito ao uso do transporte.")
       .moveDown();
 
@@ -8432,10 +8430,10 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       doc.addPage();
     }
 
-    doc.moveDown(2);
+    doc.moveDown(1);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
-    doc.moveDown(2);
+    doc.moveDown(1);
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
