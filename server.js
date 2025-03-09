@@ -8111,9 +8111,6 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
 });
 
 
-// ============================================================================
-// COMPROVANTE APROVADO - MUNICIPAL
-// ============================================================================
 app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
   const signer = req.query.signer || "filiacao1";
@@ -8194,7 +8191,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     doc.y = 130;
     doc.x = 50;
     doc
-      .fontSize(12)
+      .fontSize(11)
       .font("Helvetica-Bold")
       .text(`COMPROVANTE DE ATENDIMENTO Nº ${numeroProtocolo}`, {
         align: "justify",
@@ -8202,7 +8199,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .moveDown(1);
 
     doc
-      .fontSize(12)
+      .fontSize(11)
       .font("Helvetica")
       .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
       .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
@@ -8221,7 +8218,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .moveDown();
 
     doc
-      .fontSize(12)
+      .fontSize(11)
       .font("Helvetica-Bold")
       .text("DIREITOS", { align: "left" })
       .moveDown(0.5)
@@ -8232,7 +8229,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text("Poder reportar ocorrências ou problemas diretamente aos responsáveis pelo transporte.")
       .text("Contar com um ambiente livre de práticas abusivas ou discriminatórias.")
       .moveDown()
-      .fontSize(12)
+      .fontSize(11)
       .font("Helvetica-Bold")
       .text("DEVERES", { align: "left" })
       .moveDown(0.5)
@@ -8248,14 +8245,14 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .moveDown();
 
     const spaceNeededForSignature = 120;
-    if (doc.y + spaceNeededForSignature > doc.page.height - 60) {
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
 
-    doc.moveDown(0);
+    doc.moveDown(2);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
-    doc.moveDown(0);
+    doc.moveDown(2);
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
@@ -8269,7 +8266,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     }
 
     doc
-      .fontSize(10)
+      .fontSize(9)
       .font("Helvetica")
       .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
         width: doc.page.width - 100,
@@ -8290,11 +8287,6 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
   }
 });
 
-
-
-// ============================================================================
-// COMPROVANTE APROVADO - ESTADUAL
-// ============================================================================
 app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
   const signer = req.query.signer || "filiacao1";
@@ -8381,7 +8373,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
     doc.y = 130;
     doc.x = 50;
     doc
-      .fontSize(12)
+      .fontSize(11)
       .font("Helvetica-Bold")
       .text(`DECLARAÇÃO DE USO DO TRANSPORTE ESCOLAR Nº ${numeroProtocolo}`, {
         align: "justify",
@@ -8389,7 +8381,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .moveDown();
 
     doc
-      .fontSize(12)
+      .fontSize(11)
       .font("Helvetica")
       .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
       .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
@@ -8409,7 +8401,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .moveDown();
 
     doc
-      .fontSize(12)
+      .fontSize(11)
       .font("Helvetica-Bold")
       .text("DIREITOS", { align: "left" })
       .moveDown(0.5)
@@ -8420,7 +8412,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .text("Poder reportar ocorrências ou problemas diretamente aos responsáveis pelo transporte.")
       .text("Contar com um ambiente livre de práticas abusivas ou discriminatórias.")
       .moveDown()
-      .fontSize(12)
+      .fontSize(11)
       .font("Helvetica-Bold")
       .text("DEVERES", { align: "left" })
       .moveDown(0.5)
@@ -8440,7 +8432,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       doc.addPage();
     }
 
-    doc.moveDown();
+    doc.moveDown(2);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(2);
@@ -8456,7 +8448,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
     doc
-      .fontSize(10)
+      .fontSize(9)
       .font("Helvetica")
       .text(
         "SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC",
@@ -8482,6 +8474,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
     });
   }
 });
+
 
 // ============================================================================
 // COMPROVANTE NÃO APROVADO - ESTADUAL
