@@ -37,7 +37,6 @@
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
 
   <style>
-    /* Estilos originais da página de Listar Escolas */
     #map {
       height: 500px;
       width: 100%;
@@ -57,14 +56,12 @@
       width: 100% !important;
     }
 
-    /* Estilos do formulário de Cadastrar Escola (ajustes para o modal) */
     #mapCadastrarEscola {
       height: 400px;
       width: 100%;
       margin-bottom: 20px;
     }
 
-    /* Estilos do formulário de Editar Escola (ajustes para o modal) */
     #mapEditarEscola {
       height: 400px;
       width: 100%;
@@ -106,7 +103,6 @@
 
 <body>
   <div class="wrapper">
-    <!-- SIDEBAR -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
@@ -445,7 +441,6 @@
               </div>
             </li>
 
-            <!-- Novo item de Relatórios dentro de Financeiro -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
                 <i class="fas fa-chart-line"></i>
@@ -476,8 +471,6 @@
         </div>
       </div>
     </div>
-    <!-- END SIDEBAR -->
-
 
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
@@ -503,7 +496,6 @@
 
         <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
           <div class="container-fluid">
-            <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
@@ -689,7 +681,6 @@
           </div>
 
           <div class="row">
-            <!-- Card com o mapa e busca -->
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -710,7 +701,6 @@
             </div>
           </div>
 
-          <!-- Tabela de escolas -->
           <div class="row mt-4">
             <div class="col-md-12">
               <div class="card">
@@ -745,7 +735,6 @@
                         </tr>
                       </tfoot>
                       <tbody>
-                        <!-- Populado dinamicamente -->
                       </tbody>
                     </table>
                   </div>
@@ -757,7 +746,6 @@
       </div>
 
 
-      <!-- Modal de Cadastro de Escola -->
       <div class="modal fade" id="modalCadastrarEscola" tabindex="-1" aria-labelledby="modalCadastrarEscolaLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -924,9 +912,7 @@
           </div>
         </div>
       </div>
-      <!-- Fim do Modal -->
 
-      <!-- Modal de Edição de Escola -->
       <div class="modal fade" id="modalEditarEscola" tabindex="-1" aria-labelledby="modalEditarEscolaLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -1099,7 +1085,6 @@
           </div>
         </div>
       </div>
-      <!-- Fim do Modal Edição -->
 
 
       <footer class="footer">
@@ -1107,8 +1092,7 @@
           <nav class="pull-left">
             <ul class="nav">
               <li class="nav-item"><a class="nav-link" target="_blank" href="https://pydenexpress.com/">PyDen
-                  Express</a>
-              </li>
+                  Express</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Ajuda</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Termos de Uso</a></li>
             </ul>
@@ -1124,7 +1108,6 @@
     </div>
   </div>
 
-  <!-- Scripts básicos -->
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -1135,12 +1118,13 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
   <script src="../../assets/js/setting-demo2.js"></script>
 
-  <!-- Scripts da página Listar Escolas (mapa de visualização) -->
   <script>
     let map;
     let escolas = [];
     let markers = [];
     let infoWindow;
+    let allZoneamentos = [];
+    let displayedPolygons = [];
 
     function initMap() {
       map = new google.maps.Map(document.getElementById('map'), {
@@ -1150,15 +1134,6 @@
       });
       infoWindow = new google.maps.InfoWindow();
 
-      function getRandomColor() {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-          color += letters[Math.floor(Math.random() * 16)];
-        }
-        return color;
-      }
-
       fetch('/api/zoneamentos')
         .then(res => {
           if (!res.ok) {
@@ -1167,25 +1142,7 @@
           return res.json();
         })
         .then(zoneamentos => {
-          zoneamentos.forEach(z => {
-            const coordinates = z.geojson.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
-            const color = getRandomColor();
-            const polygon = new google.maps.Polygon({
-              paths: coordinates,
-              strokeColor: color,
-              strokeOpacity: 1.0,
-              strokeWeight: 2,
-              fillColor: color,
-              fillOpacity: 0.35
-            });
-            polygon.setMap(map);
-
-            polygon.addListener('click', () => {
-              infoWindow.setContent('<div><strong>Zoneamento:</strong> ' + z.nome + '</div>');
-              infoWindow.setPosition(polygon.getPath().getAt(0));
-              infoWindow.open(map);
-            });
-          });
+          allZoneamentos = zoneamentos;
         })
         .catch(err => {
           console.error(err);
@@ -1263,6 +1220,7 @@
           hasMarkers = true;
 
           marker.addListener('click', () => {
+            clearDisplayedPolygons();
             const zoneamentosList = e.zoneamentos ? e.zoneamentos.map(z => z.nome).join(', ') : 'Nenhum';
             const contentString = `
               <div>
@@ -1274,6 +1232,31 @@
             `;
             infoWindow.setContent(contentString);
             infoWindow.open(map, marker);
+
+            if (e.zoneamentos && e.zoneamentos.length > 0) {
+              e.zoneamentos.forEach(z => {
+                const zoneamentoDetails = allZoneamentos.find(az => az.id === z.id);
+                if (zoneamentoDetails) {
+                  const coords = zoneamentoDetails.geojson.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
+                  const polygon = new google.maps.Polygon({
+                    paths: coords,
+                    strokeColor: '#FF0000',
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2,
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.35
+                  });
+                  polygon.setMap(map);
+                  displayedPolygons.push(polygon);
+
+                  polygon.addListener('click', () => {
+                    infoWindow.setContent('<div><strong>Zoneamento:</strong> ' + zoneamentoDetails.nome + '</div>');
+                    infoWindow.setPosition(polygon.getPath().getAt(0));
+                    infoWindow.open(map);
+                  });
+                }
+              });
+            }
           });
 
           bounds.extend(position);
@@ -1290,6 +1273,11 @@
     function clearMarkers() {
       markers.forEach(m => m.setMap(null));
       markers = [];
+    }
+
+    function clearDisplayedPolygons() {
+      displayedPolygons.forEach(p => p.setMap(null));
+      displayedPolygons = [];
     }
 
     function populateTable() {
@@ -1394,7 +1382,6 @@
     });
   </script>
 
-  <!-- Scripts do Modal de Cadastrar Escola -->
   <script>
     let mapCadastrarEscola;
     let markerCadastrarEscola;
@@ -1583,7 +1570,6 @@
     });
   </script>
 
-  <!-- Scripts do Modal de Editar Escola -->
   <script>
     let mapEditarEscola;
     let markerEditarEscola;
@@ -1653,7 +1639,6 @@
           markerEditarEscola = null;
         }
 
-        // Preencher dados do formulário
         document.getElementById('editarLatitude').value = escola.latitude || '';
         document.getElementById('editarLongitude').value = escola.longitude || '';
 
@@ -1672,7 +1657,6 @@
         document.getElementById('editarNomeEscola').value = escola.nome;
         document.getElementById('editarCodigoINEP').value = escola.codigo_inep || '';
 
-        // Checkboxes de regime
         const regimeChecks = ['editarRegRegular', 'editarRegEJA', 'editarRegProf', 'editarRegEspecial'];
         regimeChecks.forEach(ch => document.getElementById(ch).checked = false);
         escola.regime.forEach(r => {
@@ -1684,7 +1668,6 @@
           }
         });
 
-        // Checkboxes de nível
         const nivelChecks = ['editarNivInfantil', 'editarNivFund', 'editarNivMedio', 'editarNivSuperior'];
         nivelChecks.forEach(ch => document.getElementById(ch).checked = false);
         escola.nivel.forEach(n => {
@@ -1696,7 +1679,6 @@
           }
         });
 
-        // Checkboxes de horário
         const horarioChecks = ['editarHorManha', 'editarHorTarde', 'editarHorNoite'];
         horarioChecks.forEach(ch => document.getElementById(ch).checked = false);
         escola.horario.forEach(h => {
@@ -1707,10 +1689,8 @@
           }
         });
 
-        // Zoneamentos
         loadZoneamentosEditar(escola.zoneamentos);
 
-        // Centralizar mapa na posição se existir latitude/longitude
         if (escola.latitude && escola.longitude) {
           const position = { lat: parseFloat(escola.latitude), lng: parseFloat(escola.longitude) };
           mapEditarEscola.setCenter(position);
@@ -1741,7 +1721,6 @@
             const option = document.createElement('option');
             option.value = z.id;
             option.textContent = z.nome;
-            // Verificar se está na escola
             if (zoneamentosEscolares.some(ze => ze.id === z.id)) {
               listaDir.appendChild(option);
             } else {
@@ -1753,7 +1732,6 @@
     }
 
     $('#modalEditarEscola').on('shown.bs.modal', function () {
-      // Nada específico aqui, pois estamos inicializando manualmente
     }).on('hidden.bs.modal', function () {
       document.getElementById('escola-form-editar').reset();
       if (markerEditarEscola) {
