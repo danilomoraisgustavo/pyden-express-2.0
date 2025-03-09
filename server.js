@@ -8416,7 +8416,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .moveDown(1);
 
     const spaceNeededForSignature = 80;
-    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+    if (doc.y + spaceNeededForSignature > doc.page.height - 100) {
       doc.addPage();
     }
 
