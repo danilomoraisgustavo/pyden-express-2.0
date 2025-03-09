@@ -8238,7 +8238,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
         `Eu, ${signerName}, declaro estar ciente dessas normas e assumo a responsabilidade de manter meus dados atualizados junto à SEMED.`,
         { align: "justify" }
       )
-      .moveDown(1);
+      .moveDown(5);
 
     const spaceNeededForSignature = 80;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
