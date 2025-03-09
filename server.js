@@ -8264,7 +8264,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     doc
       .fontSize(8)
       .font("Helvetica")
-      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) - CANAÃ DOS CARAJÁS - PA", 50, doc.page.height - 50, {
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) - CANAÃ DOS CARAJÁS - PA", 50, doc.page.height - 90, {
         width: doc.page.width - 100,
         align: "center",
       })
