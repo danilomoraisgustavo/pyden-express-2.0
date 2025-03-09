@@ -8248,7 +8248,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .moveDown();
 
     const spaceNeededForSignature = 120;
-    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+    if (doc.y + spaceNeededForSignature > doc.page.height - 260) {
       doc.addPage();
     }
 
