@@ -8413,7 +8413,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
         `Declaro ciência e responsabilidade de manter os dados atualizados junto à SEDUC.\nAssinatura: ${signerName}`,
         { align: "justify" }
       )
-      .moveDown(1);
+      .moveDown(3);
 
     const spaceNeededForSignature = 80;
     if (doc.y + spaceNeededForSignature > doc.page.height - 100) {
