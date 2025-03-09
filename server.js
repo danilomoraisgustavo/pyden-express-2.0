@@ -9401,7 +9401,6 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     }
 
     for (const aluno of alunos) {
-      // Aqui você puxa também a data_nascimento
       const {
         id_matricula,
         UNIDADE_ENSINO,
@@ -9411,7 +9410,6 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         TURMA,
         pessoa_nome,
         cpf,
-        transporte_escolar_poder_publico,
         cep,
         bairro,
         numero_pessoa_endereco,
@@ -9420,7 +9418,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         filiacao_2,
         RESPONSAVEL,
         deficiencia,
-        data_nascimento // <== CAPTURANDO DATA DE NASCIMENTO
+        data_nascimento
       } = aluno;
 
       let defArray = [];
@@ -9455,12 +9453,10 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         }
       }
 
-      // Se já existe, pula (não cadastra duplicado).
       if (alreadyExists) {
         continue;
       }
 
-      // Agora inclua data_nascimento no INSERT
       await pool.query(
         `INSERT INTO alunos_ativos(
             id_matricula,
@@ -9484,9 +9480,9 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
          )
          VALUES (
             $1,  $2,  $3,  $4,  $5,
-            $6,  $7,  $8,  $9,  $10,
-            $11, $12, $13, $14, $15,
-            $16, $17, $18
+            $6,  $7,  $8,  null, $9,
+            $10, $11, $12, $13, $14,
+            $15, $16, $17
          )`,
         [
           id_matricula || null,
@@ -9497,7 +9493,6 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           TURMA || null,
           pessoa_nome || null,
           cpf || null,
-          transporte_escolar_poder_publico || null,
           cep || null,
           bairro || null,
           numero_pessoa_endereco || null,
@@ -9506,7 +9501,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           filiacao_2 || null,
           RESPONSAVEL || null,
           defArray,
-          data_nascimento || null // <== GRAVANDO DATA DE NASCIMENTO
+          data_nascimento || null
         ]
       );
     }
@@ -9527,6 +9522,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     return res.json({ success: false, message: "Erro ao importar os alunos." });
   }
 });
+
 
 
 // Rotas (exemplo) - Ajustando para permitir filtros na query
