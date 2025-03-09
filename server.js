@@ -8235,7 +8235,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text("• Descumprimentos graves podem levar à suspensão do direito ao transporte.")
       .moveDown(1)
       .text(
-        `Declaro estar ciente dessas normas e assumo a responsabilidade de manter meus dados atualizados junto à SEMED.\nAssinatura: ${signerName}`,
+        `Eu, ${signerName}, declaro estar ciente dessas normas e assumo a responsabilidade de manter meus dados atualizados junto à SEMED.`,
         { align: "justify" }
       )
       .moveDown(1);
@@ -8251,13 +8251,13 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
-      const footerSepY = doc.page.height - 160;
+      const footerSepY = doc.page.height - 100;
       doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
     }
 
     if (fs.existsSync(logo2Path)) {
       const logo2X = (doc.page.width - 160) / 2;
-      const logo2Y = doc.page.height - 150;
+      const logo2Y = doc.page.height - 100;
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
 
