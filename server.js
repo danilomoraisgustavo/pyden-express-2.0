@@ -8145,8 +8145,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     }
 
     const solQuery = `
-      SELECT
-        id AS solicitacao_id
+      SELECT id AS solicitacao_id
       FROM solicitacoes_transporte
       WHERE aluno_id = $1
       ORDER BY id DESC
@@ -8170,6 +8169,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
+
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
@@ -8196,7 +8196,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text(`COMPROVANTE DE ATENDIMENTO Nº ${numeroProtocolo}`, {
         align: "justify",
       })
-      .moveDown(1);
+      .moveDown();
 
     doc
       .fontSize(11)
@@ -8207,12 +8207,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
       .moveDown()
       .text(
-        "O(a) aluno(a) acima mencionado(a) atende aos critérios estabelecidos e está devidamente autorizado(a) a usufruir do Transporte Escolar, conforme verificação e aprovação da Secretaria Municipal de Educação.",
-        { align: "justify" }
-      )
-      .moveDown()
-      .text(
-        `Eu, ${signerName}, declaro estar ciente das regras de utilização do transporte escolar, bem como da necessidade de manter os dados atualizados junto à SEMED.`,
+        "O(a) aluno(a) acima mencionado(a) foi aprovado para uso do Transporte Escolar, conforme verificação realizada.",
         { align: "justify" }
       )
       .moveDown();
@@ -8221,34 +8216,35 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .fontSize(11)
       .font("Helvetica-Bold")
       .text("DIREITOS", { align: "left" })
-      .moveDown(0.5)
+      .moveDown(0.3)
       .font("Helvetica")
-      .text("Receber transporte em condições adequadas de segurança e higiene.")
-      .text("Ter assentos disponíveis e o veículo em bom estado de conservação.")
-      .text("Ser tratado com respeito por motoristas, monitores e colegas.")
-      .text("Poder reportar ocorrências ou problemas diretamente aos responsáveis pelo transporte.")
-      .text("Contar com um ambiente livre de práticas abusivas ou discriminatórias.")
-      .moveDown()
+      .text("• Transporte em condições de segurança e higiene.")
+      .text("• Veículo em bom estado de conservação, com assentos adequados.")
+      .text("• Respeito de motoristas, monitores e colegas.")
+      .moveDown(0.8)
       .fontSize(11)
       .font("Helvetica-Bold")
       .text("DEVERES", { align: "left" })
-      .moveDown(0.5)
+      .moveDown(0.3)
       .font("Helvetica")
-      .text("Usar o cinto de segurança durante todo o trajeto, mantendo-se sentado e sem se deslocar com o veículo em movimento.")
-      .text("Evitar qualquer tipo de alimento dentro do ônibus e descartar o lixo de forma adequada.")
-      .text("Respeitar motorista, monitor e demais passageiros, acatando as orientações e mantendo postura correta.")
-      .text("Manter o ônibus limpo e conservado, evitando danos ao interior, assentos ou janelas.")
-      .text("Não utilizar celulares, aparelhos de som ou eletrônicos que atrapalhem a atenção do motorista ou perturbem outros.")
-      .text("Abster-se de substâncias ilícitas e de condutas que prejudiquem a segurança ou a tranquilidade do ambiente.")
-      .text("Cientificar-se de que o descumprimento dos deveres poderá ocasionar advertências, notificação aos responsáveis e, em casos graves ou reincidentes, suspensão do direito ao uso do transporte.")
-      .moveDown();
+      .text("• Usar o cinto de segurança, permanecer sentado.")
+      .text("• Não consumir alimentos no ônibus, manter limpeza e conservação.")
+      .text("• Respeitar condutores e colegas, acatar instruções.")
+      .text("• Evitar eletrônicos que prejudiquem a segurança ou perturbem os demais.")
+      .text("• Abster-se de substâncias ilícitas e condutas inseguras.")
+      .text("• Descumprimentos graves podem levar à suspensão do direito ao transporte.")
+      .moveDown(1)
+      .text(
+        `Declaro estar ciente dessas normas e assumo a responsabilidade de manter meus dados atualizados junto à SEMED.\nAssinatura: ${signerName}`,
+        { align: "justify" }
+      )
+      .moveDown(1);
 
-    const spaceNeededForSignature = 120;
+    const spaceNeededForSignature = 80;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
 
-    doc.moveDown(1);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(1);
@@ -8258,6 +8254,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       const footerSepY = doc.page.height - 160;
       doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
     }
+
     if (fs.existsSync(logo2Path)) {
       const logo2X = (doc.page.width - 160) / 2;
       const logo2Y = doc.page.height - 150;
@@ -8265,16 +8262,14 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     }
 
     doc
-      .fontSize(9)
+      .fontSize(8)
       .font("Helvetica")
-      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED", 50, doc.page.height - 85, {
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) - CANAÃ DOS CARAJÁS - PA", 50, doc.page.height - 70, {
         width: doc.page.width - 100,
         align: "center",
       })
-      .text("Rua Itamarati s/n - Bairro Novo Horizonte - CEP: 68.356-103 - Canaã dos Carajás - PA", {
-        align: "center",
-      })
-      .text("Telefone: (94) 99293-4500", { align: "center" });
+      .text("Rua Itamarati, s/n - Bairro Novo Horizonte - CEP: 68.356-103", { align: "center" })
+      .text("Fone: (94) 99293-4500", { align: "center" });
 
     doc.end();
   } catch (error) {
@@ -8307,10 +8302,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
     `;
     const result = await pool.query(query, [alunoId]);
     if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Aluno estadual não encontrado."
-      });
+      return res.status(404).json({ success: false, message: "Aluno estadual não encontrado." });
     }
     const aluno = result.rows[0];
 
@@ -8351,6 +8343,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 50, 20, { width: 60 });
     }
+
     doc
       .fontSize(11)
       .font("Helvetica-Bold")
@@ -8389,12 +8382,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .text(`Turno: ${aluno.turno || ""}`, { align: "justify" })
       .moveDown()
       .text(
-        "Declaramos que o(a) aluno(a) acima mencionado(a) encontra-se APTO(a) para o transporte escolar oferecido pela rede estadual, tendo cumprido os critérios necessários.",
-        { align: "justify" }
-      )
-      .moveDown()
-      .text(
-        `Eu, ${signerName}, responsável, declaro ciência das normas e da obrigatoriedade de manter os dados atualizados junto à SEDUC.`,
+        "O(a) aluno(a) encontra-se APTO(a) para uso do transporte escolar da rede estadual, segundo critérios verificados.",
         { align: "justify" }
       )
       .moveDown();
@@ -8403,34 +8391,35 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .fontSize(11)
       .font("Helvetica-Bold")
       .text("DIREITOS", { align: "left" })
-      .moveDown(0.5)
+      .moveDown(0.3)
       .font("Helvetica")
-      .text("Receber transporte em condições adequadas de segurança e higiene.")
-      .text("Ter assentos disponíveis e o veículo em bom estado de conservação.")
-      .text("Ser tratado com respeito por motoristas, monitores e colegas.")
-      .text("Poder reportar ocorrências ou problemas diretamente aos responsáveis pelo transporte.")
-      .text("Contar com um ambiente livre de práticas abusivas ou discriminatórias.")
-      .moveDown()
+      .text("• Transporte seguro e higiênico.")
+      .text("• Veículo em bom estado e assentos adequados.")
+      .text("• Respeito de todos os envolvidos.")
+      .moveDown(0.8)
       .fontSize(11)
       .font("Helvetica-Bold")
       .text("DEVERES", { align: "left" })
-      .moveDown(0.5)
+      .moveDown(0.3)
       .font("Helvetica")
-      .text("Usar o cinto de segurança durante todo o trajeto, mantendo-se sentado e sem se deslocar com o veículo em movimento.")
-      .text("Evitar qualquer tipo de alimento dentro do ônibus e descartar o lixo de forma adequada.")
-      .text("Respeitar motorista, monitor e demais passageiros, acatando as orientações e mantendo postura correta.")
-      .text("Manter o ônibus limpo e conservado, evitando danos ao interior, assentos ou janelas.")
-      .text("Não utilizar celulares, aparelhos de som ou eletrônicos que atrapalhem a atenção do motorista ou perturbem outros.")
-      .text("Abster-se de substâncias ilícitas e de condutas que prejudiquem a segurança ou a tranquilidade do ambiente.")
-      .text("Cientificar-se de que o descumprimento dos deveres poderá ocasionar advertências, notificação aos responsáveis e, em casos graves ou reincidentes, suspensão do direito ao uso do transporte.")
-      .moveDown();
+      .text("• Usar cinto e permanecer sentado.")
+      .text("• Não comer no ônibus, zelar pela limpeza.")
+      .text("• Respeitar condutores e colegas, seguir orientações.")
+      .text("• Não usar eletrônicos que prejudiquem a condução ou perturbem terceiros.")
+      .text("• Evitar substâncias ilícitas e comportamentos de risco.")
+      .text("• Infrações graves podem suspender o direito ao transporte.")
+      .moveDown(1)
+      .text(
+        `Declaro ciência e responsabilidade de manter os dados atualizados junto à SEDUC.\nAssinatura: ${signerName}`,
+        { align: "justify" }
+      )
+      .moveDown(1);
 
-    const spaceNeededForSignature = 120;
+    const spaceNeededForSignature = 80;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
 
-    doc.moveDown(1);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(1);
@@ -8445,22 +8434,15 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       const logo2Y = doc.page.height - 150;
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
+
     doc
-      .fontSize(9)
+      .fontSize(8)
       .font("Helvetica")
-      .text(
-        "SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC",
-        50,
-        doc.page.height - 85,
-        {
-          width: doc.page.width - 100,
-          align: "center",
-        }
-      )
-      .text(
-        "Endereço: Av. Faruk Salmen, s/n - CEP: 68.000-000 - Belém - PA",
-        { align: "center" }
-      )
+      .text("SECRETARIA DE ESTADO DE EDUCAÇÃO - SEDUC", 50, doc.page.height - 70, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Av. Faruk Salmen, s/n - Belém - PA - CEP: 68.000-000", { align: "center" })
       .text("Telefone: (94) 99999-9999", { align: "center" });
 
     doc.end();
