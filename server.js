@@ -8247,30 +8247,15 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text("Cientificar-se de que o descumprimento dos deveres poderá ocasionar advertências, notificação aos responsáveis e, em casos graves ou reincidentes, suspensão do direito ao uso do transporte.")
       .moveDown();
 
-    const spaceNeededForSignature = 100;
+    const spaceNeededForSignature = 120;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 270;
-    doc.y = signatureY;
-    doc.x = 50;
 
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2);
-
-    const signaturePath = path.join(__dirname, "public", "assets", "img", "signature.png");
-    if (fs.existsSync(signaturePath)) {
-      doc.image(signaturePath, 220, signatureY - 0, { width: 150 });
-      doc.moveDown(0);
-    }
-
-    doc
-      .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
-      .text("Gestor de Transporte Escolar", { align: "center" })
-      .text("Portaria 118/2023 - GP", { align: "center" });
+    doc.moveDown(2);
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(2);
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
@@ -8450,20 +8435,15 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       .text("Cientificar-se de que o descumprimento dos deveres poderá ocasionar advertências, notificação aos responsáveis e, em casos graves ou reincidentes, suspensão do direito ao uso do transporte.")
       .moveDown();
 
-    const spaceNeededForSignature = 100;
+    const spaceNeededForSignature = 120;
     if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
       doc.addPage();
     }
-    const signatureY = doc.page.height - 270;
-    doc.y = signatureY;
-    doc.x = 50;
-    doc
-      .fontSize(12)
-      .font("Helvetica")
-      .text("Atenciosamente,", { align: "justify" })
-      .moveDown(2)
-      .text("COORDENAÇÃO DE TRANSPORTE ESCOLAR - SEDUC", { align: "center" })
-      .text("Estado do Pará", { align: "center" });
+
+    doc.moveDown(2);
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(2);
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
@@ -8502,7 +8482,6 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
     });
   }
 });
-
 
 // ============================================================================
 // COMPROVANTE NÃO APROVADO - ESTADUAL
