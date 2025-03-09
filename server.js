@@ -8252,7 +8252,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       doc.addPage();
     }
 
-    doc.moveDown(2);
+    doc.moveDown(0);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(2);
@@ -8440,7 +8440,7 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       doc.addPage();
     }
 
-    doc.moveDown(2);
+    doc.moveDown();
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(2);
