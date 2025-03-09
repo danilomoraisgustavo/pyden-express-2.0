@@ -8248,14 +8248,14 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .moveDown();
 
     const spaceNeededForSignature = 120;
-    if (doc.y + spaceNeededForSignature > doc.page.height - 260) {
+    if (doc.y + spaceNeededForSignature > doc.page.height - 60) {
       doc.addPage();
     }
 
     doc.moveDown(0);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
-    doc.moveDown(2);
+    doc.moveDown(0);
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
