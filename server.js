@@ -8251,20 +8251,20 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
-      const footerSepY = doc.page.height - 140;
+      const footerSepY = doc.page.height - 160;
       doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
     }
 
     if (fs.existsSync(logo2Path)) {
       const logo2X = (doc.page.width - 160) / 2;
-      const logo2Y = doc.page.height - 140;
+      const logo2Y = doc.page.height - 150;
       doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
     }
 
     doc
       .fontSize(8)
       .font("Helvetica")
-      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) - CANAÃ DOS CARAJÁS - PA", 50, doc.page.height - 70, {
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) - CANAÃ DOS CARAJÁS - PA", 50, doc.page.height - 50, {
         width: doc.page.width - 100,
         align: "center",
       })
