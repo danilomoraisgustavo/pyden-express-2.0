@@ -8415,14 +8415,16 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
       )
       .moveDown(3);
 
-    const spaceNeededForSignature = 80;
-    if (doc.y + spaceNeededForSignature > doc.page.height - 100) {
+    const signatureSpace = 120;
+    if (doc.y + signatureSpace > doc.page.height - 100) {
       doc.addPage();
     }
 
+    doc.moveDown(5);
     doc.text("_____________________________________________", { align: "center" });
     doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
     doc.moveDown(1);
+
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
