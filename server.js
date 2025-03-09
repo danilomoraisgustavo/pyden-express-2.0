@@ -8025,7 +8025,7 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
     doc
       .fontSize(12)
       .font("Helvetica-Bold")
-      .text("COMPROVANTE DE NÃO APROVAÇÃO Nº 2025", {
+      .text("COMPROVANTE DE ATENDIMENTO", {
         align: "justify",
       })
       .moveDown();
@@ -8196,7 +8196,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     doc
       .fontSize(12)
       .font("Helvetica-Bold")
-      .text(`COMPROVANTE DE APROVAÇÃO Nº ${numeroProtocolo}`, {
+      .text(`COMPROVANTE DE ATENDIMENTO Nº ${numeroProtocolo}`, {
         align: "justify",
       })
       .moveDown(1);
@@ -8218,6 +8218,33 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
         `Eu, ${signerName}, declaro estar ciente das regras de utilização do transporte escolar, bem como da necessidade de manter os dados atualizados junto à SEMED.`,
         { align: "justify" }
       )
+      .moveDown();
+
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("DIREITOS", { align: "left" })
+      .moveDown(0.5)
+      .font("Helvetica")
+      .text("Receber transporte em condições adequadas de segurança e higiene.")
+      .text("Ter assentos disponíveis e o veículo em bom estado de conservação.")
+      .text("Ser tratado com respeito por motoristas, monitores e colegas.")
+      .text("Poder reportar ocorrências ou problemas diretamente aos responsáveis pelo transporte.")
+      .text("Contar com um ambiente livre de práticas abusivas ou discriminatórias.")
+      .moveDown()
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("DEVERES", { align: "left" })
+      .moveDown(0.5)
+      .font("Helvetica")
+      .text("Usar o cinto de segurança durante todo o trajeto, mantendo-se sentado e sem se deslocar com o veículo em movimento.")
+      .text("Evitar qualquer tipo de alimento dentro do ônibus e descartar o lixo de forma adequada.")
+      .text("Respeitar motorista, monitor e demais passageiros, acatando as orientações e mantendo postura correta.")
+      .text("Manter o ônibus limpo e conservado, evitando danos ao interior, assentos ou janelas.")
+      .text("Não utilizar celulares, aparelhos de som ou eletrônicos que atrapalhem a atenção do motorista ou perturbem outros.")
+      .text("Abster-se de substâncias ilícitas e de condutas que prejudiquem a segurança ou a tranquilidade do ambiente.")
+      .text("Comunicar imediatamente qualquer incidente, situação de perigo ou avarias no veículo.")
+      .text("Cientificar-se de que o descumprimento dos deveres poderá ocasionar advertências, notificação aos responsáveis e, em casos graves ou reincidentes, suspensão do direito ao uso do transporte.")
       .moveDown();
 
     const spaceNeededForSignature = 100;
@@ -8244,7 +8271,6 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
       .text("DANILO DE MORAIS GUSTAVO", { align: "center" })
       .text("Gestor de Transporte Escolar", { align: "center" })
       .text("Portaria 118/2023 - GP", { align: "center" });
-
 
     if (fs.existsSync(separadorPath)) {
       const footerSepX = (doc.page.width - 510) / 2;
@@ -8278,6 +8304,7 @@ app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
     });
   }
 });
+
 
 
 // ============================================================================
@@ -8394,6 +8421,33 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
         `Eu, ${signerName}, responsável, declaro ciência das normas e da obrigatoriedade de manter os dados atualizados junto à SEDUC.`,
         { align: "justify" }
       )
+      .moveDown();
+
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("DIREITOS", { align: "left" })
+      .moveDown(0.5)
+      .font("Helvetica")
+      .text("Receber transporte em condições adequadas de segurança e higiene.")
+      .text("Ter assentos disponíveis e o veículo em bom estado de conservação.")
+      .text("Ser tratado com respeito por motoristas, monitores e colegas.")
+      .text("Poder reportar ocorrências ou problemas diretamente aos responsáveis pelo transporte.")
+      .text("Contar com um ambiente livre de práticas abusivas ou discriminatórias.")
+      .moveDown()
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("DEVERES", { align: "left" })
+      .moveDown(0.5)
+      .font("Helvetica")
+      .text("Usar o cinto de segurança durante todo o trajeto, mantendo-se sentado e sem se deslocar com o veículo em movimento.")
+      .text("Evitar qualquer tipo de alimento dentro do ônibus e descartar o lixo de forma adequada.")
+      .text("Respeitar motorista, monitor e demais passageiros, acatando as orientações e mantendo postura correta.")
+      .text("Manter o ônibus limpo e conservado, evitando danos ao interior, assentos ou janelas.")
+      .text("Não utilizar celulares, aparelhos de som ou eletrônicos que atrapalhem a atenção do motorista ou perturbem outros.")
+      .text("Abster-se de substâncias ilícitas e de condutas que prejudiquem a segurança ou a tranquilidade do ambiente.")
+      .text("Comunicar imediatamente qualquer incidente, situação de perigo ou avarias no veículo.")
+      .text("Cientificar-se de que o descumprimento dos deveres poderá ocasionar advertências, notificação aos responsáveis e, em casos graves ou reincidentes, suspensão do direito ao uso do transporte.")
       .moveDown();
 
     const spaceNeededForSignature = 100;
