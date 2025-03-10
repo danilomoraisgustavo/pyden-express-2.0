@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
-
+const net = require("net");
 const { Pool } = require("pg");
 const multer = require("multer");
 const session = require("express-session");
@@ -10036,6 +10036,189 @@ function toRad(value) {
   return value * Math.PI / 180;
 }
 
+app.get("/api/veiculos-simples", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, placa FROM frota ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/frota", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM frota ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/frota/localizacao/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dev = await pool.query("SELECT * FROM gps_devices WHERE veiculo_id=$1 LIMIT 1", [id]);
+    if (!dev.rows.length) return res.json({ latitude: 0, longitude: 0 });
+    const deviceId = dev.rows[0].id;
+    const pos = await pool.query("SELECT latitude, longitude FROM gps_positions WHERE device_id=$1 ORDER BY id DESC LIMIT 1", [deviceId]);
+    if (!pos.rows.length) return res.json({ latitude: 0, longitude: 0 });
+    res.json({ latitude: pos.rows[0].latitude, longitude: pos.rows[0].longitude });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/admin/devices", async (req, res) => {
+  try {
+    const devices = await pool.query("SELECT gps_devices.*, frota.placa AS veiculo_placa FROM gps_devices LEFT JOIN frota ON gps_devices.veiculo_id=frota.id ORDER BY gps_devices.id ASC");
+    const list = [];
+    for (const d of devices.rows) {
+      list.push({
+        id: d.id,
+        modelo: d.modelo,
+        imei: d.imei,
+        iccid: d.iccid,
+        telefone: d.telefone,
+        observacao: d.observacao,
+        veiculo: d.veiculo_id ? { id: d.veiculo_id, placa: d.veiculo_placa } : null
+      });
+    }
+    res.json(list);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/admin/devices", async (req, res) => {
+  try {
+    const { modelo, imei, iccid, telefone, veiculo_id, observacao } = req.body;
+    const q = `INSERT INTO gps_devices (modelo, imei, iccid, telefone, veiculo_id, observacao)
+               VALUES($1,$2,$3,$4,$5,$6) RETURNING *`;
+    const result = await pool.query(q, [modelo, imei, iccid, telefone, veiculo_id || null, observacao || ""]);
+    res.json(result.rows[0]);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete("/api/admin/devices/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM gps_devices WHERE id=$1", [id]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/gps-positions/:deviceId", async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const positions = await pool.query("SELECT * FROM gps_positions WHERE device_id=$1 ORDER BY id DESC LIMIT 200", [deviceId]);
+    res.json(positions.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/api/gps-positions/route/:deviceId", async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const positions = await pool.query("SELECT * FROM gps_positions WHERE device_id=$1 AND created_at >= NOW() - INTERVAL '2 minutes' ORDER BY id ASC", [deviceId]);
+    res.json(positions.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+const server = net.createServer(socket => {
+  socket.on("data", async data => {
+    const buf = Buffer.from(data);
+    if (buf.length < 10) return;
+    if (buf[0] === 0x78 && buf[1] === 0x78) {
+      const protocolNumber = buf[3];
+      if (protocolNumber === 0x01) {
+        const imeiHex = buf.slice(4, 12);
+        let imeiStr = "";
+        for (let i = 0; i < imeiHex.length; i++) {
+          imeiStr += ("0" + imeiHex[i].toString(16)).slice(-2);
+        }
+        imeiStr = parseImei(imeiStr);
+        const serial = buf.readUInt16BE(12);
+        const resp = Buffer.from([0x78, 0x78, 0x05, 0x01, buf[12], buf[13], 0x00, 0x00, 0x0D, 0x0A]);
+        const crcVal = crcITU(resp.slice(2, 6));
+        resp[6] = (crcVal >> 8) & 0xff;
+        resp[7] = crcVal & 0xff;
+        socket.write(resp);
+      }
+      if (protocolNumber === 0x12 || protocolNumber === 0x16) {
+        const dateTime = buf.slice(4, 10);
+        const qtySat = buf[10];
+        const latRaw = buf.readUInt32BE(11);
+        const lngRaw = buf.readUInt32BE(15);
+        const speed = buf[19];
+        const courseStatus = buf.readUInt16BE(20);
+        const latitude = (latRaw / 30000.0) / 60.0;
+        const longitude = (lngRaw / 30000.0) / 60.0;
+        const deviceSerial = buf.readUInt16BE(buf.length - 6);
+        let statusStr = "";
+        const deviceImei = await findImeiForSocket(socket);
+        if (!deviceImei) return;
+        const dev = await pool.query("SELECT * FROM gps_devices WHERE imei=$1 LIMIT 1", [deviceImei]);
+        if (!dev.rows.length) return;
+        const deviceId = dev.rows[0].id;
+        await pool.query("INSERT INTO gps_positions (device_id, latitude, longitude, speed, course, status) VALUES($1,$2,$3,$4,$5,$6)", [
+          deviceId, latitude, longitude, speed, courseStatus & 0x03FF, statusStr
+        ]);
+        const resp = Buffer.from([0x78, 0x78, 0x05, protocolNumber, buf[buf.length - 6], buf[buf.length - 5], 0x00, 0x00, 0x0D, 0x0A]);
+        const crcVal = crcITU(resp.slice(2, 6));
+        resp[6] = (crcVal >> 8) & 0xff;
+        resp[7] = crcVal & 0xff;
+        socket.write(resp);
+      }
+    }
+  });
+  socket.on("error", () => { });
+});
+
+function parseImei(hexStr) {
+  let res = "";
+  for (let i = 0; i < hexStr.length; i += 2) {
+    let seg = parseInt(hexStr.slice(i, i + 2), 16).toString();
+    if (seg.length < 2) seg = "0" + seg;
+    res += seg;
+  }
+  return res.replace(/^0+/, "");
+}
+
+function crcITU(buf) {
+  let fcs = 0xffff;
+  for (let i = 0; i < buf.length; i++) {
+    fcs ^= buf[i];
+    for (let j = 0; j < 8; j++) {
+      if (fcs & 1) {
+        fcs = (fcs >> 1) ^ 0x8408;
+      } else {
+        fcs >>= 1;
+      }
+    }
+  }
+  fcs = ~fcs & 0xffff;
+  return fcs;
+}
+
+const imeiMap = new Map();
+
+function findImeiForSocket(socket) {
+  return new Promise(resolve => {
+    for (const [k, v] of imeiMap.entries()) {
+      if (v === socket) {
+        return resolve(k);
+      }
+    }
+    resolve(null);
+  });
+}
 
 
 // LISTEN (FINAL)
