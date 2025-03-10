@@ -7,7 +7,8 @@
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
-  <!-- Webfont -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
+
   <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
   <script>
     WebFont.load({
@@ -27,7 +28,6 @@
     });
   </script>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
@@ -47,7 +47,6 @@
 
 <body>
   <div class="wrapper">
-    <!-- SIDEBAR -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
@@ -385,8 +384,6 @@
                 </ul>
               </div>
             </li>
-
-            <!-- Novo item de Relatórios dentro de Financeiro -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
                 <i class="fas fa-chart-line"></i>
@@ -417,10 +414,8 @@
         </div>
       </div>
     </div>
-    <!-- END SIDEBAR -->
 
     <div class="main-panel">
-      <!-- HEADER (Inalterado) -->
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
           <div class="logo-header" data-background-color="dark">
@@ -444,9 +439,7 @@
 
         <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
           <div class="container-fluid">
-            <!-- TODO: Topbar permanece como está -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-              <!-- Exemplo de itens do topbar -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -462,7 +455,6 @@
                   <li>
                     <div class="message-notif-scroll scrollbar-outer">
                       <div class="notif-center">
-                        <!-- Exemplo -->
                         <a href="#">
                           <div class="notif-img">
                             <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
@@ -473,7 +465,6 @@
                             <span class="time">Há 5 minutos</span>
                           </div>
                         </a>
-                        <!-- ... -->
                       </div>
                     </div>
                   </li>
@@ -499,7 +490,6 @@
                   <li>
                     <div class="notif-scroll scrollbar-outer">
                       <div class="notif-center" id="notifList">
-                        <!-- Gerado dinamicamente -->
                       </div>
                     </div>
                   </li>
@@ -525,7 +515,6 @@
                   <div class="quick-actions-scroll scrollbar-outer">
                     <div class="quick-actions-items">
                       <div class="row m-0">
-                        <!-- Alguns atalhos de exemplo -->
                         <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
                           <div class="quick-actions-item">
                             <div class="avatar-item bg-primary rounded-circle">
@@ -558,7 +547,6 @@
                             <span class="text">Listar Frota</span>
                           </div>
                         </a>
-                        <!-- ... -->
                       </div>
                     </div>
                   </div>
@@ -606,7 +594,6 @@
           </div>
         </nav>
       </div>
-      <!-- FIM HEADER -->
 
       <div class="container">
         <div class="page-inner">
@@ -623,7 +610,6 @@
             </ul>
           </div>
 
-          <!-- Tabela de Veículos -->
           <div class="row mt-4">
             <div class="col-md-12">
               <div class="card">
@@ -659,7 +645,6 @@
                         </tr>
                       </tfoot>
                       <tbody>
-                        <!-- Preenchido via JavaScript -->
                       </tbody>
                     </table>
                   </div>
@@ -668,7 +653,6 @@
             </div>
           </div>
 
-          <!-- MODAL: Cadastrar Novo Veículo -->
           <div class="modal fade" id="modalCadastroVeiculo" tabindex="-1" aria-labelledby="modalCadastroVeiculoLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -679,7 +663,6 @@
                 </div>
                 <div class="modal-body">
                   <form id="veiculo-form" enctype="multipart/form-data">
-                    <!-- Primeira linha de campos -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="cor_veiculo" class="form-label required-label">Cor do Veículo</label>
@@ -699,8 +682,6 @@
                         </select>
                       </div>
                     </div>
-
-                    <!-- Segunda linha -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="capacidade" class="form-label required-label">Capacidade</label>
@@ -715,8 +696,6 @@
                         <input type="text" id="marca" name="marca" class="form-control" />
                       </div>
                     </div>
-
-                    <!-- Terceira linha -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="modelo" class="form-label">Modelo</label>
@@ -738,8 +717,6 @@
                         <input type="date" id="data_aquisicao" name="data_aquisicao" class="form-control" />
                       </div>
                     </div>
-
-                    <!-- Quarta linha -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="adaptado" class="form-label required-label">Adaptado?</label>
@@ -766,8 +743,6 @@
                         </select>
                       </div>
                     </div>
-
-                    <!-- Quinta linha -->
                     <div class="row">
                       <div class="col-md-4 mb-3">
                         <label for="gps" class="form-label required-label">GPS Integrado?</label>
@@ -789,21 +764,15 @@
                       <div class="col-md-4 mb-3">
                         <label for="fornecedor_id" class="form-label required-label">Fornecedor</label>
                         <select id="fornecedor_id" name="fornecedor_id" class="form-control" required>
-                          <!-- Preenchido via JS -->
                         </select>
                       </div>
                     </div>
-
-                    <!-- Associação imediata a uma rota (opcional) -->
                     <h5>Associar a Rota (opcional)</h5>
                     <div class="mb-3">
                       <label for="rota_id" class="form-label">Selecione a Rota</label>
                       <select id="rota_id" name="rota_id" class="form-control">
-                        <!-- Preenchido via JS -->
                       </select>
                     </div>
-
-                    <!-- Documentação -->
                     <h5 class="mt-4">Documentação</h5>
                     <div class="row">
                       <div class="col-md-6 mb-3">
@@ -817,7 +786,6 @@
                         <input type="file" id="licenca" name="licenca" class="form-control" accept=".pdf" required />
                       </div>
                     </div>
-
                     <div class="mt-4 text-end">
                       <button type="submit" class="btn btn-success">Cadastrar Veículo</button>
                     </div>
@@ -826,10 +794,24 @@
               </div>
             </div>
           </div>
-          <!-- FIM MODAL -->
+
+          <div class="modal fade" id="modalLocalizacaoVeiculo" tabindex="-1"
+            aria-labelledby="modalLocalizacaoVeiculoLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="modalLocalizacaoVeiculoLabel">Localizar Veículo</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                  <div id="map" style="height: 500px; width: 100%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
-
 
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
@@ -862,11 +844,12 @@
   <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
   <script src="../../assets/js/setting-demo2.js"></script>
-
   <script>
     let vehicles = [];
     let fornecedores = [];
     let rotas = [];
+    let map;
+    let marker;
 
     function showNotification(type, message, title = "") {
       $.notify({
@@ -889,7 +872,6 @@
       });
     }
 
-    // Carrega fornecedores
     function loadFornecedores() {
       fetch('/api/fornecedores')
         .then(res => {
@@ -913,7 +895,6 @@
         });
     }
 
-    // Carrega rotas (simples) para associação opcional
     function loadRotas() {
       fetch('/api/rotas-simples-detalhes')
         .then(res => {
@@ -937,7 +918,6 @@
         });
     }
 
-    // Carrega frota
     function loadVeiculos() {
       fetch('/api/frota')
         .then(res => {
@@ -954,11 +934,9 @@
         });
     }
 
-    // Monta DataTable
     function populateTable() {
       const tableBody = $('#frota-table tbody');
       tableBody.empty();
-
       vehicles.forEach(v => {
         const row = `
           <tr>
@@ -975,13 +953,17 @@
                   data-bs-toggle="tooltip" title="Excluir Veículo">
                   <i class="fa fa-trash-alt"></i>
                 </button>
+                <button type="button" class="btn btn-link btn-info btn-lg"
+                  onclick="locateVeiculo(${v.id})"
+                  data-bs-toggle="tooltip" title="Localizar Veículo">
+                  <i class="fa fa-map-marker-alt"></i>
+                </button>
               </div>
             </td>
           </tr>
         `;
         tableBody.append(row);
       });
-
       if ($.fn.DataTable.isDataTable('#frota-table')) {
         $('#frota-table').DataTable().clear().destroy();
       }
@@ -1009,7 +991,6 @@
       });
     }
 
-    // Exclui veículo
     function deleteVeiculo(id) {
       if (!confirm('Tem certeza que deseja excluir este veículo?')) return;
       fetch('/api/frota/' + id, { method: 'DELETE' })
@@ -1028,23 +1009,46 @@
         });
     }
 
+    function locateVeiculo(id) {
+      fetch('/api/frota/localizacao/' + id)
+        .then(res => res.json())
+        .then(data => {
+          const lat = data.latitude || 0;
+          const lng = data.longitude || 0;
+          $('#modalLocalizacaoVeiculo').modal('show');
+          setTimeout(() => {
+            if (!map) {
+              map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: lat, lng: lng },
+                zoom: 14
+              });
+              marker = new google.maps.Marker({
+                position: { lat: lat, lng: lng },
+                map: map
+              });
+            } else {
+              map.setCenter({ lat: lat, lng: lng });
+              marker.setPosition({ lat: lat, lng: lng });
+            }
+          }, 500);
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Não foi possível obter a localização do veículo.');
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
-      // Carrega dados iniciais
       loadFornecedores();
       loadRotas();
       loadVeiculos();
-
-      // Listener de submissão do form
       document.getElementById('veiculo-form').addEventListener('submit', function (e) {
         e.preventDefault();
         const formData = new FormData(this);
-
-        // Se quiser associar rota imediatamente
         const rotaId = document.getElementById('rota_id').value;
         if (rotaId) {
           formData.append('associarRotaId', rotaId);
         }
-
         fetch('/api/frota/cadastrar', {
           method: 'POST',
           body: formData
@@ -1053,11 +1057,8 @@
           .then(data => {
             if (data.success) {
               showNotification('success', 'Veículo cadastrado com sucesso!');
-              // Reseta o form
               this.reset();
-              // Fecha modal
               $('#modalCadastroVeiculo').modal('hide');
-              // Recarrega tabela
               loadVeiculos();
             } else {
               showNotification('danger', 'Erro ao cadastrar veículo: ' + data.message);
