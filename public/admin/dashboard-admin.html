@@ -1,16 +1,13 @@
-<!-- ====> public/pages/admin/dashboard-admin.html <==== -->
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>PyDen Express Admin</title>
+    <title>PyDen Express Admin - Cadastro de GPS</title>
     <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
     <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
-
-
-    <!-- Fonts and icons -->
     <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
     <script>
         WebFont.load({
@@ -29,20 +26,15 @@
             },
         });
     </script>
-
-    <!-- CSS Files -->
     <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
     <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
     <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
     <link rel="stylesheet" href="../../assets/css/demo.css" />
-
-    <!-- DataTables CSS -->
     <link rel="stylesheet" href="../../assets/js/plugin/datatables/datatables.min.css" />
 </head>
 
 <body>
     <div class="wrapper">
-        <!-- SIDEBAR (SIMPLIFICADO PARA ADMIN) -->
         <div class="sidebar" data-background-color="dark">
             <div class="sidebar-logo">
                 <div class="logo-header" data-background-color="dark">
@@ -60,14 +52,13 @@
             <div class="sidebar-wrapper scrollbar scrollbar-inner">
                 <div class="sidebar-content">
                     <ul class="nav nav-primary">
-                        <li class="nav-item active">
+                        <li class="nav-item">
                             <a href="dashboard-admin.html">
                                 <i class="fas fa-tachometer-alt"></i>
                                 <p>Dashboard Admin</p>
                             </a>
                         </li>
 
-                        <!-- Link para Gerenciamento de Usuários -->
                         <li class="nav-item">
                             <a href="#adminUsers" data-bs-toggle="collapse" aria-expanded="false">
                                 <i class="fas fa-users-cog"></i>
@@ -85,11 +76,17 @@
                             </div>
                         </li>
 
+                        <!-- Nova ABA para Cadastrar GPS -->
+                        <li class="nav-item active">
+                            <a href="dispositivos-gps.html">
+                                <i class="fas fa-microchip"></i>
+                                <p>Gerenciar GPS</p>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
         </div>
-        <!-- END SIDEBAR -->
 
         <div class="main-panel">
             <div class="main-header" style="top: 0;">
@@ -159,52 +156,36 @@
 
             <div class="container">
                 <div class="page-inner">
-                    <!-- Cabeçalho do Dashboard Admin -->
                     <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
                         <div>
-                            <h3 class="fw-bold mb-3">Painel Administrativo</h3>
-                            <h6 class="op-7 mb-2">Gerencie configurações e usuários do sistema</h6>
+                            <h3 class="fw-bold mb-3">Gerenciar Dispositivos GPS</h3>
+                            <h6 class="op-7 mb-2">Cadastre e associe dispositivos J16 ao sistema</h6>
                         </div>
                     </div>
 
-                    <!-- Seção de Estatísticas ou Resumo se desejar -->
+                    <!-- Card com tabela de dispositivos -->
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card card-round">
-                                <div class="card-header">
+                                <div class="card-header d-flex justify-content-between">
                                     <div class="card-head-row">
-                                        <div class="card-title">Estatísticas / Resumo</div>
+                                        <div class="card-title">Lista de Dispositivos GPS</div>
                                     </div>
+                                    <button class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#modalCadastroGPS">
+                                        <i class="fa fa-plus"></i> Cadastrar Novo Dispositivo
+                                    </button>
                                 </div>
                                 <div class="card-body">
-                                    <p>Aqui podem vir estatísticas administrativas. Exemplo: Quantidade de usuários,
-                                        etc.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Seção de Gerenciamento de Usuários -->
-                    <div class="row mt-4" id="secUsers">
-                        <div class="col-md-12">
-                            <div class="card card-round">
-                                <div class="card-header">
-                                    <div class="card-head-row">
-                                        <div class="card-title">Gerenciamento de Usuários</div>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <!-- Tabela DataTables -->
-                                    <table id="tableUsers" class="table table-striped table-bordered"
-                                        style="width:100%">
+                                    <table id="tableGPS" class="table table-striped table-bordered" style="width:100%">
                                         <thead>
                                             <tr>
                                                 <th>ID</th>
-                                                <th>Nome Completo</th>
+                                                <th>Modelo</th>
+                                                <th>IMEI</th>
+                                                <th>ICCID</th>
                                                 <th>Telefone</th>
-                                                <th>Email</th>
-                                                <th>Permissões</th>
-                                                <th>Init</th>
+                                                <th>Veículo Associado</th>
                                                 <th>Ações</th>
                                             </tr>
                                         </thead>
@@ -217,18 +198,130 @@
                         </div>
                     </div>
 
+                    <!-- Modal para Cadastrar Novo Dispositivo -->
+                    <div class="modal fade" id="modalCadastroGPS" tabindex="-1" aria-labelledby="modalCadastroGPSLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalCadastroGPSLabel">Cadastrar Novo Dispositivo GPS
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="gps-form">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="modelo" class="form-label">Modelo</label>
+                                                <input type="text" class="form-control" id="modelo" name="modelo"
+                                                    value="J16 4G" required />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="imei" class="form-label">IMEI</label>
+                                                <input type="text" class="form-control" id="imei" name="imei"
+                                                    required />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="iccid" class="form-label">ICCID</label>
+                                                <input type="text" class="form-control" id="iccid" name="iccid" />
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="telefone" class="form-label">Telefone (SIM)</label>
+                                                <input type="text" class="form-control" id="telefone" name="telefone"
+                                                    placeholder="(99) 99999-9999" />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="veiculo_id" class="form-label">Associar ao Veículo (ID ou
+                                                    Placa)</label>
+                                                <select class="form-control" id="veiculo_id" name="veiculo_id">
+                                                    <option value="">Nenhum</option>
+                                                    <!-- Preenchido via JS -->
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="observacao" class="form-label">Observação</label>
+                                                <input type="text" class="form-control" id="observacao"
+                                                    name="observacao" />
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 text-end">
+                                            <button type="submit" class="btn btn-success">Cadastrar Dispositivo</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal para Exibir Passo a Passo de Configuração -->
+                    <div class="modal fade" id="modalAjudaGPS" tabindex="-1" aria-labelledby="modalAjudaGPSLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalAjudaGPSLabel">Passo a Passo de Configuração J16
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <h5>1. Inserir o SIM Card</h5>
+                                    <p>Abra o dispositivo, insira corretamente o SIM Card M2M (com dados habilitados) e
+                                        certifique-se de que o chip está ativo.</p>
+
+                                    <h5>2. Alimentação e Instalação</h5>
+                                    <p>Conecte o dispositivo à bateria ou parte elétrica do veículo de acordo com o
+                                        manual. O fio
+                                        Vermelho (positivo), Preto (negativo), etc.</p>
+
+                                    <h5>3. Configurar APN e Servidor</h5>
+                                    <p>Usando os comandos SMS, configure a APN conforme sua operadora e aponte o
+                                        servidor:</p>
+                                    <pre>
+SERVER,0,54.233.187.107,8741,0#
+APN,sua.apn,aqui,senha#
+TIMER,60,3600#
+</pre>
+                                    <p>Verifique demais comandos no manual do dispositivo.</p>
+
+                                    <h5>4. Testar Conexão</h5>
+                                    <p>Após configurar, verifique no sistema se o dispositivo está reportando
+                                        corretamente a posição
+                                        (latitude/longitude).</p>
+
+                                    <h5>5. Fixação no Veículo</h5>
+                                    <p>Instale o dispositivo em local oculto, mas que não bloqueie o sinal GPS.</p>
+
+                                    <h5>Observações</h5>
+                                    <p>Para detalhes adicionais, consulte o manual do J16 e o protocolo GT06 incluído
+                                        anteriormente.
+                                        Caso haja dúvidas, entre em contato com o suporte.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Div Oculta ou Seção para Botões de Ajuda -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalAjudaGPS">
+                                <i class="fa fa-info-circle"></i> Ajuda para Configuração
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-
 
             <footer class="footer">
                 <div class="container-fluid d-flex justify-content-between">
                     <nav class="pull-left">
                         <ul class="nav">
                             <li class="nav-item"><a class="nav-link" target="_blank"
-                                    href="https://pydenexpress.com/">PyDen
-                                    Express</a>
-                            </li>
+                                    href="https://pydenexpress.com/">PyDen Express</a></li>
                             <li class="nav-item"><a class="nav-link" href="#">Ajuda</a></li>
                             <li class="nav-item"><a class="nav-link" href="#">Termos de Uso</a></li>
                         </ul>
@@ -244,34 +337,6 @@
         </div>
     </div>
 
-    <!-- Modal para vincular Usuário a Fornecedor -->
-    <div class="modal fade" id="modalRelateFornecedor" tabindex="-1" aria-labelledby="modalRelateFornecedorLabel"
-        aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalRelateFornecedorLabel">Vincular Usuário a Fornecedor</h5>
-                    <button type="button" class="close btn btn-link" data-bs-dismiss="modal" aria-label="Close">
-                        <i class="fa fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="relateUserId" />
-                    <div class="form-group">
-                        <label for="fornecedorSelect">Selecione o Fornecedor:</label>
-                        <select id="fornecedorSelect" class="form-control">
-                            <!-- Preenchido via JS -->
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    <button type="button" class="btn btn-info" id="btnVincular">Vincular</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
     <script src="../../assets/js/core/popper.min.js"></script>
     <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -281,166 +346,131 @@
     <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
     <script src="../../assets/js/pydenadmin.min.js"></script>
     <script src="../../assets/js/setting-demo2.js"></script>
-    
     <script>
-        const permissoesDisponiveis = [
-            "gestor", "admin", "locan", "talisma", "roma", "ctl", "diamond"
-        ];
-
-        let table;
+        let tableGPS;
+        let vehiclesList = [];
 
         $(document).ready(function () {
-            // Inicializa DataTable
-            table = $("#tableUsers").DataTable({
+            // Carregar lista de veículos para associar
+            $.ajax({
+                url: "/api/veiculos-simples",
+                method: "GET",
+                success: function (data) {
+                    vehiclesList = data;
+                    const veiculoSelect = $("#veiculo_id");
+                    data.forEach((veh) => {
+                        const text = `${veh.id} - ${veh.placa || ""}`;
+                        veiculoSelect.append(`<option value="${veh.id}">${text}</option>`);
+                    });
+                },
+                error: function (err) {
+                    console.error(err);
+                    alert("Erro ao carregar lista de veículos.");
+                }
+            });
+
+            // Inicializar DataTable
+            tableGPS = $("#tableGPS").DataTable({
                 ajax: {
-                    url: "/api/admin/users",
+                    url: "/api/admin/devices",
                     dataSrc: ""
                 },
                 columns: [
                     { data: "id" },
-                    { data: "nome_completo" },
+                    { data: "modelo" },
+                    { data: "imei" },
+                    { data: "iccid" },
                     { data: "telefone" },
-                    { data: "email" },
                     {
-                        data: "permissoes",
-                        render: function (data, type, row, meta) {
-                            const userPerms = data ? data.split(",") : [];
-                            let selectHtml = `<select class="form-select form-select-sm permissoes-select" multiple data-user-id="${row.id}">`;
-                            permissoesDisponiveis.forEach((perm) => {
-                                const selected = userPerms.includes(perm) ? "selected" : "";
-                                selectHtml += `<option value="${perm}" ${selected}>${perm}</option>`;
-                            });
-                            selectHtml += `</select>`;
-                            return selectHtml;
-                        }
-                    },
-                    {
-                        data: "init",
-                        render: function (data, type, row, meta) {
-                            return data ? "Ativo" : "Inativo";
+                        data: "veiculo",
+                        render: function (data, type, row) {
+                            if (!data) return "Nenhum";
+                            return data.placa ? data.placa : data.id;
                         }
                     },
                     {
                         data: null,
                         render: function (data, type, row) {
-                            let btnInit = "";
-                            if (row.init) {
-                                btnInit = `<button class="btn btn-warning btn-sm toggle-init" data-user-id="${row.id}" data-init="false">Restringir</button>`;
-                            } else {
-                                btnInit = `<button class="btn btn-success btn-sm toggle-init" data-user-id="${row.id}" data-init="true">Permitir</button>`;
-                            }
-                            const btnDelete = `<button class="btn btn-danger btn-sm delete-user" data-user-id="${row.id}">Excluir</button>`;
-                            // Novo botão para relacionar usuário a fornecedor
-                            const btnFornecedor = `<button class="btn btn-info btn-sm relate-fornecedor" data-user-id="${row.id}"><i class="fas fa-link"></i></button>`;
-                            return `${btnInit} ${btnDelete} ${btnFornecedor}`;
+                            const btnDelete = `<button class="btn btn-danger btn-sm delete-device" data-device-id="${row.id}">
+                                <i class="fa fa-trash-alt"></i>
+                            </button>`;
+                            const btnEdit = `<button class="btn btn-warning btn-sm edit-device" data-device-id="${row.id}">
+                                <i class="fa fa-edit"></i>
+                            </button>`;
+                            return `${btnEdit} ${btnDelete}`;
                         }
                     }
-                ]
-            });
-
-            // Evento para alterar permissões
-            $("#tableUsers").on("change", ".permissoes-select", function () {
-                const userId = $(this).data("user-id");
-                const selectedOptions = $(this).val() || [];
-                const newPerms = selectedOptions.join(",");
-
-                $.ajax({
-                    url: "/api/admin/update-user",
-                    method: "PUT",
-                    contentType: "application/json",
-                    data: JSON.stringify({ id: userId, permissoes: newPerms }),
-                    success: function (res) {
-                        table.ajax.reload(null, false);
+                ],
+                language: {
+                    decimal: ",",
+                    thousands: ".",
+                    info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+                    infoEmpty: "Mostrando 0 até 0 de 0 registros",
+                    infoFiltered: "(filtrado de _MAX_ registros no total)",
+                    lengthMenu: "Mostrar _MENU_ registros",
+                    loadingRecords: "Carregando...",
+                    processing: "Processando...",
+                    search: "Pesquisar:",
+                    zeroRecords: "Nenhum registro encontrado",
+                    paginate: {
+                        first: "Primeiro",
+                        last: "Último",
+                        next: "Próximo",
+                        previous: "Anterior"
                     },
-                    error: function (err) {
-                        console.error(err);
-                        alert("Erro ao atualizar permissões do usuário.");
-                    }
-                });
-            });
-
-            // Evento para toggle init
-            $("#tableUsers").on("click", ".toggle-init", function () {
-                const userId = $(this).data("user-id");
-                const newInit = $(this).data("init") === true;
-
-                $.ajax({
-                    url: "/api/admin/toggle-init",
-                    method: "PUT",
-                    contentType: "application/json",
-                    data: JSON.stringify({ id: userId, init: newInit }),
-                    success: function (res) {
-                        table.ajax.reload(null, false);
-                    },
-                    error: function (err) {
-                        console.error(err);
-                        alert("Erro ao atualizar status do usuário.");
-                    }
-                });
-            });
-
-            // Evento para excluir usuário
-            $("#tableUsers").on("click", ".delete-user", function () {
-                const userId = $(this).data("user-id");
-                if (!confirm("Tem certeza que deseja excluir este usuário?")) {
-                    return;
+                    emptyTable: "Nenhum dispositivo cadastrado"
                 }
-                $.ajax({
-                    url: `/api/admin/delete-user/${userId}`,
-                    method: "DELETE",
-                    success: function (res) {
-                        table.ajax.reload(null, false);
-                    },
-                    error: function (err) {
-                        console.error(err);
-                        alert("Erro ao excluir usuário.");
-                    }
-                });
             });
 
-            // Evento para abrir modal de Relacionar Fornecedor
-            $("#tableUsers").on("click", ".relate-fornecedor", function () {
-                const userId = $(this).data("user-id");
-                $("#relateUserId").val(userId);
-
-                // Carrega fornecedores e popula o select
-                $.getJSON("/api/fornecedores-admin", function (data) {
-                    $("#fornecedorSelect").empty();
-                    data.forEach((forn) => {
-                        $("#fornecedorSelect").append(`
-                            <option value="${forn.id}">${forn.nome_fornecedor}</option>
-                        `);
-                    });
-                    $("#modalRelateFornecedor").modal("show");
-                });
-            });
-
-            // Vincular usuário a fornecedor (botão do modal)
-            $("#btnVincular").on("click", function () {
-                const userId = $("#relateUserId").val();
-                const fornecedorId = $("#fornecedorSelect").val();
-
+            // Formulário de cadastro
+            $("#gps-form").on("submit", function (e) {
+                e.preventDefault();
+                const formData = {
+                    modelo: $("#modelo").val(),
+                    imei: $("#imei").val(),
+                    iccid: $("#iccid").val(),
+                    telefone: $("#telefone").val(),
+                    veiculo_id: $("#veiculo_id").val() || null,
+                    observacao: $("#observacao").val()
+                };
                 $.ajax({
-                    url: "/api/admin/relate-user-fornecedor",
+                    url: "/api/admin/devices",
                     method: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify({ userId, fornecedorId }),
+                    data: JSON.stringify(formData),
                     success: function (res) {
-                        alert("Usuário vinculado ao fornecedor com sucesso!");
-                        $("#modalRelateFornecedor").modal("hide");
+                        $("#modalCadastroGPS").modal("hide");
+                        $("#gps-form")[0].reset();
+                        tableGPS.ajax.reload(null, false);
                     },
                     error: function (err) {
                         console.error(err);
-                        alert("Erro ao vincular usuário ao fornecedor.");
+                        alert("Erro ao cadastrar dispositivo.");
                     }
                 });
             });
 
-            // Rolagem suave para a seção de usuários
-            $(".scroll-link").on("click", function (e) {
-                e.preventDefault();
-                const target = $(this).attr("href");
-                $("html, body").animate({ scrollTop: $(target).offset().top - 70 }, 800);
+            // Deletar
+            $("#tableGPS").on("click", ".delete-device", function () {
+                const deviceId = $(this).data("device-id");
+                if (!confirm("Tem certeza que deseja excluir este dispositivo?")) return;
+                $.ajax({
+                    url: `/api/admin/devices/${deviceId}`,
+                    method: "DELETE",
+                    success: function (res) {
+                        tableGPS.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao excluir dispositivo.");
+                    }
+                });
+            });
+
+            // Editar
+            $("#tableGPS").on("click", ".edit-device", function () {
+                const deviceId = $(this).data("device-id");
+                alert("Aqui poderia abrir um modal de edição para ID: " + deviceId + " (Função não implementada).");
             });
         });
     </script>
