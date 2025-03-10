@@ -76,7 +76,6 @@
                             </div>
                         </li>
 
-                        <!-- Nova ABA para Cadastrar GPS -->
                         <li class="nav-item active">
                             <a href="dispositivos-gps.html">
                                 <i class="fas fa-microchip"></i>
@@ -163,7 +162,6 @@
                         </div>
                     </div>
 
-                    <!-- Card com tabela de dispositivos -->
                     <div class="row">
                         <div class="col-md-12">
                             <div class="card card-round">
@@ -190,7 +188,6 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <!-- Conteúdo via JS -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -198,7 +195,6 @@
                         </div>
                     </div>
 
-                    <!-- Modal para Cadastrar Novo Dispositivo -->
                     <div class="modal fade" id="modalCadastroGPS" tabindex="-1" aria-labelledby="modalCadastroGPSLabel"
                         aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -238,7 +234,6 @@
                                                     Placa)</label>
                                                 <select class="form-control" id="veiculo_id" name="veiculo_id">
                                                     <option value="">Nenhum</option>
-                                                    <!-- Preenchido via JS -->
                                                 </select>
                                             </div>
                                             <div class="col-md-4 mb-3">
@@ -256,7 +251,6 @@
                         </div>
                     </div>
 
-                    <!-- Modal para Exibir Passo a Passo de Configuração -->
                     <div class="modal fade" id="modalAjudaGPS" tabindex="-1" aria-labelledby="modalAjudaGPSLabel"
                         aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -274,37 +268,38 @@
 
                                     <h5>2. Alimentação e Instalação</h5>
                                     <p>Conecte o dispositivo à bateria ou parte elétrica do veículo de acordo com o
-                                        manual. O fio
-                                        Vermelho (positivo), Preto (negativo), etc.</p>
+                                        manual. O fio Vermelho (positivo), Preto (negativo), etc.</p>
 
                                     <h5>3. Configurar APN e Servidor</h5>
                                     <p>Usando os comandos SMS, configure a APN conforme sua operadora e aponte o
                                         servidor:</p>
                                     <pre>
+SERVER,0,semedcanaadoscarajas.pydenexpress.com,8741,0#
+APN,sua.apn,aqui,senha#
+TIMER,60,3600#
+                                    </pre>
+                                    <p>Se preferir usar o IP diretamente, utilize:</p>
+                                    <pre>
 SERVER,0,54.233.187.107,8741,0#
 APN,sua.apn,aqui,senha#
 TIMER,60,3600#
-</pre>
-                                    <p>Verifique demais comandos no manual do dispositivo.</p>
-
+                                    </pre>
                                     <h5>4. Testar Conexão</h5>
                                     <p>Após configurar, verifique no sistema se o dispositivo está reportando
-                                        corretamente a posição
-                                        (latitude/longitude).</p>
+                                        corretamente a posição (latitude/longitude). O servidor HTTP está na porta 3000,
+                                        enquanto a porta 8741 é utilizada para dados do rastreador.</p>
 
                                     <h5>5. Fixação no Veículo</h5>
                                     <p>Instale o dispositivo em local oculto, mas que não bloqueie o sinal GPS.</p>
 
                                     <h5>Observações</h5>
                                     <p>Para detalhes adicionais, consulte o manual do J16 e o protocolo GT06 incluído
-                                        anteriormente.
-                                        Caso haja dúvidas, entre em contato com o suporte.</p>
+                                        anteriormente. Caso haja dúvidas, entre em contato com o suporte.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Div Oculta ou Seção para Botões de Ajuda -->
                     <div class="row mt-4">
                         <div class="col-md-12">
                             <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalAjudaGPS">
@@ -351,7 +346,6 @@ TIMER,60,3600#
         let vehiclesList = [];
 
         $(document).ready(function () {
-            // Carregar lista de veículos para associar
             $.ajax({
                 url: "/api/veiculos-simples",
                 method: "GET",
@@ -369,7 +363,6 @@ TIMER,60,3600#
                 }
             });
 
-            // Inicializar DataTable
             tableGPS = $("#tableGPS").DataTable({
                 ajax: {
                     url: "/api/admin/devices",
@@ -422,7 +415,6 @@ TIMER,60,3600#
                 }
             });
 
-            // Formulário de cadastro
             $("#gps-form").on("submit", function (e) {
                 e.preventDefault();
                 const formData = {
@@ -450,7 +442,6 @@ TIMER,60,3600#
                 });
             });
 
-            // Deletar
             $("#tableGPS").on("click", ".delete-device", function () {
                 const deviceId = $(this).data("device-id");
                 if (!confirm("Tem certeza que deseja excluir este dispositivo?")) return;
@@ -467,7 +458,6 @@ TIMER,60,3600#
                 });
             });
 
-            // Editar
             $("#tableGPS").on("click", ".edit-device", function () {
                 const deviceId = $(this).data("device-id");
                 alert("Aqui poderia abrir um modal de edição para ID: " + deviceId + " (Função não implementada).");
