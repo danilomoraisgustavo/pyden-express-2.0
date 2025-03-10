@@ -271,30 +271,32 @@
                                         manual. O fio Vermelho (positivo), Preto (negativo), etc.</p>
 
                                     <h5>3. Configurar APN e Servidor</h5>
-                                    <p>Usando os comandos SMS, configure a APN conforme sua operadora e aponte o
-                                        servidor:</p>
-                                    <pre>
-SERVER,0,semedcanaadoscarajas.pydenexpress.com,8741,0#
-APN,sua.apn,aqui,senha#
-TIMER,60,3600#
-                                    </pre>
-                                    <p>Se preferir usar o IP diretamente, utilize:</p>
-                                    <pre>
-SERVER,0,54.233.187.107,8741,0#
-APN,sua.apn,aqui,senha#
-TIMER,60,3600#
-                                    </pre>
+                                    <p>Use os comandos SMS numerados a seguir, enviando cada um deles para o número do
+                                        SIM Card inserido no dispositivo:</p>
+                                    <ol>
+                                        <li><strong>SERVER</strong>:
+                                            <code>SERVER,0,semedcanaadoscarajas.pydenexpress.com,8741,0#</code></li>
+                                        <li><strong>APN</strong>: <code>APN,sua.apn,aqui,senha#</code></li>
+                                        <li><strong>TIMER</strong>: <code>TIMER,60,3600#</code></li>
+                                    </ol>
+                                    <p>Se preferir usar o IP diretamente, substitua o comando SERVER pelo seguinte:</p>
+                                    <ol>
+                                        <li><strong>SERVER</strong>: <code>SERVER,0,54.233.187.107,8741,0#</code></li>
+                                        <li><strong>APN</strong>: <code>APN,sua.apn,aqui,senha#</code></li>
+                                        <li><strong>TIMER</strong>: <code>TIMER,60,3600#</code></li>
+                                    </ol>
+
                                     <h5>4. Testar Conexão</h5>
                                     <p>Após configurar, verifique no sistema se o dispositivo está reportando
                                         corretamente a posição (latitude/longitude). O servidor HTTP está na porta 3000,
-                                        enquanto a porta 8741 é utilizada para dados do rastreador.</p>
+                                        enquanto a porta 8741 é utilizada para os dados do rastreador.</p>
 
                                     <h5>5. Fixação no Veículo</h5>
-                                    <p>Instale o dispositivo em local oculto, mas que não bloqueie o sinal GPS.</p>
+                                    <p>Instale o dispositivo em um local oculto, mas que não bloqueie o sinal GPS.</p>
 
                                     <h5>Observações</h5>
-                                    <p>Para detalhes adicionais, consulte o manual do J16 e o protocolo GT06 incluído
-                                        anteriormente. Caso haja dúvidas, entre em contato com o suporte.</p>
+                                    <p>Para mais detalhes, consulte o manual do J16 e o protocolo GT06. Em caso de
+                                        dúvidas, entre em contato com o suporte.</p>
                                 </div>
                             </div>
                         </div>
