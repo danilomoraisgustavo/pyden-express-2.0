@@ -6,18 +6,12 @@
   <title>Listar Solicitações de Rota</title>
   <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
   <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
-
   <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
   <script>
     WebFont.load({
       google: { families: ["Public Sans:300,400,500,600,700"] },
       custom: {
-        families: [
-          "Font Awesome 5 Solid",
-          "Font Awesome 5 Regular",
-          "Font Awesome 5 Brands",
-          "simple-line-icons"
-        ],
+        families: ["Font Awesome 5 Solid", "Font Awesome 5 Regular", "Font Awesome 5 Brands", "simple-line-icons"],
         urls: ["../../assets/css/fonts.min.css"]
       },
       active: function () {
@@ -25,12 +19,10 @@
       }
     });
   </script>
-
   <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
-
   <style>
     .required-label::after {
       content: " *";
@@ -51,7 +43,6 @@
 
 <body>
   <div class="wrapper">
-    <!-- SIDEBAR -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
@@ -183,7 +174,6 @@
                 </ul>
               </div>
             </li>
-
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
                 <i class="fas fa-school"></i>
@@ -242,7 +232,6 @@
                 </ul>
               </div>
             </li>
-
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Transporte Administrativo</h4>
@@ -253,7 +242,6 @@
                 <p>Dashboard Administrativo</p>
               </a>
             </li>
-
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
                 <i class="fas fa-id-card"></i>
@@ -280,7 +268,6 @@
                 </ul>
               </div>
             </li>
-
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
                 <i class="fas fa-warehouse"></i>
@@ -389,8 +376,6 @@
                 </ul>
               </div>
             </li>
-
-            <!-- Novo item de Relatórios dentro de Financeiro -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
                 <i class="fas fa-chart-line"></i>
@@ -421,8 +406,6 @@
         </div>
       </div>
     </div>
-    <!-- END SIDEBAR -->
-
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
@@ -444,7 +427,6 @@
             </button>
           </div>
         </div>
-
         <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
           <div class="container-fluid">
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
@@ -484,7 +466,6 @@
                   </li>
                 </ul>
               </li>
-
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
                   aria-haspopup="true" aria-expanded="false">
@@ -510,7 +491,6 @@
                   </li>
                 </ul>
               </li>
-
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -561,7 +541,6 @@
                   </div>
                 </div>
               </li>
-
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
@@ -603,7 +582,6 @@
           </div>
         </nav>
       </div>
-
       <div class="container">
         <div class="page-inner">
           <div class="page-header">
@@ -628,8 +606,6 @@
               </li>
             </ul>
           </div>
-
-          <!-- CRIAÇÃO DAS ABAS -->
           <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
               <button class="nav-link active" id="solicitacoesRotaTabButton" data-bs-toggle="tab"
@@ -647,9 +623,7 @@
                 aria-controls="solicitacoesTransporteTab" aria-selected="false">Solicitações de Transporte</button>
             </li>
           </ul>
-
           <div class="tab-content" id="myTabContent">
-            <!-- ABA 1: Solicitações de Rota -->
             <div class="tab-pane fade show active" id="solicitacoesRotaTab" role="tabpanel"
               aria-labelledby="solicitacoesRotaTabButton">
               <div class="row mt-4">
@@ -699,8 +673,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- ABA 2: Solicitações de Reavaliação -->
             <div class="tab-pane fade" id="reavaliacoesTab" role="tabpanel" aria-labelledby="reavaliacoesTabButton">
               <div class="row mt-4">
                 <div class="col-md-12">
@@ -755,8 +727,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- ABA 3: Solicitações de Transporte -->
             <div class="tab-pane fade" id="solicitacoesTransporteTab" role="tabpanel"
               aria-labelledby="solicitacoesTransporteTabButton">
               <div class="row mt-4">
@@ -777,8 +747,11 @@
                               <th>Motivo</th>
                               <th>Tipo Fluxo</th>
                               <th>Menor 10 Acompanhado</th>
-                              <th>Responsáveis Extras</th>
+                              <th>Responsáveis Extras (JSON)</th>
                               <th>Desemb. 10 a 12 Sozinho</th>
+                              <th>Nome Aluno</th>
+                              <th>Escola Nome</th>
+                              <th>Outros Responsáveis (Tabela)</th>
                             </tr>
                           </thead>
                           <tfoot>
@@ -790,8 +763,11 @@
                               <th>Motivo</th>
                               <th>Tipo Fluxo</th>
                               <th>Menor 10 Acompanhado</th>
-                              <th>Responsáveis Extras</th>
+                              <th>Responsáveis Extras (JSON)</th>
                               <th>Desemb. 10 a 12 Sozinho</th>
+                              <th>Nome Aluno</th>
+                              <th>Escola Nome</th>
+                              <th>Outros Responsáveis (Tabela)</th>
                             </tr>
                           </tfoot>
                           <tbody></tbody>
@@ -803,17 +779,14 @@
               </div>
             </div>
           </div>
-          <!-- FIM DAS ABAS -->
         </div>
       </div>
-
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
           <nav class="pull-left">
             <ul class="nav">
               <li class="nav-item"><a class="nav-link" target="_blank" href="https://pydenexpress.com/">PyDen
-                  Express</a>
-              </li>
+                  Express</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Ajuda</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Termos de Uso</a></li>
             </ul>
@@ -828,7 +801,6 @@
       </footer>
     </div>
   </div>
-
   <div class="modal fade" id="modalLocalizar" tabindex="-1" role="dialog" aria-labelledby="modalLocalizarLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -849,7 +821,6 @@
       </div>
     </div>
   </div>
-
   <div class="modal fade" id="modalEditar" tabindex="-1" role="dialog" aria-labelledby="modalEditarLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -917,7 +888,6 @@
               <label>Critério de Direito</label>
               <textarea class="form-control" name="criterio_direito" id="edit-criterio-direito"></textarea>
             </div>
-
             <div class="row">
               <div class="col-md-6">
                 <label>Latitude</label>
@@ -938,7 +908,6 @@
       </form>
     </div>
   </div>
-
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -948,7 +917,6 @@
   <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
   <script src="../../assets/js/setting-demo2.js"></script>
-
   <script async
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=geometry,places&callback=initLocalizarMap">
     </script>
@@ -962,19 +930,13 @@
     let directionsRenderer = null;
     let mapEditar = null;
     let markerEditar = null;
-
     let reavaliacoes = [];
     let solicitacoesTransporte = [];
-
     function showNotification(type, message, title = "") {
       $.notify({
         title: title ? title + ' ' : '',
         message: message,
-        icon:
-          type === 'success' ? 'fa fa-check-circle' :
-            type === 'danger' ? 'fa fa-exclamation-circle' :
-              type === 'warning' ? 'fa fa-exclamation-triangle' :
-                type === 'info' ? 'fa fa-info-circle' : ''
+        icon: type === 'success' ? 'fa fa-check-circle' : type === 'danger' ? 'fa fa-exclamation-circle' : type === 'warning' ? 'fa fa-exclamation-triangle' : type === 'info' ? 'fa fa-info-circle' : ''
       }, {
         type: type,
         placement: {
@@ -992,20 +954,14 @@
         }
       });
     }
-
     function loadSolicitacoes() {
-      // Se o endpoint /api/cocessao-rota?status=pendente não estiver filtrando corretamente,
-      // podemos simplesmente remover o parâmetro e filtrar no front-end:
       fetch('/api/cocessao-rota?status=pendente')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar solicitações');
           return res.json();
         })
         .then(data => {
-          // Faz um filtro extra no front-end para garantir que só
-          // apareçam solicitações com status "pendente".
           solicitacoes = data.filter(s => {
-            // Ajuste conforme a propriedade que vem da API (ex.: s.status, s.status_concessao etc.)
             return (s.status || '').toLowerCase() === 'pendente';
           });
           populateTable();
@@ -1015,11 +971,9 @@
           showNotification('danger', 'Não foi possível carregar as solicitações.');
         });
     }
-
     function populateTable() {
       const tableBody = $('#solicitacoes-table tbody');
       tableBody.empty();
-
       solicitacoes.forEach(s => {
         const row = `
         <tr>
@@ -1039,14 +993,12 @@
             <button class="btn btn-sm btn-danger" onclick="excluirSolicitacao(${s.id})">Excluir</button>
           </td>
         </tr>
-      `;
+        `;
         tableBody.append(row);
       });
-
       if ($.fn.DataTable.isDataTable('#solicitacoes-table')) {
         $('#solicitacoes-table').DataTable().clear().destroy();
       }
-
       $('#solicitacoes-table').DataTable({
         pageLength: 10,
         language: {
@@ -1070,7 +1022,6 @@
         }
       });
     }
-
     function loadEscolas() {
       fetch('/api/escolas')
         .then(res => res.json())
@@ -1079,25 +1030,20 @@
         })
         .catch(err => console.error(err));
     }
-
     function initLocalizarMap() {
       directionsService = new google.maps.DirectionsService();
-      directionsRenderer = new google.maps.DirectionsRenderer({
-        mapTypeId: google.maps.MapTypeId.SATELLITE
-      });
+      directionsRenderer = new google.maps.DirectionsRenderer({ mapTypeId: google.maps.MapTypeId.SATELLITE });
       mapLocalizar = new google.maps.Map(document.getElementById('map-localizar'), {
         center: { lat: -15.795, lng: -47.882 },
         zoom: 5,
         mapTypeId: google.maps.MapTypeId.SATELLITE
       });
       directionsRenderer.setMap(mapLocalizar);
-
       mapEditar = new google.maps.Map(document.getElementById('map-editar'), {
         center: { lat: -15.795, lng: -47.882 },
         zoom: 5,
         mapTypeId: google.maps.MapTypeId.SATELLITE
       });
-
       google.maps.event.addListener(mapEditar, 'click', function (event) {
         const lat = event.latLng.lat();
         const lng = event.latLng.lng();
@@ -1119,32 +1065,26 @@
         $('#edit-longitude').val(lng);
       });
     }
-
     function abrirModalLocalizar(id) {
       const solicitacao = solicitacoes.find(s => s.id === id);
       if (!solicitacao) return;
-
       $('#distanciaLocalizar').text('');
       if (markerCasa) markerCasa.setMap(null);
       if (markerEscola) markerEscola.setMap(null);
       directionsRenderer.set('directions', null);
-
       const latCasa = parseFloat(solicitacao.latitude) || 0;
       const lngCasa = parseFloat(solicitacao.longitude) || 0;
       const escola = escolasList.find(e => e.id == solicitacao.escola_id);
-
       let latEscola = 0, lngEscola = 0;
       if (escola) {
         latEscola = parseFloat(escola.latitude) || 0;
         lngEscola = parseFloat(escola.longitude) || 0;
       }
-
       const centerLat = (latCasa + latEscola) / 2 || -15.795;
       const centerLng = (lngCasa + lngEscola) / 2 || -47.882;
       mapLocalizar.setCenter({ lat: centerLat, lng: centerLng });
       mapLocalizar.setZoom(12);
       mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
-
       markerCasa = new google.maps.Marker({
         position: { lat: latCasa, lng: lngCasa },
         map: mapLocalizar,
@@ -1155,7 +1095,6 @@
         map: mapLocalizar,
         title: 'Escola'
       });
-
       if (latCasa && lngCasa && latEscola && lngEscola) {
         const request = {
           origin: { lat: latCasa, lng: lngCasa },
@@ -1170,14 +1109,11 @@
           }
         });
       }
-
       $('#modalLocalizar').modal('show');
     }
-
     function abrirModalEditar(id) {
       const solicitacao = solicitacoes.find(s => s.id === id);
       if (!solicitacao) return;
-
       $('#edit-id').val(solicitacao.id);
       $('#edit-nome-responsavel').val(solicitacao.nome_responsavel);
       $('#edit-cpf-responsavel').val(solicitacao.cpf_responsavel);
@@ -1190,7 +1126,6 @@
       $('#edit-criterio-direito').val(solicitacao.criterio_direito);
       $('#edit-latitude').val(solicitacao.latitude);
       $('#edit-longitude').val(solicitacao.longitude);
-
       if (solicitacao.zoneamento) {
         $('#edit-zoneamento').val('sim');
       } else {
@@ -1201,20 +1136,16 @@
       } else {
         $('#edit-deficiencia').val('nao');
       }
-
-      // Preenche a lista de escolas
       $('#edit-escola-id').empty();
       escolasList.forEach(e => {
         $('#edit-escola-id').append(`<option value="${e.id}">${e.nome}</option>`);
       });
       $('#edit-escola-id').val(solicitacao.escola_id);
-
       const lat = parseFloat(solicitacao.latitude) || -15.795;
       const lng = parseFloat(solicitacao.longitude) || -47.882;
       mapEditar.setCenter({ lat, lng });
       mapEditar.setZoom(14);
       mapEditar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
-
       if (markerEditar) {
         markerEditar.setMap(null);
         markerEditar = null;
@@ -1229,15 +1160,12 @@
         $('#edit-latitude').val(newPos.lat());
         $('#edit-longitude').val(newPos.lng());
       });
-
       $('#modalEditar').modal('show');
     }
-
     $('#formEditarSolicitacao').on('submit', function (e) {
       e.preventDefault();
       const formData = new FormData(e.target);
       const id = $('#edit-id').val();
-
       fetch(`/api/cocessao-rota/${id}`, {
         method: 'PUT',
         body: formData
@@ -1257,10 +1185,8 @@
           showNotification('danger', 'Erro ao atualizar solicitação.');
         });
     });
-
     function excluirSolicitacao(id) {
       if (!confirm('Tem certeza que deseja excluir esta solicitação?')) return;
-
       fetch(`/api/cocessao-rota/${id}`, {
         method: 'DELETE'
       })
@@ -1278,19 +1204,14 @@
           showNotification('danger', 'Erro ao excluir solicitação.');
         });
     }
-
     function loadReavaliacoes() {
-      // Da mesma forma, garantir que só venham reavaliações pendentes
       fetch('/api/reavaliacoes?status=pendente')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar reavaliações');
           return res.json();
         })
         .then(data => {
-          // Filtrar localmente, caso o backend não faça o filtro:
           reavaliacoes = data.filter(r => {
-            // Aqui, cada item tem 'r.status_reavaliacao' ou algo similar
-            // Ajuste conforme necessário
             return (r.status_reavaliacao || '').toLowerCase() === 'pendente';
           });
           populateReavaliacoes();
@@ -1300,11 +1221,9 @@
           showNotification('danger', 'Não foi possível carregar as reavaliações.');
         });
     }
-
     function populateReavaliacoes() {
       const tableBody = $('#reavaliacoes-table tbody');
       tableBody.empty();
-
       reavaliacoes.forEach(r => {
         const row = `
         <tr>
@@ -1323,18 +1242,16 @@
           <td>${r.longitude || ''}</td>
           <td>
             <button class="btn btn-sm btn-info" onclick="localizarReavaliacao(${r.id})">Localizar</button>
-            <button class="btn btn-sm btn-success" onclick="aprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Aprovar</button>
-            <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id}, '${r.cpf_aluno}')">Reprovar</button>
+            <button class="btn btn-sm btn-success" onclick="aprovarReavaliacao(${r.id},'${r.cpf_aluno}')">Aprovar</button>
+            <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id},'${r.cpf_aluno}')">Reprovar</button>
           </td>
         </tr>
-      `;
+        `;
         tableBody.append(row);
       });
-
       if ($.fn.DataTable.isDataTable('#reavaliacoes-table')) {
         $('#reavaliacoes-table').DataTable().clear().destroy();
       }
-
       $('#reavaliacoes-table').DataTable({
         pageLength: 10,
         language: {
@@ -1358,35 +1275,27 @@
         }
       });
     }
-
     function localizarReavaliacao(reavId) {
       const revItem = reavaliacoes.find(r => r.id === reavId);
       if (!revItem) return;
-
       $('#distanciaLocalizar').text('');
       if (markerCasa) markerCasa.setMap(null);
       if (markerEscola) markerEscola.setMap(null);
       directionsRenderer.set('directions', null);
-
       const latCasa = parseFloat(revItem.latitude) || 0;
       const lngCasa = parseFloat(revItem.longitude) || 0;
-
       mapLocalizar.setCenter({ lat: latCasa, lng: lngCasa });
       mapLocalizar.setZoom(15);
       mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
-
       markerCasa = new google.maps.Marker({
         position: { lat: latCasa, lng: lngCasa },
         map: mapLocalizar,
         title: 'Casa do Aluno'
       });
-
       $('#modalLocalizar').modal('show');
     }
-
     function aprovarReavaliacao(reavId, cpfAluno) {
       if (!confirm('Confirmar aprovação? A ação setará o transporte_escolar_poder_publico para MUNICIPAL e gerará comprovante de aprovação.')) return;
-
       fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1408,10 +1317,8 @@
           showNotification('danger', 'Erro ao aprovar reavaliação.');
         });
     }
-
     function reprovarReavaliacao(reavId, cpfAluno) {
       if (!confirm('Tem certeza que deseja reprovar? Isso gerará um comprovante de não aprovação.')) return;
-
       fetch(`/api/reavaliacoes/${reavId}/reprovar`, {
         method: 'POST'
       })
@@ -1431,8 +1338,6 @@
           showNotification('danger', 'Erro ao reprovar reavaliação.');
         });
     }
-
-    // CARREGAMENTO DAS SOLICITAÇÕES DE TRANSPORTE
     function loadSolicitacoesTransporte() {
       fetch('/api/solicitacoes-transporte')
         .then(res => {
@@ -1448,12 +1353,15 @@
           showNotification('danger', 'Não foi possível carregar as solicitações de transporte.');
         });
     }
-
     function populateSolicitacoesTransporte() {
       const tableBody = $('#solicitacoesTransporte-table tbody');
       tableBody.empty();
-
       solicitacoesTransporte.forEach(st => {
+        let extraResp = '';
+        if (st.outros_responsaveis_detalhes && Array.isArray(st.outros_responsaveis_detalhes)) {
+          extraResp = st.outros_responsaveis_detalhes.map(o => `<li>Nome: ${o.nome}, RG: ${o.rg}, CPF: ${o.cpf}</li>`).join('');
+          if (extraResp) extraResp = `<ul>${extraResp}</ul>`;
+        }
         const row = `
           <tr>
             <td>${st.id}</td>
@@ -1465,15 +1373,16 @@
             <td>${st.menor10_acompanhado ? 'Sim' : 'Não'}</td>
             <td>${st.responsaveis_extras}</td>
             <td>${st.desembarque_sozinho_10a12 ? 'Sim' : 'Não'}</td>
+            <td>${st.aluno_nome || ''}</td>
+            <td>${st.escola_nome || ''}</td>
+            <td>${extraResp}</td>
           </tr>
         `;
         tableBody.append(row);
       });
-
       if ($.fn.DataTable.isDataTable('#solicitacoesTransporte-table')) {
         $('#solicitacoesTransporte-table').DataTable().clear().destroy();
       }
-
       $('#solicitacoesTransporte-table').DataTable({
         pageLength: 10,
         language: {
@@ -1497,7 +1406,6 @@
         }
       });
     }
-
     document.addEventListener('DOMContentLoaded', function () {
       loadSolicitacoes();
       loadEscolas();
@@ -1505,7 +1413,6 @@
       loadSolicitacoesTransporte();
     });
   </script>
-
 </body>
 
 </html>
