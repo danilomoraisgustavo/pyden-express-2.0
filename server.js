@@ -9652,8 +9652,6 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
       longitude,
       rua
     } = req.body;
-
-    // Se a deficiencia for "NADA INFORMADO" ou vazia, seta como null
     let defArray = null;
     if (Array.isArray(deficiencia)) {
       defArray = deficiencia.map(item => item === "NADA INFORMADO" ? null : item).filter(Boolean);
@@ -9665,7 +9663,6 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
         defArray = null;
       }
     }
-
     const query = `
       UPDATE alunos_ativos
       SET
@@ -9676,29 +9673,26 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
         deficiencia = $5,
         latitude = $6,
         longitude = $7,
-        rua = $8
+        rua = $8,
+        transporte_escolar_poder_publico = 'MUNICIPAL'
       WHERE id = $9
       RETURNING id
     `;
-
-    // deficiencia em $5 deve receber defArray ou null
     const values = [
       cep || null,
       bairro || null,
       numero_pessoa_endereco || null,
       numero_telefone || null,
-      defArray, // text[] ou null
+      defArray,
       latitude || null,
       longitude || null,
       rua || null,
       id
     ];
-
     const result = await pool.query(query, values);
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, message: "Aluno não encontrado." });
     }
-
     return res.json({ success: true, message: "Dados atualizados com sucesso." });
   } catch (error) {
     console.error("Erro ao atualizar aluno:", error);
