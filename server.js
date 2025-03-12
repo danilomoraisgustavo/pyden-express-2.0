@@ -9331,12 +9331,26 @@ app.get("/api/termo-desembarque-estadual/:id/gerar-pdf", async (req, res) => {
 // Rota para listar todas as solicitações de transporte
 app.get("/api/solicitacoes-transporte", async (req, res) => {
   try {
-    const query = "SELECT * FROM solicitacoes_transporte"; // ajusta conforme a estrutura do teu schema
+    const query = `
+      SELECT
+        st.*,
+        a.pessoa_nome AS aluno_nome,
+        e.nome AS escola_nome,
+        (
+          SELECT COALESCE(json_agg(json_build_object('id', orx.id, 'nome', orx.nome, 'rg', orx.rg, 'cpf', orx.cpf, 'data_nascimento', orx.data_nascimento)), '[]'::json)
+          FROM outros_responsaveis orx
+          WHERE orx.aluno_id = st.aluno_id
+        ) AS outros_responsaveis_detalhes
+      FROM solicitacoes_transporte st
+      LEFT JOIN alunos_ativos_estadual a ON a.id = st.aluno_id
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      ORDER BY st.id DESC
+    `;
     const result = await pool.query(query);
-    return res.json(result.rows);
+    res.json(result.rows);
   } catch (err) {
     console.error("Erro ao listar solicitacoes_transporte", err);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Erro interno ao listar as solicitações de transporte"
     });
