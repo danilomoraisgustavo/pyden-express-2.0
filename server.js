@@ -9357,6 +9357,33 @@ app.get("/api/solicitacoes-transporte", async (req, res) => {
   }
 });
 
+app.get("/api/solicitacoes-transporte-especial", async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        ste.id,
+        ste.protocolo,
+        ste.aluno_id,
+        ste.status,
+        ste.motivo,
+        ste.tipo_fluxo,
+        ste.menor10_acompanhado,
+        ste.responsaveis_extras,
+        ste.desembarque_sozinho_10a12,
+        to_char(ste.created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
+        to_char(ste.updated_at, 'YYYY-MM-DD HH24:MI:SS') as updated_at
+      FROM solicitacoes_transporte_especial ste
+      ORDER BY ste.id DESC
+    `;
+    const result = await pool.query(query);
+    return res.json(result.rows);
+  } catch (err) {
+    console.error("Erro ao listar solicitacoes_transporte_especial", err);
+    return res.status(500).json({ success: false, message: "Erro ao buscar solicitações especiais" });
+  }
+});
+
+
 // Este endpoint recebe as solicitações cujo status é "PENDENTE_AVALIACAO_MANUAL" e grava em solicitacoes_transporte_especial.
 app.post("/api/solicitacoes-transporte-especial", async (req, res) => {
   try {

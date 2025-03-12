@@ -622,6 +622,11 @@
                 data-bs-target="#solicitacoesTransporteTab" type="button" role="tab"
                 aria-controls="solicitacoesTransporteTab" aria-selected="false">Solicitações de Transporte</button>
             </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="solicitacoesEspecialTabButton" data-bs-toggle="tab"
+                data-bs-target="#solicitacoesEspecialTab" type="button" role="tab"
+                aria-controls="solicitacoesEspecialTab" aria-selected="false">Solicitações Transporte Especial</button>
+            </li>
           </ul>
           <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="solicitacoesRotaTab" role="tabpanel"
@@ -768,6 +773,56 @@
                               <th>Nome Aluno</th>
                               <th>Escola Nome</th>
                               <th>Outros Responsáveis (Tabela)</th>
+                            </tr>
+                          </tfoot>
+                          <tbody></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="solicitacoesEspecialTab" role="tabpanel"
+              aria-labelledby="solicitacoesEspecialTabButton">
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                      <h4 class="card-title">Solicitações de Transporte Especial</h4>
+                    </div>
+                    <div class="card-body">
+                      <div class="table-responsive">
+                        <table id="solicitacoesTransporteEspecial-table"
+                          class="display table table-striped table-hover">
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Protocolo</th>
+                              <th>Aluno ID</th>
+                              <th>Status</th>
+                              <th>Motivo</th>
+                              <th>Tipo Fluxo</th>
+                              <th>Menor 10 Acompanhado</th>
+                              <th>Responsáveis Extras (JSON)</th>
+                              <th>Desemb. 10 a 12 Sozinho</th>
+                              <th>Data Criação</th>
+                              <th>Data Atualização</th>
+                            </tr>
+                          </thead>
+                          <tfoot>
+                            <tr>
+                              <th>ID</th>
+                              <th>Protocolo</th>
+                              <th>Aluno ID</th>
+                              <th>Status</th>
+                              <th>Motivo</th>
+                              <th>Tipo Fluxo</th>
+                              <th>Menor 10 Acompanhado</th>
+                              <th>Responsáveis Extras (JSON)</th>
+                              <th>Desemb. 10 a 12 Sozinho</th>
+                              <th>Data Criação</th>
+                              <th>Data Atualização</th>
                             </tr>
                           </tfoot>
                           <tbody></tbody>
@@ -932,6 +987,7 @@
     let markerEditar = null;
     let reavaliacoes = [];
     let solicitacoesTransporte = [];
+    let solicitacoesTransporteEspecial = [];
     function showNotification(type, message, title = "") {
       $.notify({
         title: title ? title + ' ' : '',
@@ -1406,11 +1462,74 @@
         }
       });
     }
+    function loadSolicitacoesTransporteEspecial() {
+      fetch('/api/solicitacoes-transporte-especial')
+        .then(res => {
+          if (!res.ok) throw new Error('Erro ao carregar solicitações de transporte especial');
+          return res.json();
+        })
+        .then(data => {
+          solicitacoesTransporteEspecial = data;
+          populateSolicitacoesTransporteEspecial();
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Não foi possível carregar as solicitações de transporte especial.');
+        });
+    }
+    function populateSolicitacoesTransporteEspecial() {
+      const tableBody = $('#solicitacoesTransporteEspecial-table tbody');
+      tableBody.empty();
+      solicitacoesTransporteEspecial.forEach(sp => {
+        const row = `
+          <tr>
+            <td>${sp.id}</td>
+            <td>${sp.protocolo}</td>
+            <td>${sp.aluno_id}</td>
+            <td>${sp.status}</td>
+            <td>${sp.motivo || ''}</td>
+            <td>${sp.tipo_fluxo}</td>
+            <td>${sp.menor10_acompanhado ? 'Sim' : 'Não'}</td>
+            <td>${sp.responsaveis_extras}</td>
+            <td>${sp.desembarque_sozinho_10a12 ? 'Sim' : 'Não'}</td>
+            <td>${sp.created_at}</td>
+            <td>${sp.updated_at}</td>
+          </tr>
+        `;
+        tableBody.append(row);
+      });
+      if ($.fn.DataTable.isDataTable('#solicitacoesTransporteEspecial-table')) {
+        $('#solicitacoesTransporteEspecial-table').DataTable().clear().destroy();
+      }
+      $('#solicitacoesTransporteEspecial-table').DataTable({
+        pageLength: 10,
+        language: {
+          decimal: ",",
+          thousands: ".",
+          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+          infoEmpty: "Mostrando 0 até 0 de 0 registros",
+          infoFiltered: "(filtrado de _MAX_ registros no total)",
+          lengthMenu: "Mostrar _MENU_ registros",
+          loadingRecords: "Carregando...",
+          processing: "Processando...",
+          search: "Pesquisar:",
+          zeroRecords: "Nenhum registro encontrado",
+          paginate: {
+            first: "Primeiro",
+            last: "Último",
+            next: "Próximo",
+            previous: "Anterior"
+          },
+          emptyTable: "Nenhum dado disponível na tabela"
+        }
+      });
+    }
     document.addEventListener('DOMContentLoaded', function () {
       loadSolicitacoes();
       loadEscolas();
       loadReavaliacoes();
       loadSolicitacoesTransporte();
+      loadSolicitacoesTransporteEspecial();
     });
   </script>
 </body>
