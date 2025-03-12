@@ -9328,6 +9328,21 @@ app.get("/api/termo-desembarque-estadual/:id/gerar-pdf", async (req, res) => {
   }
 });
 
+// Rota para listar todas as solicitações de transporte
+app.get("/api/solicitacoes-transporte", async (req, res) => {
+  try {
+    const query = "SELECT * FROM solicitacoes_transporte"; // ajusta conforme a estrutura do teu schema
+    const result = await pool.query(query);
+    return res.json(result.rows);
+  } catch (err) {
+    console.error("Erro ao listar solicitacoes_transporte", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao listar as solicitações de transporte"
+    });
+  }
+});
+
 
 // Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
 app.post("/api/solicitacoes-transporte", async (req, res) => {
