@@ -629,106 +629,181 @@
             </ul>
           </div>
 
-          <div class="row mt-4">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                  <h4 class="card-title">Solicitações de Rota</h4>
+          <!-- CRIAÇÃO DAS ABAS -->
+          <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="solicitacoesRotaTabButton" data-bs-toggle="tab"
+                data-bs-target="#solicitacoesRotaTab" type="button" role="tab" aria-controls="solicitacoesRotaTab"
+                aria-selected="true">Solicitações de Rota</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="reavaliacoesTabButton" data-bs-toggle="tab" data-bs-target="#reavaliacoesTab"
+                type="button" role="tab" aria-controls="reavaliacoesTab" aria-selected="false">Solicitações de
+                Reavaliação</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="solicitacoesTransporteTabButton" data-bs-toggle="tab"
+                data-bs-target="#solicitacoesTransporteTab" type="button" role="tab"
+                aria-controls="solicitacoesTransporteTab" aria-selected="false">Solicitações de Transporte</button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="myTabContent">
+            <!-- ABA 1: Solicitações de Rota -->
+            <div class="tab-pane fade show active" id="solicitacoesRotaTab" role="tabpanel"
+              aria-labelledby="solicitacoesRotaTabButton">
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                      <h4 class="card-title">Solicitações de Rota</h4>
+                    </div>
+                    <div class="card-body">
+                      <div class="table-responsive">
+                        <table id="solicitacoes-table" class="display table table-striped table-hover">
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Responsável</th>
+                              <th>CPF</th>
+                              <th>Celular</th>
+                              <th>ID Matrícula</th>
+                              <th>Escola</th>
+                              <th>Zoneamento</th>
+                              <th>Deficiência</th>
+                              <th>Critério</th>
+                              <th>Observações</th>
+                              <th>Ações</th>
+                            </tr>
+                          </thead>
+                          <tfoot>
+                            <tr>
+                              <th>ID</th>
+                              <th>Responsável</th>
+                              <th>CPF</th>
+                              <th>Celular</th>
+                              <th>ID Matrícula</th>
+                              <th>Escola</th>
+                              <th>Zoneamento</th>
+                              <th>Deficiência</th>
+                              <th>Critério</th>
+                              <th>Observações</th>
+                              <th>Ações</th>
+                            </tr>
+                          </tfoot>
+                          <tbody></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="card-body">
-                  <div class="table-responsive">
-                    <table id="solicitacoes-table" class="display table table-striped table-hover">
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Responsável</th>
-                          <th>CPF</th>
-                          <th>Celular</th>
-                          <th>ID Matrícula</th>
-                          <th>Escola</th>
-                          <th>Zoneamento</th>
-                          <th>Deficiência</th>
-                          <th>Critério</th>
-                          <th>Observações</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tfoot>
-                        <tr>
-                          <th>ID</th>
-                          <th>Responsável</th>
-                          <th>CPF</th>
-                          <th>Celular</th>
-                          <th>ID Matrícula</th>
-                          <th>Escola</th>
-                          <th>Zoneamento</th>
-                          <th>Deficiência</th>
-                          <th>Critério</th>
-                          <th>Observações</th>
-                          <th>Ações</th>
-                        </tr>
-                      </tfoot>
-                      <tbody></tbody>
-                    </table>
+              </div>
+            </div>
+
+            <!-- ABA 2: Solicitações de Reavaliação -->
+            <div class="tab-pane fade" id="reavaliacoesTab" role="tabpanel" aria-labelledby="reavaliacoesTabButton">
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                      <h4 class="card-title">Solicitações de Reavaliação</h4>
+                    </div>
+                    <div class="card-body">
+                      <div class="table-responsive">
+                        <table id="reavaliacoes-table" class="display table table-striped table-hover">
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Data Solicitação</th>
+                              <th>Nome Aluno</th>
+                              <th>CPF Aluno</th>
+                              <th>Responsável</th>
+                              <th>Calçadas Ausentes</th>
+                              <th>Pavimentação Ausente</th>
+                              <th>Iluminação Precária</th>
+                              <th>Área de Risco</th>
+                              <th>Animais Perigosos</th>
+                              <th>Status</th>
+                              <th>Latitude</th>
+                              <th>Longitude</th>
+                              <th>Ações</th>
+                            </tr>
+                          </thead>
+                          <tfoot>
+                            <tr>
+                              <th>ID</th>
+                              <th>Data Solicitação</th>
+                              <th>Nome Aluno</th>
+                              <th>CPF Aluno</th>
+                              <th>Responsável</th>
+                              <th>Calçadas Ausentes</th>
+                              <th>Pavimentação Ausente</th>
+                              <th>Iluminação Precária</th>
+                              <th>Área de Risco</th>
+                              <th>Animais Perigosos</th>
+                              <th>Status</th>
+                              <th>Latitude</th>
+                              <th>Longitude</th>
+                              <th>Ações</th>
+                            </tr>
+                          </tfoot>
+                          <tbody></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ABA 3: Solicitações de Transporte -->
+            <div class="tab-pane fade" id="solicitacoesTransporteTab" role="tabpanel"
+              aria-labelledby="solicitacoesTransporteTabButton">
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                      <h4 class="card-title">Solicitações de Transporte</h4>
+                    </div>
+                    <div class="card-body">
+                      <div class="table-responsive">
+                        <table id="solicitacoesTransporte-table" class="display table table-striped table-hover">
+                          <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Protocolo</th>
+                              <th>Aluno ID</th>
+                              <th>Status</th>
+                              <th>Motivo</th>
+                              <th>Tipo Fluxo</th>
+                              <th>Menor 10 Acompanhado</th>
+                              <th>Responsáveis Extras</th>
+                              <th>Desemb. 10 a 12 Sozinho</th>
+                            </tr>
+                          </thead>
+                          <tfoot>
+                            <tr>
+                              <th>ID</th>
+                              <th>Protocolo</th>
+                              <th>Aluno ID</th>
+                              <th>Status</th>
+                              <th>Motivo</th>
+                              <th>Tipo Fluxo</th>
+                              <th>Menor 10 Acompanhado</th>
+                              <th>Responsáveis Extras</th>
+                              <th>Desemb. 10 a 12 Sozinho</th>
+                            </tr>
+                          </tfoot>
+                          <tbody></tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
-          <div class="row mt-4">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header d-flex justify-content-between">
-                  <h4 class="card-title">Solicitações de Reavaliação</h4>
-                </div>
-                <div class="card-body">
-                  <div class="table-responsive">
-                    <table id="reavaliacoes-table" class="display table table-striped table-hover">
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Data Solicitação</th>
-                          <th>Nome Aluno</th>
-                          <th>CPF Aluno</th>
-                          <th>Responsável</th>
-                          <th>Calçadas Ausentes</th>
-                          <th>Pavimentação Ausente</th>
-                          <th>Iluminação Precária</th>
-                          <th>Área de Risco</th>
-                          <th>Animais Perigosos</th>
-                          <th>Status</th>
-                          <th>Latitude</th>
-                          <th>Longitude</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tfoot>
-                        <tr>
-                          <th>ID</th>
-                          <th>Data Solicitação</th>
-                          <th>Nome Aluno</th>
-                          <th>CPF Aluno</th>
-                          <th>Responsável</th>
-                          <th>Calçadas Ausentes</th>
-                          <th>Pavimentação Ausente</th>
-                          <th>Iluminação Precária</th>
-                          <th>Área de Risco</th>
-                          <th>Animais Perigosos</th>
-                          <th>Status</th>
-                          <th>Latitude</th>
-                          <th>Longitude</th>
-                          <th>Ações</th>
-                        </tr>
-                      </tfoot>
-                      <tbody></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
+          <!-- FIM DAS ABAS -->
         </div>
       </div>
 
@@ -889,6 +964,7 @@
     let markerEditar = null;
 
     let reavaliacoes = [];
+    let solicitacoesTransporte = [];
 
     function showNotification(type, message, title = "") {
       $.notify({
@@ -1356,10 +1432,77 @@
         });
     }
 
+    // CARREGAMENTO DAS SOLICITAÇÕES DE TRANSPORTE
+    function loadSolicitacoesTransporte() {
+      fetch('/api/solicitacoes-transporte')
+        .then(res => {
+          if (!res.ok) throw new Error('Erro ao carregar solicitações de transporte');
+          return res.json();
+        })
+        .then(data => {
+          solicitacoesTransporte = data;
+          populateSolicitacoesTransporte();
+        })
+        .catch(err => {
+          console.error(err);
+          showNotification('danger', 'Não foi possível carregar as solicitações de transporte.');
+        });
+    }
+
+    function populateSolicitacoesTransporte() {
+      const tableBody = $('#solicitacoesTransporte-table tbody');
+      tableBody.empty();
+
+      solicitacoesTransporte.forEach(st => {
+        const row = `
+          <tr>
+            <td>${st.id}</td>
+            <td>${st.protocolo}</td>
+            <td>${st.aluno_id}</td>
+            <td>${st.status}</td>
+            <td>${st.motivo || ''}</td>
+            <td>${st.tipo_fluxo}</td>
+            <td>${st.menor10_acompanhado ? 'Sim' : 'Não'}</td>
+            <td>${st.responsaveis_extras}</td>
+            <td>${st.desembarque_sozinho_10a12 ? 'Sim' : 'Não'}</td>
+          </tr>
+        `;
+        tableBody.append(row);
+      });
+
+      if ($.fn.DataTable.isDataTable('#solicitacoesTransporte-table')) {
+        $('#solicitacoesTransporte-table').DataTable().clear().destroy();
+      }
+
+      $('#solicitacoesTransporte-table').DataTable({
+        pageLength: 10,
+        language: {
+          decimal: ",",
+          thousands: ".",
+          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+          infoEmpty: "Mostrando 0 até 0 de 0 registros",
+          infoFiltered: "(filtrado de _MAX_ registros no total)",
+          lengthMenu: "Mostrar _MENU_ registros",
+          loadingRecords: "Carregando...",
+          processing: "Processando...",
+          search: "Pesquisar:",
+          zeroRecords: "Nenhum registro encontrado",
+          paginate: {
+            first: "Primeiro",
+            last: "Último",
+            next: "Próximo",
+            previous: "Anterior"
+          },
+          emptyTable: "Nenhum dado disponível na tabela"
+        }
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       loadSolicitacoes();
       loadEscolas();
       loadReavaliacoes();
+      loadSolicitacoesTransporte();
     });
   </script>
 
