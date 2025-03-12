@@ -9357,6 +9357,57 @@ app.get("/api/solicitacoes-transporte", async (req, res) => {
   }
 });
 
+// Este endpoint recebe as solicitações cujo status é "PENDENTE_AVALIACAO_MANUAL" e grava em solicitacoes_transporte_especial.
+app.post("/api/solicitacoes-transporte-especial", async (req, res) => {
+  try {
+    const {
+      aluno_id,
+      status,
+      motivo,
+      tipo_fluxo,
+      menor10_acompanhado,
+      responsaveis_extras,
+      desembarque_sozinho_10a12,
+    } = req.body;
+
+    const protocoloGerado = "ESP-" + Date.now();
+
+    const insertQuery = `
+      INSERT INTO solicitacoes_transporte_especial (
+        protocolo,
+        aluno_id,
+        status,
+        motivo,
+        tipo_fluxo,
+        menor10_acompanhado,
+        responsaveis_extras,
+        desembarque_sozinho_10a12
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `;
+
+    const values = [
+      protocoloGerado,
+      aluno_id,
+      status,
+      motivo || null,
+      tipo_fluxo,
+      menor10_acompanhado,
+      JSON.stringify(responsaveis_extras || []),
+      desembarque_sozinho_10a12,
+    ];
+
+    const result = await pool.query(insertQuery, values);
+    return res.json({ success: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error("Erro ao criar solicitação de transporte especial", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao criar solicitação especial"
+    });
+  }
+});
 
 // Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
 app.post("/api/solicitacoes-transporte", async (req, res) => {

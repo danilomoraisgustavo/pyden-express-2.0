@@ -1522,7 +1522,7 @@
               desembarqueSozinho10a12
             }
           );
-          window.open(`/api/comprovante-aprovado/${alunoIdMunicipal}/gerar-pdf`, "_blank");
+          window.open(`/api/comprovante-aprovado/${alunoIdMunicipal}/gerar-pdf?signer=${signerChoice || 'filiacao1'}`, "_blank");
         } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
           await criarSolicitacaoTransporte(
             alunoIdEstadual,
@@ -1535,7 +1535,7 @@
               desembarqueSozinho10a12
             }
           );
-          window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf`, "_blank");
+          window.open(`/api/comprovante-aprovado-estadual/${alunoIdEstadual}/gerar-pdf?signer=${signerChoice || 'filiacao1'}`, "_blank");
         }
       } else if (resultadoFinal === "NAO_APROVADO") {
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
@@ -1648,7 +1648,13 @@
           responsaveis_extras: extraData ? extraData.responsaveisExtras : [],
           desembarque_sozinho_10a12: extraData ? !!extraData.desembarqueSozinho10a12 : false
         };
-        const resp = await fetch("/api/solicitacoes-transporte", {
+
+        let endpoint = "/api/solicitacoes-transporte";
+        if (status === "PENDENTE_AVALIACAO_MANUAL") {
+          endpoint = "/api/solicitacoes-transporte-especial";
+        }
+
+        const resp = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(bodyReq),
