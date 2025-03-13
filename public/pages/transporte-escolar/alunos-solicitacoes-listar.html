@@ -800,6 +800,10 @@
                               <th>ID</th>
                               <th>Protocolo</th>
                               <th>Aluno ID</th>
+                              <th>ID Matrícula</th>
+                              <th>CPF Aluno</th>
+                              <th>Longitude</th>
+                              <th>Latitude</th>
                               <th>Status</th>
                               <th>Motivo</th>
                               <th>Tipo Fluxo</th>
@@ -808,6 +812,7 @@
                               <th>Desemb. 10 a 12 Sozinho</th>
                               <th>Data Criação</th>
                               <th>Data Atualização</th>
+                              <th>Ações</th>
                             </tr>
                           </thead>
                           <tfoot>
@@ -815,6 +820,10 @@
                               <th>ID</th>
                               <th>Protocolo</th>
                               <th>Aluno ID</th>
+                              <th>ID Matrícula</th>
+                              <th>CPF Aluno</th>
+                              <th>Longitude</th>
+                              <th>Latitude</th>
                               <th>Status</th>
                               <th>Motivo</th>
                               <th>Tipo Fluxo</th>
@@ -823,6 +832,7 @@
                               <th>Desemb. 10 a 12 Sozinho</th>
                               <th>Data Criação</th>
                               <th>Data Atualização</th>
+                              <th>Ações</th>
                             </tr>
                           </tfoot>
                           <tbody></tbody>
@@ -988,11 +998,16 @@
     let reavaliacoes = [];
     let solicitacoesTransporte = [];
     let solicitacoesTransporteEspecial = [];
+
     function showNotification(type, message, title = "") {
       $.notify({
         title: title ? title + ' ' : '',
         message: message,
-        icon: type === 'success' ? 'fa fa-check-circle' : type === 'danger' ? 'fa fa-exclamation-circle' : type === 'warning' ? 'fa fa-exclamation-triangle' : type === 'info' ? 'fa fa-info-circle' : ''
+        icon: type === 'success' ? 'fa fa-check-circle'
+          : type === 'danger' ? 'fa fa-exclamation-circle'
+            : type === 'warning' ? 'fa fa-exclamation-triangle'
+              : type === 'info' ? 'fa fa-info-circle'
+                : ''
       }, {
         type: type,
         placement: {
@@ -1010,6 +1025,7 @@
         }
       });
     }
+
     function loadSolicitacoes() {
       fetch('/api/cocessao-rota?status=pendente')
         .then(res => {
@@ -1027,28 +1043,29 @@
           showNotification('danger', 'Não foi possível carregar as solicitações.');
         });
     }
+
     function populateTable() {
       const tableBody = $('#solicitacoes-table tbody');
       tableBody.empty();
       solicitacoes.forEach(s => {
         const row = `
-        <tr>
-          <td>${s.id}</td>
-          <td>${s.nome_responsavel}</td>
-          <td>${s.cpf_responsavel}</td>
-          <td>${s.celular_responsavel}</td>
-          <td>${s.id_matricula_aluno}</td>
-          <td>${s.escola_nome || s.escola_id}</td>
-          <td>${s.zoneamento ? 'Sim' : 'Não'}</td>
-          <td>${s.deficiencia ? 'Sim' : 'Não'}</td>
-          <td>${s.criterio_direito || ''}</td>
-          <td>${s.observacoes || ''}</td>
-          <td>
-            <button class="btn btn-sm btn-info" onclick="abrirModalLocalizar(${s.id})">Localizar</button>
-            <button class="btn btn-sm btn-warning" onclick="abrirModalEditar(${s.id})">Editar</button>
-            <button class="btn btn-sm btn-danger" onclick="excluirSolicitacao(${s.id})">Excluir</button>
-          </td>
-        </tr>
+          <tr>
+            <td>${s.id}</td>
+            <td>${s.nome_responsavel}</td>
+            <td>${s.cpf_responsavel}</td>
+            <td>${s.celular_responsavel}</td>
+            <td>${s.id_matricula_aluno}</td>
+            <td>${s.escola_nome || s.escola_id}</td>
+            <td>${s.zoneamento ? 'Sim' : 'Não'}</td>
+            <td>${s.deficiencia ? 'Sim' : 'Não'}</td>
+            <td>${s.criterio_direito || ''}</td>
+            <td>${s.observacoes || ''}</td>
+            <td>
+              <button class="btn btn-sm btn-info" onclick="abrirModalLocalizar(${s.id}, 'rota')">Localizar</button>
+              <button class="btn btn-sm btn-warning" onclick="abrirModalEditar(${s.id})">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="excluirSolicitacao(${s.id})">Excluir</button>
+            </td>
+          </tr>
         `;
         tableBody.append(row);
       });
@@ -1078,6 +1095,7 @@
         }
       });
     }
+
     function loadEscolas() {
       fetch('/api/escolas')
         .then(res => res.json())
@@ -1086,6 +1104,7 @@
         })
         .catch(err => console.error(err));
     }
+
     function initLocalizarMap() {
       directionsService = new google.maps.DirectionsService();
       directionsRenderer = new google.maps.DirectionsRenderer({ mapTypeId: google.maps.MapTypeId.SATELLITE });
@@ -1095,11 +1114,13 @@
         mapTypeId: google.maps.MapTypeId.SATELLITE
       });
       directionsRenderer.setMap(mapLocalizar);
+
       mapEditar = new google.maps.Map(document.getElementById('map-editar'), {
         center: { lat: -15.795, lng: -47.882 },
         zoom: 5,
         mapTypeId: google.maps.MapTypeId.SATELLITE
       });
+
       google.maps.event.addListener(mapEditar, 'click', function (event) {
         const lat = event.latLng.lat();
         const lng = event.latLng.lng();
@@ -1121,55 +1142,80 @@
         $('#edit-longitude').val(lng);
       });
     }
-    function abrirModalLocalizar(id) {
-      const solicitacao = solicitacoes.find(s => s.id === id);
-      if (!solicitacao) return;
+
+    function abrirModalLocalizar(id, tipo = 'rota') {
+      let item = null;
+      if (tipo === 'rota') {
+        item = solicitacoes.find(s => s.id === id);
+      } else if (tipo === 'especial') {
+        item = solicitacoesTransporteEspecial.find(x => x.id === id);
+      }
+      if (!item) return;
+
       $('#distanciaLocalizar').text('');
       if (markerCasa) markerCasa.setMap(null);
       if (markerEscola) markerEscola.setMap(null);
       directionsRenderer.set('directions', null);
-      const latCasa = parseFloat(solicitacao.latitude) || 0;
-      const lngCasa = parseFloat(solicitacao.longitude) || 0;
-      const escola = escolasList.find(e => e.id == solicitacao.escola_id);
-      let latEscola = 0, lngEscola = 0;
-      if (escola) {
-        latEscola = parseFloat(escola.latitude) || 0;
-        lngEscola = parseFloat(escola.longitude) || 0;
+
+      const latCasa = parseFloat(item.latitude) || 0;
+      const lngCasa = parseFloat(item.longitude) || 0;
+
+      let latEscola = 0;
+      let lngEscola = 0;
+
+      if (tipo === 'rota') {
+        const escola = escolasList.find(e => e.id == item.escola_id);
+        if (escola) {
+          latEscola = parseFloat(escola.latitude) || 0;
+          lngEscola = parseFloat(escola.longitude) || 0;
+        }
       }
+
       const centerLat = (latCasa + latEscola) / 2 || -15.795;
       const centerLng = (lngCasa + lngEscola) / 2 || -47.882;
+
       mapLocalizar.setCenter({ lat: centerLat, lng: centerLng });
       mapLocalizar.setZoom(12);
       mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+
       markerCasa = new google.maps.Marker({
         position: { lat: latCasa, lng: lngCasa },
         map: mapLocalizar,
-        title: 'Casa do Aluno'
+        title: 'Localização do Aluno'
       });
-      markerEscola = new google.maps.Marker({
-        position: { lat: latEscola, lng: lngEscola },
-        map: mapLocalizar,
-        title: 'Escola'
-      });
-      if (latCasa && lngCasa && latEscola && lngEscola) {
-        const request = {
-          origin: { lat: latCasa, lng: lngCasa },
-          destination: { lat: latEscola, lng: lngEscola },
-          travelMode: 'DRIVING'
-        };
-        directionsService.route(request, function (result, status) {
-          if (status === 'OK') {
-            directionsRenderer.setDirections(result);
-            const route = result.routes[0].legs[0];
-            $('#distanciaLocalizar').text(`Distância aproximada: ${route.distance.text} - Tempo: ${route.duration.text}`);
-          }
+
+      if (tipo === 'rota') {
+        markerEscola = new google.maps.Marker({
+          position: { lat: latEscola, lng: lngEscola },
+          map: mapLocalizar,
+          title: 'Escola'
         });
+
+        if (latCasa && lngCasa && latEscola && lngEscola) {
+          const request = {
+            origin: { lat: latCasa, lng: lngCasa },
+            destination: { lat: latEscola, lng: lngEscola },
+            travelMode: 'DRIVING'
+          };
+          directionsService.route(request, function (result, status) {
+            if (status === 'OK') {
+              directionsRenderer.setDirections(result);
+              const route = result.routes[0].legs[0];
+              $('#distanciaLocalizar').text(
+                `Distância aproximada: ${route.distance.text} - Tempo: ${route.duration.text}`
+              );
+            }
+          });
+        }
       }
+
       $('#modalLocalizar').modal('show');
     }
+
     function abrirModalEditar(id) {
       const solicitacao = solicitacoes.find(s => s.id === id);
       if (!solicitacao) return;
+
       $('#edit-id').val(solicitacao.id);
       $('#edit-nome-responsavel').val(solicitacao.nome_responsavel);
       $('#edit-cpf-responsavel').val(solicitacao.cpf_responsavel);
@@ -1182,6 +1228,7 @@
       $('#edit-criterio-direito').val(solicitacao.criterio_direito);
       $('#edit-latitude').val(solicitacao.latitude);
       $('#edit-longitude').val(solicitacao.longitude);
+
       if (solicitacao.zoneamento) {
         $('#edit-zoneamento').val('sim');
       } else {
@@ -1192,16 +1239,19 @@
       } else {
         $('#edit-deficiencia').val('nao');
       }
+
       $('#edit-escola-id').empty();
       escolasList.forEach(e => {
         $('#edit-escola-id').append(`<option value="${e.id}">${e.nome}</option>`);
       });
       $('#edit-escola-id').val(solicitacao.escola_id);
+
       const lat = parseFloat(solicitacao.latitude) || -15.795;
       const lng = parseFloat(solicitacao.longitude) || -47.882;
       mapEditar.setCenter({ lat, lng });
       mapEditar.setZoom(14);
       mapEditar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+
       if (markerEditar) {
         markerEditar.setMap(null);
         markerEditar = null;
@@ -1216,8 +1266,10 @@
         $('#edit-latitude').val(newPos.lat());
         $('#edit-longitude').val(newPos.lng());
       });
+
       $('#modalEditar').modal('show');
     }
+
     $('#formEditarSolicitacao').on('submit', function (e) {
       e.preventDefault();
       const formData = new FormData(e.target);
@@ -1241,6 +1293,7 @@
           showNotification('danger', 'Erro ao atualizar solicitação.');
         });
     });
+
     function excluirSolicitacao(id) {
       if (!confirm('Tem certeza que deseja excluir esta solicitação?')) return;
       fetch(`/api/cocessao-rota/${id}`, {
@@ -1260,6 +1313,7 @@
           showNotification('danger', 'Erro ao excluir solicitação.');
         });
     }
+
     function loadReavaliacoes() {
       fetch('/api/reavaliacoes?status=pendente')
         .then(res => {
@@ -1277,31 +1331,32 @@
           showNotification('danger', 'Não foi possível carregar as reavaliações.');
         });
     }
+
     function populateReavaliacoes() {
       const tableBody = $('#reavaliacoes-table tbody');
       tableBody.empty();
       reavaliacoes.forEach(r => {
         const row = `
-        <tr>
-          <td>${r.id}</td>
-          <td>${r.data_solicitacao || ''}</td>
-          <td>${r.nome_aluno || ''}</td>
-          <td>${r.cpf_aluno || ''}</td>
-          <td>${r.responsavel_aluno || ''}</td>
-          <td>${r.calcadas_ausentes ? 'Sim' : 'Não'}</td>
-          <td>${r.pavimentacao_ausente ? 'Sim' : 'Não'}</td>
-          <td>${r.iluminacao_precaria ? 'Sim' : 'Não'}</td>
-          <td>${r.area_de_risco ? 'Sim' : 'Não'}</td>
-          <td>${r.animais_perigosos ? 'Sim' : 'Não'}</td>
-          <td>${r.status_reavaliacao || 'PENDENTE'}</td>
-          <td>${r.latitude || ''}</td>
-          <td>${r.longitude || ''}</td>
-          <td>
-            <button class="btn btn-sm btn-info" onclick="localizarReavaliacao(${r.id})">Localizar</button>
-            <button class="btn btn-sm btn-success" onclick="aprovarReavaliacao(${r.id},'${r.cpf_aluno}')">Aprovar</button>
-            <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id},'${r.cpf_aluno}')">Reprovar</button>
-          </td>
-        </tr>
+          <tr>
+            <td>${r.id}</td>
+            <td>${r.data_solicitacao || ''}</td>
+            <td>${r.nome_aluno || ''}</td>
+            <td>${r.cpf_aluno || ''}</td>
+            <td>${r.responsavel_aluno || ''}</td>
+            <td>${r.calcadas_ausentes ? 'Sim' : 'Não'}</td>
+            <td>${r.pavimentacao_ausente ? 'Sim' : 'Não'}</td>
+            <td>${r.iluminacao_precaria ? 'Sim' : 'Não'}</td>
+            <td>${r.area_de_risco ? 'Sim' : 'Não'}</td>
+            <td>${r.animais_perigosos ? 'Sim' : 'Não'}</td>
+            <td>${r.status_reavaliacao || 'PENDENTE'}</td>
+            <td>${r.latitude || ''}</td>
+            <td>${r.longitude || ''}</td>
+            <td>
+              <button class="btn btn-sm btn-info" onclick="localizarReavaliacao(${r.id})">Localizar</button>
+              <button class="btn btn-sm btn-success" onclick="aprovarReavaliacao(${r.id},'${r.cpf_aluno}')">Aprovar</button>
+              <button class="btn btn-sm btn-danger" onclick="reprovarReavaliacao(${r.id},'${r.cpf_aluno}')">Reprovar</button>
+            </td>
+          </tr>
         `;
         tableBody.append(row);
       });
@@ -1331,6 +1386,7 @@
         }
       });
     }
+
     function localizarReavaliacao(reavId) {
       const revItem = reavaliacoes.find(r => r.id === reavId);
       if (!revItem) return;
@@ -1338,18 +1394,23 @@
       if (markerCasa) markerCasa.setMap(null);
       if (markerEscola) markerEscola.setMap(null);
       directionsRenderer.set('directions', null);
+
       const latCasa = parseFloat(revItem.latitude) || 0;
       const lngCasa = parseFloat(revItem.longitude) || 0;
+
       mapLocalizar.setCenter({ lat: latCasa, lng: lngCasa });
       mapLocalizar.setZoom(15);
       mapLocalizar.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+
       markerCasa = new google.maps.Marker({
         position: { lat: latCasa, lng: lngCasa },
         map: mapLocalizar,
         title: 'Casa do Aluno'
       });
+
       $('#modalLocalizar').modal('show');
     }
+
     function aprovarReavaliacao(reavId, cpfAluno) {
       if (!confirm('Confirmar aprovação? A ação setará o transporte_escolar_poder_publico para MUNICIPAL e gerará comprovante de aprovação.')) return;
       fetch(`/api/reavaliacoes/${reavId}/aprovar`, {
@@ -1373,6 +1434,7 @@
           showNotification('danger', 'Erro ao aprovar reavaliação.');
         });
     }
+
     function reprovarReavaliacao(reavId, cpfAluno) {
       if (!confirm('Tem certeza que deseja reprovar? Isso gerará um comprovante de não aprovação.')) return;
       fetch(`/api/reavaliacoes/${reavId}/reprovar`, {
@@ -1394,6 +1456,7 @@
           showNotification('danger', 'Erro ao reprovar reavaliação.');
         });
     }
+
     function loadSolicitacoesTransporte() {
       fetch('/api/solicitacoes-transporte')
         .then(res => {
@@ -1409,6 +1472,7 @@
           showNotification('danger', 'Não foi possível carregar as solicitações de transporte.');
         });
     }
+
     function populateSolicitacoesTransporte() {
       const tableBody = $('#solicitacoesTransporte-table tbody');
       tableBody.empty();
@@ -1462,13 +1526,33 @@
         }
       });
     }
+
     function loadSolicitacoesTransporteEspecial() {
       fetch('/api/solicitacoes-transporte-especial')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar solicitações de transporte especial');
           return res.json();
         })
-        .then(data => {
+        .then(async data => {
+          // Precisamos buscar dados adicionais do aluno (id_matricula, cpf, latitude, longitude) na tabela alunos_ativos
+          // Vamos realizar pedidos adicionais ou mesclar se a API já retorna.
+          // Supondo que teremos um endpoint /api/alunos_ativos/:id para obter dados complementares
+          // ou atualizar a query de /api/solicitacoes-transporte-especial para já trazer os dados. Ajustando nessa página.
+
+          // Exemplo de fetch adicional: (Não iremos explicar, apenas demonstrar a fusão)
+          // Vamos criar um array de promessas para buscar cada aluno e depois mesclar
+          for (let i = 0; i < data.length; i++) {
+            const item = data[i];
+            // fetch do aluno
+            const alunoResp = await fetch(`/api/alunos_ativos/${item.aluno_id}`);
+            if (alunoResp.ok) {
+              const aluno = await alunoResp.json();
+              item.id_matricula = aluno.id_matricula || '';
+              item.cpf = aluno.cpf || '';
+              item.latitude = aluno.latitude || null;
+              item.longitude = aluno.longitude || null;
+            }
+          }
           solicitacoesTransporteEspecial = data;
           populateSolicitacoesTransporteEspecial();
         })
@@ -1477,6 +1561,7 @@
           showNotification('danger', 'Não foi possível carregar as solicitações de transporte especial.');
         });
     }
+
     function populateSolicitacoesTransporteEspecial() {
       const tableBody = $('#solicitacoesTransporteEspecial-table tbody');
       tableBody.empty();
@@ -1486,6 +1571,10 @@
             <td>${sp.id}</td>
             <td>${sp.protocolo}</td>
             <td>${sp.aluno_id}</td>
+            <td>${sp.id_matricula || ''}</td>
+            <td>${sp.cpf || ''}</td>
+            <td>${sp.longitude != null ? sp.longitude : ''}</td>
+            <td>${sp.latitude != null ? sp.latitude : ''}</td>
             <td>${sp.status}</td>
             <td>${sp.motivo || ''}</td>
             <td>${sp.tipo_fluxo}</td>
@@ -1494,6 +1583,9 @@
             <td>${sp.desembarque_sozinho_10a12 ? 'Sim' : 'Não'}</td>
             <td>${sp.created_at}</td>
             <td>${sp.updated_at}</td>
+            <td>
+              <button class="btn btn-sm btn-info" onclick="abrirModalLocalizar(${sp.id}, 'especial')">Localizar</button>
+            </td>
           </tr>
         `;
         tableBody.append(row);
@@ -1524,6 +1616,7 @@
         }
       });
     }
+
     document.addEventListener('DOMContentLoaded', function () {
       loadSolicitacoes();
       loadEscolas();
