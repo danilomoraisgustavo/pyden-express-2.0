@@ -1566,6 +1566,7 @@
           }
         }
       } else if (resultadoFinal === "AVALIACAO_MANUAL") {
+        await salvarLocalizacaoFinal();
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
           await criarSolicitacaoTransporte(
             alunoIdMunicipal,
@@ -1574,6 +1575,7 @@
             "municipal",
             null
           );
+          window.open(`/api/comprovante-avaliacao-manual/${alunoIdMunicipal}/gerar-pdf?signer=${signerChoice || 'filiacao1'}`, "_blank");
         } else if (tipoFluxoSelecionado === "estadual" && alunoIdEstadual) {
           await criarSolicitacaoTransporte(
             alunoIdEstadual,
@@ -1582,6 +1584,7 @@
             "estadual",
             null
           );
+          window.open(`/api/comprovante-avaliacao-manual-estadual/${alunoIdEstadual}/gerar-pdf?signer=${signerChoice || 'filiacao1'}`, "_blank");
         }
       }
 

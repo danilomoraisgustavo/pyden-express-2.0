@@ -8110,6 +8110,164 @@ app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => 
   }
 });
 
+app.get("/api/comprovante-avaliacao-manual/:alunoId/gerar-pdf", async (req, res) => {
+  const { alunoId } = req.params;
+  const signer = req.query.signer || "filiacao1";
+  try {
+    const query = `
+      SELECT
+        a.id,
+        a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        e.nome AS escola_nome,
+        a.turma,
+        a.filiacao_1,
+        a.filiacao_2,
+        a.responsavel
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [alunoId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+    }
+    const aluno = result.rows[0];
+
+    let signerName = "______________________";
+    if (signer === "filiacao2") {
+      signerName = aluno.filiacao_2 || "______________________";
+    } else if (signer === "responsavel") {
+      signerName = aluno.responsavel || "______________________";
+    } else {
+      signerName = aluno.filiacao_1 || "______________________";
+    }
+
+    const solQuery = `
+      SELECT id AS solicitacao_id
+      FROM solicitacoes_transporte_especial
+      WHERE aluno_id = $1
+      ORDER BY id DESC
+      LIMIT 1
+    `;
+    const solResult = await pool.query(solQuery, [alunoId]);
+    let numeroProtocolo = "000";
+    if (solResult.rows.length > 0) {
+      numeroProtocolo = solResult.rows[0].solicitacao_id;
+    }
+
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    res.setHeader("Content-Disposition", `inline; filename=avaliacao_manual_${alunoId}.pdf`);
+    res.setHeader("Content-Type", "application/pdf");
+    doc.pipe(res);
+
+    const logoPath = path.join(__dirname, "public", "assets", "img", "logo_memorando1.png");
+    const separadorPath = path.join(__dirname, "public", "assets", "img", "memorando_separador.png");
+    const logo2Path = path.join(__dirname, "public", "assets", "img", "memorando_logo2.png");
+
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 20, { width: 60 });
+    }
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(
+        "ESTADO DO PARÁ\n" +
+        "PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS\n" +
+        "SECRETARIA MUNICIPAL DE EDUCAÇÃO",
+        250,
+        20,
+        { width: 300, align: "right" }
+      );
+
+    if (fs.existsSync(separadorPath)) {
+      const separadorX = (doc.page.width - 510) / 2;
+      const separadorY = 90;
+      doc.image(separadorPath, separadorX, separadorY, { width: 510 });
+    }
+
+    doc.y = 130;
+    doc.x = 50;
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text(`COMPROVANTE DE AVALIAÇÃO MANUAL Nº ${numeroProtocolo}`, {
+        align: "justify",
+      })
+      .moveDown();
+
+    doc
+      .fontSize(11)
+      .font("Helvetica")
+      .text(`Aluno(a): ${aluno.aluno_nome || ""}`, { align: "justify" })
+      .text(`CPF: ${aluno.cpf || ""}`, { align: "justify" })
+      .text(`Escola: ${aluno.escola_nome || ""}`, { align: "justify" })
+      .text(`Turma: ${aluno.turma || ""}`, { align: "justify" })
+      .moveDown()
+      .text(
+        "O(a) aluno(a) acima mencionado(a) encontra-se em processo de avaliação manual, por possuir laudo ou indicação de deficiência. O processo de verificação será realizado de forma presencial ou via documentação complementar.",
+        { align: "justify" }
+      )
+      .moveDown();
+
+    doc
+      .fontSize(11)
+      .font("Helvetica-Bold")
+      .text("INFORMAÇÕES IMPORTANTES", { align: "left" })
+      .moveDown(0.3)
+      .font("Helvetica")
+      .text("• A SEMED reserva-se ao direito de solicitar exames ou laudos complementares.")
+      .text("• O transporte poderá ser adaptado caso a avaliação comprove a necessidade.")
+      .text("• A avaliação manual deve ser finalizada para efetivação do direito ao transporte.")
+      .moveDown(1)
+      .text(
+        `Eu, ${signerName}, declaro estar ciente de que esta avaliação manual é indispensável e assumo a responsabilidade de fornecer informações e documentos verídicos.`,
+        { align: "justify" }
+      )
+      .moveDown(5);
+
+    const spaceNeededForSignature = 80;
+    if (doc.y + spaceNeededForSignature > doc.page.height - 160) {
+      doc.addPage();
+    }
+
+    doc.text("_____________________________________________", { align: "center" });
+    doc.font("Helvetica-Bold").text("Assinatura do Responsável", { align: "center" });
+    doc.moveDown(1);
+
+    if (fs.existsSync(separadorPath)) {
+      const footerSepX = (doc.page.width - 510) / 2;
+      const footerSepY = doc.page.height - 160;
+      doc.image(separadorPath, footerSepX, footerSepY, { width: 510 });
+    }
+
+    if (fs.existsSync(logo2Path)) {
+      const logo2X = (doc.page.width - 160) / 2;
+      const logo2Y = doc.page.height - 150;
+      doc.image(logo2Path, logo2X, logo2Y, { width: 160 });
+    }
+
+    doc
+      .fontSize(8)
+      .font("Helvetica")
+      .text("SECRETARIA MUNICIPAL DE EDUCAÇÃO (SEMED) - CANAÃ DOS CARAJÁS - PA", 50, doc.page.height - 90, {
+        width: doc.page.width - 100,
+        align: "center",
+      })
+      .text("Rua Itamarati, s/n - Bairro Novo Horizonte - CEP: 68.356-103", { align: "center" })
+      .text("Fone: (94) 99293-4500", { align: "center" });
+
+    doc.end();
+  } catch (error) {
+    console.error("Erro ao gerar PDF da avaliação manual:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao gerar comprovante de avaliação manual.",
+    });
+  }
+});
+
 
 app.get("/api/comprovante-aprovado/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
