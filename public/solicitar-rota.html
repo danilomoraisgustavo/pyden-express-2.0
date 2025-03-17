@@ -561,6 +561,10 @@
             <input class="form-check-input" type="checkbox" id="chkAnimaisPerigosos" />
             <label class="form-check-label" for="chkAnimaisPerigosos">Presença de animais perigosos (rural)</label>
           </div>
+          <div class="mb-2">
+            <label class="form-label fw-semibold" for="txtOutros">Outros (descreva):</label>
+            <textarea class="form-control" id="txtOutros" rows="2" placeholder="Descreva aqui..."></textarea>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -713,6 +717,7 @@
     const chkIluminacaoPrecaria = document.getElementById("chkIluminacaoPrecaria");
     const chkAreaDeRisco = document.getElementById("chkAreaDeRisco");
     const chkAnimaisPerigosos = document.getElementById("chkAnimaisPerigosos");
+    const txtOutros = document.getElementById("txtOutros");
 
     btnContinuarFluxo.addEventListener("click", async () => {
       if (fluxoMunicipal.checked) {
@@ -1193,7 +1198,9 @@
         return;
       }
 
-      const distKm = parseFloat(distanciaRota.textContent) || 0;
+      let distKm = parseFloat(distanciaRota.textContent) || 0;
+      // Adicionando margem de 100 metros
+      const marginDist = 0.1;
       let idadeMinimaOk = false;
       if (idadeAlunoAnos >= 4) {
         idadeMinimaOk = true;
@@ -1212,7 +1219,9 @@
       }
 
       let distanciaMinimaOk = false;
-      if (distKm > limPrincipal) {
+      let limPrincipalAjustado = limPrincipal - marginDist;
+
+      if (distKm > limPrincipalAjustado) {
         distanciaMinimaOk = true;
       } else {
         if (distKm >= limReavaliacao && distKm <= limPrincipal) {
@@ -1266,7 +1275,8 @@
         pavimentacao_ausente: chkPavimentacaoAusente.checked,
         iluminacao_precaria: chkIluminacaoPrecaria.checked,
         area_de_risco: chkAreaDeRisco.checked,
-        animais_perigosos: chkAnimaisPerigosos.checked
+        animais_perigosos: chkAnimaisPerigosos.checked,
+        outros_descricao: txtOutros.value.trim()
       };
 
       try {
@@ -1279,7 +1289,7 @@
         console.error("Falha ao salvar reavaliacao:", err);
       }
 
-      if (atenuantesSelecionadas) {
+      if (atenuantesSelecionadas || txtOutros.value.trim() !== "") {
         atenuantesReavaliacao = true;
       }
 
@@ -1358,7 +1368,7 @@
       });
     }
 
-    btnConfirmarMenor10.addEventListener("click", () => {
+    btnConfirmarMenor10.addEventListener("click", async () => {
       if (radioAcompanhamentoSim.checked) {
         menor10_acompanhado = true;
         for (const r of responsaveisExtras) {
@@ -1378,6 +1388,13 @@
             return;
           }
         }
+
+        // Chamar API de gerar PDF para cada responsável adicionado
+        for (const r of responsaveisExtras) {
+          fetch(`/api/gerar-pdf-responsavel?nome=${encodeURIComponent(r.nome)}`)
+            .catch(err => console.error('Erro ao gerar PDF do responsável:', err));
+        }
+
       } else {
         menor10_acompanhado = false;
         responsaveisExtras = [];
@@ -1475,6 +1492,12 @@
         } catch (err) {
           alert("Falha ao salvar responsáveis no banco.");
           return;
+        }
+
+        // Chamar API de gerar PDF para cada responsável adicionado
+        for (const r of outrosResponsaveis10a12) {
+          fetch(`/api/gerar-pdf-responsavel?nome=${encodeURIComponent(r.nome)}`)
+            .catch(err => console.error('Erro ao gerar PDF do responsável:', err));
         }
 
         if (tipoFluxoSelecionado === "municipal" && alunoIdMunicipal) {
