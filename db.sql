@@ -321,9 +321,9 @@ CREATE TABLE IF NOT EXISTS cocessao_rota (
   longitude DOUBLE PRECISION,
   observacoes TEXT,
   criterio_direito TEXT,
+  status VARCHAR(50) NOT NULL DEFAULT 'pendente',
   created_at TIMESTAMP DEFAULT NOW()
 );
-
 
 CREATE TABLE IF NOT EXISTS memorandos (
   id SERIAL PRIMARY KEY,
