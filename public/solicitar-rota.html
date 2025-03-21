@@ -1159,9 +1159,14 @@
       let insideZone = false;
       const alunoLatLng = markerAluno.getPosition();
       for (const poly of polygonsZone) {
-        if (google.maps.geometry.poly.containsLocation(alunoLatLng, poly)) {
-          insideZone = true;
-          break;
+        if (google.maps.geometry.poly && poly instanceof google.maps.Polygon) {
+          if (google.maps.geometry.poly.containsLocation(alunoLatLng, poly)) {
+            insideZone = true;
+            break;
+          }
+        } else if (poly instanceof google.maps.Polyline) {
+          // Polylines não definem interior (não se aplica "inside"), então não altera insideZone
+          // Mantido apenas para manter coerência
         }
       }
 
@@ -1729,19 +1734,66 @@
         }
         if (escolaJson.zoneamentos && Array.isArray(escolaJson.zoneamentos)) {
           escolaJson.zoneamentos.forEach(z => {
-            if (z.geojson && z.geojson.type === "Polygon" && z.geojson.coordinates.length > 0) {
-              const coords = z.geojson.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
-              const poly = new google.maps.Polygon({
-                paths: coords,
-                map: map,
-                fillColor: "#0000FF",
-                fillOpacity: 0.1, // Mais transparente
-                strokeColor: "#0000FF",
-                strokeOpacity: 0.8, // Exibe linhas mais visíveis
-                strokeWeight: 2,
-                clickable: false // Permite clicar no mapa mesmo em cima do polígono
-              });
-              polygonsZone.push(poly);
+            if (z.geojson) {
+              if (z.geojson.type === "Polygon") {
+                if (z.geojson.coordinates.length > 0) {
+                  const coords = z.geojson.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
+                  const polygon = new google.maps.Polygon({
+                    paths: coords,
+                    map: map,
+                    fillColor: "#0000FF",
+                    fillOpacity: 0.1,
+                    strokeColor: "#0000FF",
+                    strokeOpacity: 0.8,
+                    strokeWeight: 2,
+                    clickable: false
+                  });
+                  polygonsZone.push(polygon);
+                }
+              } else if (z.geojson.type === "MultiPolygon") {
+                z.geojson.coordinates.forEach(polygonCoords => {
+                  if (polygonCoords.length > 0) {
+                    const coords = polygonCoords[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
+                    const polygon = new google.maps.Polygon({
+                      paths: coords,
+                      map: map,
+                      fillColor: "#0000FF",
+                      fillOpacity: 0.1,
+                      strokeColor: "#0000FF",
+                      strokeOpacity: 0.8,
+                      strokeWeight: 2,
+                      clickable: false
+                    });
+                    polygonsZone.push(polygon);
+                  }
+                });
+              } else if (z.geojson.type === "LineString") {
+                if (z.geojson.coordinates.length > 0) {
+                  const lineCoords = z.geojson.coordinates.map(coord => ({ lat: coord[1], lng: coord[0] }));
+                  const polyline = new google.maps.Polyline({
+                    path: lineCoords,
+                    map: map,
+                    strokeColor: "#0000FF",
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3,
+                    clickable: false
+                  });
+                  polygonsZone.push(polyline);
+                }
+              } else if (z.geojson.type === "MultiLineString") {
+                z.geojson.coordinates.forEach(line => {
+                  const lineCoords = line.map(coord => ({ lat: coord[1], lng: coord[0] }));
+                  const polyline = new google.maps.Polyline({
+                    path: lineCoords,
+                    map: map,
+                    strokeColor: "#0000FF",
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3,
+                    clickable: false
+                  });
+                  polygonsZone.push(polyline);
+                });
+              }
             }
           });
         }

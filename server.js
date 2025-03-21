@@ -6599,19 +6599,21 @@ app.get("/api/alunos_ativos", async (req, res) => {
 
 
 // 2) Rota para buscar as coordenadas de uma escola por NOME
+// ROTA ATUALIZADA PARA EXIBIR O ZONEAMENTO DE FORMA PARECIDA COM /api/zoneamentos
 app.get("/api/escola-coordenadas", async (req, res) => {
   try {
     const { nome_escola } = req.query;
     if (!nome_escola) {
       return res.status(400).json({ error: "Parâmetro nome_escola é obrigatório" });
     }
+
     const query = `
       SELECT
         e.latitude,
         e.longitude,
         z.id AS zoneamento_id,
+        z.nome AS zoneamento_nome,
         ST_AsGeoJSON(z.geom) AS geojson,
-        -- opcionalmente, podemos ver que tipo de geometria é (Polygon, LineString, etc.)
         ST_GeometryType(z.geom) AS geom_type
       FROM escolas e
       JOIN escolas_zoneamentos ez ON (e.id = ez.escola_id)
@@ -6621,10 +6623,11 @@ app.get("/api/escola-coordenadas", async (req, res) => {
 
     const result = await pool.query(query, [nome_escola]);
     if (result.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "Escola não encontrada ou não possui zoneamento associado." });
+      return res.status(404).json({
+        error: "Escola não encontrada ou não possui zoneamento associado."
+      });
     }
+
     const { latitude, longitude } = result.rows[0];
     if (latitude == null || longitude == null) {
       return res.status(404).json({
@@ -6632,12 +6635,12 @@ app.get("/api/escola-coordenadas", async (req, res) => {
       });
     }
 
-    // Cada linha pode ser Polygon, MultiPolygon, LineString, etc.
-    const zoneamentos = result.rows.map((r) => ({
-      zoneamento_id: r.zoneamento_id,
-      // geojson: JSON.parse(r.geojson) trará o tipo (Polygon, LineString, etc.)
-      geojson: JSON.parse(r.geojson),
-      geom_type: r.geom_type // opcional, só para debug
+    // Monta o array de zoneamentos de modo semelhante ao /api/zoneamentos
+    const zoneamentos = result.rows.map((row) => ({
+      id: row.zoneamento_id,
+      nome: row.zoneamento_nome,
+      geojson: JSON.parse(row.geojson),
+      geom_type: row.geom_type
     }));
 
     return res.json({
