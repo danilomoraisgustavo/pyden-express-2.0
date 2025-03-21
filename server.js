@@ -6605,22 +6605,26 @@ app.get("/api/escola-coordenadas", async (req, res) => {
     if (!nome_escola) {
       return res.status(400).json({ error: "Parâmetro nome_escola é obrigatório" });
     }
-
-    // Ajuste a query conforme o nome real da coluna 'nome' na tabela 'escolas'
-    // Aqui usamos case-insensitive:
     const query = `
-      SELECT latitude, longitude
-      FROM escolas
-      WHERE UPPER(nome) = UPPER($1)
-      LIMIT 1
+      SELECT
+        e.latitude,
+        e.longitude,
+        z.id AS zoneamento_id,
+        ST_AsGeoJSON(z.geom) AS geojson,
+        -- opcionalmente, podemos ver que tipo de geometria é (Polygon, LineString, etc.)
+        ST_GeometryType(z.geom) AS geom_type
+      FROM escolas e
+      JOIN escolas_zoneamentos ez ON (e.id = ez.escola_id)
+      JOIN zoneamentos z ON (ez.zoneamento_id = z.id)
+      WHERE UPPER(e.nome) = UPPER($1)
     `;
+
     const result = await pool.query(query, [nome_escola]);
-
     if (result.rows.length === 0) {
-      // Não achou escola
-      return res.status(404).json({ error: "Escola não encontrada pelo nome informado." });
+      return res
+        .status(404)
+        .json({ error: "Escola não encontrada ou não possui zoneamento associado." });
     }
-
     const { latitude, longitude } = result.rows[0];
     if (latitude == null || longitude == null) {
       return res.status(404).json({
@@ -6628,10 +6632,18 @@ app.get("/api/escola-coordenadas", async (req, res) => {
       });
     }
 
-    // Retorna exatamente { latitude, longitude } no corpo JSON
+    // Cada linha pode ser Polygon, MultiPolygon, LineString, etc.
+    const zoneamentos = result.rows.map((r) => ({
+      zoneamento_id: r.zoneamento_id,
+      // geojson: JSON.parse(r.geojson) trará o tipo (Polygon, LineString, etc.)
+      geojson: JSON.parse(r.geojson),
+      geom_type: r.geom_type // opcional, só para debug
+    }));
+
     return res.json({
       latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude)
+      longitude: parseFloat(longitude),
+      zoneamentos
     });
   } catch (error) {
     console.error("Erro ao buscar coordenadas da escola:", error);
