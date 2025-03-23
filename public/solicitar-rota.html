@@ -1683,11 +1683,22 @@
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({
           map: map,
+          draggable: true,
           suppressMarkers: true,
           polylineOptions: {
-            strokeColor: "#0000FF",
+            strokeColor: "#FF0000",
             strokeOpacity: 0.7,
             strokeWeight: 5
+          }
+        });
+
+        // Listener para recalcular distância quando o usuário arrastar a rota
+        directionsRenderer.addListener('directions_changed', function () {
+          const newDirections = directionsRenderer.getDirections();
+          if (newDirections && newDirections.routes && newDirections.routes.length > 0) {
+            const distanceMeters = newDirections.routes[0].legs[0].distance.value;
+            const distanceKm = (distanceMeters / 1000).toFixed(2);
+            distanciaRota.textContent = distanceKm;
           }
         });
       }
@@ -1894,7 +1905,8 @@
       const request = {
         origin: aPos,
         destination: ePos,
-        travelMode: google.maps.TravelMode.WALKING
+        travelMode: google.maps.TravelMode.WALKING,
+        provideRouteAlternatives: true
       };
       directionsService.route(request, (result, status) => {
         if (status === "OK") {
