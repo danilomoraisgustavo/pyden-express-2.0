@@ -9568,56 +9568,49 @@ app.get("/api/solicitacoes-transporte-especial", async (req, res) => {
 
 
 // Este endpoint recebe as solicitações cujo status é "PENDENTE_AVALIACAO_MANUAL" e grava em solicitacoes_transporte_especial.
-app.post("/api/solicitacoes-transporte-especial", async (req, res) => {
+app.get("/api/solicitacoes-transporte-especial", async (req, res) => {
   try {
-    const {
-      aluno_id,
-      status,
-      motivo,
-      tipo_fluxo,
-      menor10_acompanhado,
-      responsaveis_extras,
-      desembarque_sozinho_10a12,
-    } = req.body;
+    const query = `
+      SELECT
+        ste.id,
+        ste.protocolo,
+        ste.aluno_id,
+        ste.status,
+        ste.motivo,
+        ste.tipo_fluxo,
+        ste.menor10_acompanhado,
+        ste.responsaveis_extras,
+        ste.desembarque_sozinho_10a12,
+        TO_CHAR(ste.created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at,
+        TO_CHAR(ste.updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at,
 
-    const protocoloGerado = "ESP-" + Date.now();
+        -- Dados do aluno
+        COALESCE(a.id_matricula, 0) AS id_matricula,
+        COALESCE(a.cpf, '') AS cpf,
+        COALESCE(a.longitude, NULL) AS longitude,
+        COALESCE(a.latitude, NULL) AS latitude,
 
-    const insertQuery = `
-      INSERT INTO solicitacoes_transporte_especial (
-        protocolo,
-        aluno_id,
-        status,
-        motivo,
-        tipo_fluxo,
-        menor10_acompanhado,
-        responsaveis_extras,
-        desembarque_sozinho_10a12
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id
+        -- Dados da escola (caso queira retornar também)
+        COALESCE(e.nome, '') AS escola_nome,
+        COALESCE(e.latitude, NULL) AS escola_latitude,
+        COALESCE(e.longitude, NULL) AS escola_longitude
+
+      FROM solicitacoes_transporte_especial ste
+      LEFT JOIN alunos_ativos a ON a.id = ste.aluno_id
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      ORDER BY ste.id DESC
     `;
-
-    const values = [
-      protocoloGerado,
-      aluno_id,
-      status,
-      motivo || null,
-      tipo_fluxo,
-      menor10_acompanhado,
-      JSON.stringify(responsaveis_extras || []),
-      desembarque_sozinho_10a12,
-    ];
-
-    const result = await pool.query(insertQuery, values);
-    return res.json({ success: true, id: result.rows[0].id });
+    const result = await pool.query(query);
+    return res.json(result.rows);
   } catch (err) {
-    console.error("Erro ao criar solicitação de transporte especial", err);
+    console.error("Erro ao listar solicitacoes_transporte_especial", err);
     return res.status(500).json({
       success: false,
-      message: "Erro interno ao criar solicitação especial"
+      message: "Erro ao buscar solicitações especiais"
     });
   }
 });
+
 
 // Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
 app.post("/api/solicitacoes-transporte", async (req, res) => {
@@ -9824,34 +9817,52 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 // Rotas (exemplo) - Ajustando para permitir filtros na query
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
-    let { escola, bairro, cep, search } = req.query;
-    escola = escola || "";
-    bairro = bairro || "";
-    cep = cep || "";
-    search = search || "";
+    let { escola, bairro, cep, search, transporte, deficiencia, idade, turno } = req.query
+    escola = escola || ""
+    bairro = bairro || ""
+    cep = cep || ""
+    search = search || ""
+    transporte = transporte || ""
+    deficiencia = deficiencia || ""
+    idade = idade || ""
+    turno = turno || ""
 
-    // Ajuste ou substitua conforme sua lógica de WHERE
-    // Exemplo simples:
-    let whereClauses = [];
+    let whereClauses = []
+
     if (escola) {
-      whereClauses.push(`e.nome ILIKE '%${escola}%'`);
+      whereClauses.push(`e.nome ILIKE '%${escola}%'`)
     }
     if (bairro) {
-      whereClauses.push(`a.bairro ILIKE '%${bairro}%'`);
+      whereClauses.push(`a.bairro ILIKE '%${bairro}%'`)
     }
     if (cep) {
-      whereClauses.push(`a.cep ILIKE '%${cep}%'`);
+      whereClauses.push(`a.cep ILIKE '%${cep}%'`)
     }
     if (search) {
       whereClauses.push(`
         (a.pessoa_nome ILIKE '%${search}%'
-         OR a.id_matricula ILIKE '%${search}%'
+         OR CAST(a.id_matricula AS TEXT) ILIKE '%${search}%'
          OR a.cpf ILIKE '%${search}%')
-      `);
+      `)
     }
-    let whereStr = "";
+    if (transporte) {
+      whereClauses.push(`a.transporte_escolar_poder_publico ILIKE '%${transporte}%'`)
+    }
+    if (deficiencia === "sim") {
+      whereClauses.push(`(a.deficiencia IS NOT NULL AND array_length(a.deficiencia, 1) > 0)`)
+    } else if (deficiencia === "nao") {
+      whereClauses.push(`(a.deficiencia IS NULL OR array_length(a.deficiencia, 1) = 0)`)
+    }
+    if (idade) {
+      whereClauses.push(`DATE_PART('year', AGE(a.data_nascimento)) = ${idade}`)
+    }
+    if (turno) {
+      whereClauses.push(`a.turma ILIKE '%-${turno}'`)
+    }
+
+    let whereStr = ""
     if (whereClauses.length) {
-      whereStr = "WHERE " + whereClauses.join(" AND ");
+      whereStr = "WHERE " + whereClauses.join(" AND ")
     }
 
     const query = `
@@ -9861,14 +9872,42 @@ app.get("/api/alunos-ativos", async (req, res) => {
       LEFT JOIN escolas e ON e.id = a.escola_id
       ${whereStr}
       ORDER BY a.id DESC
-    `;
-    const result = await pool.query(query);
-    return res.json(result.rows);
+    `
+    const result = await pool.query(query)
+    return res.json(result.rows)
   } catch (err) {
-    console.error(err);
     return res.status(500).json({
       success: false,
-      message: "Erro ao buscar alunos.",
+      message: "Erro ao buscar alunos."
+    })
+  }
+})
+
+// Observe que aqui estou usando "/api/alunos_ativos/:id" (com underscore)
+app.get("/api/alunos_ativos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = `
+      SELECT a.*,
+             e.nome AS escola_nome,
+             e.latitude AS escola_latitude,
+             e.longitude AS escola_longitude
+      FROM alunos_ativos a
+      LEFT JOIN escolas e ON e.id = a.escola_id
+      WHERE a.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
+    }
+
+    return res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Erro ao buscar aluno ativo por ID:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro ao buscar aluno ativo."
     });
   }
 });

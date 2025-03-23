@@ -1169,6 +1169,12 @@
           latEscola = parseFloat(escola.latitude) || 0;
           lngEscola = parseFloat(escola.longitude) || 0;
         }
+      } else if (tipo === 'especial') {
+        const escola = escolasList.find(e => e.id == item.escola_id);
+        if (escola) {
+          latEscola = parseFloat(escola.latitude) || 0;
+          lngEscola = parseFloat(escola.longitude) || 0;
+        }
       }
 
       const centerLat = (latCasa + latEscola) / 2 || -15.795;
@@ -1184,29 +1190,27 @@
         title: 'Localização do Aluno'
       });
 
-      if (tipo === 'rota') {
+      if ((tipo === 'rota' || tipo === 'especial') && latEscola && lngEscola && latCasa && lngCasa) {
         markerEscola = new google.maps.Marker({
           position: { lat: latEscola, lng: lngEscola },
           map: mapLocalizar,
           title: 'Escola'
         });
 
-        if (latCasa && lngCasa && latEscola && lngEscola) {
-          const request = {
-            origin: { lat: latCasa, lng: lngCasa },
-            destination: { lat: latEscola, lng: lngEscola },
-            travelMode: 'DRIVING'
-          };
-          directionsService.route(request, function (result, status) {
-            if (status === 'OK') {
-              directionsRenderer.setDirections(result);
-              const route = result.routes[0].legs[0];
-              $('#distanciaLocalizar').text(
-                `Distância aproximada: ${route.distance.text} - Tempo: ${route.duration.text}`
-              );
-            }
-          });
-        }
+        const request = {
+          origin: { lat: latCasa, lng: lngCasa },
+          destination: { lat: latEscola, lng: lngEscola },
+          travelMode: 'WALKING'
+        };
+        directionsService.route(request, function (result, status) {
+          if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+            const route = result.routes[0].legs[0];
+            $('#distanciaLocalizar').text(
+              `Distância aproximada (a pé): ${route.distance.text} - Tempo: ${route.duration.text}`
+            );
+          }
+        });
       }
 
       $('#modalLocalizar').modal('show');
@@ -1534,16 +1538,8 @@
           return res.json();
         })
         .then(async data => {
-          // Precisamos buscar dados adicionais do aluno (id_matricula, cpf, latitude, longitude) na tabela alunos_ativos
-          // Vamos realizar pedidos adicionais ou mesclar se a API já retorna.
-          // Supondo que teremos um endpoint /api/alunos_ativos/:id para obter dados complementares
-          // ou atualizar a query de /api/solicitacoes-transporte-especial para já trazer os dados. Ajustando nessa página.
-
-          // Exemplo de fetch adicional: (Não iremos explicar, apenas demonstrar a fusão)
-          // Vamos criar um array de promessas para buscar cada aluno e depois mesclar
           for (let i = 0; i < data.length; i++) {
             const item = data[i];
-            // fetch do aluno
             const alunoResp = await fetch(`/api/alunos_ativos/${item.aluno_id}`);
             if (alunoResp.ok) {
               const aluno = await alunoResp.json();
@@ -1551,6 +1547,7 @@
               item.cpf = aluno.cpf || '';
               item.latitude = aluno.latitude || null;
               item.longitude = aluno.longitude || null;
+              item.escola_id = aluno.escola_id || null;
             }
           }
           solicitacoesTransporteEspecial = data;

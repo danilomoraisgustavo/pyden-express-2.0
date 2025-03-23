@@ -769,8 +769,14 @@
                   <input type="text" class="form-control" id="filtroCep" placeholder="Digite o CEP" />
                 </div>
                 <div class="col-md-3">
-                  <label for="searchInput" class="form-label">Pesquisa Geral</label>
-                  <input type="text" id="searchInput" class="form-control" placeholder="Digite para pesquisar..." />
+                  <label for="filtroTurno" class="form-label">Turno</label>
+                  <select id="filtroTurno" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="MAT">Matutino</option>
+                    <option value="VESP">Vespertino</option>
+                    <option value="NOT">Noturno</option>
+                    <option value="INT">Integral</option>
+                  </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                   <button id="btnBuscarAlunos" class="btn btn-primary w-100">Filtrar Alunos</button>
@@ -846,7 +852,7 @@
             </div>
           </div>
         </div>
-      </div><!-- FIM container / page-inner -->
+      </div>
 
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
@@ -866,8 +872,8 @@
           </div>
         </div>
       </footer>
-    </div><!-- FIM main-panel -->
-  </div><!-- FIM wrapper -->
+    </div>
+  </div>
 
   <div id="globalLoader" class="spinner-container">
     <div class="spinner">
@@ -1234,16 +1240,16 @@
       const deficienciaVal = $("#filtroDeficiencia").val();
       const idadeVal = $("#filtroIdade").val();
       const cepVal = $("#filtroCep").val();
-      const searchVal = $("#searchInput").val();
+      const turnoVal = $("#filtroTurno").val();
 
       const queryParams = new URLSearchParams();
       if (escolaVal) queryParams.append("escola", escolaVal);
       if (bairroVal) queryParams.append("bairro", bairroVal);
       if (cepVal) queryParams.append("cep", cepVal);
-      if (searchVal) queryParams.append("search", searchVal);
       if (transporteVal) queryParams.append("transporte", transporteVal);
       if (deficienciaVal) queryParams.append("deficiencia", deficienciaVal);
       if (idadeVal) queryParams.append("idade", idadeVal);
+      if (turnoVal) queryParams.append("turno", turnoVal);
 
       showLoader();
       fetch("/api/alunos-ativos?" + queryParams.toString())
