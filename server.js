@@ -9531,43 +9531,6 @@ app.get("/api/solicitacoes-transporte", async (req, res) => {
 });
 
 // Exemplo de atualização na rota /api/solicitacoes-transporte-especial para trazer dados do aluno_ativo
-
-app.get("/api/solicitacoes-transporte-especial", async (req, res) => {
-  try {
-    const query = `
-      SELECT
-        ste.id,
-        ste.protocolo,
-        ste.aluno_id,
-        ste.status,
-        ste.motivo,
-        ste.tipo_fluxo,
-        ste.menor10_acompanhado,
-        ste.responsaveis_extras,
-        ste.desembarque_sozinho_10a12,
-        to_char(ste.created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
-        to_char(ste.updated_at, 'YYYY-MM-DD HH24:MI:SS') as updated_at,
-        COALESCE(a.id_matricula, 0) AS id_matricula,
-        COALESCE(a.cpf, '') AS cpf,
-        COALESCE(a.longitude, NULL) AS longitude,
-        COALESCE(a.latitude, NULL) AS latitude
-      FROM solicitacoes_transporte_especial ste
-      LEFT JOIN alunos_ativos a ON a.id = ste.aluno_id
-      ORDER BY ste.id DESC
-    `;
-    const result = await pool.query(query);
-    return res.json(result.rows);
-  } catch (err) {
-    console.error("Erro ao listar solicitacoes_transporte_especial", err);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao buscar solicitações especiais"
-    });
-  }
-});
-
-
-// Este endpoint recebe as solicitações cujo status é "PENDENTE_AVALIACAO_MANUAL" e grava em solicitacoes_transporte_especial.
 app.get("/api/solicitacoes-transporte-especial", async (req, res) => {
   try {
     const query = `
@@ -9611,6 +9574,39 @@ app.get("/api/solicitacoes-transporte-especial", async (req, res) => {
   }
 });
 
+app.post("/api/solicitacoes-transporte-especial", async (req, res) => {
+  try {
+    const {
+      aluno_id,
+      status,
+      motivo,
+      tipo_fluxo,
+      menor10_acompanhado,
+      responsaveis_extras,
+      desembarque_sozinho_10a12
+    } = req.body
+    const protocolo = "P" + Date.now()
+    const insertQuery = `
+      INSERT INTO solicitacoes_transporte_especial
+      (protocolo, aluno_id, status, motivo, tipo_fluxo, menor10_acompanhado, responsaveis_extras, desembarque_sozinho_10a12)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      RETURNING *
+    `
+    const result = await db.query(insertQuery, [
+      protocolo,
+      aluno_id,
+      status,
+      motivo || null,
+      tipo_fluxo,
+      menor10_acompanhado || false,
+      JSON.stringify(responsaveis_extras || []),
+      desembarque_sozinho_10a12 || false
+    ])
+    res.status(201).json(result.rows[0])
+  } catch (error) {
+    res.status(400).json({ message: error.message })
+  }
+})
 
 // Recebe status ('APROVADO' ou 'NAO_APROVADO') e salva com protocolo gerado
 app.post("/api/solicitacoes-transporte", async (req, res) => {
