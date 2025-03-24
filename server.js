@@ -9592,7 +9592,7 @@ app.post("/api/solicitacoes-transporte-especial", async (req, res) => {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       RETURNING *
     `
-    const result = await db.query(insertQuery, [
+    const result = await pool.query(insertQuery, [
       protocolo,
       aluno_id,
       status,
