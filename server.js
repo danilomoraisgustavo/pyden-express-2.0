@@ -9502,20 +9502,56 @@ app.get("/api/termo-desembarque-estadual/:id/gerar-pdf", async (req, res) => {
 });
 
 // Rota para listar todas as solicitações de transporte
+// Rota atualizada para retornar todos os dados necessários do aluno e substituir o ID do aluno pelo ID de matrícula
 app.get("/api/solicitacoes-transporte", async (req, res) => {
   try {
     const query = `
       SELECT
-        st.*,
+        st.id,
+        a.id_matricula AS aluno_id, -- aqui substituímos o ID do aluno pelo ID de matrícula
+        st.protocolo,
+        st.status,
+        st.motivo,
+        st.data_solicitacao,
+        st.data_resposta,
+        st.tipo_fluxo,
+        st.menor10_acompanhado,
+        st.responsaveis_extras,
+        st.desembarque_sozinho_10a12,
+        a.escola_id,
+        a.ano,
+        a.modalidade,
+        a.formato_letivo,
+        a.turma,
         a.pessoa_nome AS aluno_nome,
+        a.cpf,
+        a.transporte_escolar_poder_publico,
+        a.cep,
+        a.rua,
+        a.bairro,
+        a.numero_pessoa_endereco,
+        a.filiacao_1,
+        a.numero_telefone,
+        a.filiacao_2,
+        a.responsavel,
+        a.deficiencia,
+        a.data_nascimento,
+        a.longitude,
+        a.latitude,
         e.nome AS escola_nome,
         (
-          SELECT COALESCE(json_agg(json_build_object('id', orx.id, 'nome', orx.nome, 'rg', orx.rg, 'cpf', orx.cpf, 'data_nascimento', orx.data_nascimento)), '[]'::json)
+          SELECT COALESCE(json_agg(json_build_object(
+            'id', orx.id,
+            'nome', orx.nome,
+            'rg', orx.rg,
+            'cpf', orx.cpf,
+            'data_nascimento', orx.data_nascimento
+          )), '[]'::json)
           FROM outros_responsaveis orx
-          WHERE orx.aluno_id = st.aluno_id
+          WHERE orx.aluno_id = a.id
         ) AS outros_responsaveis_detalhes
       FROM solicitacoes_transporte st
-      LEFT JOIN alunos_ativos_estadual a ON a.id = st.aluno_id
+      LEFT JOIN alunos_ativos a ON a.id = st.aluno_id
       LEFT JOIN escolas e ON e.id = a.escola_id
       ORDER BY st.id DESC
     `;
@@ -9529,6 +9565,7 @@ app.get("/api/solicitacoes-transporte", async (req, res) => {
     });
   }
 });
+
 
 // Exemplo de atualização na rota /api/solicitacoes-transporte-especial para trazer dados do aluno_ativo
 app.get("/api/solicitacoes-transporte-especial", async (req, res) => {
