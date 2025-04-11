@@ -24,62 +24,58 @@
   <link rel="stylesheet" href="../../assets/css/demo.css" />
   <style>
     body {
-      background: linear-gradient(120deg, #2c623f, #b95609);
-      color: #fff;
+      background: #fff;
       font-family: 'Public Sans', sans-serif;
-      min-height: 100vh;
     }
     .card {
-      background-color: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
       border-radius: 8px;
       margin-bottom: 30px;
-      color: #fff;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      background: #fff;
     }
     .card-header {
-      background: linear-gradient(60deg, #1e462a, #924304);
+      background: linear-gradient(60deg, #074f2d, #ce6d20);
       color: #fff;
       border-top-left-radius: 8px;
       border-top-right-radius: 8px;
     }
     .page-header h3 {
-      background: linear-gradient(45deg, #75f493, #ffc184);
+      background: linear-gradient(45deg, #0a8b13, #f46b0e);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       font-weight: 700 !important;
     }
     .btn-primary {
-      background: linear-gradient(60deg, #2c623f, #b95609);
+      background: linear-gradient(60deg, #074f2d, #0a8b13);
       border: none;
       color: #fff;
     }
     .btn-success {
-      background: linear-gradient(60deg, #1a4c2b, #9f5500);
+      background: linear-gradient(60deg, #0a8b13, #138b0a);
       border: none;
       color: #fff;
     }
     .btn-info {
-      background: linear-gradient(60deg, #238743, #b54908);
+      background: linear-gradient(60deg, #13678a, #1ca4c2);
       border: none;
       color: #fff;
     }
     .btn-danger {
-      background: linear-gradient(60deg, #4a8033, #b84709);
+      background: linear-gradient(60deg, #9e0a0a, #ce2029);
       border: none;
       color: #fff;
     }
     .btn-warning {
-      background: linear-gradient(60deg, #47642c, #a85a0a);
+      background: linear-gradient(60deg, #ce6d20, #f46b0e);
       border: none;
       color: #fff;
     }
     .form-check-input:checked {
-      background-color: #2c623f;
-      border-color: #2c623f;
+      background-color: #074f2d;
+      border-color: #074f2d;
     }
     .form-select, .form-control {
       border-radius: 6px;
-      color: #000;
     }
     .wizard-step {
       display: none;
@@ -90,15 +86,14 @@
     .badge-idade {
       padding: 0.45rem 0.6rem;
       font-size: 0.875rem;
+      color: #fff;
     }
-    #modalMenores10 .modal-dialog {
+    #modalMenores10 .modal-dialog,
+    #modalOutrosResponsaveis10a12 .modal-dialog {
       max-width: 600px;
     }
     #modalDesembarque10a12 .modal-dialog {
       max-width: 500px;
-    }
-    #modalOutrosResponsaveis10a12 .modal-dialog {
-      max-width: 600px;
     }
     #modalEscolherAssinatura .modal-dialog {
       max-width: 500px;
@@ -111,14 +106,26 @@
       margin-top: 10px;
       font-weight: 600;
       font-size: 0.9rem;
-      color: #fff;
+      color: #444;
     }
     .notify-with-gradient {
-      background: linear-gradient(45deg, #2c623f, #b95609) !important;
       color: #fff !important;
       border: none !important;
     }
+    .alert-success.notify-with-gradient {
+      background: linear-gradient(45deg, #05610c, #0a8b13) !important;
+    }
+    .alert-danger.notify-with-gradient {
+      background: linear-gradient(45deg, #9e0a0a, #ce2029) !important;
+    }
+    .alert-warning.notify-with-gradient {
+      background: linear-gradient(45deg, #ce6d20, #f46b0e) !important;
+    }
+    .alert-info.notify-with-gradient {
+      background: linear-gradient(45deg, #13678a, #1ca4c2) !important;
+    }
   </style>
+  
 </head>
 
 <body>
