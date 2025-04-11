@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Cadastro de Alunos</title>
@@ -24,49 +23,68 @@
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
   <style>
+    body {
+      background: linear-gradient(135deg, #f9f9f9, #e0e0e0);
+      transition: background 0.5s;
+    }
+    .card {
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    input, select, textarea {
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #66afe9;
+      box-shadow: 0 0 8px rgba(102,175,233,0.6);
+    }
+    button {
+      transition: background-color 0.3s, transform 0.3s;
+    }
+    button:hover {
+      transform: scale(1.02);
+    }
     #mapCriterios {
       width: 100%;
       height: 400px;
     }
-
     #measureInfo {
       margin-top: 10px;
       font-weight: 600;
       font-size: 0.9rem;
       color: #444;
     }
-
     .wizard-step {
       display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
     }
-
     .wizard-step.active {
       display: block;
+      opacity: 1;
     }
-
     .badge-idade {
       padding: 0.45rem 0.6rem;
       font-size: 0.875rem;
     }
-
     #modalMenores10 .modal-dialog {
       max-width: 600px;
     }
-
     #modalDesembarque10a12 .modal-dialog {
       max-width: 500px;
     }
-
     #modalOutrosResponsaveis10a12 .modal-dialog {
       max-width: 600px;
     }
-
     #modalEscolherAssinatura .modal-dialog {
       max-width: 500px;
     }
   </style>
 </head>
-
 <body>
   <div class="container my-4">
     <div class="page-inner">
@@ -101,8 +119,7 @@
           <div class="row justify-content-center">
             <div class="col-md-6 text-center">
               <label for="inputBusca" class="form-label">CPF ou ID de Matrícula</label>
-              <input type="text" class="form-control mx-auto" style="max-width: 300px;" id="inputBusca"
-                placeholder="Digite aqui..." />
+              <input type="text" class="form-control mx-auto" style="max-width: 300px;" id="inputBusca" placeholder="Digite aqui..." />
               <button id="btnBuscar" class="btn btn-primary mt-3">Buscar</button>
             </div>
           </div>
@@ -196,10 +213,8 @@
                 </div>
                 <div class="d-flex justify-content-between mt-3">
                   <div>
-                    <button class="btn btn-success me-2" id="btnSalvarAlteracoesMunicipal" disabled>Salvar
-                      Alterações</button>
-                    <button class="btn btn-info" id="btnImprimirConfirmacaoMunicipal" disabled>Imprimir
-                      Confirmação</button>
+                    <button class="btn btn-success me-2" id="btnSalvarAlteracoesMunicipal" disabled>Salvar Alterações</button>
+                    <button class="btn btn-info" id="btnImprimirConfirmacaoMunicipal" disabled>Imprimir Confirmação</button>
                   </div>
                   <div>
                     <button class="btn btn-primary" id="btnProximoMunicipal" disabled>Próximo</button>
@@ -219,8 +234,7 @@
           <div class="row">
             <div class="col-md-6 mb-2">
               <label class="form-label fw-semibold">CPF ou ID Matrícula</label>
-              <input type="text" class="form-control" id="inputBuscaEstadual"
-                placeholder="Digite CPF ou Matrícula..." />
+              <input type="text" class="form-control" id="inputBuscaEstadual" placeholder="Digite CPF ou Matrícula..." />
             </div>
             <div class="col-md-2 d-flex align-items-end mb-2">
               <button class="btn btn-primary w-100" id="btnBuscarEstadual">Buscar</button>
@@ -403,16 +417,13 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
-          <p>Este aluno possui menos de 10 anos. Gostaria de indicar até 3 responsáveis (maiores de 18 anos) para
-            deixá-lo/buscá-lo no ponto?</p>
+          <p>Este aluno possui menos de 10 anos. Gostaria de indicar até 3 responsáveis (maiores de 18 anos) para deixá-lo/buscá-lo no ponto?</p>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="radioAcompanhamento" id="radioAcompanhamentoSim"
-              value="sim">
+            <input class="form-check-input" type="radio" name="radioAcompanhamento" id="radioAcompanhamentoSim" value="sim">
             <label class="form-check-label" for="radioAcompanhamentoSim">Sim</label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="radioAcompanhamento" id="radioAcompanhamentoNao"
-              value="nao" checked>
+            <input class="form-check-input" type="radio" name="radioAcompanhamento" id="radioAcompanhamentoNao" value="nao" checked>
             <label class="form-check-label" for="radioAcompanhamentoNao">Não</label>
           </div>
           <div class="mt-3 d-none" id="containerResponsaveisExtras">
@@ -430,8 +441,7 @@
   </div>
 
   <!-- Modal Desembarque 10 a 17 anos 11 meses e 31 dias -->
-  <div class="modal fade" id="modalDesembarque10a12" tabindex="-1" aria-labelledby="modalDesembarque10a12Label"
-    aria-hidden="true">
+  <div class="modal fade" id="modalDesembarque10a12" tabindex="-1" aria-labelledby="modalDesembarque10a12Label" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -445,8 +455,7 @@
             <label class="form-check-label" for="radioDesembarqueSim">Sim, autorizo</label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="radioDesembarque" id="radioDesembarqueNao" value="nao"
-              checked>
+            <input class="form-check-input" type="radio" name="radioDesembarque" id="radioDesembarqueNao" value="nao" checked>
             <label class="form-check-label" for="radioDesembarqueNao">Não, sempre acompanhado</label>
           </div>
         </div>
@@ -459,8 +468,7 @@
   </div>
 
   <!-- Modal Responsáveis não parentes (10 a 17 anos 11 meses e 31 dias) -->
-  <div class="modal fade" id="modalOutrosResponsaveis10a12" tabindex="-1"
-    aria-labelledby="modalOutrosResponsaveis10a12Label" aria-hidden="true">
+  <div class="modal fade" id="modalOutrosResponsaveis10a12" tabindex="-1" aria-labelledby="modalOutrosResponsaveis10a12Label" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -474,8 +482,7 @@
             <label class="form-check-label" for="radioOutrosRespSim">Sim</label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="radioOutrosResp" id="radioOutrosRespNao" value="nao"
-              checked>
+            <input class="form-check-input" type="radio" name="radioOutrosResp" id="radioOutrosRespNao" value="nao" checked>
             <label class="form-check-label" for="radioOutrosRespNao">Não</label>
           </div>
           <div class="mt-3 d-none" id="containerOutrosResponsaveis10a12">
@@ -493,8 +500,7 @@
   </div>
 
   <!-- Modal Escolher Assinatura -->
-  <div class="modal fade" id="modalEscolherAssinatura" tabindex="-1" aria-labelledby="modalEscolherAssinaturaLabel"
-    aria-hidden="true">
+  <div class="modal fade" id="modalEscolherAssinatura" tabindex="-1" aria-labelledby="modalEscolherAssinaturaLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -504,18 +510,15 @@
         <div class="modal-body">
           <p>Escolha se quem irá assinar o termo é a Filiação 1, Filiação 2, ou o Responsável.</p>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaFiliacao1"
-              value="filiacao1" checked>
+            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaFiliacao1" value="filiacao1" checked>
             <label class="form-check-label" for="radioAssinaturaFiliacao1">Filiação 1</label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaFiliacao2"
-              value="filiacao2">
+            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaFiliacao2" value="filiacao2">
             <label class="form-check-label" for="radioAssinaturaFiliacao2">Filiação 2</label>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaResponsavel"
-              value="responsavel">
+            <input class="form-check-input" type="radio" name="radioAssinatura" id="radioAssinaturaResponsavel" value="responsavel">
             <label class="form-check-label" for="radioAssinaturaResponsavel">Responsável</label>
           </div>
         </div>
@@ -528,8 +531,7 @@
   </div>
 
   <!-- Modal Reavaliação para Situações Atenuantes -->
-  <div class="modal fade" id="modalReavaliacao" tabindex="-1" aria-labelledby="modalReavaliacaoLabel"
-    aria-hidden="true">
+  <div class="modal fade" id="modalReavaliacao" tabindex="-1" aria-labelledby="modalReavaliacaoLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -571,17 +573,18 @@
     </div>
   </div>
 
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry">
-    </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry"></script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
-
   <script>
+    function showNotification(message, type) {
+      $.notify({ message: message }, { type: type, placement: { from: "top", align: "right" }, delay: 3000 });
+    }
+
     let map, directionsService, directionsRenderer;
     let markerAluno = null, markerEscola = null;
     let escolaPos = null, alunoPos = null;
@@ -716,7 +719,7 @@
         etapa1Estadual.classList.add("active");
         await carregarEscolasEstaduais();
       } else {
-        alert("Selecione o tipo de fluxo (Municipal ou Estadual).");
+        showNotification("Selecione o tipo de fluxo (Municipal ou Estadual).", "warning");
       }
     });
 
@@ -734,14 +737,14 @@
         });
       } catch (err) {
         console.error("Erro ao buscar escolas:", err);
-        alert("Não foi possível carregar a lista de escolas.");
+        showNotification("Não foi possível carregar a lista de escolas.", "danger");
       }
     }
 
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
-        alert("Informe CPF ou ID de Matrícula.");
+        showNotification("Informe CPF ou ID de Matrícula.", "warning");
         return;
       }
       try {
@@ -749,7 +752,7 @@
         if (!resp.ok) throw new Error("Erro ao buscar aluno (Municipal).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
-          alert("Nenhum aluno encontrado.");
+          showNotification("Nenhum aluno encontrado.", "danger");
           return;
         }
         originalData = data;
@@ -787,7 +790,7 @@
         dadosAlunoContainerMunicipal.classList.remove("d-none");
       } catch (err) {
         console.error(err);
-        alert("Erro ao buscar aluno (Municipal).");
+        showNotification("Erro ao buscar aluno (Municipal).", "danger");
       }
     });
 
@@ -823,7 +826,7 @@
     btnConverterCepMunicipal.addEventListener("click", async () => {
       const cepLimpo = campoCepMunicipal.value.replace(/\D/g, "");
       if (!cepLimpo) {
-        alert("Informe um CEP válido.");
+        showNotification("Informe um CEP válido.", "warning");
         return;
       }
       try {
@@ -834,14 +837,14 @@
             campoRuaMunicipal.value = viacep.logradouro || campoRuaMunicipal.value;
             campoBairroMunicipal.value = viacep.bairro || campoBairroMunicipal.value;
           } else {
-            alert("CEP não encontrado.");
+            showNotification("CEP não encontrado.", "danger");
           }
           btnSalvarAlteracoesMunicipal.disabled = false;
         } else {
-          alert("Erro ao consultar ViaCEP.");
+          showNotification("Erro ao consultar ViaCEP.", "danger");
         }
       } catch (e) {
-        alert("Erro ao converter CEP (Municipal).");
+        showNotification("Erro ao converter CEP (Municipal).", "danger");
       }
     });
 
@@ -849,13 +852,13 @@
       const ok = await salvarAlteracoesMunicipal();
       if (ok) {
         btnImprimirConfirmacaoMunicipal.disabled = false;
-        alert("Alterações salvas com sucesso (Municipal)!");
+        showNotification("Alterações salvas com sucesso (Municipal)!", "success");
       }
     });
 
     async function salvarAlteracoesMunicipal() {
       if (!alunoIdMunicipal) {
-        alert("Nenhum aluno carregado (Municipal).");
+        showNotification("Nenhum aluno carregado (Municipal).", "warning");
         return false;
       }
       const defValue = campoDeficienciaMunicipal.value;
@@ -878,20 +881,20 @@
         });
         const result = await resp.json();
         if (!resp.ok) {
-          alert(result.message || "Falha ao salvar alterações (municipal).");
+          showNotification(result.message || "Falha ao salvar alterações (municipal).", "danger");
           return false;
         }
         return true;
       } catch (err) {
         console.error(err);
-        alert("Erro ao atualizar dados do aluno (municipal).");
+        showNotification("Erro ao atualizar dados do aluno (municipal).", "danger");
         return false;
       }
     }
 
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
-        alert("Nenhum aluno carregado para gerar termo.");
+        showNotification("Nenhum aluno carregado para gerar termo.", "warning");
         return;
       }
       signerChoice = null;
@@ -915,7 +918,7 @@
 
     btnProximoMunicipal.addEventListener("click", () => {
       if (!originalData) {
-        alert("Nenhum aluno carregado.");
+        showNotification("Nenhum aluno carregado.", "warning");
         return;
       }
       etapa1Municipal.classList.remove("active");
@@ -928,7 +931,7 @@
     btnBuscarEstadual.addEventListener("click", async () => {
       const valorBuscaEst = inputBuscaEstadual.value.trim();
       if (!valorBuscaEst) {
-        alert("Informe CPF ou ID de Matrícula.");
+        showNotification("Informe CPF ou ID de Matrícula.", "warning");
         return;
       }
       try {
@@ -936,7 +939,7 @@
         if (!resp.ok) throw new Error("Erro ao buscar aluno (Estadual).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
-          alert("Nenhum aluno encontrado.");
+          showNotification("Nenhum aluno encontrado.", "danger");
           return;
         }
         originalData = data;
@@ -974,7 +977,7 @@
         }
       } catch (err) {
         console.error(err);
-        alert("Erro ao buscar aluno (Estadual).");
+        showNotification("Erro ao buscar aluno (Estadual).", "danger");
       }
     });
 
@@ -1016,7 +1019,7 @@
     btnConverterCepEstadual.addEventListener("click", async () => {
       const cepLimpoEst = campoCepEstadual.value.replace(/\D/g, "");
       if (!cepLimpoEst) {
-        alert("Informe um CEP válido.");
+        showNotification("Informe um CEP válido.", "warning");
         return;
       }
       try {
@@ -1027,13 +1030,13 @@
             campoRuaEstadual.value = viacep.logradouro || campoRuaEstadual.value;
             campoBairroEstadual.value = viacep.bairro || campoBairroEstadual.value;
           } else {
-            alert("CEP não encontrado.");
+            showNotification("CEP não encontrado.", "danger");
           }
         } else {
-          alert("Erro ao consultar ViaCEP (Estadual).");
+          showNotification("Erro ao consultar ViaCEP (Estadual).", "danger");
         }
       } catch (e) {
-        alert("Erro ao converter CEP (Estadual).");
+        showNotification("Erro ao converter CEP (Estadual).", "danger");
       }
     });
 
@@ -1066,7 +1069,7 @@
         });
         if (!resp.ok) {
           const errorData = await resp.json();
-          alert(errorData.message || "Erro ao salvar aluno estadual.");
+          showNotification(errorData.message || "Erro ao salvar aluno estadual.", "danger");
           return;
         }
         const result = await resp.json();
@@ -1078,7 +1081,7 @@
           initMap();
         }, 300);
       } catch (err) {
-        alert("Falha ao cadastrar aluno estadual.");
+        showNotification("Falha ao cadastrar aluno estadual.", "danger");
       }
     });
 
@@ -1152,7 +1155,7 @@
 
     btnVerificarCriterios.addEventListener("click", () => {
       if (!markerAluno) {
-        alert("Marque a posição do aluno no mapa para continuar.");
+        showNotification("Marque a posição do aluno no mapa para continuar.", "warning");
         return;
       }
 
@@ -1166,7 +1169,6 @@
           }
         } else if (poly instanceof google.maps.Polyline) {
           // Polylines não definem interior (não se aplica "inside"), então não altera insideZone
-          // Mantido apenas para manter coerência
         }
       }
 
@@ -1181,7 +1183,7 @@
 
       const nivel = selectNivelEnsino.value;
       if (!nivel) {
-        alert("Selecione o nível de ensino (Infantil ou Fundamental).");
+        showNotification("Selecione o nível de ensino (Infantil ou Fundamental).", "warning");
         return;
       }
       let defValue = "";
@@ -1311,7 +1313,7 @@
 
     btnAddResponsavel.addEventListener("click", () => {
       if (responsaveisExtras.length >= 3) {
-        alert("É permitido no máximo 3 responsáveis extras.");
+        showNotification("É permitido no máximo 3 responsáveis extras.", "warning");
         return;
       }
       const responsavelObj = {
@@ -1361,7 +1363,7 @@
         menor10_acompanhado = true;
         for (const r of responsaveisExtras) {
           if (!r.nome || !r.rg || !r.dataNascimento) {
-            alert("Preencha todos os campos dos responsáveis extras.");
+            showNotification("Preencha todos os campos dos responsáveis extras.", "warning");
             return;
           }
           const dataResp = new Date(r.dataNascimento);
@@ -1372,7 +1374,7 @@
           if (dd < 0) { mm--; dd += 30; }
           if (mm < 0) { anos--; mm += 12; }
           if (anos < 18) {
-            alert("Todos os responsáveis extras devem ter mais de 18 anos.");
+            showNotification("Todos os responsáveis extras devem ter mais de 18 anos.", "warning");
             return;
           }
         }
@@ -1416,7 +1418,7 @@
 
     btnAddOutroResponsavel10a12.addEventListener("click", () => {
       if (outrosResponsaveis10a12.length >= 3) {
-        alert("É permitido no máximo 3 responsáveis extras.");
+        showNotification("É permitido no máximo 3 responsáveis extras.", "warning");
         return;
       }
       const obj = { nome: "", rg: "", cpf: "" };
@@ -1460,7 +1462,7 @@
     btnConfirmarOutrosResponsaveis10a12.addEventListener("click", async () => {
       if (radioOutrosRespSim.checked) {
         if (outrosResponsaveis10a12.length === 0) {
-          alert("Adicione ao menos um responsável.");
+          showNotification("Adicione ao menos um responsável.", "warning");
           return;
         }
         try {
@@ -1474,7 +1476,7 @@
             })
           });
         } catch (err) {
-          alert("Falha ao salvar responsáveis no banco.");
+          showNotification("Falha ao salvar responsáveis no banco.", "danger");
           return;
         }
         for (const r of outrosResponsaveis10a12) {
@@ -1591,7 +1593,7 @@
           window.open(`/api/comprovante-avaliacao-manual-estadual/${alunoIdEstadual}/gerar-pdf?signer=${signerChoice || 'filiacao1'}`, "_blank");
         }
       }
-      alert("Atendimento finalizado!");
+      showNotification("Atendimento finalizado!", "success");
       location.reload();
     });
 
@@ -1665,11 +1667,11 @@
         });
         const data = await resp.json();
         if (!resp.ok) {
-          alert(data.message || "Erro ao salvar solicitação no banco.");
+          showNotification(data.message || "Erro ao salvar solicitação no banco.", "danger");
           return;
         }
       } catch (error) {
-        alert("Falha ao salvar a solicitação.");
+        showNotification("Falha ao salvar a solicitação.", "danger");
       }
     }
 
@@ -1692,7 +1694,6 @@
           }
         });
 
-        // Listener para recalcular distância quando o usuário arrastar a rota
         directionsRenderer.addListener('directions_changed', function () {
           const newDirections = directionsRenderer.getDirections();
           if (newDirections && newDirections.routes && newDirections.routes.length > 0) {
@@ -1830,7 +1831,7 @@
             campoLongitude.value = alunoPos.lng().toFixed(6);
             createOrMoveMarkers();
           } else {
-            alert("Não foi possível localizar o endereço do aluno via Geocoder.");
+            showNotification("Não foi possível localizar o endereço do aluno via Geocoder.", "danger");
             map.setCenter(escolaPos);
           }
         });
@@ -1921,5 +1922,4 @@
     }
   </script>
 </body>
-
 </html>
