@@ -27,60 +27,76 @@
       background: linear-gradient(120deg, #f7f7f7, #ffffff);
       font-family: 'Public Sans', sans-serif;
     }
+  
     .card {
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
       border-radius: 8px;
       margin-bottom: 30px;
     }
+  
     .card-header {
       background: linear-gradient(60deg, #3b5998, #8b9dc3);
-      color: #fff;
+      color: #fff; /* Deixa o texto em branco */
       border-top-left-radius: 8px;
       border-top-right-radius: 8px;
     }
+  
     .page-header h3 {
       background: linear-gradient(45deg, #00aeef, #a6ffcb);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       font-weight: 700 !important;
     }
+  
+    /* Botões com texto branco */
     .btn-primary {
       background: linear-gradient(60deg, #00c6ff, #0072ff);
       border: none;
+      color: #fff !important;
     }
     .btn-success {
       background: linear-gradient(60deg, #00b09b, #96c93d);
       border: none;
+      color: #fff !important;
     }
     .btn-info {
       background: linear-gradient(60deg, #4776E6, #8E54E9);
       border: none;
+      color: #fff !important;
     }
     .btn-danger {
       background: linear-gradient(60deg, #ff5858, #f09819);
       border: none;
+      color: #fff !important;
     }
     .btn-warning {
       background: linear-gradient(60deg, #F09819, #EDDE5D);
       border: none;
+      color: #fff !important;
     }
+  
     .form-check-input:checked {
       background-color: #3b5998;
       border-color: #3b5998;
     }
-    .form-select, .form-control {
+  
+    .form-select,
+    .form-control {
       border-radius: 6px;
     }
+  
     .wizard-step {
       display: none;
     }
     .wizard-step.active {
       display: block;
     }
+  
     .badge-idade {
       padding: 0.45rem 0.6rem;
       font-size: 0.875rem;
     }
+  
     #modalMenores10 .modal-dialog {
       max-width: 600px;
     }
@@ -93,22 +109,34 @@
     #modalEscolherAssinatura .modal-dialog {
       max-width: 500px;
     }
+  
     #mapCriterios {
       width: 100%;
       height: 400px;
     }
+  
     #measureInfo {
       margin-top: 10px;
       font-weight: 600;
       font-size: 0.9rem;
       color: #444;
     }
+  
+    /* Notificação com fundo gradiente, texto branco e alinhamento top-right */
     .notify-with-gradient {
       background: linear-gradient(45deg, #00aeef, #a6ffcb) !important;
       color: #fff !important;
       border: none !important;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999; /* Garante que fique acima de outros elementos */
+      padding: 10px 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
   </style>
+  
 </head>
 
 <body>
