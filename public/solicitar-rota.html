@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Cadastro de Alunos</title>
@@ -23,117 +24,47 @@
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
   <style>
-    body {
-      background: linear-gradient(120deg, #f7f7f7, #ffffff);
-      font-family: 'Public Sans', sans-serif;
-    }
-  
-    .card {
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      margin-bottom: 30px;
-    }
-  
-    .card-header {
-      background: linear-gradient(60deg, #3b5998, #8b9dc3);
-      color: #fff; /* Deixa o texto em branco */
-      border-top-left-radius: 8px;
-      border-top-right-radius: 8px;
-    }
-  
-    .page-header h3 {
-      background: linear-gradient(45deg, #00aeef, #a6ffcb);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-weight: 700 !important;
-    }
-  
-    /* Botões com texto branco */
-    .btn-primary {
-      background: linear-gradient(60deg, #00c6ff, #0072ff);
-      border: none;
-      color: #fff !important;
-    }
-    .btn-success {
-      background: linear-gradient(60deg, #00b09b, #96c93d);
-      border: none;
-      color: #fff !important;
-    }
-    .btn-info {
-      background: linear-gradient(60deg, #4776E6, #8E54E9);
-      border: none;
-      color: #fff !important;
-    }
-    .btn-danger {
-      background: linear-gradient(60deg, #ff5858, #f09819);
-      border: none;
-      color: #fff !important;
-    }
-    .btn-warning {
-      background: linear-gradient(60deg, #F09819, #EDDE5D);
-      border: none;
-      color: #fff !important;
-    }
-  
-    .form-check-input:checked {
-      background-color: #3b5998;
-      border-color: #3b5998;
-    }
-  
-    .form-select,
-    .form-control {
-      border-radius: 6px;
-    }
-  
-    .wizard-step {
-      display: none;
-    }
-    .wizard-step.active {
-      display: block;
-    }
-  
-    .badge-idade {
-      padding: 0.45rem 0.6rem;
-      font-size: 0.875rem;
-    }
-  
-    #modalMenores10 .modal-dialog {
-      max-width: 600px;
-    }
-    #modalDesembarque10a12 .modal-dialog {
-      max-width: 500px;
-    }
-    #modalOutrosResponsaveis10a12 .modal-dialog {
-      max-width: 600px;
-    }
-    #modalEscolherAssinatura .modal-dialog {
-      max-width: 500px;
-    }
-  
     #mapCriterios {
       width: 100%;
       height: 400px;
     }
-  
+
     #measureInfo {
       margin-top: 10px;
       font-weight: 600;
       font-size: 0.9rem;
       color: #444;
     }
-  
-    /* Notificação com fundo gradiente, texto branco */
-    .notify-with-gradient {
-      background: linear-gradient(45deg, #00aeef, #a6ffcb) !important;
-      color: #fff !important;
-      border: none !important;
-      /* Removido position fixo e top/right para o plugin gerenciar */
-      padding: 10px 20px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+
+    .wizard-step {
+      display: none;
+    }
+
+    .wizard-step.active {
+      display: block;
+    }
+
+    .badge-idade {
+      padding: 0.45rem 0.6rem;
+      font-size: 0.875rem;
+    }
+
+    #modalMenores10 .modal-dialog {
+      max-width: 600px;
+    }
+
+    #modalDesembarque10a12 .modal-dialog {
+      max-width: 500px;
+    }
+
+    #modalOutrosResponsaveis10a12 .modal-dialog {
+      max-width: 600px;
+    }
+
+    #modalEscolherAssinatura .modal-dialog {
+      max-width: 500px;
     }
   </style>
-  
 </head>
 
 <body>
@@ -642,7 +573,7 @@
 
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=places,geometry">
-  </script>
+    </script>
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -774,24 +705,6 @@
     const chkAnimaisPerigosos = document.getElementById("chkAnimaisPerigosos");
     const txtOutros = document.getElementById("txtOutros");
 
-    function showNotify(message, type) {
-      $.notify(
-        { message: message },
-        {
-          type: type,
-          delay: 3000,
-          allow_dismiss: true,
-          z_index: 9999,
-          placement: { from: "top", align: "center" },
-          animate: { enter: "animate__animated animate__fadeInDown", exit: "animate__animated animate__fadeOutUp" },
-          template:
-            '<div data-notify="container" class="col-11 col-md-4 alert alert-{0} notify-with-gradient" role="alert">' +
-              '<span data-notify="message">{2}</span>' +
-            "</div>"
-        }
-      );
-    }
-
     btnContinuarFluxo.addEventListener("click", async () => {
       if (fluxoMunicipal.checked) {
         tipoFluxoSelecionado = "municipal";
@@ -803,7 +716,7 @@
         etapa1Estadual.classList.add("active");
         await carregarEscolasEstaduais();
       } else {
-        showNotify("Selecione o tipo de fluxo (Municipal ou Estadual).", "warning");
+        alert("Selecione o tipo de fluxo (Municipal ou Estadual).");
       }
     });
 
@@ -821,16 +734,14 @@
         });
       } catch (err) {
         console.error("Erro ao buscar escolas:", err);
-        
-        showNotify("Não foi possível carregar a lista de escolas.", "danger");
+        alert("Não foi possível carregar a lista de escolas.");
       }
     }
 
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
-        
-        showNotify("Informe CPF ou ID de Matrícula.", "warning");
+        alert("Informe CPF ou ID de Matrícula.");
         return;
       }
       try {
@@ -838,8 +749,7 @@
         if (!resp.ok) throw new Error("Erro ao buscar aluno (Municipal).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
-          
-          showNotify("Nenhum aluno encontrado.", "warning");
+          alert("Nenhum aluno encontrado.");
           return;
         }
         originalData = data;
@@ -877,8 +787,7 @@
         dadosAlunoContainerMunicipal.classList.remove("d-none");
       } catch (err) {
         console.error(err);
-        
-        showNotify("Erro ao buscar aluno (Municipal).", "danger");
+        alert("Erro ao buscar aluno (Municipal).");
       }
     });
 
@@ -914,8 +823,7 @@
     btnConverterCepMunicipal.addEventListener("click", async () => {
       const cepLimpo = campoCepMunicipal.value.replace(/\D/g, "");
       if (!cepLimpo) {
-       
-        showNotify("Informe um CEP válido.", "warning");
+        alert("Informe um CEP válido.");
         return;
       }
       try {
@@ -926,33 +834,28 @@
             campoRuaMunicipal.value = viacep.logradouro || campoRuaMunicipal.value;
             campoBairroMunicipal.value = viacep.bairro || campoBairroMunicipal.value;
           } else {
-           
-            showNotify("CEP não encontrado.", "warning");
+            alert("CEP não encontrado.");
           }
           btnSalvarAlteracoesMunicipal.disabled = false;
         } else {
-       
-          showNotify("Erro ao consultar ViaCEP.", "danger");
+          alert("Erro ao consultar ViaCEP.");
         }
       } catch (e) {
-    
-        showNotify("Erro ao converter CEP (Municipal).", "danger");
+        alert("Erro ao converter CEP (Municipal).");
       }
     });
 
     btnSalvarAlteracoesMunicipal.addEventListener("click", async () => {
       const ok = await salvarAlteracoesMunicipal();
       if (ok) {
-  
-        showNotify("Alterações salvas com sucesso (Municipal)!", "success");
         btnImprimirConfirmacaoMunicipal.disabled = false;
+        alert("Alterações salvas com sucesso (Municipal)!");
       }
     });
 
     async function salvarAlteracoesMunicipal() {
       if (!alunoIdMunicipal) {
-
-        showNotify("Nenhum aluno carregado (Municipal).", "danger");
+        alert("Nenhum aluno carregado (Municipal).");
         return false;
       }
       const defValue = campoDeficienciaMunicipal.value;
@@ -976,22 +879,19 @@
         const result = await resp.json();
         if (!resp.ok) {
           alert(result.message || "Falha ao salvar alterações (municipal).");
-          showNotify(result.message || "Falha ao salvar alterações (municipal).", "danger");
           return false;
         }
         return true;
       } catch (err) {
         console.error(err);
-
-        showNotify("Erro ao atualizar dados do aluno (municipal).", "danger");
+        alert("Erro ao atualizar dados do aluno (municipal).");
         return false;
       }
     }
 
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
- 
-        showNotify("Nenhum aluno carregado para gerar termo.", "warning");
+        alert("Nenhum aluno carregado para gerar termo.");
         return;
       }
       signerChoice = null;
@@ -1015,8 +915,7 @@
 
     btnProximoMunicipal.addEventListener("click", () => {
       if (!originalData) {
-
-        showNotify("Nenhum aluno carregado.", "danger");
+        alert("Nenhum aluno carregado.");
         return;
       }
       etapa1Municipal.classList.remove("active");
@@ -1029,8 +928,7 @@
     btnBuscarEstadual.addEventListener("click", async () => {
       const valorBuscaEst = inputBuscaEstadual.value.trim();
       if (!valorBuscaEst) {
-
-        showNotify("Informe CPF ou ID de Matrícula.", "warning");
+        alert("Informe CPF ou ID de Matrícula.");
         return;
       }
       try {
@@ -1038,8 +936,7 @@
         if (!resp.ok) throw new Error("Erro ao buscar aluno (Estadual).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
-
-          showNotify("Nenhum aluno encontrado.", "warning");
+          alert("Nenhum aluno encontrado.");
           return;
         }
         originalData = data;
@@ -1077,8 +974,7 @@
         }
       } catch (err) {
         console.error(err);
-
-        showNotify("Erro ao buscar aluno (Estadual).", "danger");
+        alert("Erro ao buscar aluno (Estadual).");
       }
     });
 
@@ -1120,8 +1016,7 @@
     btnConverterCepEstadual.addEventListener("click", async () => {
       const cepLimpoEst = campoCepEstadual.value.replace(/\D/g, "");
       if (!cepLimpoEst) {
-
-        showNotify("Informe um CEP válido.", "warning");
+        alert("Informe um CEP válido.");
         return;
       }
       try {
@@ -1132,16 +1027,13 @@
             campoRuaEstadual.value = viacep.logradouro || campoRuaEstadual.value;
             campoBairroEstadual.value = viacep.bairro || campoBairroEstadual.value;
           } else {
-
-            showNotify("CEP não encontrado.", "warning");
+            alert("CEP não encontrado.");
           }
         } else {
-
-          showNotify("Erro ao consultar ViaCEP (Estadual).", "danger");
+          alert("Erro ao consultar ViaCEP (Estadual).");
         }
       } catch (e) {
-
-        showNotify("Erro ao converter CEP (Estadual).", "danger");
+        alert("Erro ao converter CEP (Estadual).");
       }
     });
 
@@ -1175,7 +1067,6 @@
         if (!resp.ok) {
           const errorData = await resp.json();
           alert(errorData.message || "Erro ao salvar aluno estadual.");
-          showNotify(errorData.message || "Erro ao salvar aluno estadual.", "danger");
           return;
         }
         const result = await resp.json();
@@ -1187,7 +1078,7 @@
           initMap();
         }, 300);
       } catch (err) {
-        showNotify("Falha ao cadastrar aluno estadual.", "danger");
+        alert("Falha ao cadastrar aluno estadual.");
       }
     });
 
@@ -1261,8 +1152,7 @@
 
     btnVerificarCriterios.addEventListener("click", () => {
       if (!markerAluno) {
-
-        showNotify("Marque a posição do aluno no mapa para continuar.", "warning");
+        alert("Marque a posição do aluno no mapa para continuar.");
         return;
       }
 
@@ -1274,7 +1164,10 @@
             insideZone = true;
             break;
           }
-        } else if (poly instanceof google.maps.Polyline) {}
+        } else if (poly instanceof google.maps.Polyline) {
+          // Polylines não definem interior (não se aplica "inside"), então não altera insideZone
+          // Mantido apenas para manter coerência
+        }
       }
 
       if (!insideZone) {
@@ -1288,8 +1181,7 @@
 
       const nivel = selectNivelEnsino.value;
       if (!nivel) {
-
-        showNotify("Selecione o nível de ensino (Infantil ou Fundamental).", "warning");
+        alert("Selecione o nível de ensino (Infantil ou Fundamental).");
         return;
       }
       let defValue = "";
@@ -1419,8 +1311,7 @@
 
     btnAddResponsavel.addEventListener("click", () => {
       if (responsaveisExtras.length >= 3) {
-
-        showNotify("É permitido no máximo 3 responsáveis extras.", "warning");
+        alert("É permitido no máximo 3 responsáveis extras.");
         return;
       }
       const responsavelObj = {
@@ -1470,8 +1361,7 @@
         menor10_acompanhado = true;
         for (const r of responsaveisExtras) {
           if (!r.nome || !r.rg || !r.dataNascimento) {
-
-            showNotify("Preencha todos os campos dos responsáveis extras.", "warning");
+            alert("Preencha todos os campos dos responsáveis extras.");
             return;
           }
           const dataResp = new Date(r.dataNascimento);
@@ -1482,7 +1372,7 @@
           if (dd < 0) { mm--; dd += 30; }
           if (mm < 0) { anos--; mm += 12; }
           if (anos < 18) {
-            showNotify("Todos os responsáveis extras devem ter mais de 18 anos.", "warning");
+            alert("Todos os responsáveis extras devem ter mais de 18 anos.");
             return;
           }
         }
@@ -1526,8 +1416,7 @@
 
     btnAddOutroResponsavel10a12.addEventListener("click", () => {
       if (outrosResponsaveis10a12.length >= 3) {
-
-        showNotify("É permitido no máximo 3 responsáveis extras.", "warning");
+        alert("É permitido no máximo 3 responsáveis extras.");
         return;
       }
       const obj = { nome: "", rg: "", cpf: "" };
@@ -1571,8 +1460,7 @@
     btnConfirmarOutrosResponsaveis10a12.addEventListener("click", async () => {
       if (radioOutrosRespSim.checked) {
         if (outrosResponsaveis10a12.length === 0) {
-
-          showNotify("Adicione ao menos um responsável.", "warning");
+          alert("Adicione ao menos um responsável.");
           return;
         }
         try {
@@ -1586,8 +1474,7 @@
             })
           });
         } catch (err) {
-
-          showNotify("Falha ao salvar responsáveis no banco.", "danger");
+          alert("Falha ao salvar responsáveis no banco.");
           return;
         }
         for (const r of outrosResponsaveis10a12) {
@@ -1704,7 +1591,7 @@
           window.open(`/api/comprovante-avaliacao-manual-estadual/${alunoIdEstadual}/gerar-pdf?signer=${signerChoice || 'filiacao1'}`, "_blank");
         }
       }
-      showNotify("Atendimento finalizado!", "success");
+      alert("Atendimento finalizado!");
       location.reload();
     });
 
@@ -1779,11 +1666,10 @@
         const data = await resp.json();
         if (!resp.ok) {
           alert(data.message || "Erro ao salvar solicitação no banco.");
-          showNotify(data.message || "Erro ao salvar solicitação no banco.", "danger");
           return;
         }
       } catch (error) {
-        showNotify("Falha ao salvar a solicitação.", "danger");
+        alert("Falha ao salvar a solicitação.");
       }
     }
 
@@ -1806,6 +1692,7 @@
           }
         });
 
+        // Listener para recalcular distância quando o usuário arrastar a rota
         directionsRenderer.addListener('directions_changed', function () {
           const newDirections = directionsRenderer.getDirections();
           if (newDirections && newDirections.routes && newDirections.routes.length > 0) {
@@ -1943,7 +1830,7 @@
             campoLongitude.value = alunoPos.lng().toFixed(6);
             createOrMoveMarkers();
           } else {
-            showNotify("Não foi possível localizar o endereço do aluno via Geocoder.", "danger");
+            alert("Não foi possível localizar o endereço do aluno via Geocoder.");
             map.setCenter(escolaPos);
           }
         });
@@ -2034,4 +1921,5 @@
     }
   </script>
 </body>
+
 </html>
