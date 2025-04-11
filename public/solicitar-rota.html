@@ -122,15 +122,12 @@
       color: #444;
     }
   
-    /* Notificação com fundo gradiente, texto branco e alinhamento top-right */
+    /* Notificação com fundo gradiente, texto branco */
     .notify-with-gradient {
       background: linear-gradient(45deg, #00aeef, #a6ffcb) !important;
       color: #fff !important;
       border: none !important;
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999; /* Garante que fique acima de outros elementos */
+      /* Removido position fixo e top/right para o plugin gerenciar */
       padding: 10px 20px;
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
