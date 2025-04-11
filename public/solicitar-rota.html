@@ -778,7 +778,6 @@
         etapa1Estadual.classList.add("active");
         await carregarEscolasEstaduais();
       } else {
-        alert("Selecione o tipo de fluxo (Municipal ou Estadual).");
         showNotify("Selecione o tipo de fluxo (Municipal ou Estadual).", "warning");
       }
     });
@@ -797,7 +796,7 @@
         });
       } catch (err) {
         console.error("Erro ao buscar escolas:", err);
-        alert("Não foi possível carregar a lista de escolas.");
+        
         showNotify("Não foi possível carregar a lista de escolas.", "danger");
       }
     }
@@ -805,7 +804,7 @@
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
-        alert("Informe CPF ou ID de Matrícula.");
+        
         showNotify("Informe CPF ou ID de Matrícula.", "warning");
         return;
       }
@@ -814,7 +813,7 @@
         if (!resp.ok) throw new Error("Erro ao buscar aluno (Municipal).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
-          alert("Nenhum aluno encontrado.");
+          
           showNotify("Nenhum aluno encontrado.", "warning");
           return;
         }
@@ -853,7 +852,7 @@
         dadosAlunoContainerMunicipal.classList.remove("d-none");
       } catch (err) {
         console.error(err);
-        alert("Erro ao buscar aluno (Municipal).");
+        
         showNotify("Erro ao buscar aluno (Municipal).", "danger");
       }
     });
@@ -890,7 +889,7 @@
     btnConverterCepMunicipal.addEventListener("click", async () => {
       const cepLimpo = campoCepMunicipal.value.replace(/\D/g, "");
       if (!cepLimpo) {
-        alert("Informe um CEP válido.");
+       
         showNotify("Informe um CEP válido.", "warning");
         return;
       }
@@ -902,16 +901,16 @@
             campoRuaMunicipal.value = viacep.logradouro || campoRuaMunicipal.value;
             campoBairroMunicipal.value = viacep.bairro || campoBairroMunicipal.value;
           } else {
-            alert("CEP não encontrado.");
+           
             showNotify("CEP não encontrado.", "warning");
           }
           btnSalvarAlteracoesMunicipal.disabled = false;
         } else {
-          alert("Erro ao consultar ViaCEP.");
+       
           showNotify("Erro ao consultar ViaCEP.", "danger");
         }
       } catch (e) {
-        alert("Erro ao converter CEP (Municipal).");
+    
         showNotify("Erro ao converter CEP (Municipal).", "danger");
       }
     });
@@ -919,7 +918,7 @@
     btnSalvarAlteracoesMunicipal.addEventListener("click", async () => {
       const ok = await salvarAlteracoesMunicipal();
       if (ok) {
-        alert("Alterações salvas com sucesso (Municipal)!");
+  
         showNotify("Alterações salvas com sucesso (Municipal)!", "success");
         btnImprimirConfirmacaoMunicipal.disabled = false;
       }
@@ -927,7 +926,7 @@
 
     async function salvarAlteracoesMunicipal() {
       if (!alunoIdMunicipal) {
-        alert("Nenhum aluno carregado (Municipal).");
+
         showNotify("Nenhum aluno carregado (Municipal).", "danger");
         return false;
       }
@@ -958,7 +957,7 @@
         return true;
       } catch (err) {
         console.error(err);
-        alert("Erro ao atualizar dados do aluno (municipal).");
+
         showNotify("Erro ao atualizar dados do aluno (municipal).", "danger");
         return false;
       }
@@ -966,7 +965,7 @@
 
     btnImprimirConfirmacaoMunicipal.addEventListener("click", () => {
       if (!alunoIdMunicipal) {
-        alert("Nenhum aluno carregado para gerar termo.");
+ 
         showNotify("Nenhum aluno carregado para gerar termo.", "warning");
         return;
       }
@@ -991,7 +990,7 @@
 
     btnProximoMunicipal.addEventListener("click", () => {
       if (!originalData) {
-        alert("Nenhum aluno carregado.");
+
         showNotify("Nenhum aluno carregado.", "danger");
         return;
       }
@@ -1005,7 +1004,7 @@
     btnBuscarEstadual.addEventListener("click", async () => {
       const valorBuscaEst = inputBuscaEstadual.value.trim();
       if (!valorBuscaEst) {
-        alert("Informe CPF ou ID de Matrícula.");
+
         showNotify("Informe CPF ou ID de Matrícula.", "warning");
         return;
       }
@@ -1014,7 +1013,7 @@
         if (!resp.ok) throw new Error("Erro ao buscar aluno (Estadual).");
         const data = await resp.json();
         if (!data || !data.id_matricula) {
-          alert("Nenhum aluno encontrado.");
+
           showNotify("Nenhum aluno encontrado.", "warning");
           return;
         }
@@ -1053,7 +1052,7 @@
         }
       } catch (err) {
         console.error(err);
-        alert("Erro ao buscar aluno (Estadual).");
+
         showNotify("Erro ao buscar aluno (Estadual).", "danger");
       }
     });
@@ -1096,7 +1095,7 @@
     btnConverterCepEstadual.addEventListener("click", async () => {
       const cepLimpoEst = campoCepEstadual.value.replace(/\D/g, "");
       if (!cepLimpoEst) {
-        alert("Informe um CEP válido.");
+
         showNotify("Informe um CEP válido.", "warning");
         return;
       }
@@ -1108,15 +1107,15 @@
             campoRuaEstadual.value = viacep.logradouro || campoRuaEstadual.value;
             campoBairroEstadual.value = viacep.bairro || campoBairroEstadual.value;
           } else {
-            alert("CEP não encontrado.");
+
             showNotify("CEP não encontrado.", "warning");
           }
         } else {
-          alert("Erro ao consultar ViaCEP (Estadual).");
+
           showNotify("Erro ao consultar ViaCEP (Estadual).", "danger");
         }
       } catch (e) {
-        alert("Erro ao converter CEP (Estadual).");
+
         showNotify("Erro ao converter CEP (Estadual).", "danger");
       }
     });
@@ -1163,7 +1162,6 @@
           initMap();
         }, 300);
       } catch (err) {
-        alert("Falha ao cadastrar aluno estadual.");
         showNotify("Falha ao cadastrar aluno estadual.", "danger");
       }
     });
@@ -1238,7 +1236,7 @@
 
     btnVerificarCriterios.addEventListener("click", () => {
       if (!markerAluno) {
-        alert("Marque a posição do aluno no mapa para continuar.");
+
         showNotify("Marque a posição do aluno no mapa para continuar.", "warning");
         return;
       }
@@ -1265,7 +1263,7 @@
 
       const nivel = selectNivelEnsino.value;
       if (!nivel) {
-        alert("Selecione o nível de ensino (Infantil ou Fundamental).");
+
         showNotify("Selecione o nível de ensino (Infantil ou Fundamental).", "warning");
         return;
       }
@@ -1396,7 +1394,7 @@
 
     btnAddResponsavel.addEventListener("click", () => {
       if (responsaveisExtras.length >= 3) {
-        alert("É permitido no máximo 3 responsáveis extras.");
+
         showNotify("É permitido no máximo 3 responsáveis extras.", "warning");
         return;
       }
@@ -1447,7 +1445,7 @@
         menor10_acompanhado = true;
         for (const r of responsaveisExtras) {
           if (!r.nome || !r.rg || !r.dataNascimento) {
-            alert("Preencha todos os campos dos responsáveis extras.");
+
             showNotify("Preencha todos os campos dos responsáveis extras.", "warning");
             return;
           }
@@ -1459,7 +1457,6 @@
           if (dd < 0) { mm--; dd += 30; }
           if (mm < 0) { anos--; mm += 12; }
           if (anos < 18) {
-            alert("Todos os responsáveis extras devem ter mais de 18 anos.");
             showNotify("Todos os responsáveis extras devem ter mais de 18 anos.", "warning");
             return;
           }
@@ -1504,7 +1501,7 @@
 
     btnAddOutroResponsavel10a12.addEventListener("click", () => {
       if (outrosResponsaveis10a12.length >= 3) {
-        alert("É permitido no máximo 3 responsáveis extras.");
+
         showNotify("É permitido no máximo 3 responsáveis extras.", "warning");
         return;
       }
@@ -1549,7 +1546,7 @@
     btnConfirmarOutrosResponsaveis10a12.addEventListener("click", async () => {
       if (radioOutrosRespSim.checked) {
         if (outrosResponsaveis10a12.length === 0) {
-          alert("Adicione ao menos um responsável.");
+
           showNotify("Adicione ao menos um responsável.", "warning");
           return;
         }
@@ -1564,7 +1561,7 @@
             })
           });
         } catch (err) {
-          alert("Falha ao salvar responsáveis no banco.");
+
           showNotify("Falha ao salvar responsáveis no banco.", "danger");
           return;
         }
@@ -1682,7 +1679,6 @@
           window.open(`/api/comprovante-avaliacao-manual-estadual/${alunoIdEstadual}/gerar-pdf?signer=${signerChoice || 'filiacao1'}`, "_blank");
         }
       }
-      alert("Atendimento finalizado!");
       showNotify("Atendimento finalizado!", "success");
       location.reload();
     });
@@ -1762,7 +1758,6 @@
           return;
         }
       } catch (error) {
-        alert("Falha ao salvar a solicitação.");
         showNotify("Falha ao salvar a solicitação.", "danger");
       }
     }
@@ -1923,7 +1918,6 @@
             campoLongitude.value = alunoPos.lng().toFixed(6);
             createOrMoveMarkers();
           } else {
-            alert("Não foi possível localizar o endereço do aluno via Geocoder.");
             showNotify("Não foi possível localizar o endereço do aluno via Geocoder.", "danger");
             map.setCenter(escolaPos);
           }
