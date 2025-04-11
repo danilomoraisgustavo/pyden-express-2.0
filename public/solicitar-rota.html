@@ -23,109 +23,134 @@
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
   <link rel="stylesheet" href="../../assets/css/demo.css" />
   <style>
+    /* Reset básico */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      background: #fff;
-      font-family: 'Public Sans', sans-serif;
+      background-color: #ffffff;
+      color: #333333;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
     }
-    .card {
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      margin-bottom: 30px;
-      background: #fff;
+
+    /* Cabeçalho */
+    header {
+      background-color: #0d1117; /* Fundo escuro */
+      color: #ffffff;           /* Letra branca */
+      padding: 2rem 1rem;
+      text-align: center;
     }
-    .card-header {
-      background: linear-gradient(60deg, #074f2d, #ce6d20);
-      color: #fff;
-      border-top-left-radius: 8px;
-      border-top-right-radius: 8px;
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
     }
-    .page-header h3 {
-      background: linear-gradient(45deg, #0a8b13, #f46b0e);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-weight: 700 !important;
+    header p {
+      font-size: 1.2rem;
     }
-    .btn-primary {
-      background: linear-gradient(60deg, #074f2d, #0a8b13);
+
+    /* Navbar */
+    nav {
+      background-color: #21262d; /* Um tom de cinza bem escuro */
+      color: #ffffff;
+    }
+    nav a {
+      color: #ffffff;
+      text-decoration: none;
+      padding: 1rem 1.5rem;
+      display: inline-block;
+      transition: background-color 0.3s ease;
+    }
+    nav a:hover {
+      background-color: #30363d;
+    }
+
+    /* Conteúdo principal */
+    main {
+      padding: 2rem 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card-custom {
+      background-color: #f6f8fa;
       border: none;
-      color: #fff;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
     }
-    .btn-success {
-      background: linear-gradient(60deg, #0a8b13, #138b0a);
+    .card-custom h2 {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+      color: #24292e;
+    }
+    .card-custom p {
+      color: #484f58;
+      margin-bottom: 1rem;
+    }
+    .btn-accent {
+      background-color: #ec4899; /* Rosa forte */
+      color: #ffffff;
       border: none;
-      color: #fff;
-    }
-    .btn-info {
-      background: linear-gradient(60deg, #13678a, #1ca4c2);
-      border: none;
-      color: #fff;
-    }
-    .btn-danger {
-      background: linear-gradient(60deg, #9e0a0a, #ce2029);
-      border: none;
-      color: #fff;
-    }
-    .btn-warning {
-      background: linear-gradient(60deg, #ce6d20, #f46b0e);
-      border: none;
-      color: #fff;
-    }
-    .form-check-input:checked {
-      background-color: #074f2d;
-      border-color: #074f2d;
-    }
-    .form-select, .form-control {
-      border-radius: 6px;
-    }
-    .wizard-step {
-      display: none;
-    }
-    .wizard-step.active {
-      display: block;
-    }
-    .badge-idade {
-      padding: 0.45rem 0.6rem;
-      font-size: 0.875rem;
-      color: #fff;
-    }
-    #modalMenores10 .modal-dialog,
-    #modalOutrosResponsaveis10a12 .modal-dialog {
-      max-width: 600px;
-    }
-    #modalDesembarque10a12 .modal-dialog {
-      max-width: 500px;
-    }
-    #modalEscolherAssinatura .modal-dialog {
-      max-width: 500px;
-    }
-    #mapCriterios {
-      width: 100%;
-      height: 400px;
-    }
-    #measureInfo {
-      margin-top: 10px;
+      padding: 0.7rem 1.2rem;
+      border-radius: 0.3rem;
       font-weight: 600;
-      font-size: 0.9rem;
-      color: #444;
+      transition: background-color 0.3s ease;
     }
-    .notify-with-gradient {
-      color: #fff !important;
-      border: none !important;
+    .btn-accent:hover {
+      background-color: #db2777;
     }
-    .alert-success.notify-with-gradient {
-      background: linear-gradient(45deg, #05610c, #0a8b13) !important;
+
+    /* Seção de destaque */
+    .highlight-section {
+      background-color: #161b22;
+      color: #ffffff;
+      padding: 2rem 1rem;
+      text-align: center;
     }
-    .alert-danger.notify-with-gradient {
-      background: linear-gradient(45deg, #9e0a0a, #ce2029) !important;
+    .highlight-section h3 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
     }
-    .alert-warning.notify-with-gradient {
-      background: linear-gradient(45deg, #ce6d20, #f46b0e) !important;
+    .highlight-section p {
+      max-width: 600px;
+      margin: 0 auto 2rem auto;
     }
-    .alert-info.notify-with-gradient {
-      background: linear-gradient(45deg, #13678a, #1ca4c2) !important;
+    .highlight-section .btn-dark-contrast {
+      background-color: #ffffff; 
+      color: #161b22; 
+      border: none;
+      transition: background-color 0.3s ease;
+    }
+    .highlight-section .btn-dark-contrast:hover {
+      background-color: #e2e2e2;
+    }
+
+    /* Rodapé */
+    footer {
+      background-color: #0d1117;
+      color: #ffffff;
+      text-align: center;
+      padding: 1rem;
+    }
+    footer p {
+      margin: 0.5rem 0;
+    }
+
+    /* Responsividade */
+    @media (max-width: 576px) {
+      nav a {
+        display: block;
+        text-align: center;
+      }
+      .highlight-section h3 {
+        font-size: 1.5rem;
+      }
     }
   </style>
-  
 </head>
 
 <body>
