@@ -9679,15 +9679,19 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         bairro,
         numero_pessoa_endereco,
         filiacao_1,
-        numero_telefone,
+        telefone_filiacao_1,
         filiacao_2,
+        telefone_filiacao_2,
         RESPONSAVEL,
         deficiencia,
         data_nascimento,
         latitude,
         longitude
+        /*  >>>  campo transporte_escolar_poder_publico vem no XLSX,
+                mas NÃO será usado  <<< */
       } = a;
 
+      /* ajusta tipos ------------------------------------------- */
       const defArray =
         typeof deficiencia === "string" && deficiencia.trim()
           ? JSON.parse(deficiencia)
@@ -9695,25 +9699,31 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
             ? deficiencia
             : null;
 
+      const latNum = latitude ? parseFloat(latitude) : null;
+      const lonNum = longitude ? parseFloat(longitude) : null;
+
       await pool.query(
-        `INSERT INTO alunos_ativos (
-           id_pessoa, id_matricula, escola_id, ano, modalidade,
-           formato_letivo, turma, pessoa_nome, cpf,
-           transporte_escolar_poder_publico, cep, bairro, numero_pessoa_endereco,
-           filiacao_1, numero_telefone, filiacao_2, responsavel,
-           deficiencia, data_nascimento, latitude, longitude, geom
-         ) VALUES (
-           $1,$2,$3,$4,$5,
-           $6,$7,$8,$9,
-           null,$10,$11,$12,
-           $13,$14,$15,$16,
-           $17,$18,$19,$20,
-           CASE
-             WHEN $19 IS NOT NULL AND $20 IS NOT NULL
-             THEN ST_SetSRID(ST_MakePoint($20,$19),4326)
-             ELSE NULL
-           END
-         ) ON CONFLICT DO NOTHING`,
+        `
+        INSERT INTO alunos_ativos (
+          id_pessoa, id_matricula, escola_id, ano, modalidade,
+          formato_letivo, turma, pessoa_nome, cpf,
+          cep, bairro, numero_pessoa_endereco,
+          filiacao_1, numero_telefone, filiacao_2, responsavel,
+          deficiencia, data_nascimento, latitude, longitude, geom
+        ) VALUES (
+          $1,$2,$3,$4,$5,
+          $6,$7,$8,$9,
+          $10,$11,$12,
+          $13,$14,$15,$16,
+          $17::text[],$18,$19,$20,
+          CASE
+            WHEN $19 IS NOT NULL AND $20 IS NOT NULL
+            THEN ST_SetSRID(ST_MakePoint($20::numeric,$19::numeric),4326)
+            ELSE NULL
+          END
+        )
+        ON CONFLICT DO NOTHING
+        `,
         [
           id_pessoa || null,
           id_matricula || null,
@@ -9728,13 +9738,13 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           bairro || null,
           numero_pessoa_endereco || null,
           filiacao_1 || null,
-          numero_telefone || null,
+          telefone_filiacao_1 || null,
           filiacao_2 || null,
           RESPONSAVEL || null,
           defArray,
           data_nascimento || null,
-          latitude || null,
-          longitude || null
+          latNum,
+          lonNum
         ]
       );
     }
@@ -9745,6 +9755,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     return res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
+
 
 
 app.get("/api/alunos-ativos", async (req, res) => {
