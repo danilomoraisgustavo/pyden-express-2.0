@@ -998,723 +998,274 @@
   <script src="../../assets/js/setting-demo2.js"></script>
 
   <script>
-    let mapPontos, infoWindowPontos;
-    let pontos = [];
-    let markersPontos = [];
+    let mapPontos, infoWindowPontos
+    let pontos = []
+    let markersPontos = []
+    const iconGreen = "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+    const iconRed = "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
 
     function initMapPontos() {
-      mapPontos = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13,
-        mapTypeId: 'roadmap'
-      });
-      infoWindowPontos = new google.maps.InfoWindow();
+      mapPontos = new google.maps.Map(document.getElementById('map'), { center: { lat: -6.530066, lng: -49.851630 }, zoom: 13 })
+      infoWindowPontos = new google.maps.InfoWindow()
     }
 
     function showNotificationPontos(type, message) {
-      let icon;
-      switch (type) {
-        case 'success': icon = 'fa fa-check-circle'; break;
-        case 'danger': icon = 'fa fa-exclamation-circle'; break;
-        case 'warning': icon = 'fa fa-exclamation-triangle'; break;
-        case 'info': icon = 'fa fa-info-circle'; break;
-        default: icon = 'fa fa-bell';
-      }
-      $.notify({
-        icon: icon,
-        message: message
-      }, {
-        type: type,
-        placement: { from: "top", align: "right" },
-        offset: 20,
-        spacing: 10,
-        z_index: 1031,
-        delay: 3000,
-        timer: 1000,
-        animate: { enter: 'animated fadeInDown', exit: 'animated fadeOutUp' }
-      });
+      const icons = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" }
+      $.notify({ icon: icons[type] || "fa fa-bell", message }, { type, placement: { from: "top", align: "right" }, delay: 3000, animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" } })
     }
 
     function loadPontos() {
-      fetch('/api/pontos')
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar pontos');
-          return res.json();
-        })
-        .then(data => {
-          pontos = data;
-          const select = document.getElementById('pontoSelect');
-          select.innerHTML = '<option value="">Selecione um ponto</option>';
-
-          pontos.forEach(p => {
-            const option = document.createElement('option');
-            option.value = p.id;
-            option.textContent = p.nome_ponto;
-            select.appendChild(option);
-          });
-
-          placeMarkersPontos();
-          populateTablePontos();
-        })
-        .catch(err => {
-          console.error(err);
-          showNotificationPontos('danger', 'Não foi possível carregar os pontos de parada.');
-        });
+      fetch('/api/pontos').then(r => { if (!r.ok) throw new Error(); return r.json() }).then(data => {
+        pontos = data
+        const sel = document.getElementById('pontoSelect')
+        sel.innerHTML = '<option value="">Selecione um ponto</option>'
+        pontos.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.nome_ponto; sel.appendChild(o) })
+        placeMarkersPontos()
+        populateTablePontos()
+      }).catch(() => showNotificationPontos('danger', 'Não foi possível carregar os pontos de parada.'))
     }
+
+    function clearMarkersPontos() { markersPontos.forEach(m => m.setMap(null)); markersPontos = [] }
 
     function placeMarkersPontos() {
-      clearMarkersPontos();
-      let bounds = new google.maps.LatLngBounds();
-      let hasMarkers = false;
-
+      clearMarkersPontos()
+      const bounds = new google.maps.LatLngBounds()
+      let has = false
       pontos.forEach(p => {
         if (p.latitude && p.longitude) {
-          const position = { lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) };
-          const marker = new google.maps.Marker({
-            position: position,
-            map: mapPontos,
-            title: p.nome_ponto
-          });
-          markersPontos.push(marker);
-          hasMarkers = true;
-
+          const pos = { lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) }
+          const marker = new google.maps.Marker({ position: pos, map: mapPontos, title: p.nome_ponto, icon: (p.status === "ativo" ? iconGreen : iconRed) })
+          markersPontos.push(marker); has = true
           marker.addListener('click', () => {
-            const zs = p.zoneamentos ? p.zoneamentos.map(z => z.nome).join(', ') : 'Nenhum';
-            const contentString = `
-              <div>
-                <h5>${p.nome_ponto}</h5>
-                <p><strong>Bairro:</strong> ${p.bairro || 'Não informado'}</p>
-                <p><strong>Referência:</strong> ${p.ponto_referencia || 'Não informado'}</p>
-                <p><strong>Zoneamentos:</strong> ${zs}</p>
-              </div>
-            `;
-            infoWindowPontos.setContent(contentString);
-            infoWindowPontos.open(mapPontos, marker);
-          });
-
-          bounds.extend(position);
+            const zs = p.zoneamentos ? p.zoneamentos.map(z => z.nome).join(', ') : 'Nenhum'
+            infoWindowPontos.setContent(`<div><h5>${p.nome_ponto}</h5><p><strong>Status:</strong> ${p.status === 'ativo' ? 'Ativo' : 'Inativo'}</p><p><strong>Bairro:</strong> ${p.bairro || 'Não informado'}</p><p><strong>Referência:</strong> ${p.ponto_referencia || 'Não informado'}</p><p><strong>Zoneamentos:</strong> ${zs}</p></div>`)
+            infoWindowPontos.open(mapPontos, marker)
+          })
+          bounds.extend(pos)
         }
-      });
-
-      if (hasMarkers) {
-        mapPontos.fitBounds(bounds);
-      } else {
-        showNotificationPontos('info', 'Nenhum ponto disponível para exibir no mapa.');
-      }
-    }
-
-    function clearMarkersPontos() {
-      markersPontos.forEach(m => m.setMap(null));
-      markersPontos = [];
+      })
+      if (has) mapPontos.fitBounds(bounds); else showNotificationPontos('info', 'Nenhum ponto disponível para exibir no mapa.')
     }
 
     function populateTablePontos() {
-      const tableBody = $('#pontos-table tbody');
-      tableBody.empty();
-
+      const tbody = $('#pontos-table tbody')
+      tbody.empty()
       pontos.forEach(p => {
-        const row = `
-          <tr>
-            <td>${p.id}</td>
-            <td>${p.nome_ponto}</td>
-            <td>${p.bairro || ''}</td>
-            <td>${p.ponto_referencia || ''}</td>
-            <td>
-              <button type="button" class="btn btn-link btn-primary btn-lg" onclick="focusPonto(${p.id})">
-                <i class="fa fa-map-marker-alt"></i>
-              </button>
-              <button type="button" class="btn btn-link btn-warning btn-lg" onclick="editPonto(${p.id})">
-                <i class="fa fa-edit"></i>
-              </button>
-            </td>
-          </tr>
-        `;
-        tableBody.append(row);
-      });
-
-      if ($.fn.DataTable.isDataTable('#pontos-table')) {
-        $('#pontos-table').DataTable().clear().destroy();
-      }
-
-      $('#pontos-table').DataTable({
-        pageLength: 10,
-        language: {
-          decimal: ",",
-          thousands: ".",
-          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-          infoEmpty: "Mostrando 0 até 0 de 0 registros",
-          infoFiltered: "(filtrado de _MAX_ registros no total)",
-          lengthMenu: "Mostrar _MENU_ registros",
-          loadingRecords: "Carregando...",
-          processing: "Processando...",
-          search: "Pesquisar:",
-          zeroRecords: "Nenhum registro encontrado",
-          paginate: {
-            first: "Primeiro",
-            last: "Último",
-            next: "Próximo",
-            previous: "Anterior"
-          },
-          emptyTable: "Nenhum dado disponível na tabela"
-        }
-      });
+        const badge = `<span class="badge ${p.status === 'ativo' ? 'bg-success' : 'bg-danger'}">${p.status === 'ativo' ? 'Ativo' : 'Inativo'}</span>`
+        tbody.append(`<tr><td>${p.id}</td><td>${p.nome_ponto}</td><td class="text-center">${badge}</td><td>${p.bairro || ''}</td><td>${p.ponto_referencia || ''}</td><td><button class="btn btn-link btn-primary btn-lg" onclick="focusPonto(${p.id})"><i class="fa fa-map-marker-alt"></i></button><button class="btn btn-link btn-warning btn-lg" onclick="editPonto(${p.id})"><i class="fa fa-edit"></i></button></td></tr>`)
+      })
+      if ($.fn.DataTable.isDataTable('#pontos-table')) $('#pontos-table').DataTable().destroy()
+      $('#pontos-table').DataTable({ pageLength: 10, language: { decimal: ",", thousands: ".", info: "Mostrando _START_ até _END_ de _TOTAL_ registros", infoEmpty: "Mostrando 0 até 0 de 0 registros", infoFiltered: "(filtrado de _MAX_ registros no total)", lengthMenu: "Mostrar _MENU_ registros", loadingRecords: "Carregando...", processing: "Processando...", search: "Pesquisar:", zeroRecords: "Nenhum registro encontrado", paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" }, emptyTable: "Nenhum dado disponível na tabela" } })
     }
 
     function focusPonto(id) {
-      const ponto = pontos.find(pt => pt.id == id);
-      if (!ponto || !ponto.latitude || !ponto.longitude) return;
-      const position = { lat: parseFloat(ponto.latitude), lng: parseFloat(ponto.longitude) };
-      mapPontos.setCenter(position);
-      mapPontos.setZoom(18);
-      const marker = markersPontos.find(m =>
-        m.getPosition().lat() === position.lat && m.getPosition().lng() === position.lng
-      );
-      if (marker) google.maps.event.trigger(marker, 'click');
+      const p = pontos.find(pt => pt.id == id)
+      if (!p || !p.latitude || !p.longitude) return
+      const pos = { lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) }
+      mapPontos.setCenter(pos); mapPontos.setZoom(18)
+      const marker = markersPontos.find(m => m.getPosition().lat() === pos.lat && m.getPosition().lng() === pos.lng)
+      if (marker) google.maps.event.trigger(marker, 'click')
     }
 
-    let mapCadastrarPonto, markerCadastrarPonto, geocoderCadastrarPonto, zoneamentosPontoData = [];
+    let mapCadastrarPonto, markerCadastrarPonto, geocoderCadastrarPonto, zoneamentosPontoData = []
     function initMapCadastrarPonto() {
-      geocoderCadastrarPonto = new google.maps.Geocoder();
-      mapCadastrarPonto = new google.maps.Map(document.getElementById('mapCadastrarPonto'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13,
-        mapTypeId: 'satellite'
-      });
-      mapCadastrarPonto.addListener('click', function (event) {
-        const lat = event.latLng.lat();
-        const lng = event.latLng.lng();
-        if (markerCadastrarPonto) {
-          markerCadastrarPonto.setPosition(event.latLng);
-        } else {
-          markerCadastrarPonto = new google.maps.Marker({
-            position: event.latLng,
-            map: mapCadastrarPonto
-          });
-        }
-        document.getElementById('latitudePonto').value = lat;
-        document.getElementById('longitudePonto').value = lng;
-        geocoderCadastrarPonto.geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+      geocoderCadastrarPonto = new google.maps.Geocoder()
+      mapCadastrarPonto = new google.maps.Map(document.getElementById('mapCadastrarPonto'), { center: { lat: -6.530066, lng: -49.851630 }, zoom: 13, mapTypeId: 'satellite' })
+      mapCadastrarPonto.addListener('click', e => {
+        const lat = e.latLng.lat(), lng = e.latLng.lng()
+        if (markerCadastrarPonto) { markerCadastrarPonto.setPosition(e.latLng) } else { markerCadastrarPonto = new google.maps.Marker({ position: e.latLng, map: mapCadastrarPonto }) }
+        $('#latitudePonto').val(lat); $('#longitudePonto').val(lng)
+        geocoderCadastrarPonto.geocode({ location: { lat, lng } }, (results, status) => {
           if (status === 'OK' && results[0]) {
-            let addressComponents = results[0].address_components;
-            let logradouro = '', numero = '', bairro = '';
-            addressComponents.forEach(comp => {
-              if (comp.types.includes('route')) logradouro = comp.long_name;
-              if (comp.types.includes('street_number')) numero = comp.long_name;
-              if (comp.types.includes('sublocality') || comp.types.includes('administrative_area_level_2')) {
-                bairro = comp.long_name;
-              }
-            });
-            document.getElementById('logradouroPonto').value = logradouro;
-            document.getElementById('numeroPonto').value = numero;
-            document.getElementById('bairroPonto').value = bairro;
+            let logradouro = '', numero = '', bairro = ''
+            results[0].address_components.forEach(c => {
+              if (c.types.includes('route')) logradouro = c.long_name
+              if (c.types.includes('street_number')) numero = c.long_name
+              if (c.types.includes('sublocality') || c.types.includes('administrative_area_level_2')) bairro = c.long_name
+            })
+            $('#logradouroPonto').val(logradouro); $('#numeroPonto').val(numero); $('#bairroPonto').val(bairro)
           }
-        });
-      });
+        })
+      })
     }
 
-    $('#modalCadastrarPonto')
-      .on('shown.bs.modal', function () {
-        initMapCadastrarPonto();
-      })
-      .on('hidden.bs.modal', function () {
-        document.getElementById('ponto-form').reset();
-        if (markerCadastrarPonto) {
-          markerCadastrarPonto.setMap(null);
-          markerCadastrarPonto = null;
-        }
-        document.getElementById('latitudePonto').value = '';
-        document.getElementById('longitudePonto').value = '';
-      });
+    $('#modalCadastrarPonto').on('shown.bs.modal', () => initMapCadastrarPonto()).on('hidden.bs.modal', () => {
+      $('#ponto-form')[0].reset()
+      if (markerCadastrarPonto) { markerCadastrarPonto.setMap(null); markerCadastrarPonto = null }
+      $('#latitudePonto,#longitudePonto').val('')
+    })
 
-    let mapEditarPonto, markerEditarPonto, geocoderEditarPonto;
+    let mapEditarPonto, markerEditarPonto, geocoderEditarPonto
     function initMapEditarPonto() {
-      geocoderEditarPonto = new google.maps.Geocoder();
-      mapEditarPonto = new google.maps.Map(document.getElementById('mapEditarPonto'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13,
-        mapTypeId: 'satellite'
-      });
-      mapEditarPonto.addListener('click', function (event) {
-        const lat = event.latLng.lat();
-        const lng = event.latLng.lng();
-        if (markerEditarPonto) {
-          markerEditarPonto.setPosition(event.latLng);
-        } else {
-          markerEditarPonto = new google.maps.Marker({
-            position: event.latLng,
-            map: mapEditarPonto
-          });
-        }
-        document.getElementById('latitudePontoEdit').value = lat;
-        document.getElementById('longitudePontoEdit').value = lng;
-        geocoderEditarPonto.geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+      geocoderEditarPonto = new google.maps.Geocoder()
+      mapEditarPonto = new google.maps.Map(document.getElementById('mapEditarPonto'), { center: { lat: -6.530066, lng: -49.851630 }, zoom: 13, mapTypeId: 'satellite' })
+      mapEditarPonto.addListener('click', e => {
+        const lat = e.latLng.lat(), lng = e.latLng.lng()
+        if (markerEditarPonto) { markerEditarPonto.setPosition(e.latLng) } else { markerEditarPonto = new google.maps.Marker({ position: e.latLng, map: mapEditarPonto }) }
+        $('#latitudePontoEdit').val(lat); $('#longitudePontoEdit').val(lng)
+        geocoderEditarPonto.geocode({ location: { lat, lng } }, (results, status) => {
           if (status === 'OK' && results[0]) {
-            let addressComponents = results[0].address_components;
-            let logradouro = '', numero = '', bairro = '';
-            addressComponents.forEach(comp => {
-              if (comp.types.includes('route')) logradouro = comp.long_name;
-              if (comp.types.includes('street_number')) numero = comp.long_name;
-              if (comp.types.includes('sublocality') || comp.types.includes('administrative_area_level_2')) {
-                bairro = comp.long_name;
-              }
-            });
-            document.getElementById('logradouroPontoEdit').value = logradouro;
-            document.getElementById('numeroPontoEdit').value = numero;
-            document.getElementById('bairroPontoEdit').value = bairro;
+            let logradouro = '', numero = '', bairro = ''
+            results[0].address_components.forEach(c => {
+              if (c.types.includes('route')) logradouro = c.long_name
+              if (c.types.includes('street_number')) numero = c.long_name
+              if (c.types.includes('sublocality') || c.types.includes('administrative_area_level_2')) bairro = c.long_name
+            })
+            $('#logradouroPontoEdit').val(logradouro); $('#numeroPontoEdit').val(numero); $('#bairroPontoEdit').val(bairro)
           }
-        });
-      });
+        })
+      })
     }
 
-    $('#modalEditarPonto')
-      .on('shown.bs.modal', function () {
-        initMapEditarPonto();
-      })
-      .on('hidden.bs.modal', function () {
-        document.getElementById('ponto-edit-form').reset();
-        if (markerEditarPonto) {
-          markerEditarPonto.setMap(null);
-          markerEditarPonto = null;
-        }
-        document.getElementById('latitudePontoEdit').value = '';
-        document.getElementById('longitudePontoEdit').value = '';
-      });
+    $('#modalEditarPonto').on('shown.bs.modal', () => initMapEditarPonto()).on('hidden.bs.modal', () => {
+      $('#ponto-edit-form')[0].reset()
+      if (markerEditarPonto) { markerEditarPonto.setMap(null); markerEditarPonto = null }
+      $('#latitudePontoEdit,#longitudePontoEdit').val('')
+    })
 
-    function filterOptionsPonto(input, select) {
-      const filterVal = input.value.toLowerCase();
-      for (let i = 0; i < select.options.length; i++) {
-        const txt = select.options[i].text.toLowerCase();
-        select.options[i].style.display = txt.includes(filterVal) ? 'block' : 'none';
-      }
+    function filterOptionsPonto(inp, sel) {
+      const f = inp.value.toLowerCase()
+      for (let i = 0; i < sel.options.length; i++) { const txt = sel.options[i].text.toLowerCase(); sel.options[i].style.display = txt.includes(f) ? 'block' : 'none' }
     }
 
     $(document).ready(function () {
-      initMapPontos();
-      loadPontos();
+      initMapPontos()
+      loadPontos()
 
-      $('#filtroEsqPonto').on('input', function () {
-        filterOptionsPonto(this, document.getElementById('listaEsqPonto'));
-      });
-      $('#filtroDirPonto').on('input', function () {
-        filterOptionsPonto(this, document.getElementById('listaDirPonto'));
-      });
-      $('#addBtnPonto').click(function () {
-        const listaEsq = document.getElementById('listaEsqPonto');
-        const listaDir = document.getElementById('listaDirPonto');
-        for (let i = listaEsq.options.length - 1; i >= 0; i--) {
-          if (listaEsq.options[i].selected && listaEsq.options[i].style.display !== 'none') {
-            listaDir.appendChild(listaEsq.options[i]);
-          }
-        }
-      });
-      $('#removeBtnPonto').click(function () {
-        const listaEsq = document.getElementById('listaEsqPonto');
-        const listaDir = document.getElementById('listaDirPonto');
-        for (let i = listaDir.options.length - 1; i >= 0; i--) {
-          if (listaDir.options[i].selected && listaDir.options[i].style.display !== 'none') {
-            listaEsq.appendChild(listaDir.options[i]);
-          }
-        }
-      });
+      $('#filtroEsqPonto').on('input', function () { filterOptionsPonto(this, document.getElementById('listaEsqPonto')) })
+      $('#filtroDirPonto').on('input', function () { filterOptionsPonto(this, document.getElementById('listaDirPonto')) })
+      $('#addBtnPonto').click(function () { const lE = document.getElementById('listaEsqPonto'), lD = document.getElementById('listaDirPonto'); for (let i = lE.options.length - 1; i >= 0; i--) { if (lE.options[i].selected && lE.options[i].style.display !== 'none') { lD.appendChild(lE.options[i]) } } })
+      $('#removeBtnPonto').click(function () { const lE = document.getElementById('listaEsqPonto'), lD = document.getElementById('listaDirPonto'); for (let i = lD.options.length - 1; i >= 0; i--) { if (lD.options[i].selected && lD.options[i].style.display !== 'none') { lE.appendChild(lD.options[i]) } } })
 
-      $('#filtroEsqPontoEdit').on('input', function () {
-        filterOptionsPonto(this, document.getElementById('listaEsqPontoEdit'));
-      });
-      $('#filtroDirPontoEdit').on('input', function () {
-        filterOptionsPonto(this, document.getElementById('listaDirPontoEdit'));
-      });
-      $('#addBtnPontoEdit').click(function () {
-        const listaEsq = document.getElementById('listaEsqPontoEdit');
-        const listaDir = document.getElementById('listaDirPontoEdit');
-        for (let i = listaEsq.options.length - 1; i >= 0; i--) {
-          if (listaEsq.options[i].selected && listaEsq.options[i].style.display !== 'none') {
-            listaDir.appendChild(listaEsq.options[i]);
-          }
-        }
-      });
-      $('#removeBtnPontoEdit').click(function () {
-        const listaEsq = document.getElementById('listaEsqPontoEdit');
-        const listaDir = document.getElementById('listaDirPontoEdit');
-        for (let i = listaDir.options.length - 1; i >= 0; i--) {
-          if (listaDir.options[i].selected && listaDir.options[i].style.display !== 'none') {
-            listaEsq.appendChild(listaDir.options[i]);
-          }
-        }
-      });
+      $('#filtroEsqPontoEdit').on('input', function () { filterOptionsPonto(this, document.getElementById('listaEsqPontoEdit')) })
+      $('#filtroDirPontoEdit').on('input', function () { filterOptionsPonto(this, document.getElementById('listaDirPontoEdit')) })
+      $('#addBtnPontoEdit').click(function () { const lE = document.getElementById('listaEsqPontoEdit'), lD = document.getElementById('listaDirPontoEdit'); for (let i = lE.options.length - 1; i >= 0; i--) { if (lE.options[i].selected && lE.options[i].style.display !== 'none') { lD.appendChild(lE.options[i]) } } })
+      $('#removeBtnPontoEdit').click(function () { const lE = document.getElementById('listaEsqPontoEdit'), lD = document.getElementById('listaDirPontoEdit'); for (let i = lD.options.length - 1; i >= 0; i--) { if (lD.options[i].selected && lD.options[i].style.display !== 'none') { lE.appendChild(lD.options[i]) } } })
 
-      fetch('/api/zoneamentos')
-        .then(res => res.json())
-        .then(data => {
-          zoneamentosPontoData = data;
-          const listaEsq = document.getElementById('listaEsqPonto');
-          listaEsq.innerHTML = '';
-          zoneamentosPontoData.forEach(z => {
-            const option = document.createElement('option');
-            option.value = z.id;
-            option.textContent = z.nome;
-            listaEsq.appendChild(option);
-          });
-        })
-        .catch(err => console.error(err));
+      fetch('/api/zoneamentos').then(r => r.json()).then(data => {
+        zoneamentosPontoData = data
+        const sel = document.getElementById('listaEsqPonto'); sel.innerHTML = ''
+        data.forEach(z => { const o = document.createElement('option'); o.value = z.id; o.textContent = z.nome; sel.appendChild(o) })
+      })
 
       $('#ponto-form').on('submit', function (e) {
-        e.preventDefault();
-        const listaDir = document.getElementById('listaDirPonto');
-        const selecionados = [];
-        for (let i = 0; i < listaDir.options.length; i++) {
-          selecionados.push(listaDir.options[i].value);
-        }
-        document.getElementById('zoneamentosPonto').value = JSON.stringify(selecionados);
-        const formData = $(this).serialize();
-        fetch('/api/pontos/cadastrar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              $.notify({ message: 'Ponto de parada cadastrado com sucesso!' }, { type: 'success' });
-              $('#modalCadastrarPonto').modal('hide');
-              loadPontos();
-            } else {
-              $.notify({ message: 'Erro ao cadastrar ponto: ' + data.message }, { type: 'danger' });
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            $.notify({ message: 'Erro ao cadastrar ponto. Tente novamente.' }, { type: 'danger' });
-          });
-      });
+        e.preventDefault()
+        const sel = $('#listaDirPonto option').map((_, o) => o.value).get()
+        $('#zoneamentosPonto').val(JSON.stringify(sel))
+        fetch('/api/pontos/cadastrar', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: $(this).serialize() }).then(r => r.json()).then(d => {
+          if (d.success) { showNotificationPontos('success', 'Ponto de parada cadastrado com sucesso!'); $('#modalCadastrarPonto').modal('hide'); loadPontos() } else { showNotificationPontos('danger', 'Erro ao cadastrar ponto: ' + d.message) }
+        }).catch(() => showNotificationPontos('danger', 'Erro ao cadastrar ponto. Tente novamente.'))
+      })
 
-      document.getElementById('pontoSearch').addEventListener('input', function () {
-        const searchTerm = this.value.toLowerCase();
-        const select = document.getElementById('pontoSelect');
-        select.innerHTML = '<option value="">Selecione um ponto</option>';
-        pontos
-          .filter(p => p.nome_ponto.toLowerCase().includes(searchTerm))
-          .forEach(p => {
-            const option = document.createElement('option');
-            option.value = p.id;
-            option.textContent = p.nome_ponto;
-            select.appendChild(option);
-          });
-      });
-
-      document.getElementById('pontoSelect').addEventListener('change', function () {
-        const val = this.value;
-        if (!val) {
-          placeMarkersPontos();
-          return;
-        }
-        focusPonto(val);
-      });
+      $('#pontoSearch').on('input', function () {
+        const s = this.value.toLowerCase(), sel = document.getElementById('pontoSelect')
+        sel.innerHTML = '<option value="">Selecione um ponto</option>'
+        pontos.filter(p => p.nome_ponto.toLowerCase().includes(s)).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.nome_ponto; sel.appendChild(o) })
+      })
+      $('#pontoSelect').on('change', function () { this.value ? focusPonto(this.value) : placeMarkersPontos() })
 
       $('#ponto-edit-form').on('submit', function (e) {
-        e.preventDefault();
-        const listaDir = document.getElementById('listaDirPontoEdit');
-        const selecionados = [];
-        for (let i = 0; i < listaDir.options.length; i++) {
-          selecionados.push(listaDir.options[i].value);
-        }
-        document.getElementById('zoneamentosPontoEdit').value = JSON.stringify(selecionados);
-        const formData = $(this).serialize();
-        const pontoId = $('#idPontoEdit').val();
-        fetch('/api/pontos/atualizar/' + pontoId, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              $.notify({ message: 'Ponto de parada atualizado com sucesso!' }, { type: 'success' });
-              $('#modalEditarPonto').modal('hide');
-              loadPontos();
-            } else {
-              $.notify({ message: 'Erro ao atualizar ponto: ' + data.message }, { type: 'danger' });
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            $.notify({ message: 'Erro ao atualizar ponto. Tente novamente.' }, { type: 'danger' });
-          });
-      });
-    });
+        e.preventDefault()
+        const sel = $('#listaDirPontoEdit option').map((_, o) => o.value).get()
+        $('#zoneamentosPontoEdit').val(JSON.stringify(sel))
+        const id = $('#idPontoEdit').val()
+        fetch('/api/pontos/atualizar/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: $(this).serialize() }).then(r => r.json()).then(d => {
+          if (d.success) { showNotificationPontos('success', 'Ponto de parada atualizado com sucesso!'); $('#modalEditarPonto').modal('hide'); loadPontos() } else { showNotificationPontos('danger', 'Erro ao atualizar ponto: ' + d.message) }
+        }).catch(() => showNotificationPontos('danger', 'Erro ao atualizar ponto. Tente novamente.'))
+      })
+    })
 
     function editPonto(id) {
-      const ponto = pontos.find(pt => pt.id == id);
-      if (!ponto) return;
-      const listaEsq = document.getElementById('listaEsqPontoEdit');
-      const listaDir = document.getElementById('listaDirPontoEdit');
-      listaEsq.innerHTML = '';
-      listaDir.innerHTML = '';
-      fetch('/api/zoneamentos')
-        .then(res => res.json())
-        .then(data => {
-          const assignedZoneamentos = ponto.zoneamentos || [];
-          data.forEach(z => {
-            const inAssigned = assignedZoneamentos.some(az => az.id === z.id);
-            const option = document.createElement('option');
-            option.value = z.id;
-            option.textContent = z.nome;
-            if (inAssigned) {
-              listaDir.appendChild(option);
-            } else {
-              listaEsq.appendChild(option);
-            }
-          });
+      const ponto = pontos.find(pt => pt.id == id); if (!ponto) return
+      const lE = document.getElementById('listaEsqPontoEdit'), lD = document.getElementById('listaDirPontoEdit')
+      lE.innerHTML = ''; lD.innerHTML = ''
+      fetch('/api/zoneamentos').then(r => r.json()).then(data => {
+        const assigned = ponto.zoneamentos || []
+        data.forEach(z => {
+          const opt = document.createElement('option'); opt.value = z.id; opt.textContent = z.nome
+          assigned.some(a => a.id === z.id) ? lD.appendChild(opt) : lE.appendChild(opt)
         })
-        .catch(err => console.error(err));
-      $('#idPontoEdit').val(ponto.id);
-      $('#latitudePontoEdit').val(ponto.latitude || '');
-      $('#longitudePontoEdit').val(ponto.longitude || '');
-      $('#logradouroPontoEdit').val(ponto.logradouro || '');
-      $('#numeroPontoEdit').val(ponto.numero || '');
-      $('#complementoPontoEdit').val(ponto.complemento || '');
-      $('#pontoReferenciaPontoEdit').val(ponto.ponto_referencia || '');
-      $('#bairroPontoEdit').val(ponto.bairro || '');
-      $('#cepPontoEdit').val(ponto.cep || '');
-      if (ponto.area === 'urbana') {
-        $('#areaUrbanaEdit').prop('checked', true);
-      } else {
-        $('#areaRuralEdit').prop('checked', true);
-      }
-      $('#modalEditarPonto').modal('show');
-      setTimeout(() => {
-        if (ponto.latitude && ponto.longitude) {
-          const position = new google.maps.LatLng(parseFloat(ponto.latitude), parseFloat(ponto.longitude));
-          mapEditarPonto.setCenter(position);
-          mapEditarPonto.setZoom(17);
-          if (markerEditarPonto) {
-            markerEditarPonto.setPosition(position);
-          } else {
-            markerEditarPonto = new google.maps.Marker({
-              position: position,
-              map: mapEditarPonto
-            });
-          }
-        }
-      }, 500);
+      })
+      $('#idPontoEdit').val(ponto.id)
+      $('#latitudePontoEdit').val(ponto.latitude || '')
+      $('#longitudePontoEdit').val(ponto.longitude || '')
+      $('#logradouroPontoEdit').val(ponto.logradouro || '')
+      $('#numeroPontoEdit').val(ponto.numero || '')
+      $('#complementoPontoEdit').val(ponto.complemento || '')
+      $('#pontoReferenciaPontoEdit').val(ponto.ponto_referencia || '')
+      $('#bairroPontoEdit').val(ponto.bairro || '')
+      $('#cepPontoEdit').val(ponto.cep || '')
+      ponto.area === 'urbana' ? $('#areaUrbanaEdit').prop('checked', true) : $('#areaRuralEdit').prop('checked', true)
+      $('#statusPontoEdit').val(ponto.status || 'inativo')
+      $('#modalEditarPonto').modal('show')
+      setTimeout(() => { if (ponto.latitude && ponto.longitude) { const pos = new google.maps.LatLng(parseFloat(ponto.latitude), parseFloat(ponto.longitude)); mapEditarPonto.setCenter(pos); mapEditarPonto.setZoom(17); if (markerEditarPonto) { markerEditarPonto.setPosition(pos) } else { markerEditarPonto = new google.maps.Marker({ position: pos, map: mapEditarPonto }) } } }, 500)
     }
 
-    let mapCadastrarVariosPontos, geocoderCadastrarVariosPontos;
-    let markersMultiplos = [];
-    let dadosMultiplos = [];
-    let zoneamentosPontoDataMulti = [];
+    let mapCadastrarVariosPontos, geocoderCadastrarVariosPontos
+    let markersMultiplos = []
+    let dadosMultiplos = []
+    let zoneamentosPontoDataMulti = []
 
     function initMapCadastrarVariosPontos() {
-      geocoderCadastrarVariosPontos = new google.maps.Geocoder();
-      mapCadastrarVariosPontos = new google.maps.Map(document.getElementById('mapCadastrarVariosPontos'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13,
-        mapTypeId: 'satellite'
-      });
-      mapCadastrarVariosPontos.addListener('click', function (event) {
-        const lat = event.latLng.lat();
-        const lng = event.latLng.lng();
-        const marker = new google.maps.Marker({
-          position: event.latLng,
-          map: mapCadastrarVariosPontos
-        });
-        markersMultiplos.push(marker);
-        const novoRegistro = {
-          latitude: lat,
-          longitude: lng,
-          area: 'urbana',
-          logradouro: '',
-          numero: '',
-          complemento: '',
-          referencia: '',
-          bairro: '',
-          cep: '',
-          zona: ''
-        };
-        geocoderCadastrarVariosPontos.geocode({ location: { lat: lat, lng: lng } }, function (results, status) {
+      geocoderCadastrarVariosPontos = new google.maps.Geocoder()
+      mapCadastrarVariosPontos = new google.maps.Map(document.getElementById('mapCadastrarVariosPontos'), { center: { lat: -6.530066, lng: -49.851630 }, zoom: 13, mapTypeId: 'satellite' })
+      mapCadastrarVariosPontos.addListener('click', e => {
+        const lat = e.latLng.lat(), lng = e.latLng.lng()
+        const marker = new google.maps.Marker({ position: e.latLng, map: mapCadastrarVariosPontos })
+        markersMultiplos.push(marker)
+        const novo = { latitude: lat, longitude: lng, area: 'urbana', logradouro: '', numero: '', complemento: '', referencia: '', bairro: '', cep: '', zona: '' }
+        geocoderCadastrarVariosPontos.geocode({ location: { lat, lng } }, (results, status) => {
           if (status === 'OK' && results[0]) {
-            let addressComponents = results[0].address_components;
-            addressComponents.forEach(comp => {
-              if (comp.types.includes('route')) novoRegistro.logradouro = comp.long_name;
-              if (comp.types.includes('street_number')) novoRegistro.numero = comp.long_name;
-              if (comp.types.includes('sublocality') || comp.types.includes('administrative_area_level_2')) {
-                novoRegistro.bairro = comp.long_name;
-              }
-            });
-          }
-          fetch(`/api/zoneamentos/detect?lat=${lat}&lng=${lng}`)
-            .then(rz => rz.json())
-            .then(zdata => {
-              if (zdata && zdata.zona) {
-                novoRegistro.zona = zdata.zona;
-              } else {
-                novoRegistro.zona = 'N/A';
-              }
-              dadosMultiplos.push(novoRegistro);
-              atualizaTabelaMultiplos();
+            results[0].address_components.forEach(c => {
+              if (c.types.includes('route')) novo.logradouro = c.long_name
+              if (c.types.includes('street_number')) novo.numero = c.long_name
+              if (c.types.includes('sublocality') || c.types.includes('administrative_area_level_2')) novo.bairro = c.long_name
             })
-            .catch(() => {
-              novoRegistro.zona = 'N/A';
-              dadosMultiplos.push(novoRegistro);
-              atualizaTabelaMultiplos();
-            });
-        });
-      });
+          }
+          fetch(`/api/zoneamentos/detect?lat=${lat}&lng=${lng}`).then(r => r.json()).then(z => { novo.zona = z && z.zona ? z.zona : 'N/A'; dadosMultiplos.push(novo); atualizaTabelaMultiplos() }).catch(() => { novo.zona = 'N/A'; dadosMultiplos.push(novo); atualizaTabelaMultiplos() })
+        })
+      })
     }
 
     function atualizaTabelaMultiplos() {
-      const tbody = document.getElementById('tbodyMultiplosPontos');
-      tbody.innerHTML = '';
-      dadosMultiplos.forEach((p, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${index + 1}</td>
-          <td>
-            <input type="text" class="form-control small-input" data-idx="${index}" data-field="latitude" value="${p.latitude.toFixed(6)}" readonly>
-          </td>
-          <td>
-            <input type="text" class="form-control small-input" data-idx="${index}" data-field="longitude" value="${p.longitude.toFixed(6)}" readonly>
-          </td>
-          <td>
-            <select class="form-select" data-idx="${index}" data-field="area">
-              <option value="urbana" ${p.area === 'urbana' ? 'selected' : ''}>Urbana</option>
-              <option value="rural" ${p.area === 'rural' ? 'selected' : ''}>Rural</option>
-            </select>
-          </td>
-          <td>
-            <input type="text" class="form-control" data-idx="${index}" data-field="logradouro" value="${p.logradouro}">
-          </td>
-          <td>
-            <input type="text" class="form-control small-input" data-idx="${index}" data-field="numero" value="${p.numero}">
-          </td>
-          <td>
-            <input type="text" class="form-control" data-idx="${index}" data-field="complemento" value="${p.complemento}">
-          </td>
-          <td>
-            <input type="text" class="form-control" data-idx="${index}" data-field="referencia" value="${p.referencia}">
-          </td>
-          <td>
-            <input type="text" class="form-control" data-idx="${index}" data-field="bairro" value="${p.bairro}">
-          </td>
-          <td>
-            <input type="text" class="form-control small-input" data-idx="${index}" data-field="cep" value="${p.cep}">
-          </td>
-          <td>
-            <input type="text" class="form-control" data-idx="${index}" data-field="zona" value="${p.zona}" readonly>
-          </td>
-          <td>
-            <button type="button" class="btn btn-danger btn-sm" onclick="removerPontoMultiplo(${index})">X</button>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-      const inputs = tbody.querySelectorAll('input, select');
-      inputs.forEach(el => {
-        el.addEventListener('change', function () {
-          const idx = parseInt(this.getAttribute('data-idx'));
-          const field = this.getAttribute('data-field');
-          if (field && idx >= 0) {
-            dadosMultiplos[idx][field] = this.value;
-          }
-        });
-      });
-    }
-
-    function removerPontoMultiplo(index) {
-      dadosMultiplos.splice(index, 1);
-      const marker = markersMultiplos[index];
-      if (marker) {
-        marker.setMap(null);
-      }
-      markersMultiplos.splice(index, 1);
-      atualizaTabelaMultiplos();
-    }
-
-    $('#modalCadastrarVariosPontos')
-      .on('shown.bs.modal', function () {
-        if (!mapCadastrarVariosPontos) {
-          initMapCadastrarVariosPontos();
-        }
+      const tbody = document.getElementById('tbodyMultiplosPontos')
+      tbody.innerHTML = ''
+      dadosMultiplos.forEach((p, i) => {
+        const row = document.createElement('tr')
+        row.innerHTML = `<td>${i + 1}</td><td><input class="form-control small-input" data-idx="${i}" data-field="latitude" value="${p.latitude.toFixed(6)}" readonly></td><td><input class="form-control small-input" data-idx="${i}" data-field="longitude" value="${p.longitude.toFixed(6)}" readonly></td><td><select class="form-select" data-idx="${i}" data-field="area"><option value="urbana" ${p.area === 'urbana' ? 'selected' : ''}>Urbana</option><option value="rural" ${p.area === 'rural' ? 'selected' : ''}>Rural</option></select></td><td><input class="form-control" data-idx="${i}" data-field="logradouro" value="${p.logradouro}"></td><td><input class="form-control small-input" data-idx="${i}" data-field="numero" value="${p.numero}"></td><td><input class="form-control" data-idx="${i}" data-field="complemento" value="${p.complemento}"></td><td><input class="form-control" data-idx="${i}" data-field="referencia" value="${p.referencia}"></td><td><input class="form-control" data-idx="${i}" data-field="bairro" value="${p.bairro}"></td><td><input class="form-control small-input" data-idx="${i}" data-field="cep" value="${p.cep}"></td><td><input class="form-control" data-idx="${i}" data-field="zona" value="${p.zona}" readonly></td><td><button class="btn btn-danger btn-sm" onclick="removerPontoMultiplo(${i})">X</button></td>`
+        tbody.appendChild(row)
       })
-      .on('hidden.bs.modal', function () {
-        dadosMultiplos = [];
-        markersMultiplos.forEach(m => m.setMap(null));
-        markersMultiplos = [];
-        atualizaTabelaMultiplos();
-      });
+      tbody.querySelectorAll('input,select').forEach(el => el.addEventListener('change', function () { const idx = parseInt(this.getAttribute('data-idx')); const field = this.getAttribute('data-field'); dadosMultiplos[idx][field] = this.value }))
+    }
+
+    function removerPontoMultiplo(i) {
+      dadosMultiplos.splice(i, 1); if (markersMultiplos[i]) markersMultiplos[i].setMap(null); markersMultiplos.splice(i, 1); atualizaTabelaMultiplos()
+    }
+
+    $('#modalCadastrarVariosPontos').on('shown.bs.modal', () => { if (!mapCadastrarVariosPontos) initMapCadastrarVariosPontos() }).on('hidden.bs.modal', () => { dadosMultiplos = []; markersMultiplos.forEach(m => m.setMap(null)); markersMultiplos = []; atualizaTabelaMultiplos() })
 
     $(document).ready(function () {
-      fetch('/api/zoneamentos')
-        .then(res => res.json())
-        .then(data => {
-          zoneamentosPontoDataMulti = data;
-          const listaEsq = document.getElementById('listaEsqPontoMulti');
-          listaEsq.innerHTML = '';
-          zoneamentosPontoDataMulti.forEach(z => {
-            const option = document.createElement('option');
-            option.value = z.id;
-            option.textContent = z.nome;
-            listaEsq.appendChild(option);
-          });
-        })
-        .catch(err => console.error(err));
-    });
+      fetch('/api/zoneamentos').then(r => r.json()).then(data => {
+        zoneamentosPontoDataMulti = data
+        const sel = document.getElementById('listaEsqPontoMulti'); sel.innerHTML = ''
+        data.forEach(z => { const o = document.createElement('option'); o.value = z.id; o.textContent = z.nome; sel.appendChild(o) })
+      })
+    })
 
-    $('#filtroEsqPontoMulti').on('input', function () {
-      filterOptionsPonto(this, document.getElementById('listaEsqPontoMulti'));
-    });
-    $('#filtroDirPontoMulti').on('input', function () {
-      filterOptionsPonto(this, document.getElementById('listaDirPontoMulti'));
-    });
-    $('#addBtnPontoMulti').click(function () {
-      const listaEsq = document.getElementById('listaEsqPontoMulti');
-      const listaDir = document.getElementById('listaDirPontoMulti');
-      for (let i = listaEsq.options.length - 1; i >= 0; i--) {
-        if (listaEsq.options[i].selected && listaEsq.options[i].style.display !== 'none') {
-          listaDir.appendChild(listaEsq.options[i]);
-        }
-      }
-    });
-    $('#removeBtnPontoMulti').click(function () {
-      const listaEsq = document.getElementById('listaEsqPontoMulti');
-      const listaDir = document.getElementById('listaDirPontoMulti');
-      for (let i = listaDir.options.length - 1; i >= 0; i--) {
-        if (listaDir.options[i].selected && listaDir.options[i].style.display !== 'none') {
-          listaEsq.appendChild(listaDir.options[i]);
-        }
-      }
-    });
+    $('#filtroEsqPontoMulti').on('input', function () { filterOptionsPonto(this, document.getElementById('listaEsqPontoMulti')) })
+    $('#filtroDirPontoMulti').on('input', function () { filterOptionsPonto(this, document.getElementById('listaDirPontoMulti')) })
+    $('#addBtnPontoMulti').click(function () { const lE = document.getElementById('listaEsqPontoMulti'), lD = document.getElementById('listaDirPontoMulti'); for (let i = lE.options.length - 1; i >= 0; i--) { if (lE.options[i].selected && lE.options[i].style.display !== 'none') { lD.appendChild(lE.options[i]) } } })
+    $('#removeBtnPontoMulti').click(function () { const lE = document.getElementById('listaEsqPontoMulti'), lD = document.getElementById('listaDirPontoMulti'); for (let i = lD.options.length - 1; i >= 0; i--) { if (lD.options[i].selected && lD.options[i].style.display !== 'none') { lE.appendChild(lD.options[i]) } } })
 
     $('#btnSalvarMultiplosPontos').click(function () {
-      const listaDir = document.getElementById('listaDirPontoMulti');
-      const selecionados = [];
-      for (let i = 0; i < listaDir.options.length; i++) {
-        selecionados.push(listaDir.options[i].value);
-      }
-      const payload = {
-        pontos: dadosMultiplos,
-        zoneamentos: selecionados
-      };
-      fetch('/api/pontos/cadastrar-multiplos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            $.notify({ message: 'Pontos de parada cadastrados com sucesso!' }, { type: 'success' });
-            $('#modalCadastrarVariosPontos').modal('hide');
-            loadPontos();
-          } else {
-            $.notify({ message: 'Erro ao cadastrar múltiplos pontos: ' + data.message }, { type: 'danger' });
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          $.notify({ message: 'Erro ao cadastrar múltiplos pontos. Tente novamente.' }, { type: 'danger' });
-        });
-    });
+      const sel = $('#listaDirPontoMulti option').map((_, o) => o.value).get()
+      const payload = { pontos: dadosMultiplos, zoneamentos: sel }
+      fetch('/api/pontos/cadastrar-multiplos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then(r => r.json()).then(d => {
+        if (d.success) { showNotificationPontos('success', 'Pontos de parada cadastrados com sucesso!'); $('#modalCadastrarVariosPontos').modal('hide'); loadPontos() } else { showNotificationPontos('danger', 'Erro ao cadastrar múltiplos pontos: ' + d.message) }
+      }).catch(() => showNotificationPontos('danger', 'Erro ao cadastrar múltiplos pontos. Tente novamente.'))
+    })
   </script>
+
 </body>
 
 </html>
