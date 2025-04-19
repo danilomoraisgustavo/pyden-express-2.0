@@ -9655,9 +9655,6 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 
 
 // Import alunos ativos
-// ============================================================================
-//  IMPORTAÇÃO DE ALUNOS ATIVOS  (rota totalmente substituída)
-// ============================================================================
 app.post("/api/import-alunos-ativos", async (req, res) => {
   try {
     const { alunos, escolaId } = req.body;
@@ -9687,11 +9684,9 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         data_nascimento,
         latitude,
         longitude
-        /*  >>>  campo transporte_escolar_poder_publico vem no XLSX,
-                mas NÃO será usado  <<< */
       } = a;
 
-      /* ajusta tipos ------------------------------------------- */
+      /* ---------- ajustes de tipo ---------- */
       const defArray =
         typeof deficiencia === "string" && deficiencia.trim()
           ? JSON.parse(deficiencia)
@@ -9699,8 +9694,8 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
             ? deficiencia
             : null;
 
-      const latNum = latitude ? parseFloat(latitude) : null;
-      const lonNum = longitude ? parseFloat(longitude) : null;
+      const latNum = latitude !== "" && latitude != null ? Number(latitude) : null;
+      const lonNum = longitude !== "" && longitude != null ? Number(longitude) : null;
 
       await pool.query(
         `
@@ -9717,34 +9712,38 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           $13,$14,$15,$16,
           $17::text[],$18,$19,$20,
           CASE
-            WHEN $19 IS NOT NULL AND $20 IS NOT NULL
-            THEN ST_SetSRID(ST_MakePoint($20::numeric,$19::numeric),4326)
+            WHEN $21 IS NOT NULL AND $22 IS NOT NULL
+            THEN ST_SetSRID(ST_MakePoint($22,$21),4326)
             ELSE NULL
           END
         )
-        ON CONFLICT DO NOTHING
+        ON CONFLICT (id_matricula)
+        DO UPDATE SET id_pessoa = EXCLUDED.id_pessoa
+          WHERE alunos_ativos.id_pessoa IS NULL;
         `,
         [
-          id_pessoa || null,
-          id_matricula || null,
-          escolaId,
-          ANO || null,
-          MODALIDADE || null,
-          FORMATO_LETIVO || null,
-          TURMA || null,
-          pessoa_nome || null,
-          cpf || null,
-          cep || null,
-          bairro || null,
-          numero_pessoa_endereco || null,
-          filiacao_1 || null,
-          telefone_filiacao_1 || null,
-          filiacao_2 || null,
-          RESPONSAVEL || null,
-          defArray,
-          data_nascimento || null,
-          latNum,
-          lonNum
+          id_pessoa || null,            // $1
+          id_matricula || null,         // $2
+          escolaId,                     // $3
+          ANO || null,                  // $4
+          MODALIDADE || null,           // $5
+          FORMATO_LETIVO || null,       // $6
+          TURMA || null,                // $7
+          pessoa_nome || null,          // $8
+          cpf || null,                  // $9
+          cep || null,                  // $10
+          bairro || null,               // $11
+          numero_pessoa_endereco || null, // $12
+          filiacao_1 || null,           // $13
+          telefone_filiacao_1 || null,  // $14
+          filiacao_2 || null,           // $15
+          RESPONSAVEL || null,          // $16
+          defArray,                     // $17
+          data_nascimento || null,      // $18
+          latNum,                       // $19  -> coluna latitude
+          lonNum,                       // $20  -> coluna longitude
+          latNum,                       // $21  -> ST_MakePoint
+          lonNum                        // $22  -> ST_MakePoint
         ]
       );
     }
@@ -9755,9 +9754,6 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     return res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
-
-
-
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
     const params = [];
