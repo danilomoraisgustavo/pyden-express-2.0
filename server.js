@@ -9726,30 +9726,30 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           $13,$14,$15,$16,
           $17::text[],$18
         )
-        ON CONFLICT ON CONSTRAINT uq_alunos_cpf
+        ON CONFLICT (cpf)                    --  ←  aqui só muda isto
         DO UPDATE
            SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
                                     EXCLUDED.id_pessoa)
         `,
         [
-          id_pessoa || null,            // $1
-          id_matricula || null,         // $2
-          escolaId,                     // $3
-          ANO || null,                  // $4
-          MODALIDADE || null,           // $5
-          FORMATO_LETIVO || null,       // $6
-          TURMA || null,                // $7
-          pessoa_nome || null,          // $8
-          cpf || null,                  // $9
-          cep || null,                  // $10
-          bairro || null,               // $11
-          numero_pessoa_endereco || null,// $12
-          filiacao_1 || null,           // $13
-          telefone_filiacao_1 || null,  // $14
-          filiacao_2 || null,           // $15
-          RESPONSAVEL || null,          // $16
-          defArray,                     // $17
-          data_nascimento || null       // $18
+          id_pessoa || null,
+          id_matricula || null,
+          escolaId,
+          ANO || null,
+          MODALIDADE || null,
+          FORMATO_LETIVO || null,
+          TURMA || null,
+          pessoa_nome || null,
+          cpf || null,
+          cep || null,
+          bairro || null,
+          numero_pessoa_endereco || null,
+          filiacao_1 || null,
+          telefone_filiacao_1 || null,
+          filiacao_2 || null,
+          RESPONSAVEL || null,
+          defArray,
+          data_nascimento || null
         ]
       );
     }
