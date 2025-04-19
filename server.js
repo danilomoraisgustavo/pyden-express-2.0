@@ -9801,71 +9801,59 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
-    let { escola, bairro, cep, search, transporte, deficiencia, idade, turno } = req.query
-    escola = escola || ""
-    bairro = bairro || ""
-    cep = cep || ""
-    search = search || ""
-    transporte = transporte || ""
-    deficiencia = deficiencia || ""
-    idade = idade || ""
-    turno = turno || ""
+    const params = [];
+    const where = [];
+    let idx = 1;
 
-    let whereClauses = []
-
-    if (escola) {
-      whereClauses.push(`e.nome ILIKE '%${escola}%'`)
+    if (req.query.escola_id) {
+      where.push(`a.escola_id = $${idx++}`);
+      params.push(parseInt(req.query.escola_id, 10));
     }
-    if (bairro) {
-      whereClauses.push(`a.bairro ILIKE '%${bairro}%'`)
+    if (req.query.bairro) {
+      where.push(`a.bairro ILIKE $${idx++}`);
+      params.push(`%${req.query.bairro}%`);
     }
-    if (cep) {
-      whereClauses.push(`a.cep ILIKE '%${cep}%'`)
+    if (req.query.cep) {
+      where.push(`a.cep ILIKE $${idx++}`);
+      params.push(`%${req.query.cep}%`);
     }
-    if (search) {
-      whereClauses.push(`
-        (a.pessoa_nome ILIKE '%${search}%'
-         OR CAST(a.id_matricula AS TEXT) ILIKE '%${search}%'
-         OR a.cpf ILIKE '%${search}%')
-      `)
+    if (req.query.search) {
+      const s = `%${req.query.search}%`;
+      where.push(`(a.pessoa_nome ILIKE $${idx} OR CAST(a.id_matricula AS TEXT) ILIKE $${idx} OR a.cpf ILIKE $${idx})`);
+      params.push(s); idx++;
     }
-    if (transporte) {
-      whereClauses.push(`a.transporte_escolar_poder_publico ILIKE '%${transporte}%'`)
+    if (req.query.transporte) {
+      where.push(`a.transporte_escolar_poder_publico ILIKE $${idx++}`);
+      params.push(`%${req.query.transporte}%`);
     }
-    if (deficiencia === "sim") {
-      whereClauses.push(`(a.deficiencia IS NOT NULL AND array_length(a.deficiencia, 1) > 0)`)
-    } else if (deficiencia === "nao") {
-      whereClauses.push(`(a.deficiencia IS NULL OR array_length(a.deficiencia, 1) = 0)`)
+    if (req.query.deficiencia === "sim") {
+      where.push(`(a.deficiencia IS NOT NULL AND array_length(a.deficiencia,1) > 0)`);
+    } else if (req.query.deficiencia === "nao") {
+      where.push(`(a.deficiencia IS NULL OR array_length(a.deficiencia,1) = 0)`);
     }
-    if (idade) {
-      whereClauses.push(`DATE_PART('year', AGE(a.data_nascimento)) = ${idade}`)
+    if (req.query.idade) {
+      where.push(`DATE_PART('year', AGE(a.data_nascimento)) = $${idx++}`);
+      params.push(parseInt(req.query.idade, 10));
     }
-    if (turno) {
-      whereClauses.push(`a.turma ILIKE '%-${turno}'`)
+    if (req.query.turno) {
+      where.push(`a.turma ILIKE $${idx++}`);
+      params.push(`%-${req.query.turno}`);
     }
 
-    let whereStr = ""
-    if (whereClauses.length) {
-      whereStr = "WHERE " + whereClauses.join(" AND ")
-    }
-
-    const query = `
-      SELECT a.*,
-             e.nome AS escola_nome
+    const sql = `
+      SELECT a.*, e.nome AS escola_nome
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
-      ${whereStr}
+      ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY a.id DESC
-    `
-    const result = await pool.query(query)
-    return res.json(result.rows)
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao buscar alunos."
-    })
+    `;
+    const { rows } = await pool.query(sql, params);
+    res.json(rows);
+  } catch {
+    res.status(500).json({ success: false, message: "Erro ao buscar alunos." });
   }
-})
+});
+
 
 app.get("/api/alunos_ativos/:id", async (req, res) => {
   try {
