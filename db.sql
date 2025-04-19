@@ -1,241 +1,190 @@
---------------------------------------------------------------------------------
--- TABELA: zoneamentos
---------------------------------------------------------------------------------
+-- =========================================================
+-- EXTENSÕES NECESSÁRIAS
+-- =========================================================
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- =========================================================
+-- 1. ZONEAMENTOS E RELAÇÕES
+-- =========================================================
 CREATE TABLE IF NOT EXISTS zoneamentos (
-  id SERIAL PRIMARY KEY,
+  id   SERIAL PRIMARY KEY,
   nome VARCHAR(255) NOT NULL,
   lote VARCHAR(255),
   geom GEOMETRY(Polygon, 4326) NOT NULL
 );
 
---------------------------------------------------------------------------------
--- TABELA: escolas
---------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS pontos (
+  id                SERIAL PRIMARY KEY,
+  nome_ponto        VARCHAR(255) NOT NULL,
+  latitude          DOUBLE PRECISION,
+  longitude         DOUBLE PRECISION,
+  area              VARCHAR(50),
+  logradouro        VARCHAR(255),
+  numero            VARCHAR(50),
+  complemento       VARCHAR(255),
+  ponto_referencia  VARCHAR(255),
+  bairro            VARCHAR(255),
+  cep               VARCHAR(20)
+);
+
+CREATE TABLE IF NOT EXISTS pontos_zoneamentos (
+  id            SERIAL PRIMARY KEY,
+  ponto_id      INT NOT NULL REFERENCES pontos(id) ON DELETE CASCADE,
+  zoneamento_id INT NOT NULL REFERENCES zoneamentos(id) ON DELETE CASCADE
+);
+
+-- =========================================================
+-- 2. ESCOLAS
+-- =========================================================
 CREATE TABLE IF NOT EXISTS escolas (
-  id SERIAL PRIMARY KEY,
-  nome VARCHAR(255) NOT NULL,
-  codigo_inep VARCHAR(50),
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  area VARCHAR(50),
-  logradouro VARCHAR(255),
-  numero VARCHAR(50),
-  complemento VARCHAR(255),
+  id               SERIAL PRIMARY KEY,
+  nome             VARCHAR(255) NOT NULL,
+  codigo_inep      VARCHAR(50),
+  latitude         DOUBLE PRECISION,
+  longitude        DOUBLE PRECISION,
+  area             VARCHAR(50),
+  logradouro       VARCHAR(255),
+  numero           VARCHAR(50),
+  complemento      VARCHAR(255),
   ponto_referencia VARCHAR(255),
-  bairro VARCHAR(255),
-  cep VARCHAR(20),
-  regime VARCHAR(255),
-  nivel VARCHAR(255),
-  horario VARCHAR(255)
+  bairro           VARCHAR(255),
+  cep              VARCHAR(20),
+  regime           VARCHAR(255),
+  nivel            VARCHAR(255),
+  horario          VARCHAR(255)
 );
 
---------------------------------------------------------------------------------
--- RELAÇÃO: escolas_zoneamentos
---------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS escolas_zoneamentos (
-  id SERIAL PRIMARY KEY,
-  escola_id INT NOT NULL,
-  zoneamento_id INT NOT NULL,
-  FOREIGN KEY (escola_id) REFERENCES escolas(id) ON DELETE CASCADE,
-  FOREIGN KEY (zoneamento_id) REFERENCES zoneamentos(id) ON DELETE CASCADE
+  id            SERIAL PRIMARY KEY,
+  escola_id     INT NOT NULL REFERENCES escolas(id)      ON DELETE CASCADE,
+  zoneamento_id INT NOT NULL REFERENCES zoneamentos(id)  ON DELETE CASCADE
 );
 
---------------------------------------------------------------------------------
--- TABELA: fornecedores
---------------------------------------------------------------------------------
+-- =========================================================
+-- 3. FORNECEDORES, FROTA E RELAÇÕES
+-- =========================================================
 CREATE TABLE IF NOT EXISTS fornecedores (
-  id SERIAL PRIMARY KEY,
+  id              SERIAL PRIMARY KEY,
   nome_fornecedor VARCHAR(255) NOT NULL,
-  tipo_contrato VARCHAR(100),
-  cnpj VARCHAR(50),
-  contato VARCHAR(100),
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  logradouro VARCHAR(255),
-  numero VARCHAR(50),
-  complemento VARCHAR(255),
-  bairro VARCHAR(255),
-  cep VARCHAR(20)
+  tipo_contrato   VARCHAR(100),
+  cnpj            VARCHAR(50),
+  contato         VARCHAR(100),
+  latitude        DOUBLE PRECISION,
+  longitude       DOUBLE PRECISION,
+  logradouro      VARCHAR(255),
+  numero          VARCHAR(50),
+  complemento     VARCHAR(255),
+  bairro          VARCHAR(255),
+  cep             VARCHAR(20)
 );
 
---------------------------------------------------------------------------------
--- TABELA: frota
---------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS frota (
-  id SERIAL PRIMARY KEY,
-  nome_veiculo VARCHAR(255) NOT NULL,
-  placa VARCHAR(20) NOT NULL,
-  tipo_veiculo VARCHAR(100),
-  capacidade INT,
+  id               SERIAL PRIMARY KEY,
+  nome_veiculo     VARCHAR(255) NOT NULL,
+  cor_veiculo      VARCHAR(100),
+  placa            VARCHAR(20)  NOT NULL,
+  tipo_veiculo     VARCHAR(100),
+  capacidade       INT,
   latitude_garagem DOUBLE PRECISION,
   longitude_garagem DOUBLE PRECISION,
-  fornecedor_id INT,
-  documentacao VARCHAR(255),
-  licenca VARCHAR(255),
-  ano INT,
-  marca VARCHAR(100),
-  modelo VARCHAR(100),
+  fornecedor_id    INT REFERENCES fornecedores(id) ON DELETE SET NULL,
+  documentacao     VARCHAR(255),
+  licenca          VARCHAR(255),
+  ano              INT,
+  marca            VARCHAR(100),
+  modelo           VARCHAR(100),
   tipo_combustivel VARCHAR(50),
-  data_aquisicao DATE,
-  adaptado BOOLEAN DEFAULT FALSE,
-  elevador BOOLEAN DEFAULT FALSE,
-  ar_condicionado BOOLEAN DEFAULT FALSE,
-  gps BOOLEAN DEFAULT FALSE,
-  cinto_seguranca BOOLEAN DEFAULT FALSE,
-  FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) ON DELETE SET NULL
+  data_aquisicao   DATE,
+  adaptado         BOOLEAN DEFAULT FALSE,
+  elevador         BOOLEAN DEFAULT FALSE,
+  ar_condicionado  BOOLEAN DEFAULT FALSE,
+  gps              BOOLEAN DEFAULT FALSE,
+  cinto_seguranca  BOOLEAN DEFAULT FALSE
 );
 
---------------------------------------------------------------------------------
--- TABELA: monitores
---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS monitores (
-  id SERIAL PRIMARY KEY,
-  nome_monitor VARCHAR(255) NOT NULL,
-  cpf VARCHAR(50) NOT NULL,
-  fornecedor_id INT NOT NULL,
-  telefone VARCHAR(50),
-  email VARCHAR(100),
-  endereco VARCHAR(255),
-  data_admissao DATE,
-  documento_pessoal VARCHAR(255),
-  certificado_curso VARCHAR(255),
-  FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) ON DELETE CASCADE
-);
-
---------------------------------------------------------------------------------
--- TABELA: motoristas
---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS motoristas (
-  id SERIAL PRIMARY KEY,
-  nome_motorista VARCHAR(255) NOT NULL,
-  cpf VARCHAR(50) NOT NULL,
-  rg VARCHAR(50),
-  data_nascimento DATE,
-  telefone VARCHAR(50),
-  email VARCHAR(100),
-  endereco VARCHAR(255),
-  cidade VARCHAR(100),
-  estado VARCHAR(100),
-  cep VARCHAR(20),
-  numero_cnh VARCHAR(50),
-  categoria_cnh VARCHAR(10),
-  validade_cnh DATE,
-  fornecedor_id INT,
-  cnh_pdf VARCHAR(255),
-  cert_transporte_escolar VARCHAR(255),
-  cert_transporte_passageiros VARCHAR(255),
-  data_validade_transporte_escolar DATE,
-  data_validade_transporte_passageiros DATE,
-  senha VARCHAR(255),
-  FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) ON DELETE SET NULL
-);
-
---------------------------------------------------------------------------------
--- TABELA: pontos
---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS pontos (
-  id SERIAL PRIMARY KEY,
-  nome_ponto VARCHAR(255) NOT NULL,
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  area VARCHAR(50),
-  logradouro VARCHAR(255),
-  numero VARCHAR(50),
-  complemento VARCHAR(255),
-  ponto_referencia VARCHAR(255),
-  bairro VARCHAR(255),
-  cep VARCHAR(20)
-);
-
---------------------------------------------------------------------------------
--- RELAÇÃO: pontos_zoneamentos
---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS pontos_zoneamentos (
-  id SERIAL PRIMARY KEY,
-  ponto_id INT NOT NULL,
-  zoneamento_id INT NOT NULL,
-  FOREIGN KEY (ponto_id) REFERENCES pontos(id) ON DELETE CASCADE,
-  FOREIGN KEY (zoneamento_id) REFERENCES zoneamentos(id) ON DELETE CASCADE
-);
-
---------------------------------------------------------------------------------
--- TABELA: rotas_simples
---------------------------------------------------------------------------------
-CREATE TABLE rotas_simples (
-    id SERIAL PRIMARY KEY,
-    identificador VARCHAR(20) NOT NULL,
-    descricao VARCHAR(255),
-    partida_lat DOUBLE PRECISION NOT NULL,
-    partida_lng DOUBLE PRECISION NOT NULL,
-    chegada_lat DOUBLE PRECISION,
-    chegada_lng DOUBLE PRECISION,
-    area_zona VARCHAR(50),         -- <- ADICIONE ESTA LINHA
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
-
---------------------------------------------------------------------------------
--- RELAÇÃO: rotas_pontos
---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS rotas_pontos (
-  id SERIAL PRIMARY KEY,
-  rota_id INT NOT NULL,
-  ponto_id INT NOT NULL,
-  FOREIGN KEY (rota_id) REFERENCES rotas_simples(id) ON DELETE CASCADE,
-  FOREIGN KEY (ponto_id) REFERENCES pontos(id) ON DELETE CASCADE
-);
-
---------------------------------------------------------------------------------
--- RELAÇÃO: rotas_escolas
---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS rotas_escolas (
-  id SERIAL PRIMARY KEY,
-  rota_id INT NOT NULL,
-  escola_id INT NOT NULL,
-  FOREIGN KEY (rota_id) REFERENCES rotas_simples(id) ON DELETE CASCADE,
-  FOREIGN KEY (escola_id) REFERENCES escolas(id) ON DELETE CASCADE
-);
-
---------------------------------------------------------------------------------
--- RELAÇÃO: motoristas_rotas
---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS motoristas_rotas (
-  id SERIAL PRIMARY KEY,
-  motorista_id INT NOT NULL,
-  rota_id INT NOT NULL,
-  FOREIGN KEY (motorista_id) REFERENCES motoristas(id) ON DELETE CASCADE,
-  FOREIGN KEY (rota_id) REFERENCES rotas_simples(id) ON DELETE CASCADE
-);
-
---------------------------------------------------------------------------------
--- RELAÇÃO: frota_motoristas
---------------------------------------------------------------------------------
+-- veículo × motorista
 CREATE TABLE IF NOT EXISTS frota_motoristas (
-  id SERIAL PRIMARY KEY,
-  frota_id INT NOT NULL,
-  motorista_id INT NOT NULL,
-  FOREIGN KEY (frota_id) REFERENCES frota(id) ON DELETE CASCADE,
-  FOREIGN KEY (motorista_id) REFERENCES motoristas(id) ON DELETE CASCADE
+  id           SERIAL PRIMARY KEY,
+  frota_id     INT NOT NULL REFERENCES frota(id)      ON DELETE CASCADE,
+  motorista_id INT NOT NULL REFERENCES motoristas(id) ON DELETE CASCADE
 );
 
---------------------------------------------------------------------------------
--- TABELA: checklists_onibus
---------------------------------------------------------------------------------
+-- veículo × rota
+CREATE TABLE IF NOT EXISTS frota_rotas (
+  frota_id INT NOT NULL REFERENCES frota(id)          ON DELETE CASCADE,
+  rota_id  INT NOT NULL REFERENCES rotas_simples(id)  ON DELETE CASCADE,
+  PRIMARY KEY (frota_id, rota_id)
+); -- :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
+
+-- fornecedor × rota
+CREATE TABLE IF NOT EXISTS fornecedores_rotas (
+  rota_id       INT NOT NULL REFERENCES rotas_simples(id) ON DELETE CASCADE,
+  fornecedor_id INT NOT NULL REFERENCES fornecedores(id) ON DELETE CASCADE,
+  PRIMARY KEY (rota_id, fornecedor_id)
+); -- :contentReference[oaicite:2]{index=2}&#8203;:contentReference[oaicite:3]{index=3}
+
+-- =========================================================
+-- 4. MONITORES, MOTORISTAS, CHECKLISTS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS monitores (
+  id                SERIAL PRIMARY KEY,
+  nome_monitor      VARCHAR(255) NOT NULL,
+  cpf               VARCHAR(50)  NOT NULL,
+  fornecedor_id     INT NOT NULL REFERENCES fornecedores(id) ON DELETE CASCADE,
+  telefone          VARCHAR(50),
+  email             VARCHAR(100),
+  endereco          VARCHAR(255),
+  data_admissao     DATE,
+  documento_pessoal VARCHAR(255),
+  certificado_curso VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS motoristas (
+  id                                 SERIAL PRIMARY KEY,
+  nome_motorista                     VARCHAR(255) NOT NULL,
+  cpf                                VARCHAR(50)  NOT NULL,
+  rg                                 VARCHAR(50),
+  data_nascimento                    DATE,
+  telefone                           VARCHAR(50),
+  email                              VARCHAR(100),
+  endereco                           VARCHAR(255),
+  cidade                             VARCHAR(100),
+  estado                             VARCHAR(100),
+  cep                                VARCHAR(20),
+  numero_cnh                         VARCHAR(50),
+  categoria_cnh                      VARCHAR(10),
+  validade_cnh                       DATE,
+  fornecedor_id                      INT REFERENCES fornecedores(id) ON DELETE SET NULL,
+  cnh_pdf                            VARCHAR(255),
+  cert_transporte_escolar            VARCHAR(255),
+  cert_transporte_passageiros        VARCHAR(255),
+  data_validade_transporte_escolar   DATE,
+  data_validade_transporte_passageiros DATE,
+  senha                              VARCHAR(255)
+);
+
+-- monitor × rota
+CREATE TABLE IF NOT EXISTS monitores_rotas (
+  id         SERIAL PRIMARY KEY,
+  monitor_id INT NOT NULL REFERENCES monitores(id)     ON DELETE CASCADE,
+  rota_id    INT NOT NULL REFERENCES rotas_simples(id) ON DELETE CASCADE
+);
+
+-- motorista × rota
+CREATE TABLE IF NOT EXISTS motoristas_rotas (
+  id           SERIAL PRIMARY KEY,
+  motorista_id INT NOT NULL REFERENCES motoristas(id)  ON DELETE CASCADE,
+  rota_id      INT NOT NULL REFERENCES rotas_simples(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS checklists_onibus (
-  id SERIAL PRIMARY KEY,
-  motorista_id INT NOT NULL,
-  CONSTRAINT fk_motorista
-    FOREIGN KEY (motorista_id)
-    REFERENCES motoristas(id)
-    ON DELETE CASCADE,
-  frota_id INT NOT NULL,
-  CONSTRAINT fk_frota
-    FOREIGN KEY (frota_id)
-    REFERENCES frota(id)
-    ON DELETE CASCADE,
-  data_checklist DATE NOT NULL,
-  horario_saida TIME,
-  horario_retorno TIME,
+  id                 SERIAL PRIMARY KEY,
+  motorista_id       INT NOT NULL REFERENCES motoristas(id) ON DELETE CASCADE,
+  frota_id           INT NOT NULL REFERENCES frota(id)      ON DELETE CASCADE,
+  data_checklist     DATE NOT NULL,
+  horario_saida      TIME,
+  horario_retorno    TIME,
   quilometragem_final INT,
   cnh_valida BOOLEAN DEFAULT FALSE,
   crlv_atualizado BOOLEAN DEFAULT FALSE,
@@ -289,189 +238,236 @@ CREATE TABLE IF NOT EXISTS checklists_onibus (
   obs_retorno TEXT
 );
 
---------------------------------------------------------------------------------
--- RELAÇÃO: monitores_rotas
---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS monitores_rotas (
-  id SERIAL PRIMARY KEY,
-  monitor_id INT NOT NULL,
-  rota_id INT NOT NULL,
-  FOREIGN KEY (monitor_id) REFERENCES monitores(id) ON DELETE CASCADE,
-  FOREIGN KEY (rota_id) REFERENCES rotas_simples(id) ON DELETE CASCADE
+-- =========================================================
+-- 5. ROTAS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS rotas_simples (
+  id            SERIAL PRIMARY KEY,
+  identificador VARCHAR(20)  NOT NULL,
+  descricao     VARCHAR(255),
+  partida_lat   DOUBLE PRECISION NOT NULL,
+  partida_lng   DOUBLE PRECISION NOT NULL,
+  chegada_lat   DOUBLE PRECISION,
+  chegada_lng   DOUBLE PRECISION,
+  area_zona     VARCHAR(50),
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
---------------------------------------------------------------------------------
--- TABELA: cocessao_rota
---------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS rotas_pontos (
+  id       SERIAL PRIMARY KEY,
+  rota_id  INT NOT NULL REFERENCES rotas_simples(id) ON DELETE CASCADE,
+  ponto_id INT NOT NULL REFERENCES pontos(id)        ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS rotas_escolas (
+  id        SERIAL PRIMARY KEY,
+  rota_id   INT NOT NULL REFERENCES rotas_simples(id) ON DELETE CASCADE,
+  escola_id INT NOT NULL REFERENCES escolas(id)       ON DELETE CASCADE
+);
+
+-- =========================================================
+-- 6. RELATÓRIOS
+-- =========================================================
+CREATE TABLE IF NOT EXISTS relatorios_ocorrencias (
+  id            SERIAL PRIMARY KEY,
+  tipo_relatorio VARCHAR(100) NOT NULL,
+  rota_id        VARCHAR(255),
+  data_ocorrido  DATE,
+  corpo          TEXT,
+  caminho_anexo  TEXT,
+  fornecedor_id  INT REFERENCES fornecedores(id) ON DELETE SET NULL,
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+); -- :contentReference[oaicite:4]{index=4}&#8203;:contentReference[oaicite:5]{index=5}
+
+CREATE TABLE IF NOT EXISTS relatorios_gerais (
+  id            SERIAL PRIMARY KEY,
+  tipo_relatorio VARCHAR(100) NOT NULL,
+  data_relatorio DATE         NOT NULL,
+  corpo          TEXT,
+  caminho_anexo  TEXT,
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+); -- :contentReference[oaicite:6]{index=6}&#8203;:contentReference[oaicite:7]{index=7}
+
+-- =========================================================
+-- 7. USUÁRIOS, SESSÕES E PERMISSÕES
+-- =========================================================
+CREATE TABLE IF NOT EXISTS usuarios (
+  id                       SERIAL PRIMARY KEY,
+  nome_completo            VARCHAR(255) NOT NULL,
+  cpf                      VARCHAR(14),
+  cnpj                     VARCHAR(18),
+  telefone                 VARCHAR(20) NOT NULL,
+  email                    VARCHAR(100) NOT NULL,
+  senha                    VARCHAR(255) NOT NULL,
+  init                     BOOLEAN DEFAULT FALSE,
+  permissoes               TEXT,
+  rg                       VARCHAR(20),
+  endereco                 VARCHAR(255),
+  cidade                   VARCHAR(100),
+  estado                   VARCHAR(100),
+  cep                      VARCHAR(20),
+  foto_perfil              VARCHAR(255),
+  pergunta_seguranca       VARCHAR(255),
+  autenticacao_dois_fatores VARCHAR(50),
+  tema_preferido           VARCHAR(50),
+  notificacoes_email       VARCHAR(50),
+  linguagem_preferida      VARCHAR(10)
+);
+
+-- vínculo de usuário a fornecedor (1‑para‑1)
+CREATE TABLE IF NOT EXISTS usuario_fornecedor (
+  usuario_id    INT PRIMARY KEY REFERENCES usuarios(id)     ON DELETE CASCADE,
+  fornecedor_id INT NOT NULL   REFERENCES fornecedores(id)  ON DELETE CASCADE
+); -- :contentReference[oaicite:8]{index=8}&#8203;:contentReference[oaicite:9]{index=9}
+
+-- sessões express‑session
+CREATE TABLE IF NOT EXISTS session (
+  sid    VARCHAR NOT NULL PRIMARY KEY,
+  sess   JSON    NOT NULL,
+  expire TIMESTAMP(6) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS session_expire_idx ON session(expire);
+
+-- =========================================================
+-- 8. NOTIFICAÇÕES
+-- =========================================================
+CREATE TABLE IF NOT EXISTS notificacoes (
+  id          SERIAL PRIMARY KEY,
+  user_id     INT REFERENCES usuarios(id) ON DELETE SET NULL,
+  acao        VARCHAR(50),
+  tabela      VARCHAR(50),
+  registro_id INT,
+  mensagem    TEXT,
+  datahora    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  is_read     BOOLEAN DEFAULT FALSE
+);
+
+-- =========================================================
+-- 9. DEMAIS TABELAS DE NEGÓCIO JÁ EXISTENTES
+-- =========================================================
 CREATE TABLE IF NOT EXISTS cocessao_rota (
-  id SERIAL PRIMARY KEY,
-  nome_responsavel VARCHAR(200) NOT NULL,
-  cpf_responsavel VARCHAR(20) NOT NULL,
-  celular_responsavel VARCHAR(20) NOT NULL,
-  id_matricula_aluno VARCHAR(50) NOT NULL,
-  escola_id INT NOT NULL,
-  cep VARCHAR(10) NOT NULL,
-  numero VARCHAR(20) NOT NULL,
-  endereco VARCHAR(255),
-  zoneamento BOOLEAN NOT NULL,
-  deficiencia BOOLEAN NOT NULL,
-  laudo_deficiencia_path TEXT,
-  comprovante_endereco_path TEXT,
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  observacoes TEXT,
-  criterio_direito TEXT,
-  status VARCHAR(50) NOT NULL DEFAULT 'pendente',
-  created_at TIMESTAMP DEFAULT NOW()
+  id                         SERIAL PRIMARY KEY,
+  nome_responsavel           VARCHAR(200) NOT NULL,
+  cpf_responsavel            VARCHAR(20)  NOT NULL,
+  celular_responsavel        VARCHAR(20)  NOT NULL,
+  id_matricula_aluno         VARCHAR(50)  NOT NULL,
+  escola_id                  INT NOT NULL,
+  cep                        VARCHAR(10)  NOT NULL,
+  numero                     VARCHAR(20)  NOT NULL,
+  endereco                   VARCHAR(255),
+  zoneamento                 BOOLEAN NOT NULL,
+  deficiencia                BOOLEAN NOT NULL,
+  laudo_deficiencia_path     TEXT,
+  comprovante_endereco_path  TEXT,
+  latitude                   DOUBLE PRECISION,
+  longitude                  DOUBLE PRECISION,
+  observacoes                TEXT,
+  criterio_direito           TEXT,
+  status                     VARCHAR(50) NOT NULL DEFAULT 'pendente',
+  created_at                 TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS memorandos (
-  id SERIAL PRIMARY KEY,
-  tipo_memorando VARCHAR(100) NOT NULL,
-  data_emissao DATE NOT NULL,
-  assunto VARCHAR(250) NOT NULL,
-  setor_origem VARCHAR(150) NOT NULL,
+  id                SERIAL PRIMARY KEY,
+  tipo_memorando    VARCHAR(100) NOT NULL,
+  data_emissao      DATE NOT NULL,
+  assunto           VARCHAR(250) NOT NULL,
+  setor_origem      VARCHAR(150) NOT NULL,
   destino_transporte VARCHAR(150),
-  data_transporte DATE,
+  data_transporte   DATE,
   quantidade_pessoas INT,
   funcionario_responsavel VARCHAR(150),
-  valor_diaria VARCHAR(50),
-  motivo_diaria VARCHAR(250),
-  placa_veiculo VARCHAR(50),
+  valor_diaria      VARCHAR(50),
+  motivo_diaria     VARCHAR(250),
+  placa_veiculo     VARCHAR(50),
   descricao_problema VARCHAR(250),
-  tipo_combustivel VARCHAR(50),
+  tipo_combustivel  VARCHAR(50),
   quantidade_litros INT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
--- Atualização da estrutura da tabela (incluindo a nova coluna numero_pessoa_endereco)
 
 CREATE TABLE IF NOT EXISTS alunos_ativos (
-    id SERIAL PRIMARY KEY,
-    id_matricula INTEGER,
-    escola_id INTEGER REFERENCES escolas(id),
-    ano INTEGER,
-    modalidade VARCHAR(255),
-    formato_letivo VARCHAR(255),
-    turma VARCHAR(255),
-    pessoa_nome VARCHAR(255),
-    cpf VARCHAR(50),
+    id                          SERIAL PRIMARY KEY,
+    -- NOVO CAMPO ..............................
+    id_pessoa                   VARCHAR(50),
+
+    id_matricula                INT,
+    escola_id                   INT REFERENCES escolas(id),
+    ano                         INT,
+    modalidade                  VARCHAR(255),
+    formato_letivo              VARCHAR(255),
+    turma                       VARCHAR(255),
+    pessoa_nome                 VARCHAR(255),
+    cpf                         VARCHAR(50),
     transporte_escolar_poder_publico VARCHAR(255),
-    cep VARCHAR(50),
-    rua VARCHAR(255),
-    bairro VARCHAR(255),
-    numero_pessoa_endereco VARCHAR(50),
-    filiacao_1 VARCHAR(255),
-    numero_telefone VARCHAR(50),
-    filiacao_2 VARCHAR(255),
-    responsavel VARCHAR(255),
-    deficiencia TEXT[],
-    data_nascimento DATE,
-    longitude NUMERIC(9,6),
-    latitude NUMERIC(9,6)
+    cep                         VARCHAR(50),
+    rua                         VARCHAR(255),
+    bairro                      VARCHAR(255),
+    numero_pessoa_endereco      VARCHAR(50),
+    filiacao_1                  VARCHAR(255),
+    numero_telefone             VARCHAR(50),
+    filiacao_2                  VARCHAR(255),
+    responsavel                 VARCHAR(255),
+    deficiencia                 TEXT[],
+    data_nascimento             DATE,
+    longitude                   NUMERIC(9,6),
+    latitude                    NUMERIC(9,6),
+
+    --------------------------------------------------------
+    -- Garantias de unicidade (ignoram valores nulos/vazios)
+    --------------------------------------------------------
+    CONSTRAINT uq_alunos_id_pessoa    UNIQUE (id_pessoa)
+        DEFERRABLE INITIALLY IMMEDIATE,
+    CONSTRAINT uq_alunos_id_matricula UNIQUE (id_matricula)
+        DEFERRABLE INITIALLY IMMEDIATE,
+    CONSTRAINT uq_alunos_cpf          UNIQUE (cpf)
+        DEFERRABLE INITIALLY IMMEDIATE
 );
 
--- CRIAÇÃO DA TABELA alunos_ativos_estadual
+
 CREATE TABLE IF NOT EXISTS alunos_ativos_estadual (
-    id SERIAL PRIMARY KEY,
-    id_matricula VARCHAR(50),
-    pessoa_nome VARCHAR(255) NOT NULL,
-    escola_id INTEGER REFERENCES escolas(id),
-    turma VARCHAR(255),
-    turno VARCHAR(255),
-    cpf VARCHAR(50),
-    cep VARCHAR(50),
-    rua VARCHAR(255),
-    bairro VARCHAR(255),
-    numero_pessoa_endereco VARCHAR(50),
-    numero_telefone VARCHAR(50),
-    filiacao_1 VARCHAR(255),
-    filiacao_2 VARCHAR(255),
-    responsavel VARCHAR(255),
-    deficiencia TEXT[],
-    latitude NUMERIC(9,6),
-    longitude NUMERIC(9,6),
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+  id                       SERIAL PRIMARY KEY,
+  id_matricula             VARCHAR(50),
+  pessoa_nome              VARCHAR(255) NOT NULL,
+  escola_id                INT REFERENCES escolas(id),
+  turma                    VARCHAR(255),
+  turno                    VARCHAR(255),
+  cpf                      VARCHAR(50),
+  cep                      VARCHAR(50),
+  rua                      VARCHAR(255),
+  bairro                   VARCHAR(255),
+  numero_pessoa_endereco   VARCHAR(50),
+  numero_telefone          VARCHAR(50),
+  filiacao_1               VARCHAR(255),
+  filiacao_2               VARCHAR(255),
+  responsavel              VARCHAR(255),
+  deficiencia              TEXT[],
+  latitude                 NUMERIC(9,6),
+  longitude                NUMERIC(9,6),
+  created_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-
--- ==========================================
--- CRIAÇÃO DA TABELA "usuarios"
--- ==========================================
-CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    nome_completo VARCHAR(255) NOT NULL,
-    cpf VARCHAR(14),                   -- Ex: 000.000.000-00
-    cnpj VARCHAR(18),                  -- Ex: 00.000.000/0000-00
-    telefone VARCHAR(20) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    init BOOLEAN DEFAULT FALSE,        -- Indica se o usuário está ativo/liberado
-    permissoes TEXT,                   -- Lista de permissões em formato de texto (JSON ou CSV)
-    rg VARCHAR(20),                    -- Documento adicional (RG, etc.)
-    endereco VARCHAR(255),
-    cidade VARCHAR(100),
-    estado VARCHAR(100),
-    cep VARCHAR(20),
-    foto_perfil VARCHAR(255),         -- Caminho ou URL da foto do perfil
-    pergunta_seguranca VARCHAR(255),
-    autenticacao_dois_fatores VARCHAR(50),  -- Ex: "off", "sms", "email", "app"
-    tema_preferido VARCHAR(50),       -- Ex: "claro" ou "escuro"
-    notificacoes_email VARCHAR(50),    -- Ex: "todas", "media", "importantes", "nenhuma"
-    linguagem_preferida VARCHAR(10)    -- Ex: "pt-br", "en", "es"
-);
-
-
--- (Opcional) criar índice único para não permitir emails duplicados:
--- CREATE UNIQUE INDEX
-
-CREATE TABLE IF NOT EXISTS session (
-  sid varchar NOT NULL COLLATE "default",
-  sess json NOT NULL,
-  expire timestamp(6) NOT NULL,
-  CONSTRAINT session_pkey PRIMARY KEY (sid)
-);
-CREATE INDEX ON session (expire);
-
-
-CREATE TABLE IF NOT EXISTS notificacoes (
-    id SERIAL PRIMARY KEY,
-    user_id INT,                 -- Quem realizou a ação (FK p/ usuarios.id)
-    acao VARCHAR(50),            -- Ex: "CREATE", "DELETE", "UPDATE"
-    tabela VARCHAR(50),          -- Ex: "zoneamentos", "escolas", etc.
-    registro_id INT,             -- ID do registro afetado
-    mensagem TEXT,               -- Texto descritivo do que ocorreu
-    datahora TIMESTAMP DEFAULT NOW(),
-    is_read BOOLEAN DEFAULT FALSE
-);
-
--- Exemplo de criação da tabela "reavaliacoes" para armazenar os dados das situações atenuantes:
--- Ajuste conforme sua modelagem e campos já existentes.
 
 CREATE TABLE IF NOT EXISTS reavaliacoes (
-  id SERIAL PRIMARY KEY,
-  aluno_id INT NOT NULL,
-  tipo_fluxo VARCHAR(50) NOT NULL,
-  data_solicitacao TIMESTAMP DEFAULT NOW(),
-  nome_aluno TEXT,
-  cpf_aluno TEXT,
-  responsavel_aluno TEXT,
-  latitude NUMERIC(9,6),
-  longitude NUMERIC(9,6),
-  calcadas_ausentes BOOLEAN DEFAULT false,
-  pavimentacao_ausente BOOLEAN DEFAULT false,
-  iluminacao_precaria BOOLEAN DEFAULT false,
-  area_de_risco BOOLEAN DEFAULT false,
-  animais_perigosos BOOLEAN DEFAULT false,
-  status_reavaliacao VARCHAR(50) DEFAULT 'PENDENTE'
+  id                         SERIAL PRIMARY KEY,
+  aluno_id                   INT NOT NULL,
+  tipo_fluxo                 VARCHAR(50) NOT NULL,
+  data_solicitacao           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  nome_aluno                 TEXT,
+  cpf_aluno                  TEXT,
+  responsavel_aluno          TEXT,
+  latitude                   NUMERIC(9,6),
+  longitude                  NUMERIC(9,6),
+  calcadas_ausentes          BOOLEAN DEFAULT FALSE,
+  pavimentacao_ausente       BOOLEAN DEFAULT FALSE,
+  iluminacao_precaria        BOOLEAN DEFAULT FALSE,
+  area_de_risco              BOOLEAN DEFAULT FALSE,
+  animais_perigosos          BOOLEAN DEFAULT FALSE,
+  status_reavaliacao         VARCHAR(50) DEFAULT 'PENDENTE'
 );
-
--- Caso queira criar índice para aluno_id, por exemplo:
 CREATE INDEX IF NOT EXISTS idx_reavaliacoes_aluno_id ON reavaliacoes(aluno_id);
-
-
 
 -- ==========================================
 -- CONEXÃO COM O BANCO DE DADOS VIA PSQL

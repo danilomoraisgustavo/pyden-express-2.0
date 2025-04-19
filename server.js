@@ -6597,9 +6597,6 @@ app.get("/api/alunos_ativos", async (req, res) => {
   }
 });
 
-
-// 2) Rota para buscar as coordenadas de uma escola por NOME
-// ROTA ATUALIZADA PARA EXIBIR O ZONEAMENTO DE FORMA PARECIDA COM /api/zoneamentos
 app.get("/api/escola-coordenadas", async (req, res) => {
   try {
     const { nome_escola } = req.query;
@@ -6981,11 +6978,6 @@ app.delete("/api/cocessao-rota/:id", async (req, res) => {
   }
 });
 
-// ====================================================================================
-// MEMORANDOS
-// ====================================================================================
-
-// app.get("/api/memorandos", ...) ...
 app.get("/api/memorandos", async (req, res) => {
   try {
     const result = await pool.query(
@@ -7593,8 +7585,6 @@ app.post('/api/reavaliacoes', async (req, res) => {
       animais_perigosos
     } = req.body;
 
-    // Exemplo de insert no Postgres usando pool (ajuste conforme seu código):
-    // Usando async/await (com pool.query)
     const query = `
       INSERT INTO reavaliacoes (
         aluno_id,
@@ -7635,12 +7625,7 @@ app.post('/api/reavaliacoes', async (req, res) => {
     return res.status(500).json({ message: 'Erro interno ao salvar reavaliação.' });
   }
 });
-// Exemplo de endpoint para buscar todas as reavaliações
-// Ajuste nomes de campos/tabelas conforme seu banco de dados e estrutura
-// Exemplo de endpoints para aprovar/reprovar a reavaliação
 
-// Aprovar - muda status_reavaliacao para 'APROVADO',
-// atualiza alunos_ativos transporte_escolar_poder_publico = 'MUNICIPAL'
 app.post("/api/reavaliacoes/:id/aprovar", async (req, res) => {
   try {
     const { id } = req.params;
@@ -7787,8 +7772,6 @@ app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
     }
     const aluno = resultAluno.rows[0];
 
-    // Consulta da reavaliação mais recente do aluno
-    // (ajuste conforme a forma que você armazena; ex: pega a última reavaliação via ORDER BY id DESC)
     const queryReavaliacao = `
       SELECT
         id AS reavaliacao_id,
@@ -7965,10 +7948,6 @@ app.get("/api/comprovante-reavaliacao/:alunoId/gerar-pdf", async (req, res) => {
     });
   }
 });
-
-// ============================================================================
-// COMPROVANTE NÃO APROVADO - MUNICIPAL
-// ============================================================================
 app.get("/api/comprovante-nao-aprovado/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
   // Recebe quem assina pelo query param (opcional)
@@ -8629,9 +8608,6 @@ app.get("/api/comprovante-aprovado-estadual/:alunoId/gerar-pdf", async (req, res
   }
 });
 
-// ============================================================================
-// COMPROVANTE NÃO APROVADO - ESTADUAL
-// ============================================================================
 app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req, res) => {
   const { alunoId } = req.params;
   const signer = req.query.signer || "filiacao1";
@@ -8785,10 +8761,6 @@ app.get("/api/comprovante-nao-aprovado-estadual/:alunoId/gerar-pdf", async (req,
   }
 });
 
-
-// ============================================================================
-// TERMO DE CADASTRO (MUNICIPAL) COM ESCOLHA DE FILIAÇÃO
-// ============================================================================
 app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   const signer = req.query.signer || "filiacao1";
@@ -8966,11 +8938,6 @@ app.get("/api/termo-cadastro/:id/gerar-pdf", async (req, res) => {
   }
 });
 
-
-// ============================================================================
-// TERMO DE DESEMBARQUE (MUNICIPAL) - MANTÉM COMO ESTAVA
-// ============================================================================
-
 app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   // Capturamos o 'signer' da query string. Se não vier nada, definimos como 'responsavel'.
@@ -9124,9 +9091,6 @@ app.get("/api/termo-desembarque/:id/gerar-pdf", async (req, res) => {
   }
 });
 
-// ============================================================================
-// TERMO DE AUTORIZAÇÃO DE OUTROS RESPONSÁVEIS (MUNICIPAL)
-// ============================================================================
 app.get("/api/termo-autorizacao-outros-responsaveis/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   const signer = req.query.signer || "filiacao1";
@@ -9365,10 +9329,6 @@ app.post("/api/outros-responsaveis", async (req, res) => {
   }
 });
 
-
-// ============================================================================
-// TERMO DE DESEMBARQUE - ESTADUAL (se desejar ter outro endpoint para estadual)
-// ============================================================================
 app.get("/api/termo-desembarque-estadual/:id/gerar-pdf", async (req, res) => {
   const { id } = req.params;
   try {
@@ -9501,8 +9461,6 @@ app.get("/api/termo-desembarque-estadual/:id/gerar-pdf", async (req, res) => {
   }
 });
 
-// Rota para listar todas as solicitações de transporte
-// Rota atualizada para retornar todos os dados necessários do aluno e substituir o ID do aluno pelo ID de matrícula
 app.get("/api/solicitacoes-transporte", async (req, res) => {
   try {
     const query = `
@@ -9566,8 +9524,6 @@ app.get("/api/solicitacoes-transporte", async (req, res) => {
   }
 });
 
-
-// Exemplo de atualização na rota /api/solicitacoes-transporte-especial para trazer dados do aluno_ativo
 app.get("/api/solicitacoes-transporte-especial", async (req, res) => {
   try {
     const query = `
@@ -9679,7 +9635,7 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
       protocoloGerado,
       aluno_id,
       status,
-      motivo || null,                       // caso o motivo não venha preenchido
+      motivo || null,
       tipo_fluxo,
       menor10_acompanhado,
       JSON.stringify(responsaveis_extras || []),
@@ -9699,6 +9655,9 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 
 
 // Import alunos ativos
+// ============================================================================
+//  IMPORTAÇÃO DE ALUNOS ATIVOS  (rota totalmente substituída)
+// ============================================================================
 app.post("/api/import-alunos-ativos", async (req, res) => {
   try {
     const { alunos, escolaId } = req.body;
@@ -9706,26 +9665,21 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       return res.json({ success: false, message: "Dados inválidos." });
     }
     if (!escolaId) {
-      return res.json({
-        success: false,
-        message: "É necessário informar uma escola.",
-      });
+      return res.json({ success: false, message: "É necessário informar uma escola." });
     }
 
     const userId = req.session?.userId || null;
 
-    const buscaEscola = await pool.query(
-      `SELECT id FROM escolas WHERE id = $1`,
-      [escolaId]
-    );
-    if (buscaEscola.rows.length === 0) {
+    // valida existência da escola
+    const escolaCheck = await pool.query("SELECT id FROM escolas WHERE id = $1", [escolaId]);
+    if (escolaCheck.rowCount === 0) {
       return res.json({ success: false, message: "Escola não encontrada." });
     }
 
     for (const aluno of alunos) {
       const {
+        id_pessoa,
         id_matricula,
-        UNIDADE_ENSINO,
         ANO,
         MODALIDADE,
         FORMATO_LETIVO,
@@ -9743,102 +9697,101 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         data_nascimento
       } = aluno;
 
-      let defArray = [];
+      // converte deficiência p/ array‑PG
+      let defArray = null;
       try {
-        if (typeof deficiencia === "string") {
+        if (Array.isArray(deficiencia)) {
+          defArray = deficiencia.length ? deficiencia : null;
+        } else if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
           defArray = JSON.parse(deficiencia);
-          if (!Array.isArray(defArray)) defArray = [];
+          if (!Array.isArray(defArray) || defArray.length === 0) defArray = null;
         }
-      } catch {
-        defArray = [];
+      } catch { defArray = null; }
+
+      //----------------------------------------------------------------------
+      //  A) verifica duplicação em qualquer uma das três chaves lógicas
+      //----------------------------------------------------------------------
+      const dup = await pool.query(`
+        SELECT id, id_pessoa
+          FROM alunos_ativos
+         WHERE (id_pessoa   = $1 AND $1 IS NOT NULL)
+            OR (id_matricula = $2 AND $2 IS NOT NULL)
+            OR (cpf          = $3 AND $3 <> '')
+         LIMIT 1
+      `, [id_pessoa || null, id_matricula || null, cpf || null]);
+
+      if (dup.rowCount > 0) {
+        // B) se já existe mas id_pessoa ainda é NULL, apenas atualiza esse campo
+        if (!dup.rows[0].id_pessoa && id_pessoa) {
+          await pool.query(
+            "UPDATE alunos_ativos SET id_pessoa = $1 WHERE id = $2",
+            [id_pessoa, dup.rows[0].id]
+          );
+        }
+        continue; // não insere nova linha
       }
 
-      let alreadyExists = false;
-      if (cpf) {
-        const check = await pool.query(
-          `SELECT id FROM alunos_ativos 
-           WHERE (cpf = $1 AND cpf <> '')
-              OR (id_matricula = $2 AND id_matricula IS NOT NULL)`,
-          [cpf, id_matricula]
-        );
-        if (check.rows.length > 0) {
-          alreadyExists = true;
-        }
-      } else if (id_matricula) {
-        const check = await pool.query(
-          `SELECT id FROM alunos_ativos 
-           WHERE id_matricula = $1 AND id_matricula IS NOT NULL`,
-          [id_matricula]
-        );
-        if (check.rows.length > 0) {
-          alreadyExists = true;
-        }
-      }
-
-      if (alreadyExists) {
-        continue;
-      }
-
-      await pool.query(
-        `INSERT INTO alunos_ativos(
-            id_matricula,
-            escola_id,
-            ano,
-            modalidade,
-            formato_letivo,
-            turma,
-            pessoa_nome,
-            cpf,
-            transporte_escolar_poder_publico,
-            cep,
-            bairro,
-            numero_pessoa_endereco,
-            filiacao_1,
-            numero_telefone,
-            filiacao_2,
-            responsavel,
-            deficiencia,
-            data_nascimento
-         )
-         VALUES (
-            $1,  $2,  $3,  $4,  $5,
-            $6,  $7,  $8,  null, $9,
-            $10, $11, $12, $13, $14,
-            $15, $16, $17
-         )`,
-        [
-          id_matricula || null,
-          escolaId,
-          ANO || null,
-          MODALIDADE || null,
-          FORMATO_LETIVO || null,
-          TURMA || null,
-          pessoa_nome || null,
-          cpf || null,
-          cep || null,
-          bairro || null,
-          numero_pessoa_endereco || null,
-          filiacao_1 || null,
-          numero_telefone || null,
-          filiacao_2 || null,
-          RESPONSAVEL || null,
-          defArray,
-          data_nascimento || null
-        ]
-      );
+      //----------------------------------------------------------------------
+      //  C) insere aluno novo
+      //----------------------------------------------------------------------
+      await pool.query(`
+        INSERT INTO alunos_ativos (
+          id_pessoa,
+          id_matricula,
+          escola_id,
+          ano,
+          modalidade,
+          formato_letivo,
+          turma,
+          pessoa_nome,
+          cpf,
+          transporte_escolar_poder_publico,
+          cep,
+          bairro,
+          numero_pessoa_endereco,
+          filiacao_1,
+          numero_telefone,
+          filiacao_2,
+          responsavel,
+          deficiencia,
+          data_nascimento
+        ) VALUES (
+          $1, $2, $3, $4, $5,
+          $6, $7, $8, $9, null,
+          $10, $11, $12, $13, $14,
+          $15, $16, $17, $18
+        )
+      `, [
+        id_pessoa || null,
+        id_matricula || null,
+        escolaId,
+        ANO || null,
+        MODALIDADE || null,
+        FORMATO_LETIVO || null,
+        TURMA || null,
+        pessoa_nome || null,
+        cpf || null,
+        cep || null,
+        bairro || null,
+        numero_pessoa_endereco || null,
+        filiacao_1 || null,
+        numero_telefone || null,
+        filiacao_2 || null,
+        RESPONSAVEL || null,
+        defArray,
+        data_nascimento || null
+      ]);
     }
 
-    const mensagem = `Importados alunos para a escola ID ${escolaId}`;
-    await pool.query(
-      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-       VALUES ($1, 'CREATE', 'alunos_ativos', 0, $2)`,
-      [userId, mensagem]
-    );
+    // notificação
+    await pool.query(`
+      INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+      VALUES ($1, 'CREATE', 'alunos_ativos', 0,
+              'Importação de alunos para a escola ID ${escolaId}')
+    `, [userId]);
 
-    return res.json({
-      success: true,
-      message: "Alunos importados com sucesso!",
-    });
+    return res.json({ success: true, message: "Alunos importados com sucesso!" });
+
   } catch (err) {
     console.error(err);
     return res.json({ success: false, message: "Erro ao importar os alunos." });
@@ -9846,8 +9799,6 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 });
 
 
-
-// Rotas (exemplo) - Ajustando para permitir filtros na query
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
     let { escola, bairro, cep, search, transporte, deficiencia, idade, turno } = req.query
@@ -9916,7 +9867,6 @@ app.get("/api/alunos-ativos", async (req, res) => {
   }
 })
 
-// Observe que aqui estou usando "/api/alunos_ativos/:id" (com underscore)
 app.get("/api/alunos_ativos/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -9967,10 +9917,6 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
     });
   }
 });
-
-// PUT /api/alunos-recadastro/:id
-// Exemplo de ajuste para evitar erro de array malformado quando o valor for "NADA INFORMADO":
-// Dentro do PUT /api/alunos-recadastro/:id
 
 app.put("/api/alunos-recadastro/:id", async (req, res) => {
   try {
@@ -10033,11 +9979,6 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
   }
 });
 
-
-/***************************************************************
- * POST /api/alunos-ativos-estadual
- * Cria um novo aluno estadual na tabela alunos_ativos_estadual
- ***************************************************************/
 app.post("/api/alunos-ativos-estadual", async (req, res) => {
   try {
     const {
@@ -10066,10 +10007,6 @@ app.post("/api/alunos-ativos-estadual", async (req, res) => {
         message: "O campo 'pessoa_nome' é obrigatório."
       });
     }
-
-    // Para o campo deficiencia do tipo TEXT[] em PostgreSQL, 
-    // basta enviar como array no body. Ex: deficiencia: ["auditiva", "visual"]
-    // Se preferir armazenar como string, seria necessária conversão (mas aqui vamos armazenar nativo em array).
 
     const insertSQL = `
       INSERT INTO alunos_ativos_estadual (
@@ -10132,11 +10069,6 @@ app.post("/api/alunos-ativos-estadual", async (req, res) => {
   }
 });
 
-
-/***************************************************************
- * PUT /api/alunos-ativos-estadual/:id
- * Atualiza os dados de um aluno estadual já existente
- ***************************************************************/
 app.put("/api/alunos-ativos-estadual/:id", async (req, res) => {
   try {
     const alunoId = req.params.id;
