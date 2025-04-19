@@ -9654,9 +9654,6 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 });
 
 
-/* =======================================================================
-   POST /api/import-alunos-ativos
-   ======================================================================= */
 app.post("/api/import-alunos-ativos", async (req, res) => {
   try {
     const { alunos, escolaId } = req.body;
@@ -9684,11 +9681,9 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         RESPONSAVEL,
         deficiencia,
         data_nascimento
-        /* latitude / longitude presentes no XLSX? 
-           → simplesmente ignoramos aqui */
       } = a;
 
-      /* converte JSON de deficiências (se existir) -------------------- */
+      /* trata array de deficiências */
       const defArray =
         typeof deficiencia === "string" && deficiencia.trim()
           ? JSON.parse(deficiencia)
@@ -9698,23 +9693,31 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 
       await pool.query(
         `
-          INSERT INTO alunos_ativos (
-            id_pessoa, id_matricula, escola_id, ano, modalidade,
-            formato_letivo, turma, pessoa_nome, cpf,
-            cep, bairro, numero_pessoa_endereco,
-            filiacao_1, numero_telefone, filiacao_2, responsavel,
-            deficiencia, data_nascimento          -- geom / lat / lon ficam NULL
-          ) VALUES (
-            $1,$2,$3,$4,$5,
-            $6,$7,$8,$9,
-            $10,$11,$12,
-            $13,$14,$15,$16,
-            $17::text[], $18
-          )
-          ON CONFLICT (id_matricula)
-          DO UPDATE SET id_pessoa = EXCLUDED.id_pessoa
-            WHERE alunos_ativos.id_pessoa IS NULL;
-          `,
+        INSERT INTO alunos_ativos (
+          id_pessoa, id_matricula, escola_id, ano, modalidade,
+          formato_letivo, turma, pessoa_nome, cpf,
+          cep, bairro, numero_pessoa_endereco,
+          filiacao_1, numero_telefone, filiacao_2, responsavel,
+          deficiencia, data_nascimento
+        ) VALUES (
+          $1,$2,$3,$4,$5,
+          $6,$7,$8,$9,
+          $10,$11,$12,
+          $13,$14,$15,$16,
+          $17::text[],$18
+        )
+        /* 1️⃣  Se conflitar NO CPF              ------------------------ */
+        ON CONFLICT ON CONSTRAINT uq_alunos_cpf
+        DO UPDATE
+           SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
+                                    EXCLUDED.id_pessoa)
+        /* 2️⃣  Se não conflitar no CPF mas conflitar NA MATRÍCULA ----- */
+        /*    (só acontece quando CPF é novo mas matrícula já existe)    */
+        ON CONFLICT ON CONSTRAINT uq_alunos_id_matricula
+        DO UPDATE
+           SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
+                                    EXCLUDED.id_pessoa);
+        `,
         [
           id_pessoa || null,            // $1
           id_matricula || null,         // $2
@@ -9727,7 +9730,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           cpf || null,                  // $9
           cep || null,                  // $10
           bairro || null,               // $11
-          numero_pessoa_endereco || null, // $12
+          numero_pessoa_endereco || null,// $12
           filiacao_1 || null,           // $13
           telefone_filiacao_1 || null,  // $14
           filiacao_2 || null,           // $15
@@ -9744,6 +9747,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     return res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
+
 
 app.get("/api/alunos-ativos", async (req, res) => {
   try {
