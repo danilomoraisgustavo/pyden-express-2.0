@@ -9661,22 +9661,11 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 app.post("/api/import-alunos-ativos", async (req, res) => {
   try {
     const { alunos, escolaId } = req.body;
-    if (!alunos || !Array.isArray(alunos)) {
+    if (!Array.isArray(alunos) || !escolaId) {
       return res.json({ success: false, message: "Dados inválidos." });
     }
-    if (!escolaId) {
-      return res.json({ success: false, message: "É necessário informar uma escola." });
-    }
 
-    const userId = req.session?.userId || null;
-
-    // valida existência da escola
-    const escolaCheck = await pool.query("SELECT id FROM escolas WHERE id = $1", [escolaId]);
-    if (escolaCheck.rowCount === 0) {
-      return res.json({ success: false, message: "Escola não encontrada." });
-    }
-
-    for (const aluno of alunos) {
+    for (const a of alunos) {
       const {
         id_pessoa,
         id_matricula,
@@ -9694,107 +9683,66 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         filiacao_2,
         RESPONSAVEL,
         deficiencia,
-        data_nascimento
-      } = aluno;
+        data_nascimento,
+        latitude,
+        longitude
+      } = a;
 
-      // converte deficiência p/ array‑PG
-      let defArray = null;
-      try {
-        if (Array.isArray(deficiencia)) {
-          defArray = deficiencia.length ? deficiencia : null;
-        } else if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
-          defArray = JSON.parse(deficiencia);
-          if (!Array.isArray(defArray) || defArray.length === 0) defArray = null;
-        }
-      } catch { defArray = null; }
+      const defArray =
+        typeof deficiencia === "string" && deficiencia.trim()
+          ? JSON.parse(deficiencia)
+          : Array.isArray(deficiencia)
+            ? deficiencia
+            : null;
 
-      //----------------------------------------------------------------------
-      //  A) verifica duplicação em qualquer uma das três chaves lógicas
-      //----------------------------------------------------------------------
-      const dup = await pool.query(`
-        SELECT id, id_pessoa
-          FROM alunos_ativos
-         WHERE (id_pessoa   = $1 AND $1 IS NOT NULL)
-            OR (id_matricula = $2 AND $2 IS NOT NULL)
-            OR (cpf          = $3 AND $3 <> '')
-         LIMIT 1
-      `, [id_pessoa || null, id_matricula || null, cpf || null]);
-
-      if (dup.rowCount > 0) {
-        // B) se já existe mas id_pessoa ainda é NULL, apenas atualiza esse campo
-        if (!dup.rows[0].id_pessoa && id_pessoa) {
-          await pool.query(
-            "UPDATE alunos_ativos SET id_pessoa = $1 WHERE id = $2",
-            [id_pessoa, dup.rows[0].id]
-          );
-        }
-        continue; // não insere nova linha
-      }
-
-      //----------------------------------------------------------------------
-      //  C) insere aluno novo
-      //----------------------------------------------------------------------
-      await pool.query(`
-        INSERT INTO alunos_ativos (
-          id_pessoa,
-          id_matricula,
-          escola_id,
-          ano,
-          modalidade,
-          formato_letivo,
-          turma,
-          pessoa_nome,
-          cpf,
-          transporte_escolar_poder_publico,
-          cep,
-          bairro,
-          numero_pessoa_endereco,
-          filiacao_1,
-          numero_telefone,
-          filiacao_2,
-          responsavel,
-          deficiencia,
-          data_nascimento
-        ) VALUES (
-          $1, $2, $3, $4, $5,
-          $6, $7, $8, $9, null,
-          $10, $11, $12, $13, $14,
-          $15, $16, $17, $18
-        )
-      `, [
-        id_pessoa || null,
-        id_matricula || null,
-        escolaId,
-        ANO || null,
-        MODALIDADE || null,
-        FORMATO_LETIVO || null,
-        TURMA || null,
-        pessoa_nome || null,
-        cpf || null,
-        cep || null,
-        bairro || null,
-        numero_pessoa_endereco || null,
-        filiacao_1 || null,
-        numero_telefone || null,
-        filiacao_2 || null,
-        RESPONSAVEL || null,
-        defArray,
-        data_nascimento || null
-      ]);
+      await pool.query(
+        `INSERT INTO alunos_ativos (
+           id_pessoa, id_matricula, escola_id, ano, modalidade,
+           formato_letivo, turma, pessoa_nome, cpf,
+           transporte_escolar_poder_publico, cep, bairro, numero_pessoa_endereco,
+           filiacao_1, numero_telefone, filiacao_2, responsavel,
+           deficiencia, data_nascimento, latitude, longitude, geom
+         ) VALUES (
+           $1,$2,$3,$4,$5,
+           $6,$7,$8,$9,
+           null,$10,$11,$12,
+           $13,$14,$15,$16,
+           $17,$18,$19,$20,
+           CASE
+             WHEN $19 IS NOT NULL AND $20 IS NOT NULL
+             THEN ST_SetSRID(ST_MakePoint($20,$19),4326)
+             ELSE NULL
+           END
+         ) ON CONFLICT DO NOTHING`,
+        [
+          id_pessoa || null,
+          id_matricula || null,
+          escolaId,
+          ANO || null,
+          MODALIDADE || null,
+          FORMATO_LETIVO || null,
+          TURMA || null,
+          pessoa_nome || null,
+          cpf || null,
+          cep || null,
+          bairro || null,
+          numero_pessoa_endereco || null,
+          filiacao_1 || null,
+          numero_telefone || null,
+          filiacao_2 || null,
+          RESPONSAVEL || null,
+          defArray,
+          data_nascimento || null,
+          latitude || null,
+          longitude || null
+        ]
+      );
     }
 
-    // notificação
-    await pool.query(`
-      INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-      VALUES ($1, 'CREATE', 'alunos_ativos', 0,
-              'Importação de alunos para a escola ID ${escolaId}')
-    `, [userId]);
-
-    return res.json({ success: true, message: "Alunos importados com sucesso!" });
-
-  } catch (err) {
-    console.error(err);
-    return res.json({ success: false, message: "Erro ao importar os alunos." });
+    return res.json({ success: true, message: "Alunos importados." });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
 
@@ -9885,24 +9833,24 @@ app.get("/api/alunos_ativos/:id", async (req, res) => {
 
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const check = await pool.query(
-      "SELECT id FROM alunos_ativos WHERE id = $1",
-      [id]
+    await pool.query("DELETE FROM alunos_ativos WHERE id = $1", [req.params.id]);
+    return res.json({ success: true });
+  } catch (e) {
+    return res.status(500).json({ success: false });
+  }
+});
+
+app.post("/api/reprocessar-alunos-pontos", async (_req, res) => {
+  try {
+    await pool.query(
+      `SELECT f_vincular_aluno_ao_ponto(id)
+         FROM alunos_ativos
+        WHERE geom IS NOT NULL`
     );
-    if (check.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Aluno não encontrado." });
-    }
-    await pool.query("DELETE FROM alunos_ativos WHERE id = $1", [id]);
-    return res.json({ success: true, message: "Aluno excluído com sucesso." });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao excluir o aluno.",
-    });
+    return res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false });
   }
 });
 
@@ -9970,188 +9918,135 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
 app.post("/api/alunos-ativos-estadual", async (req, res) => {
   try {
     const {
-      id_matricula,
-      pessoa_nome,
-      escola_id,
-      turma,
-      turno,
-      cpf,
-      cep,
-      rua,
-      bairro,
-      numero_pessoa_endereco,
-      numero_telefone,
-      filiacao_1,
-      filiacao_2,
-      responsavel,
-      deficiencia,
-      latitude,
-      longitude
+      id_matricula, pessoa_nome, escola_id, turma, turno, cpf,
+      cep, rua, bairro, numero_pessoa_endereco, numero_telefone,
+      filiacao_1, filiacao_2, responsavel, deficiencia,
+      latitude, longitude
     } = req.body;
 
-    // Validações básicas (exemplo)
-    if (!pessoa_nome) {
-      return res.status(400).json({
-        message: "O campo 'pessoa_nome' é obrigatório."
-      });
-    }
+    const defArray =
+      typeof deficiencia === "string" && deficiencia.trim()
+        ? JSON.parse(deficiencia)
+        : Array.isArray(deficiencia)
+          ? deficiencia
+          : null;
 
-    const insertSQL = `
-      INSERT INTO alunos_ativos_estadual (
-        id_matricula,
+    const { rows } = await pool.query(
+      `INSERT INTO alunos_ativos_estadual (
+         id_matricula, pessoa_nome, escola_id, turma, turno, cpf,
+         cep, rua, bairro, numero_pessoa_endereco, numero_telefone,
+         filiacao_1, filiacao_2, responsavel, deficiencia,
+         latitude, longitude, geom
+       ) VALUES (
+         $1,$2,$3,$4,$5,$6,
+         $7,$8,$9,$10,$11,
+         $12,$13,$14,$15,
+         $16,$17,
+         CASE
+           WHEN $16 IS NOT NULL AND $17 IS NOT NULL
+           THEN ST_SetSRID(ST_MakePoint($17,$16),4326)
+           ELSE NULL
+         END
+       ) RETURNING id`,
+      [
+        id_matricula || null,
         pessoa_nome,
-        escola_id,
-        turma,
-        turno,
-        cpf,
-        cep,
-        rua,
-        bairro,
-        numero_pessoa_endereco,
-        numero_telefone,
-        filiacao_1,
-        filiacao_2,
-        responsavel,
-        deficiencia,
-        latitude,
-        longitude
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-      RETURNING id
-    `;
+        escola_id || null,
+        turma || null,
+        turno || null,
+        cpf || null,
+        cep || null,
+        rua || null,
+        bairro || null,
+        numero_pessoa_endereco || null,
+        numero_telefone || null,
+        filiacao_1 || null,
+        filiacao_2 || null,
+        responsavel || null,
+        defArray,
+        latitude || null,
+        longitude || null
+      ]
+    );
 
-    const values = [
-      id_matricula || null,
-      pessoa_nome,
-      escola_id || null,
-      turma || null,
-      turno || null,
-      cpf || null,
-      cep || null,
-      rua || null,
-      bairro || null,
-      numero_pessoa_endereco || null,
-      numero_telefone || null,
-      filiacao_1 || null,
-      filiacao_2 || null,
-      responsavel || null,
-      // deficiencia como array (nativo no PostgreSQL)
-      Array.isArray(deficiencia) && deficiencia.length > 0 ? deficiencia : null,
-      // Latitude e longitude
-      latitude || null,
-      longitude || null
-    ];
-
-    const result = await pool.query(insertSQL, values);
-
-    return res.status(201).json({
-      success: true,
-      message: "Aluno estadual cadastrado com sucesso.",
-      id: result.rows[0].id
-    });
-  } catch (error) {
-    console.error("Erro no POST /api/alunos-ativos-estadual:", error);
-    return res.status(500).json({
-      message: "Erro interno ao criar aluno estadual."
-    });
+    return res.status(201).json({ success: true, id: rows[0].id });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false });
   }
 });
 
 app.put("/api/alunos-ativos-estadual/:id", async (req, res) => {
   try {
-    const alunoId = req.params.id;
     const {
-      id_matricula,
-      pessoa_nome,
-      escola_id,
-      turma,
-      turno,
-      cpf,
-      cep,
-      rua,
-      bairro,
-      numero_pessoa_endereco,
-      numero_telefone,
-      filiacao_1,
-      filiacao_2,
-      responsavel,
-      deficiencia,
-      latitude,
-      longitude
+      id_matricula, pessoa_nome, escola_id, turma, turno, cpf,
+      cep, rua, bairro, numero_pessoa_endereco, numero_telefone,
+      filiacao_1, filiacao_2, responsavel, deficiencia,
+      latitude, longitude
     } = req.body;
 
-    if (!alunoId) {
-      return res.status(400).json({ message: "ID do aluno não informado." });
-    }
+    const defArray =
+      typeof deficiencia === "string" && deficiencia.trim()
+        ? JSON.parse(deficiencia)
+        : Array.isArray(deficiencia)
+          ? deficiencia
+          : null;
 
-    // Aqui também armazenamos deficiencia como array:
-    const updateSQL = `
-      UPDATE alunos_ativos_estadual
-      SET
-        id_matricula = $1,
-        pessoa_nome = $2,
-        escola_id = $3,
-        turma = $4,
-        turno = $5,
-        cpf = $6,
-        cep = $7,
-        rua = $8,
-        bairro = $9,
-        numero_pessoa_endereco = $10,
-        numero_telefone = $11,
-        filiacao_1 = $12,
-        filiacao_2 = $13,
-        responsavel = $14,
-        deficiencia = $15,
-        latitude = $16,
-        longitude = $17,
-        updated_at = NOW()
-      WHERE id = $18
-      RETURNING id
-    `;
+    await pool.query(
+      `UPDATE alunos_ativos_estadual SET
+         id_matricula = $1,
+         pessoa_nome  = $2,
+         escola_id    = $3,
+         turma        = $4,
+         turno        = $5,
+         cpf          = $6,
+         cep          = $7,
+         rua          = $8,
+         bairro       = $9,
+         numero_pessoa_endereco = $10,
+         numero_telefone        = $11,
+         filiacao_1             = $12,
+         filiacao_2             = $13,
+         responsavel            = $14,
+         deficiencia            = $15,
+         latitude               = $16,
+         longitude              = $17,
+         geom                   = CASE
+                                    WHEN $16 IS NOT NULL AND $17 IS NOT NULL
+                                    THEN ST_SetSRID(ST_MakePoint($17,$16),4326)
+                                    ELSE NULL
+                                  END,
+         updated_at             = NOW()
+       WHERE id = $18`,
+      [
+        id_matricula || null,
+        pessoa_nome || null,
+        escola_id || null,
+        turma || null,
+        turno || null,
+        cpf || null,
+        cep || null,
+        rua || null,
+        bairro || null,
+        numero_pessoa_endereco || null,
+        numero_telefone || null,
+        filiacao_1 || null,
+        filiacao_2 || null,
+        responsavel || null,
+        defArray,
+        latitude || null,
+        longitude || null,
+        req.params.id
+      ]
+    );
 
-    const values = [
-      id_matricula || null,
-      pessoa_nome || null,
-      escola_id || null,
-      turma || null,
-      turno || null,
-      cpf || null,
-      cep || null,
-      rua || null,
-      bairro || null,
-      numero_pessoa_endereco || null,
-      numero_telefone || null,
-      filiacao_1 || null,
-      filiacao_2 || null,
-      responsavel || null,
-      // deficiencia como array (nativo no PostgreSQL)
-      Array.isArray(deficiencia) && deficiencia.length > 0 ? deficiencia : null,
-      latitude || null,
-      longitude || null,
-      alunoId
-    ];
-
-    const result = await pool.query(updateSQL, values);
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({
-        message: "Aluno não encontrado ou não foi possível atualizar."
-      });
-    }
-
-    return res.json({
-      success: true,
-      message: "Dados do aluno estadual atualizados com sucesso.",
-      updatedId: result.rows[0].id
-    });
-  } catch (error) {
-    console.error("Erro no PUT /api/alunos-ativos-estadual/:id:", error);
-    return res.status(500).json({
-      message: "Erro interno ao atualizar o aluno estadual."
-    });
+    return res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false });
   }
 });
+
 
 app.put("/api/alunos-ativos/:id", async (req, res) => {
   try {
@@ -10176,123 +10071,74 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
       deficiencia,
       longitude,
       latitude,
-      rua  // NOVO CAMPO
+      rua
     } = req.body;
 
-    // Busca o aluno
-    const check = await pool.query("SELECT * FROM alunos_ativos WHERE id = $1", [id]);
-    if (check.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
-    }
+    const defArray =
+      typeof deficiencia === "string" && deficiencia.trim()
+        ? JSON.parse(deficiencia)
+        : Array.isArray(deficiencia)
+          ? deficiencia
+          : null;
 
-    const oldData = check.rows[0];
-    // Ajusta a lista de deficiências
-    let defArray = oldData.deficiencia || null;
-    try {
-      if (typeof deficiencia === "string" && deficiencia.trim() !== "") {
-        defArray = JSON.parse(deficiencia);
-      } else if (Array.isArray(deficiencia)) {
-        defArray = deficiencia;
-      }
-    } catch (e) {
-      // se der erro no parse, ignora e mantém oldData.deficiencia
-    }
+    await pool.query(
+      `UPDATE alunos_ativos SET
+         id_matricula                    = $1,
+         escola_id                       = $2,
+         ano                             = $3,
+         modalidade                      = $4,
+         formato_letivo                  = $5,
+         turma                           = $6,
+         pessoa_nome                     = $7,
+         cpf                             = $8,
+         transporte_escolar_poder_publico= $9,
+         cep                             = $10,
+         bairro                          = $11,
+         numero_pessoa_endereco          = $12,
+         filiacao_1                      = $13,
+         numero_telefone                 = $14,
+         filiacao_2                      = $15,
+         responsavel                     = $16,
+         deficiencia                     = $17,
+         longitude                       = $18,
+         latitude                        = $19,
+         rua                             = $20,
+         geom                            = CASE
+                                             WHEN $19 IS NOT NULL AND $18 IS NOT NULL
+                                             THEN ST_SetSRID(ST_MakePoint($18,$19),4326)
+                                             ELSE NULL
+                                           END,
+         updated_at                      = NOW()
+       WHERE id = $21`,
+      [
+        id_matricula || null,
+        escola_id || null,
+        ano || null,
+        modalidade || null,
+        formato_letivo || null,
+        turma || null,
+        pessoa_nome || null,
+        cpf || null,
+        transporte_escolar_poder_publico || null,
+        cep || null,
+        bairro || null,
+        numero_pessoa_endereco || null,
+        filiacao_1 || null,
+        numero_telefone || null,
+        filiacao_2 || null,
+        responsavel || null,
+        defArray,
+        longitude || null,
+        latitude || null,
+        rua || null,
+        id
+      ]
+    );
 
-    const newData = {
-      id_matricula: (id_matricula !== undefined ? id_matricula : oldData.id_matricula),
-      escola_id: (escola_id !== undefined ? escola_id : oldData.escola_id),
-      ano: (ano !== undefined ? ano : oldData.ano),
-      modalidade: (modalidade !== undefined ? modalidade : oldData.modalidade),
-      formato_letivo: (formato_letivo !== undefined ? formato_letivo : oldData.formato_letivo),
-      turma: (turma !== undefined ? turma : oldData.turma),
-      pessoa_nome: (pessoa_nome !== undefined ? pessoa_nome : oldData.pessoa_nome),
-      cpf: (cpf !== undefined ? cpf : oldData.cpf),
-      transporte_escolar_poder_publico: (
-        transporte_escolar_poder_publico !== undefined
-          ? transporte_escolar_poder_publico
-          : oldData.transporte_escolar_poder_publico
-      ),
-      cep: (cep !== undefined ? cep : oldData.cep),
-      bairro: (bairro !== undefined ? bairro : oldData.bairro),
-      numero_pessoa_endereco: (
-        numero_pessoa_endereco !== undefined
-          ? numero_pessoa_endereco
-          : oldData.numero_pessoa_endereco
-      ),
-      filiacao_1: (filiacao_1 !== undefined ? filiacao_1 : oldData.filiacao_1),
-      numero_telefone: (
-        numero_telefone !== undefined
-          ? numero_telefone
-          : oldData.numero_telefone
-      ),
-      filiacao_2: (filiacao_2 !== undefined ? filiacao_2 : oldData.filiacao_2),
-      responsavel: (responsavel !== undefined ? responsavel : oldData.responsavel),
-      deficiencia: (defArray !== null ? defArray : oldData.deficiencia),
-      longitude: (longitude !== undefined ? longitude : oldData.longitude),
-      latitude: (latitude !== undefined ? latitude : oldData.latitude),
-      rua: (rua !== undefined ? rua : oldData.rua) // NOVO
-    };
-
-    const updateQuery = `
-      UPDATE alunos_ativos
-      SET
-        id_matricula = $1,
-        escola_id = $2,
-        ano = $3,
-        modalidade = $4,
-        formato_letivo = $5,
-        turma = $6,
-        pessoa_nome = $7,
-        cpf = $8,
-        transporte_escolar_poder_publico = $9,
-        cep = $10,
-        bairro = $11,
-        numero_pessoa_endereco = $12,
-        filiacao_1 = $13,
-        numero_telefone = $14,
-        filiacao_2 = $15,
-        responsavel = $16,
-        deficiencia = $17,
-        longitude = $18,
-        latitude = $19,
-        rua = $20
-      WHERE id = $21
-    `;
-
-    await pool.query(updateQuery, [
-      newData.id_matricula,
-      newData.escola_id,
-      newData.ano,
-      newData.modalidade,
-      newData.formato_letivo,
-      newData.turma,
-      newData.pessoa_nome,
-      newData.cpf,
-      newData.transporte_escolar_poder_publico,
-      newData.cep,
-      newData.bairro,
-      newData.numero_pessoa_endereco,
-      newData.filiacao_1,
-      newData.numero_telefone,
-      newData.filiacao_2,
-      newData.responsavel,
-      newData.deficiencia,
-      newData.longitude,
-      newData.latitude,
-      newData.rua,
-      id
-    ]);
-
-    return res.json({
-      success: true,
-      message: "Aluno atualizado com sucesso."
-    });
-  } catch (err) {
-    console.error("Erro ao atualizar aluno:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao atualizar o aluno."
-    });
+    return res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
 
