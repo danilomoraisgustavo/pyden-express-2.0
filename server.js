@@ -9654,6 +9654,9 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 });
 
 
+/* ------------------------------------------------------------------ */
+/*  ROTAS ::  Importar alunos activos                                 */
+/* ------------------------------------------------------------------ */
 app.post("/api/import-alunos-ativos", async (req, res) => {
   try {
     const { alunos, escolaId } = req.body;
@@ -9662,6 +9665,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     }
 
     for (const a of alunos) {
+      /* ---------- destrutura / trata tipos ------------------------ */
       const {
         id_pessoa,
         id_matricula,
@@ -9683,7 +9687,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         data_nascimento
       } = a;
 
-      /* trata array de deficiências */
+      /* transforma string → array (quando vier como texto JSON) */
       const defArray =
         typeof deficiencia === "string" && deficiencia.trim()
           ? JSON.parse(deficiencia)
@@ -9691,6 +9695,22 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
             ? deficiencia
             : null;
 
+      /* ------------------------------------------------------------ */
+      /*  1)  Atualiza id_pessoa se já existir a matrícula            */
+      /* ------------------------------------------------------------ */
+      await pool.query(
+        `
+        UPDATE alunos_ativos
+           SET id_pessoa = COALESCE(id_pessoa,$1)
+         WHERE id_matricula = $2
+           AND id_pessoa    IS NULL
+        `,
+        [id_pessoa || null, id_matricula || null]
+      );
+
+      /* ------------------------------------------------------------ */
+      /*  2)  Faz INSERT; se conflitar no CPF, só preenche id_pessoa  */
+      /* ------------------------------------------------------------ */
       await pool.query(
         `
         INSERT INTO alunos_ativos (
@@ -9706,17 +9726,10 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           $13,$14,$15,$16,
           $17::text[],$18
         )
-        /* 1️⃣  Se conflitar NO CPF              ------------------------ */
         ON CONFLICT ON CONSTRAINT uq_alunos_cpf
         DO UPDATE
            SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
                                     EXCLUDED.id_pessoa)
-        /* 2️⃣  Se não conflitar no CPF mas conflitar NA MATRÍCULA ----- */
-        /*    (só acontece quando CPF é novo mas matrícula já existe)    */
-        ON CONFLICT ON CONSTRAINT uq_alunos_id_matricula
-        DO UPDATE
-           SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
-                                    EXCLUDED.id_pessoa);
         `,
         [
           id_pessoa || null,            // $1
@@ -9741,10 +9754,10 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       );
     }
 
-    return res.json({ success: true, message: "Alunos importados." });
+    res.json({ success: true, message: "Alunos importados." });
   } catch (e) {
     console.error(e);
-    return res.status(500).json({ success: false, message: "Erro interno." });
+    res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
 
