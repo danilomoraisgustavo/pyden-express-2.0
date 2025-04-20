@@ -4571,26 +4571,29 @@ app.get("/api/pontos", async (req, res) => {
               p.bairro,
               p.cep,
               p.status,
-              /* ---------- qtde de alunos ---------- */
-              COALESCE(COUNT(ap.aluno_id),0)               AS alunos_count,
-
-              /* ---------- lista de zoneamentos ----- */
+              COALESCE(q.total,0)                                    AS alunos_count,
               COALESCE(
                 json_agg(
                   json_build_object('id',z.id,'nome',z.nome)
                 ) FILTER (WHERE z.id IS NOT NULL),
                 '[]'
-              )                                            AS zoneamentos
-      FROM pontos p
-      /* alunos atribuídos */
-      LEFT JOIN alunos_pontos  ap ON ap.ponto_id = p.id
-      /* zoneamentos */
+              )                                                     AS zoneamentos
+      FROM   pontos p
+      LEFT JOIN (
+        SELECT  ap.ponto_id,
+                COUNT(DISTINCT ap.aluno_id) AS total
+        FROM    alunos_pontos ap
+        JOIN    alunos_ativos a ON a.id = ap.aluno_id
+        WHERE   a.latitude  IS NOT NULL
+          AND   a.longitude IS NOT NULL
+          AND   a.transporte_escolar_poder_publico ILIKE ANY (ARRAY['Municipal','Estadual'])
+        GROUP BY ap.ponto_id
+      ) q ON q.ponto_id = p.id
       LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
       LEFT JOIN zoneamentos         z ON z.id = pz.zoneamento_id
-      GROUP BY p.id
+      GROUP BY p.id, q.total
       ORDER BY p.id;
     `;
-
     const { rows } = await pool.query(q);
     res.json(rows);
   } catch (e) {
@@ -4598,7 +4601,6 @@ app.get("/api/pontos", async (req, res) => {
     res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
-
 
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
