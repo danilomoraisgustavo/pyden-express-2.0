@@ -4154,20 +4154,42 @@ app.post("/api/fornecedor/frota/atribuir-rota", async (req, res) => {
 app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
   const alunoId = Number(req.params.id);
   const client = await pool.connect();
+
   try {
+    // 1) Carrega dados do aluno ------------------------------------------------
     const { rows: alunoRows } = await client.query(
-      `SELECT id, latitude, longitude FROM alunos_ativos WHERE id = $1`,
+      `SELECT id,
+              latitude,
+              longitude,
+              transporte_escolar_poder_publico AS poder
+         FROM  alunos_ativos
+        WHERE  id = $1`,
       [alunoId]
     );
-    if (
-      alunoRows.length === 0 ||
-      alunoRows[0].latitude == null ||
-      alunoRows[0].longitude == null
-    ) {
-      res.status(400).json({ error: 'Aluno sem geolocalização' });
-      return;
+
+    if (alunoRows.length === 0) {
+      return res.status(404).json({ error: 'Aluno não encontrado' });
     }
-    const { latitude, longitude } = alunoRows[0];
+
+    const { latitude, longitude, poder } = alunoRows[0];
+
+    // regra 1 – poder público deve ser Municipal ou Estadual
+    const poderOk =
+      poder && ['municipal', 'estadual'].includes(poder.toLowerCase());
+    if (!poderOk) {
+      return res
+        .status(400)
+        .json({ error: 'Aluno não é atendido pelo poder público Municipal/Estadual' });
+    }
+
+    // regra 2 – precisa ter lat/lng válidos
+    if (latitude == null || longitude == null) {
+      return res
+        .status(400)
+        .json({ error: 'Aluno sem coordenadas (latitude/longitude)' });
+    }
+
+    // 2) Seleciona o ponto mais próximo ---------------------------------------
     const { rows: pontoRows } = await client.query(
       `
       WITH cand AS (
@@ -4177,9 +4199,9 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
                  cos(radians(longitude) - radians($2)) +
                  sin(radians($1)) * sin(radians(latitude))
                ) AS d
-        FROM pontos
-        WHERE latitude IS NOT NULL
-          AND longitude IS NOT NULL
+          FROM pontos
+         WHERE latitude  IS NOT NULL
+           AND longitude IS NOT NULL
       )
       SELECT id, d
         FROM cand
@@ -4188,13 +4210,20 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
       `,
       [latitude, longitude]
     );
+
     if (pontoRows.length === 0) {
-      res.status(404).json({ error: 'Nenhum ponto com coordenadas cadastrado' });
-      return;
+      return res
+        .status(404)
+        .json({ error: 'Nenhum ponto de parada possui coordenadas cadastradas' });
     }
+
     const pontoId = pontoRows[0].id;
     const distanciaKm = Number(pontoRows[0].d).toFixed(3);
+
+    // 3) Grava associação (regra 3 – apenas um ponto por aluno) ---------------
     await client.query('BEGIN');
+
+    // upsert na tabela de ligações
     await client.query(
       `
       INSERT INTO alunos_pontos (aluno_id, ponto_id)
@@ -4204,24 +4233,34 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
       `,
       [alunoId, pontoId]
     );
+
+    // atualiza campo direto na tabela de alunos (se existir)
     await client.query(
       `UPDATE alunos_ativos SET ponto_id = $2 WHERE id = $1`,
       [alunoId, pontoId]
     );
+
+    // coloca o ponto como ATIVO se ainda não estiver
     await client.query(
-      `UPDATE pontos SET status = 'ativo' WHERE id = $1`,
+      `UPDATE pontos
+          SET status = 'ativo'
+        WHERE id = $1
+          AND status <> 'ativo'`,
       [pontoId]
     );
+
     await client.query('COMMIT');
-    res.json({
+
+    // 4) Resposta --------------------------------------------------------------
+    return res.json({
       alunoId,
       pontoId,
-      distancia_km: distanciaKm,
+      distancia_km: distanciaKm
     });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Erro ao associar ponto mais próximo:', err);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    return res.status(500).json({ error: 'Erro interno do servidor' });
   } finally {
     client.release();
   }
