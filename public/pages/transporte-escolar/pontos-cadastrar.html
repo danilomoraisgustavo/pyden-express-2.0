@@ -843,14 +843,13 @@
           has = true
 
           marker.addListener('click', () => {
-            const zs = p.zoneamentos ? p.zoneamentos.map(z => z.nome).join(', ') : 'Nenhum'
+            const zoneamento = p.zoneamentos && p.zoneamentos.length ? p.zoneamentos.map(z => z.nome).join(', ') : 'Nenhum'
+            const qtdAlunos = p.qtd_alunos ?? p.alunos_count ?? p.total_alunos ?? 0
             infoWindowPontos.setContent(
-              `<div>
-                 <h5>${p.nome_ponto}</h5>
-                 <p><strong>Status:</strong> ${p.status === 'ativo' ? 'Ativo' : 'Inativo'}</p>
-                 <p><strong>Bairro:</strong> ${p.bairro || 'Não informado'}</p>
-                 <p><strong>Referência:</strong> ${p.ponto_referencia || 'Não informado'}</p>
-                 <p><strong>Zoneamentos:</strong> ${zs}</p>
+              `<div style="min-width:180px">
+                 <p><strong>ID:</strong> ${p.id}</p>
+                 <p><strong>Zoneamento:</strong> ${zoneamento}</p>
+                 <p><strong>Alunos associados:</strong> ${qtdAlunos}</p>
                </div>`
             )
             infoWindowPontos.open(mapPontos, marker)
@@ -1130,6 +1129,7 @@
       }).catch(() => showNotificationPontos('danger', 'Erro ao cadastrar múltiplos pontos. Tente novamente.'))
     })
   </script>
+
 
 </body>
 
