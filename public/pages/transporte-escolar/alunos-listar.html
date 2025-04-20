@@ -667,6 +667,11 @@
                 Mapear Alunos
               </button>
             </div>
+            <div>
+              <button type="button" class="btn btn-outline-secondary" id="btnExportarCSV" disabled>
+                Exportar Relatório CSV
+              </button>
+            </div>
           </div>
 
           <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel"
@@ -1093,6 +1098,7 @@
     $("#modalMapear").on("shown.bs.modal", () => {
       if (!map) initMap();
       $("#btnAssociarPontosMap").prop("disabled", true);
+      toggleExportBtn();
     });
 
     $(document).on("click", "#btnFiltrarMapa", () => {
@@ -1105,13 +1111,15 @@
           alunosMapList = resp.data;
           plotarMapa(alunosMapList, resp.escola);
           $("#btnAssociarPontosMap").prop("disabled", alunosMapList.length === 0);
+          toggleExportBtn();
         } else {
           alunosMapList = [];
           $("#btnAssociarPontosMap").prop("disabled", true);
+          toggleExportBtn();
           showNotification("info", "Nenhum aluno encontrado.");
         }
       }).catch(() => {
-        alunosMapList = []; $("#btnAssociarPontosMap").prop("disabled", true);
+        alunosMapList = []; $("#btnAssociarPontosMap").prop("disabled", true); toggleExportBtn();
         showNotification("danger", "Erro ao filtrar alunos no mapa.");
       }).finally(hideLoader);
     });
@@ -1134,6 +1142,7 @@
         showNotification("success", `${ok} aluno(s) associado(s) com sucesso.`);
         falhas.forEach(f => showNotification("warning", `Aluno ${f.id}: ${f.msg}`));
         $("#btnAssociarPontosMap").prop("disabled", true);
+        toggleExportBtn();
       }).catch(() => showNotification("danger", "Erro na associação dos alunos.")).finally(hideLoader);
     });
 
@@ -1157,6 +1166,32 @@
       });
       if (!bounds.isEmpty()) map.fitBounds(bounds);
     }
+
+    /* ---------- exportação ---------- */
+    function toggleExportBtn() { $("#btnExportarCSV").prop("disabled", alunosMapList.length === 0); }
+    function jsonParaCSV(arr) {
+      if (!arr.length) return "";
+      const cab = Object.keys(arr[0]).join(";") + "\n";
+      const corpo = arr.map(o => Object.values(o).map(v => (v == null ? "" : String(v).replace(/;/g, ","))).join(";")).join("\n");
+      return cab + corpo;
+    }
+    $("#btnExportarCSV").on("click", () => {
+      const escola = $("#selectEscolaMap").val();
+      const url = "/api/relatorio/alunos-mapeados" + (escola ? `?escola_id=${escola}` : "");
+      showLoader();
+      fetch(url).then(r => r.json()).then(({ success, data }) => {
+        if (!success || !data.length) { showNotification("info", "Nenhum dado para exportar."); return; }
+        const csv = jsonParaCSV(data);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "alunos_mapeados.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showNotification("success", "Relatório gerado.");
+      }).catch(() => showNotification("danger", "Erro ao gerar relatório.")).finally(hideLoader);
+    });
 
     /* ---------- busca / filtros ---------- */
     function buscarAlunosComFiltros() {
@@ -1297,6 +1332,7 @@
       });
     }
   </script>
+
 
 </body>
 

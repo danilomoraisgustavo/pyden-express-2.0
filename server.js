@@ -4266,41 +4266,38 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
   }
 });
 
-app.get('/api/relatorios/alunos-pontos', async (req, res) => {
-  const wantCsv = (req.query.format || '').toLowerCase() === 'csv';
+app.get("/api/relatorio/alunos-mapeados", async (req, res) => {
   try {
-    const q = `
-      SELECT
-        a.pessoa_nome                                        AS nome_aluno,
-        a.id_pessoa,
-        a.id_matricula,
-        e.nome                                               AS escola_nome,
-        COALESCE(p.id,0)                                     AS ponto_id,
-        CONCAT(a.latitude,',',a.longitude)                   AS residencia_coords,
-        CONCAT(p.latitude,',',p.longitude)                   AS ponto_coords
-      FROM alunos_ativos      a
-      LEFT JOIN escolas       e  ON e.id  = a.escola_id
-      LEFT JOIN alunos_pontos ap ON ap.aluno_id = a.id
-      LEFT JOIN pontos        p  ON p.id = ap.ponto_id
-      WHERE a.latitude IS NOT NULL
-        AND a.longitude IS NOT NULL
-        AND a.transporte_escolar_poder_publico IN ('Municipal','Estadual')
+    const { escola_id } = req.query;
+    const params = [];
+    let filtro = "";
+
+    if (escola_id) { filtro = "WHERE a.escola_id = $1"; params.push(escola_id); }
+
+    const sql = `
+      SELECT  a.pessoa_nome                      AS nome_aluno,
+              a.id_pessoa,
+              a.id_matricula,
+              e.nome                             AS escola_nome,
+              ap.ponto_id,
+              /* residência */
+              a.latitude   AS residencia_lat,
+              a.longitude  AS residencia_lng,
+              /* ponto de parada */
+              p.latitude   AS ponto_lat,
+              p.longitude  AS ponto_lng
+      FROM alunos_ativos        a
+      JOIN escolas              e  ON e.id = a.escola_id
+      JOIN alunos_pontos        ap ON ap.aluno_id = a.id
+      JOIN pontos               p  ON p.id        = ap.ponto_id
+      ${filtro}
+      ORDER BY e.nome, a.pessoa_nome;
     `;
-    const { rows } = await pool.query(q);
-
-    if (wantCsv) {
-      const header = Object.keys(rows[0] || {}).join(',');
-      const body = rows.map(r => Object.values(r).map(v =>
-        `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Disposition', 'attachment; filename=relatorio_alunos_pontos.csv');
-      return res.send(header + '\n' + body);
-    }
-
-    res.json(rows);
+    const { rows } = await pool.query(sql, params);
+    res.json({ success: true, data: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Erro interno' });
+    res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
 
