@@ -644,11 +644,7 @@
           <div class="page-header">
             <h3 class="fw-bold mb-3">Importar Alunos Ativos</h3>
             <ul class="breadcrumbs mb-3">
-              <li class="nav-home">
-                <a href="../../">
-                  <i class="icon-home"></i>
-                </a>
-              </li>
+              <li class="nav-home"><a href="../../"><i class="icon-home"></i></a></li>
               <li class="separator"><i class="icon-arrow-right"></i></li>
               <li class="nav-item"><a href="#">Alunos</a></li>
               <li class="separator"><i class="icon-arrow-right"></i></li>
@@ -657,21 +653,10 @@
           </div>
 
           <div class="mb-3 d-flex gap-2 flex-wrap">
-            <div>
-              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
-                Importar Alunos
-              </button>
-            </div>
-            <div>
-              <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalMapear">
-                Mapear Alunos
-              </button>
-            </div>
-            <div>
-              <button type="button" class="btn btn-outline-secondary" id="btnExportarCSV" disabled>
-                Exportar Relatório CSV
-              </button>
-            </div>
+            <div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">Importar
+                Alunos</button></div>
+            <div><button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalMapear">Mapear
+                Alunos</button></div>
           </div>
 
           <div class="modal fade" id="modalImportar" tabindex="-1" aria-labelledby="modalImportarLabel"
@@ -710,11 +695,11 @@
                 </div>
                 <div class="modal-body">
                   <div class="row g-2 align-items-end mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                       <label for="selectEscolaMap" class="form-label">Escola</label>
                       <select id="selectEscolaMap" class="form-select"></select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                       <label for="buscarAlunoInput" class="form-label">Buscar/Filtrar</label>
                       <div class="input-group">
                         <input type="text" id="buscarAlunoInput" class="form-control"
@@ -722,9 +707,12 @@
                         <button class="btn btn-primary" id="btnFiltrarMapa"><i class="fa fa-search"></i></button>
                       </div>
                     </div>
-                    <div class="col-md-4 d-grid">
+                    <div class="col-md-3 d-grid">
                       <button type="button" class="btn btn-success" id="btnAssociarPontosMap" disabled>Associar ao Ponto
                         Mais Próximo</button>
+                    </div>
+                    <div class="col-md-3 d-grid">
+                      <button type="button" class="btn btn-secondary" id="btnExportarCSV" disabled>Exportar CSV</button>
                     </div>
                   </div>
                   <div id="map" style="height: 500px; width: 100%;"></div>
@@ -733,59 +721,43 @@
             </div>
           </div>
 
-
           <div class="card mb-4">
             <div class="card-body">
               <div class="row g-3">
-                <div class="col-md-3">
-                  <label for="filtroEscola" class="form-label">Filtrar por Escola</label>
-                  <select id="filtroEscola" class="form-select">
+                <div class="col-md-3"><label for="filtroEscola" class="form-label">Filtrar por Escola</label><select
+                    id="filtroEscola" class="form-select">
                     <option value="">Todas</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label for="filtroBairro" class="form-label">Filtrar por Bairro</label>
-                  <select id="filtroBairro" class="form-select">
+                  </select></div>
+                <div class="col-md-3"><label for="filtroBairro" class="form-label">Filtrar por Bairro</label><select
+                    id="filtroBairro" class="form-select">
                     <option value="">Todos</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label for="filtroTransporte" class="form-label">Transporte Escolar</label>
-                  <select id="filtroTransporte" class="form-select">
+                  </select></div>
+                <div class="col-md-3"><label for="filtroTransporte" class="form-label">Transporte Escolar</label><select
+                    id="filtroTransporte" class="form-select">
                     <option value="">Todos</option>
                     <option value="municipal">Municipal</option>
                     <option value="estadual">Estadual</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label for="filtroDeficiencia" class="form-label">Deficiência</label>
-                  <select id="filtroDeficiencia" class="form-select">
+                  </select></div>
+                <div class="col-md-3"><label for="filtroDeficiencia" class="form-label">Deficiência</label><select
+                    id="filtroDeficiencia" class="form-select">
                     <option value="">Todas</option>
                     <option value="sim">Sim</option>
                     <option value="nao">Não</option>
-                  </select>
-                </div>
-                <div class="col-md-3">
-                  <label for="filtroIdade" class="form-label">Filtrar por Idade</label>
-                  <input type="number" min="0" class="form-control" id="filtroIdade" placeholder="Ex: 10" />
-                </div>
-                <div class="col-md-3">
-                  <label for="filtroCep" class="form-label">Filtrar por CEP</label>
-                  <input type="text" class="form-control" id="filtroCep" placeholder="Digite o CEP" />
-                </div>
-                <div class="col-md-3">
-                  <label for="filtroTurno" class="form-label">Turno</label>
-                  <select id="filtroTurno" class="form-select">
+                  </select></div>
+                <div class="col-md-3"><label for="filtroIdade" class="form-label">Filtrar por Idade</label><input
+                    type="number" min="0" class="form-control" id="filtroIdade" placeholder="Ex: 10" /></div>
+                <div class="col-md-3"><label for="filtroCep" class="form-label">Filtrar por CEP</label><input
+                    type="text" class="form-control" id="filtroCep" placeholder="Digite o CEP" /></div>
+                <div class="col-md-3"><label for="filtroTurno" class="form-label">Turno</label><select id="filtroTurno"
+                    class="form-select">
                     <option value="">Todos</option>
                     <option value="MAT">Matutino</option>
                     <option value="VESP">Vespertino</option>
                     <option value="NOT">Noturno</option>
                     <option value="INT">Integral</option>
-                  </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-end">
-                  <button id="btnBuscarAlunos" class="btn btn-primary w-100">Filtrar Alunos</button>
-                </div>
+                  </select></div>
+                <div class="col-md-3 d-flex align-items-end"><button id="btnBuscarAlunos"
+                    class="btn btn-primary w-100">Filtrar Alunos</button></div>
               </div>
             </div>
           </div>
@@ -860,6 +832,7 @@
           </div>
         </div>
       </div>
+
 
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
