@@ -4150,6 +4150,49 @@ app.post("/api/fornecedor/frota/atribuir-rota", async (req, res) => {
     });
   }
 });
+router.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
+  const idAluno = Number(req.params.id);
+  const aluno = await db.oneOrNone(
+    'SELECT id, latitude, longitude FROM alunos_ativos WHERE id = $1',
+    [idAluno]
+  );
+  if (!aluno || aluno.latitude == null || aluno.longitude == null)
+    return res.status(400).json({ error: 'Aluno sem geolocalização' });
+
+  const pontoMaisProx = await db.one(
+    `
+    WITH cand AS (
+      SELECT id,
+             6371 * acos(
+               cos(radians($1)) * cos(radians(latitude)) *
+               cos(radians(longitude) - radians($2)) +
+               sin(radians($1)) * sin(radians(latitude))
+             ) AS d
+      FROM pontos
+    )
+    SELECT id, d FROM cand ORDER BY d LIMIT 1
+    `,
+    [aluno.latitude, aluno.longitude]
+  );
+
+  await db.tx(async t => {
+    await t.none(
+      `INSERT INTO alunos_pontos (aluno_id, ponto_id)
+         VALUES ($1,$2)
+       ON CONFLICT (aluno_id) DO UPDATE SET ponto_id = EXCLUDED.ponto_id`,
+      [idAluno, pontoMaisProx.id]
+    );
+    // se também gravar em alunos_ativos:
+    await t.none('UPDATE alunos_ativos SET ponto_id = $2 WHERE id = $1',
+      [idAluno, pontoMaisProx.id]);
+  });
+
+  res.json({
+    alunoId: idAluno,
+    pontoId: pontoMaisProx.id,
+    distancia_km: Number(pontoMaisProx.d).toFixed(3)
+  });
+});
 
 app.delete("/api/fornecedor/frota/:id", async (req, res) => {
   try {

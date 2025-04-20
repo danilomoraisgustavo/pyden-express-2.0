@@ -28,6 +28,14 @@ CREATE TABLE IF NOT EXISTS pontos (
   cep               VARCHAR(20)
 );
 
+-- tabela de ligação 1‑para‑1 (caso cada aluno só possa ter um ponto de parada)
+CREATE TABLE IF NOT EXISTS alunos_pontos (
+    aluno_id  INT  PRIMARY KEY REFERENCES alunos_ativos(id) ON DELETE CASCADE,
+    ponto_id  INT  NOT NULL     REFERENCES pontos(id)       ON DELETE RESTRICT,
+    data_vinculado TIMESTAMP DEFAULT NOW()
+);
+
+
 CREATE TABLE IF NOT EXISTS pontos_zoneamentos (
   id            SERIAL PRIMARY KEY,
   ponto_id      INT NOT NULL REFERENCES pontos(id) ON DELETE CASCADE,

@@ -697,37 +697,37 @@
           </div>
 
           <div class="modal fade" id="modalMapear" tabindex="-1" aria-labelledby="modalMapearLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="modalMapearLabel">Mapa de Alunos</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <h5 class="modal-title fw-bold" id="modalMapearLabel">Mapear Alunos</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                  <div class="row mb-3">
-                    <div class="col-md-6">
-                      <label for="selectEscolaMap" class="form-label">Filtrar por Escola</label>
-                      <select class="form-select" id="selectEscolaMap">
-                        <option value="">Todas as Escolas</option>
-                      </select>
+                  <div class="row g-2 align-items-end mb-3">
+                    <div class="col-md-4">
+                      <label for="selectEscolaMap" class="form-label">Escola</label>
+                      <select id="selectEscolaMap" class="form-select"></select>
                     </div>
-                    <div class="col-md-6">
-                      <label for="buscarAlunoInput" class="form-label">Buscar por ID, Nome ou CPF</label>
-                      <input type="text" class="form-control" id="buscarAlunoInput"
-                        placeholder="Ex: 12345 ou João ou 000.000.000-00" />
+                    <div class="col-md-4">
+                      <label for="buscarAlunoInput" class="form-label">Buscar/Filtrar</label>
+                      <div class="input-group">
+                        <input type="text" id="buscarAlunoInput" class="form-control"
+                          placeholder="Nome, CPF, matrícula…">
+                        <button class="btn btn-primary" id="btnFiltrarMapa"><i class="fa fa-search"></i></button>
+                      </div>
+                    </div>
+                    <div class="col-md-4 d-grid">
+                      <button type="button" class="btn btn-success" id="btnAssociarPontosMap" disabled>Associar ao Ponto
+                        Mais Próximo</button>
                     </div>
                   </div>
-                  <div class="mb-3">
-                    <button id="btnFiltrarMapa" class="btn btn-primary">Buscar/Filtrar</button>
-                  </div>
-                  <div id="map"></div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                  <div id="map" style="height: 500px; width: 100%;"></div>
                 </div>
               </div>
             </div>
           </div>
+
 
           <div class="card mb-4">
             <div class="card-body">
@@ -1027,7 +1027,8 @@
       mapAluno = null,
       alunoAtual = null,
       currentAlunoMarker = null,
-      currentAlunoPosition = null;
+      currentAlunoPosition = null,
+      alunosMapList = []; /* lista do modal de mapa */
 
     /* ---------- utilidades ---------- */
     function showLoader() { document.getElementById("globalLoader").style.display = "flex" }
@@ -1051,20 +1052,12 @@
     function popularSelectEscolas() {
       const s = document.getElementById("escolaSelect");
       s.innerHTML = '<option value="">Selecione a Escola</option>';
-      escolasLista.forEach(e => {
-        const o = document.createElement("option");
-        o.value = e.id; o.textContent = `${e.nome} (ID:${e.id})`;
-        s.appendChild(o);
-      });
+      escolasLista.forEach(e => { const o = document.createElement("option"); o.value = e.id; o.textContent = `${e.nome} (ID:${e.id})`; s.appendChild(o); });
     }
     function popularSelectEscolasMap() {
       const s = document.getElementById("selectEscolaMap");
       s.innerHTML = '<option value="">Todas as Escolas</option>';
-      escolasLista.forEach(e => {
-        const o = document.createElement("option");
-        o.value = e.id; o.textContent = `${e.nome} (ID:${e.id})`;
-        s.appendChild(o);
-      });
+      escolasLista.forEach(e => { const o = document.createElement("option"); o.value = e.id; o.textContent = `${e.nome} (ID:${e.id})`; s.appendChild(o); });
     }
     function carregarEscolas() {
       showLoader();
@@ -1105,18 +1098,43 @@
 
     /* ---------- mapa geral ---------- */
     function initMap() { map = new google.maps.Map(document.getElementById("map"), { center: { lat: -3.135366, lng: -60.023207 }, zoom: 4, mapId: "ca7a0e55f44be727" }); }
-    $("#modalMapear").on("shown.bs.modal", () => { if (!map) initMap(); });
+    $("#modalMapear").on("shown.bs.modal", () => { if (!map) initMap(); $("#btnAssociarPontosMap").prop("disabled", true); });
+
     $(document).on("click", "#btnFiltrarMapa", () => {
       const escola = $("#selectEscolaMap").val(), busca = $("#buscarAlunoInput").val().trim(), q = new URLSearchParams();
       if (escola) q.append("escola_id", escola);
       if (busca) q.append("busca", busca);
       showLoader();
       fetch("/api/alunos-mapa?" + q.toString()).then(r => r.json()).then(resp => {
-        if (resp.success && Array.isArray(resp.data)) plotarMapa(resp.data, resp.escola);
-        else showNotification("info", "Nenhum aluno encontrado.");
-      }).catch(() => showNotification("danger", "Erro ao filtrar alunos no mapa."))
+        if (resp.success && Array.isArray(resp.data)) {
+          alunosMapList = resp.data;
+          plotarMapa(alunosMapList, resp.escola);
+          $("#btnAssociarPontosMap").prop("disabled", alunosMapList.length === 0);
+        } else {
+          alunosMapList = [];
+          $("#btnAssociarPontosMap").prop("disabled", true);
+          showNotification("info", "Nenhum aluno encontrado.");
+        }
+      }).catch(() => { alunosMapList = []; $("#btnAssociarPontosMap").prop("disabled", true); showNotification("danger", "Erro ao filtrar alunos no mapa."); })
         .finally(hideLoader);
     });
+
+    $(document).on("click", "#btnAssociarPontosMap", () => {
+      if (!alunosMapList.length) return;
+      showLoader();
+      Promise.all(alunosMapList.map(a =>
+        fetch(`/api/alunos/${a.id}/associar-ponto-mais-proximo`, { method: "POST" })
+          .then(r => r.json()).catch(() => ({ error: true }))
+      ))
+        .then(r => {
+          const ok = r.filter(x => !x.error && !x.errorMessage).length;
+          showNotification("success", `${ok} aluno(s) associado(s) ao ponto mais próximo.`);
+          $("#btnAssociarPontosMap").prop("disabled", true);
+        })
+        .catch(() => showNotification("danger", "Erro na associação dos alunos."))
+        .finally(hideLoader);
+    });
+
     function plotarMapa(alunos, escolaData) {
       if (!map) initMap();
       map = new google.maps.Map(document.getElementById("map"), { center: { lat: -3.135366, lng: -60.023207 }, zoom: 4, mapId: "ca7a0e55f44be727" });
@@ -1297,6 +1315,7 @@
       });
     }
   </script>
+
 </body>
 
 </html>
