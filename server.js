@@ -4266,6 +4266,43 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
   }
 });
 
+app.get('/api/relatorios/alunos-pontos', async (req, res) => {
+  const wantCsv = (req.query.format || '').toLowerCase() === 'csv';
+  try {
+    const q = `
+      SELECT
+        a.pessoa_nome                                        AS nome_aluno,
+        a.id_pessoa,
+        a.id_matricula,
+        e.nome                                               AS escola_nome,
+        COALESCE(p.id,0)                                     AS ponto_id,
+        CONCAT(a.latitude,',',a.longitude)                   AS residencia_coords,
+        CONCAT(p.latitude,',',p.longitude)                   AS ponto_coords
+      FROM alunos_ativos      a
+      LEFT JOIN escolas       e  ON e.id  = a.escola_id
+      LEFT JOIN alunos_pontos ap ON ap.aluno_id = a.id
+      LEFT JOIN pontos        p  ON p.id = ap.ponto_id
+      WHERE a.latitude IS NOT NULL
+        AND a.longitude IS NOT NULL
+        AND a.transporte_escolar_poder_publico IN ('Municipal','Estadual')
+    `;
+    const { rows } = await pool.query(q);
+
+    if (wantCsv) {
+      const header = Object.keys(rows[0] || {}).join(',');
+      const body = rows.map(r => Object.values(r).map(v =>
+        `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename=relatorio_alunos_pontos.csv');
+      return res.send(header + '\n' + body);
+    }
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Erro interno' });
+  }
+});
 
 app.delete("/api/fornecedor/frota/:id", async (req, res) => {
   try {
@@ -9863,20 +9900,6 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
     await pool.query("DELETE FROM alunos_ativos WHERE id = $1", [req.params.id]);
     return res.json({ success: true });
   } catch (e) {
-    return res.status(500).json({ success: false });
-  }
-});
-
-app.post("/api/reprocessar-alunos-pontos", async (_req, res) => {
-  try {
-    await pool.query(
-      `SELECT f_vincular_aluno_ao_ponto(id)
-         FROM alunos_ativos
-        WHERE geom IS NOT NULL`
-    );
-    return res.json({ success: true });
-  } catch (e) {
-    console.error(e);
     return res.status(500).json({ success: false });
   }
 });
