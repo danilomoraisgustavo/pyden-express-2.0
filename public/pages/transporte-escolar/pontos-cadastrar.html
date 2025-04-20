@@ -765,69 +765,170 @@
     let mapPontos, infoWindowPontos
     let pontos = []
     let markersPontos = []
-    const iconGreen = "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
-    const iconRed = "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
 
+    /* ícones de marcador — vermelho = ATIVO, verde = INATIVO */
+    const iconActive = "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+    const iconInactive = "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+
+    /* ------- inicialização do mapa principal ------- */
     function initMapPontos() {
-      mapPontos = new google.maps.Map(document.getElementById('map'), { center: { lat: -6.530066, lng: -49.851630 }, zoom: 13 })
+      mapPontos = new google.maps.Map(
+        document.getElementById('map'),
+        { center: { lat: -6.530066, lng: -49.851630 }, zoom: 13 }
+      )
       infoWindowPontos = new google.maps.InfoWindow()
     }
 
+    /* ------- helper de notificação ------- */
     function showNotificationPontos(type, message) {
-      const icons = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" }
-      $.notify({ icon: icons[type] || "fa fa-bell", message }, { type, placement: { from: "top", align: "right" }, delay: 3000, animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" } })
+      const icons = {
+        success: "fa fa-check-circle",
+        danger: "fa fa-exclamation-circle",
+        warning: "fa fa-exclamation-triangle",
+        info: "fa fa-info-circle"
+      }
+      $.notify(
+        { icon: icons[type] || "fa fa-bell", message },
+        {
+          type, placement: { from: "top", align: "right" }, delay: 3000,
+          animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" }
+        }
+      )
     }
 
+    /* ------- carrega pontos do backend ------- */
     function loadPontos() {
-      fetch('/api/pontos').then(r => { if (!r.ok) throw new Error(); return r.json() }).then(data => {
-        pontos = data
-        const sel = document.getElementById('pontoSelect')
-        sel.innerHTML = '<option value="">Selecione um ponto</option>'
-        pontos.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.nome_ponto; sel.appendChild(o) })
-        placeMarkersPontos()
-        populateTablePontos()
-      }).catch(() => showNotificationPontos('danger', 'Não foi possível carregar os pontos de parada.'))
+      fetch('/api/pontos')
+        .then(r => { if (!r.ok) throw new Error(); return r.json() })
+        .then(data => {
+          pontos = data
+          const sel = document.getElementById('pontoSelect')
+          sel.innerHTML = '<option value="">Selecione um ponto</option>'
+          pontos.forEach(p => {
+            const o = document.createElement('option')
+            o.value = p.id
+            o.textContent = p.nome_ponto
+            sel.appendChild(o)
+          })
+          placeMarkersPontos()
+          populateTablePontos()
+        })
+        .catch(() => showNotificationPontos('danger', 'Não foi possível carregar os pontos de parada.'))
     }
 
-    function clearMarkersPontos() { markersPontos.forEach(m => m.setMap(null)); markersPontos = [] }
+    function clearMarkersPontos() {
+      markersPontos.forEach(m => m.setMap(null))
+      markersPontos = []
+    }
 
+    /* ------- coloca marcadores no mapa ------- */
     function placeMarkersPontos() {
       clearMarkersPontos()
       const bounds = new google.maps.LatLngBounds()
       let has = false
+
       pontos.forEach(p => {
         if (p.latitude && p.longitude) {
           const pos = { lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) }
-          const marker = new google.maps.Marker({ position: pos, map: mapPontos, title: p.nome_ponto, icon: (p.status === "ativo" ? iconGreen : iconRed) })
-          markersPontos.push(marker); has = true
+
+          /*  ícone: vermelho quando status = ativo  */
+          const marker = new google.maps.Marker({
+            position: pos,
+            map: mapPontos,
+            title: p.nome_ponto,
+            icon: (p.status === 'ativo' ? iconActive : iconInactive)
+          })
+
+          markersPontos.push(marker)
+          has = true
+
           marker.addListener('click', () => {
             const zs = p.zoneamentos ? p.zoneamentos.map(z => z.nome).join(', ') : 'Nenhum'
-            infoWindowPontos.setContent(`<div><h5>${p.nome_ponto}</h5><p><strong>Status:</strong> ${p.status === 'ativo' ? 'Ativo' : 'Inativo'}</p><p><strong>Bairro:</strong> ${p.bairro || 'Não informado'}</p><p><strong>Referência:</strong> ${p.ponto_referencia || 'Não informado'}</p><p><strong>Zoneamentos:</strong> ${zs}</p></div>`)
+            infoWindowPontos.setContent(
+              `<div>
+                 <h5>${p.nome_ponto}</h5>
+                 <p><strong>Status:</strong> ${p.status === 'ativo' ? 'Ativo' : 'Inativo'}</p>
+                 <p><strong>Bairro:</strong> ${p.bairro || 'Não informado'}</p>
+                 <p><strong>Referência:</strong> ${p.ponto_referencia || 'Não informado'}</p>
+                 <p><strong>Zoneamentos:</strong> ${zs}</p>
+               </div>`
+            )
             infoWindowPontos.open(mapPontos, marker)
           })
+
           bounds.extend(pos)
         }
       })
-      if (has) mapPontos.fitBounds(bounds); else showNotificationPontos('info', 'Nenhum ponto disponível para exibir no mapa.')
+
+      if (has) {
+        mapPontos.fitBounds(bounds)
+      } else {
+        showNotificationPontos('info', 'Nenhum ponto disponível para exibir no mapa.')
+      }
     }
 
+    /* ------- tabela ------- */
     function populateTablePontos() {
       const tbody = $('#pontos-table tbody')
       tbody.empty()
+
       pontos.forEach(p => {
-        const badge = `<span class="badge ${p.status === 'ativo' ? 'bg-success' : 'bg-danger'}">${p.status === 'ativo' ? 'Ativo' : 'Inativo'}</span>`
-        tbody.append(`<tr><td>${p.id}</td><td>${p.nome_ponto}</td><td class="text-center">${badge}</td><td>${p.bairro || ''}</td><td>${p.ponto_referencia || ''}</td><td><button class="btn btn-link btn-primary btn-lg" onclick="focusPonto(${p.id})"><i class="fa fa-map-marker-alt"></i></button><button class="btn btn-link btn-warning btn-lg" onclick="editPonto(${p.id})"><i class="fa fa-edit"></i></button></td></tr>`)
+        const badge =
+          `<span class="badge ${p.status === 'ativo' ? 'bg-success' : 'bg-danger'}">
+             ${p.status === 'ativo' ? 'Ativo' : 'Inativo'}
+           </span>`
+
+        tbody.append(
+          `<tr>
+             <td>${p.id}</td>
+             <td>${p.nome_ponto}</td>
+             <td class="text-center">${badge}</td>
+             <td>${p.bairro || ''}</td>
+             <td>${p.ponto_referencia || ''}</td>
+             <td>
+               <button class="btn btn-link btn-primary btn-lg" onclick="focusPonto(${p.id})">
+                 <i class="fa fa-map-marker-alt"></i>
+               </button>
+               <button class="btn btn-link btn-warning btn-lg" onclick="editPonto(${p.id})">
+                 <i class="fa fa-edit"></i>
+               </button>
+             </td>
+           </tr>`
+        )
       })
-      if ($.fn.DataTable.isDataTable('#pontos-table')) $('#pontos-table').DataTable().destroy()
-      $('#pontos-table').DataTable({ pageLength: 10, language: { decimal: ",", thousands: ".", info: "Mostrando _START_ até _END_ de _TOTAL_ registros", infoEmpty: "Mostrando 0 até 0 de 0 registros", infoFiltered: "(filtrado de _MAX_ registros no total)", lengthMenu: "Mostrar _MENU_ registros", loadingRecords: "Carregando...", processing: "Processando...", search: "Pesquisar:", zeroRecords: "Nenhum registro encontrado", paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" }, emptyTable: "Nenhum dado disponível na tabela" } })
+
+      if ($.fn.DataTable.isDataTable('#pontos-table')) {
+        $('#pontos-table').DataTable().destroy()
+      }
+      $('#pontos-table').DataTable({
+        pageLength: 10,
+        language: {
+          decimal: ",",
+          thousands: ".",
+          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+          infoEmpty: "Mostrando 0 até 0 de 0 registros",
+          infoFiltered: "(filtrado de _MAX_ registros no total)",
+          lengthMenu: "Mostrar _MENU_ registros",
+          loadingRecords: "Carregando...",
+          processing: "Processando...",
+          search: "Pesquisar:",
+          zeroRecords: "Nenhum registro encontrado",
+          paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
+          emptyTable: "Nenhum dado disponível na tabela"
+        }
+      })
     }
 
+    /* ------- focar ponto específico ------- */
     function focusPonto(id) {
       const p = pontos.find(pt => pt.id == id)
       if (!p || !p.latitude || !p.longitude) return
       const pos = { lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) }
-      mapPontos.setCenter(pos); mapPontos.setZoom(18)
-      const marker = markersPontos.find(m => m.getPosition().lat() === pos.lat && m.getPosition().lng() === pos.lng)
+      mapPontos.setCenter(pos)
+      mapPontos.setZoom(18)
+      const marker = markersPontos.find(
+        m => m.getPosition().lat() === pos.lat && m.getPosition().lng() === pos.lng
+      )
       if (marker) google.maps.event.trigger(marker, 'click')
     }
 
