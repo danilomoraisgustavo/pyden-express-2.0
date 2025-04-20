@@ -4559,39 +4559,68 @@ app.post("/api/motoristas/check-cpf", async (req, res) => {
 app.get("/api/pontos", async (req, res) => {
   try {
     const q = `
-      SELECT  p.id,
-              p.nome_ponto,
-              p.latitude,
-              p.longitude,
-              p.area,
-              p.logradouro,
-              p.numero,
-              p.complemento,
-              p.ponto_referencia,
-              p.bairro,
-              p.cep,
-              p.status,
-              COALESCE(q.total,0)                                    AS alunos_count,
-              COALESCE(
-                json_agg(
-                  json_build_object('id',z.id,'nome',z.nome)
-                ) FILTER (WHERE z.id IS NOT NULL),
-                '[]'
-              )                                                     AS zoneamentos
-      FROM   pontos p
-      LEFT JOIN (
-        SELECT  ap.ponto_id,
-                COUNT(DISTINCT ap.aluno_id) AS total
-        FROM    alunos_pontos ap
-        JOIN    alunos_ativos a ON a.id = ap.aluno_id
-        WHERE   a.latitude  IS NOT NULL
-          AND   a.longitude IS NOT NULL
-          AND   a.transporte_escolar_poder_publico ILIKE ANY (ARRAY['Municipal','Estadual'])
-        GROUP BY ap.ponto_id
-      ) q ON q.ponto_id = p.id
+      WITH alunos_turno AS (
+        SELECT
+          ap.ponto_id,
+          CASE
+            WHEN a.turma ILIKE '%-MAT'  THEN 'manha'
+            WHEN a.turma ILIKE '%-VESP' THEN 'tarde'
+            WHEN a.turma ILIKE '%-NOT'  THEN 'noite'
+            WHEN a.turma ILIKE '%-INT'  THEN 'integral'
+            ELSE NULL
+          END AS turno
+        FROM alunos_ativos a
+        JOIN alunos_pontos ap ON ap.aluno_id = a.id
+        WHERE a.latitude IS NOT NULL
+          AND a.longitude IS NOT NULL
+          AND LOWER(a.transporte_escolar_poder_publico) IN ('municipal','estadual')
+      ),
+      alunos_agg AS (
+        SELECT
+          ponto_id,
+          COUNT(*)                                              AS total,
+          COUNT(*) FILTER (WHERE turno = 'manha')               AS manha,
+          COUNT(*) FILTER (WHERE turno = 'tarde')               AS tarde,
+          COUNT(*) FILTER (WHERE turno = 'noite')               AS noite,
+          COUNT(*) FILTER (WHERE turno = 'integral')            AS integral
+        FROM alunos_turno
+        GROUP BY ponto_id
+      )
+      SELECT
+        p.id,
+        p.nome_ponto,
+        p.latitude,
+        p.longitude,
+        p.area,
+        p.logradouro,
+        p.numero,
+        p.complemento,
+        p.ponto_referencia,
+        p.bairro,
+        p.cep,
+        p.status,
+        COALESCE(a.total,0)     AS alunos_count,
+        COALESCE(a.manha,0)     AS alunos_manha,
+        COALESCE(a.tarde,0)     AS alunos_tarde,
+        COALESCE(a.noite,0)     AS alunos_noite,
+        COALESCE(a.integral,0)  AS alunos_integral,
+        COALESCE(
+          json_agg(
+            json_build_object('id',z.id,'nome',z.nome)
+          ) FILTER (WHERE z.id IS NOT NULL),
+          '[]'
+        )                      AS zoneamentos
+      FROM pontos p
+      LEFT JOIN alunos_agg         a  ON a.ponto_id = p.id
       LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-      LEFT JOIN zoneamentos         z ON z.id = pz.zoneamento_id
-      GROUP BY p.id, q.total
+      LEFT JOIN zoneamentos        z  ON z.id = pz.zoneamento_id
+      GROUP BY
+        p.id,
+        a.total,
+        a.manha,
+        a.tarde,
+        a.noite,
+        a.integral
       ORDER BY p.id;
     `;
     const { rows } = await pool.query(q);
