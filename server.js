@@ -4515,31 +4515,51 @@ app.post("/api/motoristas/check-cpf", async (req, res) => {
 // ====================================================================================
 
 /* ------------------------------------------------------------------
-   LISTAR TODOS
+   LISTAR TODOS OS PONTOS (AGORA COM alunos_count)
 ------------------------------------------------------------------ */
 app.get("/api/pontos", async (req, res) => {
   try {
     const q = `
-      SELECT p.id, p.nome_ponto, p.latitude, p.longitude, p.area,
-             p.logradouro, p.numero, p.complemento, p.ponto_referencia,
-             p.bairro, p.cep, p.status,
-             COALESCE(
-               json_agg(
-                 json_build_object('id', z.id, 'nome', z.nome)
-               ) FILTER (WHERE z.id IS NOT NULL),
-               '[]') AS zoneamentos
+      SELECT  p.id,
+              p.nome_ponto,
+              p.latitude,
+              p.longitude,
+              p.area,
+              p.logradouro,
+              p.numero,
+              p.complemento,
+              p.ponto_referencia,
+              p.bairro,
+              p.cep,
+              p.status,
+              /* ---------- qtde de alunos ---------- */
+              COALESCE(COUNT(ap.aluno_id),0)               AS alunos_count,
+
+              /* ---------- lista de zoneamentos ----- */
+              COALESCE(
+                json_agg(
+                  json_build_object('id',z.id,'nome',z.nome)
+                ) FILTER (WHERE z.id IS NOT NULL),
+                '[]'
+              )                                            AS zoneamentos
       FROM pontos p
+      /* alunos atribuídos */
+      LEFT JOIN alunos_pontos  ap ON ap.ponto_id = p.id
+      /* zoneamentos */
       LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-      LEFT JOIN zoneamentos z        ON z.id = pz.zoneamento_id
+      LEFT JOIN zoneamentos         z ON z.id = pz.zoneamento_id
       GROUP BY p.id
       ORDER BY p.id;
     `;
+
     const { rows } = await pool.query(q);
-    res.json(rows);                               /* ←  já inclui status   */
+    res.json(rows);
   } catch (e) {
+    console.error(e);
     res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
+
 
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
