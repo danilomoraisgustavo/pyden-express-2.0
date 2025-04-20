@@ -4152,14 +4152,14 @@ app.post("/api/fornecedor/frota/atribuir-rota", async (req, res) => {
 });
 app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
   const idAluno = Number(req.params.id);
-  const aluno = await db.oneOrNone(
+  const aluno = await pool.oneOrNone(
     'SELECT id, latitude, longitude FROM alunos_ativos WHERE id = $1',
     [idAluno]
   );
   if (!aluno || aluno.latitude == null || aluno.longitude == null)
     return res.status(400).json({ error: 'Aluno sem geolocalização' });
 
-  const pontoMaisProx = await db.one(
+  const pontoMaisProx = await pool.one(
     `
     WITH cand AS (
       SELECT id,
@@ -4175,7 +4175,7 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
     [aluno.latitude, aluno.longitude]
   );
 
-  await db.tx(async t => {
+  await pool.tx(async t => {
     await t.none(
       `INSERT INTO alunos_pontos (aluno_id, ponto_id)
          VALUES ($1,$2)
