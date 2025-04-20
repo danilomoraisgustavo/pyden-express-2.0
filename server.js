@@ -4150,7 +4150,7 @@ app.post("/api/fornecedor/frota/atribuir-rota", async (req, res) => {
     });
   }
 });
-router.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
+app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
   const idAluno = Number(req.params.id);
   const aluno = await db.oneOrNone(
     'SELECT id, latitude, longitude FROM alunos_ativos WHERE id = $1',
