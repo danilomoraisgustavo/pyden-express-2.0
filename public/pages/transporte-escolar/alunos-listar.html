@@ -1028,21 +1028,20 @@
       alunoAtual = null,
       currentAlunoMarker = null,
       currentAlunoPosition = null,
-      alunosMapList = []; /* lista do modal de mapa */
+      alunosMapList = [];
 
     /* ---------- utilidades ---------- */
-    function showLoader() { document.getElementById("globalLoader").style.display = "flex" }
-    function hideLoader() { document.getElementById("globalLoader").style.display = "none" }
+    function showLoader() { document.getElementById("globalLoader").style.display = "flex"; }
+    function hideLoader() { document.getElementById("globalLoader").style.display = "none"; }
     function showNotification(type, msg) {
-      $.notify(
-        { message: msg, icon: type === "success" ? "fa fa-check-circle" : type === "danger" ? "fa fa-exclamation-circle" : "fa fa-info-circle" },
+      $.notify({ message: msg, icon: type === "success" ? "fa fa-check-circle" : type === "danger" ? "fa fa-exclamation-circle" : "fa fa-info-circle" },
         {
           type, placement: { from: "top", align: "right" }, offset: 20, spacing: 10, z_index: 1031, delay: 3000, timer: 1000,
           animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" }
         });
     }
 
-    /* ---------- escolas (selects + filtros) ---------- */
+    /* ---------- escolas ---------- */
     function popularFiltroEscola() {
       const f = $("#filtroEscola"), v = f.val() || "";
       f.empty().append('<option value="">Todas</option>');
@@ -1062,12 +1061,8 @@
     function carregarEscolas() {
       showLoader();
       fetch("/api/escolas").then(r => r.json()).then(d => {
-        escolasLista = d;
-        popularSelectEscolas();
-        popularSelectEscolasMap();
-        popularFiltroEscola();
-      }).catch(() => showNotification("danger", "Erro ao carregar lista de escolas."))
-        .finally(hideLoader);
+        escolasLista = d; popularSelectEscolas(); popularSelectEscolasMap(); popularFiltroEscola();
+      }).catch(() => showNotification("danger", "Erro ao carregar lista de escolas.")).finally(hideLoader);
     }
 
     /* ---------- importação XLSX ---------- */
@@ -1085,20 +1080,20 @@
       if (!escolaId) { showNotification("danger", "Selecione uma escola antes de importar."); return; }
       if (!dadosXLSX.length) { showNotification("danger", "Nenhum arquivo importado ainda."); return; }
       showLoader();
-      fetch("/api/import-alunos-ativos", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ escolaId, alunos: dadosXLSX })
-      })
+      fetch("/api/import-alunos-ativos",
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ escolaId, alunos: dadosXLSX }) })
         .then(r => r.json()).then(resp => {
           if (resp.success) { showNotification("success", resp.message || "Importação realizada com sucesso!"); $("#modalImportar").modal("hide"); }
           else { showNotification("danger", resp.message || "Ocorreu um erro na importação."); }
-        }).catch(() => showNotification("danger", "Erro ao enviar os dados ao servidor."))
-        .finally(hideLoader);
+        }).catch(() => showNotification("danger", "Erro ao enviar os dados ao servidor.")).finally(hideLoader);
     }
 
     /* ---------- mapa geral ---------- */
     function initMap() { map = new google.maps.Map(document.getElementById("map"), { center: { lat: -3.135366, lng: -60.023207 }, zoom: 4, mapId: "ca7a0e55f44be727" }); }
-    $("#modalMapear").on("shown.bs.modal", () => { if (!map) initMap(); $("#btnAssociarPontosMap").prop("disabled", true); });
+    $("#modalMapear").on("shown.bs.modal", () => {
+      if (!map) initMap();
+      $("#btnAssociarPontosMap").prop("disabled", true);
+    });
 
     $(document).on("click", "#btnFiltrarMapa", () => {
       const escola = $("#selectEscolaMap").val(), busca = $("#buscarAlunoInput").val().trim(), q = new URLSearchParams();
@@ -1115,24 +1110,31 @@
           $("#btnAssociarPontosMap").prop("disabled", true);
           showNotification("info", "Nenhum aluno encontrado.");
         }
-      }).catch(() => { alunosMapList = []; $("#btnAssociarPontosMap").prop("disabled", true); showNotification("danger", "Erro ao filtrar alunos no mapa."); })
-        .finally(hideLoader);
+      }).catch(() => {
+        alunosMapList = []; $("#btnAssociarPontosMap").prop("disabled", true);
+        showNotification("danger", "Erro ao filtrar alunos no mapa.");
+      }).finally(hideLoader);
     });
 
     $(document).on("click", "#btnAssociarPontosMap", () => {
       if (!alunosMapList.length) return;
+      const alunosComGeo = alunosMapList.filter(a => a.latitude != null && a.longitude != null);
+      if (!alunosComGeo.length) { showNotification("info", "Nenhum aluno com coordenadas para associar."); return; }
       showLoader();
-      Promise.all(alunosMapList.map(a =>
+      Promise.all(alunosComGeo.map(a =>
         fetch(`/api/alunos/${a.id}/associar-ponto-mais-proximo`, { method: "POST" })
-          .then(r => r.json()).catch(() => ({ error: true }))
-      ))
-        .then(r => {
-          const ok = r.filter(x => !x.error && !x.errorMessage).length;
-          showNotification("success", `${ok} aluno(s) associado(s) ao ponto mais próximo.`);
-          $("#btnAssociarPontosMap").prop("disabled", true);
-        })
-        .catch(() => showNotification("danger", "Erro na associação dos alunos."))
-        .finally(hideLoader);
+          .then(async resp => {
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) { return { erro: true, id: a.id, msg: data.error || "erro" }; }
+            return { ok: true, id: a.id };
+          }).catch(() => ({ erro: true, id: a.id, msg: "falha de rede" }))
+      )).then(res => {
+        const ok = res.filter(x => x.ok).length;
+        const falhas = res.filter(x => x.erro);
+        showNotification("success", `${ok} aluno(s) associado(s) com sucesso.`);
+        falhas.forEach(f => showNotification("warning", `Aluno ${f.id}: ${f.msg}`));
+        $("#btnAssociarPontosMap").prop("disabled", true);
+      }).catch(() => showNotification("danger", "Erro na associação dos alunos.")).finally(hideLoader);
     });
 
     function plotarMapa(alunos, escolaData) {
@@ -1171,56 +1173,36 @@
       showLoader();
       fetch("/api/alunos-ativos?" + q.toString()).then(r => r.json()).then(d => {
         alunosData = d; popularTabela(alunosData); popularFiltros(alunosData);
-      }).catch(() => showNotification("danger", "Erro ao carregar dados do banco."))
-        .finally(hideLoader);
+      }).catch(() => showNotification("danger", "Erro ao carregar dados do banco.")).finally(hideLoader);
     }
 
     /* ---------- DataTable ---------- */
     function popularTabela(alunos) {
       const tbody = $("#alunos-table tbody"); tbody.empty();
       if (dataTable) { dataTable.clear().destroy(); }
-      if (!alunos.length) {
-        dataTable = $("#alunos-table").DataTable({ pageLength: 10, language: dtLang }); return;
-      }
+      if (!alunos.length) { dataTable = $("#alunos-table").DataTable({ pageLength: 10, language: dtLang }); return; }
       alunos.forEach(it => {
         const def = it.deficiencia && Array.isArray(it.deficiencia) ? JSON.stringify(it.deficiencia) : it.deficiencia || "";
-        const row = `<tr data-id="${it.id}" data-obj='${JSON.stringify(it)}'>
-          <td>${it.id_matricula || ""}</td>
-          <td>${it.id_pessoa || ""}</td>
-          <td>${it.escola_nome || ""}</td>
-          <td>${it.ano || ""}</td>
-          <td>${it.modalidade || ""}</td>
-          <td>${it.formato_letivo || ""}</td>
-          <td>${it.turma || ""}</td>
-          <td>${it.pessoa_nome || ""}</td>
-          <td>${it.cpf || ""}</td>
-          <td>${it.data_nascimento || ""}</td>
-          <td>${it.transporte_escolar_poder_publico || ""}</td>
-          <td>${it.cep || ""}</td>
-          <td>${it.bairro || ""}</td>
-          <td>${it.numero_pessoa_endereco || ""}</td>
-          <td>${it.filiacao_1 || ""}</td>
-          <td>${it.numero_telefone || ""}</td>
-          <td>${it.filiacao_2 || ""}</td>
-          <td>${it.responsavel || ""}</td>
-          <td>${def}</td>
-          <td>${it.latitude || ""}</td>
-          <td>${it.longitude || ""}</td>
+        tbody.append(`<tr data-id="${it.id}" data-obj='${JSON.stringify(it)}'>
+          <td>${it.id_matricula || ""}</td><td>${it.id_pessoa || ""}</td><td>${it.escola_nome || ""}</td>
+          <td>${it.ano || ""}</td><td>${it.modalidade || ""}</td><td>${it.formato_letivo || ""}</td><td>${it.turma || ""}</td>
+          <td>${it.pessoa_nome || ""}</td><td>${it.cpf || ""}</td><td>${it.data_nascimento || ""}</td>
+          <td>${it.transporte_escolar_poder_publico || ""}</td><td>${it.cep || ""}</td><td>${it.bairro || ""}</td>
+          <td>${it.numero_pessoa_endereco || ""}</td><td>${it.filiacao_1 || ""}</td><td>${it.numero_telefone || ""}</td>
+          <td>${it.filiacao_2 || ""}</td><td>${it.responsavel || ""}</td><td>${def}</td><td>${it.latitude || ""}</td><td>${it.longitude || ""}</td>
           <td>
             <button class="btn btn-sm btn-warning btn-editar"   title="Editar"><i class="fa fa-edit"></i></button>
             <button class="btn btn-sm btn-info    btn-localizar" title="Localizar"><i class="fa fa-map-marker-alt"></i></button>
             <button class="btn btn-sm btn-danger  btn-excluir"   title="Excluir"><i class="fa fa-trash"></i></button>
-          </td>
-        </tr>`;
-        tbody.append(row);
+          </td></tr>`);
       });
       dataTable = $("#alunos-table").DataTable({ pageLength: 10, language: dtLang });
     }
     const dtLang = {
       decimal: ",", thousands: ".", info: "Mostrando _START_ até _END_ de _TOTAL_ registros", infoEmpty: "Mostrando 0 até 0 de 0 registros",
-      infoFiltered: "(filtrado de _MAX_ registros no total)", lengthMenu: "Mostrar _MENU_ registros", loadingRecords: "Carregando...",
-      processing: "Processando...", search: "Pesquisar:", zeroRecords: "Nenhum registro encontrado",
-      paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" }, emptyTable: "Nenhum dado disponível na tabela"
+      infoFiltered: "(filtrado de _MAX_ registros no total)", lengthMenu: "Mostrar _MENU_ registros", loadingRecords: "Carregando...", processing: "Processando...",
+      search: "Pesquisar:", zeroRecords: "Nenhum registro encontrado", paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
+      emptyTable: "Nenhum dado disponível na tabela"
     };
 
     function popularFiltros(alunos) {
