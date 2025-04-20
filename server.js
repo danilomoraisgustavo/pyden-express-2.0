@@ -4150,48 +4150,97 @@ app.post("/api/fornecedor/frota/atribuir-rota", async (req, res) => {
     });
   }
 });
+
 app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
-  const idAluno = Number(req.params.id);
-  const aluno = await pool.oneOrNone(
-    'SELECT id, latitude, longitude FROM alunos_ativos WHERE id = $1',
-    [idAluno]
-  );
-  if (!aluno || aluno.latitude == null || aluno.longitude == null)
-    return res.status(400).json({ error: 'Aluno sem geolocalização' });
+  const alunoId = Number(req.params.id);
 
-  const pontoMaisProx = await pool.one(
-    `
-    WITH cand AS (
-      SELECT id,
-             6371 * acos(
-               cos(radians($1)) * cos(radians(latitude)) *
-               cos(radians(longitude) - radians($2)) +
-               sin(radians($1)) * sin(radians(latitude))
-             ) AS d
-      FROM pontos
-    )
-    SELECT id, d FROM cand ORDER BY d LIMIT 1
-    `,
-    [aluno.latitude, aluno.longitude]
-  );
-
-  await pool.tx(async t => {
-    await t.none(
-      `INSERT INTO alunos_pontos (aluno_id, ponto_id)
-         VALUES ($1,$2)
-       ON CONFLICT (aluno_id) DO UPDATE SET ponto_id = EXCLUDED.ponto_id`,
-      [idAluno, pontoMaisProx.id]
+  // abre uma conexão dedicada para controlar a transação
+  const client = await pool.connect();
+  try {
+    /* 1. Recupera a geolocalização do aluno -------------------- */
+    const { rows: alunoRows } = await client.query(
+      `SELECT id, latitude, longitude
+         FROM alunos_ativos
+        WHERE id = $1`,
+      [alunoId]
     );
-    // se também gravar em alunos_ativos:
-    await t.none('UPDATE alunos_ativos SET ponto_id = $2 WHERE id = $1',
-      [idAluno, pontoMaisProx.id]);
-  });
 
-  res.json({
-    alunoId: idAluno,
-    pontoId: pontoMaisProx.id,
-    distancia_km: Number(pontoMaisProx.d).toFixed(3)
-  });
+    if (
+      alunoRows.length === 0 ||
+      alunoRows[0].latitude == null ||
+      alunoRows[0].longitude == null
+    ) {
+      return res.status(400).json({ error: 'Aluno sem geolocalização' });
+    }
+
+    const { latitude, longitude } = alunoRows[0];
+
+    /* 2. Busca o ponto mais próximo ---------------------------- */
+    const { rows: pontoRows } = await client.query(
+      `
+      WITH cand AS (
+        SELECT id,
+               6371 * acos(
+                 cos(radians($1)) * cos(radians(latitude)) *
+                 cos(radians(longitude) - radians($2)) +
+                 sin(radians($1)) * sin(radians(latitude))
+               ) AS d
+        FROM pontos
+        WHERE latitude IS NOT NULL
+          AND longitude IS NOT NULL
+      )
+      SELECT id, d
+        FROM cand
+    ORDER BY d
+       LIMIT 1
+      `,
+      [latitude, longitude]
+    );
+
+    if (pontoRows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: 'Nenhum ponto com coordenadas cadastrado' });
+    }
+
+    const pontoId = pontoRows[0].id;
+    const distanciaKm = Number(pontoRows[0].d).toFixed(3);
+
+    /* 3. Grava em transação ------------------------------------ */
+    await client.query('BEGIN');
+
+    // tabela de relacionamento (alunos_pontos)
+    await client.query(
+      `
+      INSERT INTO alunos_pontos (aluno_id, ponto_id)
+           VALUES ($1, $2)
+      ON CONFLICT (aluno_id)
+      DO UPDATE SET ponto_id = EXCLUDED.ponto_id
+      `,
+      [alunoId, pontoId]
+    );
+
+    // se você também guarda o campo direto em alunos_ativos
+    await client.query(
+      `UPDATE alunos_ativos SET ponto_id = $2 WHERE id = $1`,
+      [alunoId, pontoId]
+    );
+
+    await client.query('COMMIT');
+
+    /* 4. Resposta ---------------------------------------------- */
+    return res.json({
+      alunoId,
+      pontoId,
+      distancia_km: distanciaKm,
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Erro ao associar ponto mais próximo:', err);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  } finally {
+    client.release();
+  }
 });
 
 app.delete("/api/fornecedor/frota/:id", async (req, res) => {
