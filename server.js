@@ -4301,6 +4301,85 @@ app.get("/api/relatorio/alunos-mapeados", async (req, res) => {
   }
 });
 
+app.post("/api/rotas/cadastrar-zoneada", async (req, res) => {
+  const {
+    identificador,
+    descricao,
+    areaZona,
+    partidaLat,
+    partidaLng,
+    chegadaLat,
+    chegadaLng,
+    zoneamentos = [],
+    pontosParada = [],
+    fornecedores = []
+  } = req.body;
+
+  // validação mínima
+  if (!identificador || !descricao || !areaZona || partidaLat == null || partidaLng == null) {
+    return res.status(400).json({ success: false, message: "Campos obrigatórios faltando." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 1) insere na tabela rotas
+    const insertRotaText = `
+      INSERT INTO rotas
+        (identificador, descricao, area_zona, partida_lat, partida_lng, chegada_lat, chegada_lng)
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      RETURNING id
+    `;
+    const { rows } = await client.query(insertRotaText, [
+      identificador,
+      descricao,
+      areaZona,
+      partidaLat,
+      partidaLng,
+      chegadaLat || partidaLat,
+      chegadaLng || partidaLng
+    ]);
+    const rotaId = rows[0].id;
+
+    // 2) vínculos com zoneamentos
+    if (zoneamentos.length) {
+      const vals = zoneamentos.map((_, i) => `($1, $${i + 2})`).join(", ");
+      await client.query(
+        `INSERT INTO rotas_zoneamentos (rota_id, zoneamento_id) VALUES ${vals}`,
+        [rotaId, ...zoneamentos]
+      );
+    }
+
+    // 3) vínculos com pontos de parada
+    if (pontosParada.length) {
+      const vals = pontosParada.map((_, i) => `($1, $${i + 2})`).join(", ");
+      await client.query(
+        `INSERT INTO rotas_pontos (rota_id, ponto_id) VALUES ${vals}`,
+        [rotaId, ...pontosParada]
+      );
+    }
+
+    // 4) vínculos com fornecedores
+    if (fornecedores.length) {
+      const vals = fornecedores.map((_, i) => `($1, $${i + 2})`).join(", ");
+      await client.query(
+        `INSERT INTO fornecedores_rotas (rota_id, fornecedor_id) VALUES ${vals}`,
+        [rotaId, ...fornecedores]
+      );
+    }
+
+    await client.query("COMMIT");
+    res.json({ success: true, id: rotaId });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Erro ao cadastrar rota zoneada:", err);
+    res.status(500).json({ success: false, message: "Erro interno ao cadastrar rota." });
+  } finally {
+    client.release();
+  }
+});
+
 app.delete("/api/fornecedor/frota/:id", async (req, res) => {
   try {
     const userId = req.session?.userId;
