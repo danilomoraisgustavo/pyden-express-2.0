@@ -2,19 +2,20 @@
 <html lang="pt-br">
 
 <head>
-    <!-- cabeçalho, CSS e Google Maps/Leaflet como no rotas-listar.html -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Rotas Inteligentes</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
+    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+    <script src="https://maps.googleapis.com/maps/api/js?key=SEU_KEY"></script>
 </head>
 
 <body>
     <div class="wrapper">
-        <!-- sidebar idem ao rotas-listar, mas com item "Rotas Inteligentes" -->
+        <!-- sidebar igual ao rote-listar -->
         <div class="main-panel">
             <div class="container page-inner">
                 <h3>Rotas Inteligentes</h3>
-                <!-- Formulário para seleção de escolas -->
-                <form id="formRotasInteligentes" class="row g-3 align-items-end mb-4">
+                <form id="formRotasInteligentes" class="row g-3 mb-4 align-items-end">
                     <div class="col-md-6">
                         <label for="selectEscolas" class="form-label">Escolas</label>
                         <select id="selectEscolas" class="form-select" multiple required></select>
@@ -23,43 +24,36 @@
                         <button id="btnGerarRota" class="btn btn-primary">Gerar Rota</button>
                     </div>
                 </form>
-
-                <!-- Mapa para visualização -->
-                <div id="map" style="height:500px;width:100%;"></div>
-                <!-- Detalhes da rota gerada -->
+                <div id="map" style="height:500px;width:100%"></div>
                 <div id="detalhesRota" class="mt-4"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // 1) Carrega lista de escolas para o <select>
+        let map, markers = [];
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: -3.743, lng: -49.832 }, zoom: 12
+            });
+        }
+        initMap();
+
         fetch('/api/escolas')
             .then(r => r.json())
             .then(escolas => {
                 const sel = document.getElementById('selectEscolas');
                 escolas.forEach(e => {
                     const opt = document.createElement('option');
-                    opt.value = e.id;
-                    opt.textContent = e.nome;
+                    opt.value = e.id; opt.textContent = e.nome;
                     sel.appendChild(opt);
                 });
             });
 
-        // 2) Inicializa mapa
-        let map, markers = [];
-        function initMap() {
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: { lat: -3.7319, lng: -38.5267 }, zoom: 12
-            });
-        }
-        initMap();
-
-        // 3) Dispara geração de rota
         document.getElementById('btnGerarRota').addEventListener('click', async e => {
             e.preventDefault();
             const sel = document.getElementById('selectEscolas');
-            const escolas = Array.from(sel.selectedOptions).map(o => parseInt(o.value));
+            const escolas = Array.from(sel.selectedOptions).map(o => +o.value);
             if (!escolas.length) return alert('Selecione ao menos uma escola.');
             const res = await fetch('/api/rotas-inteligentes/gerar', {
                 method: 'POST',
@@ -71,36 +65,24 @@
             mostrarDetalhes(rota);
         });
 
-        // 4) Renderiza rota no mapa
         function mostrarRotaNoMapa(rota) {
-            // limpa marcadores
-            markers.forEach(m => m.setMap(null)); markers = [];
-            // adiciona marcadores dos pontos na ordem
-            rota.ordem_pontos.forEach((pid, idx) => {
-                // busca coords via API /api/pontos/:id (implemente se necessário)
-                fetch(`/api/pontos/${pid}`)
-                    .then(r => r.json())
-                    .then(p => {
-                        const marker = new google.maps.Marker({
-                            position: { lat: p.latitude, lng: p.longitude },
-                            label: String(idx + 1),
-                            map
-                        });
-                        markers.push(marker);
-                    });
+            markers.forEach(m => m.setMap(null));
+            markers = rota.pontos.map((p, i) => {
+                return new google.maps.Marker({
+                    position: { lat: p.latitude, lng: p.longitude },
+                    label: String(i + 1),
+                    map
+                });
             });
-            // centraliza no primeiro ponto
-            // ...
+            if (markers.length) map.panTo(markers[0].getPosition());
         }
 
-        // 5) Exibe informações da rota
         function mostrarDetalhes(r) {
-            const div = document.getElementById('detalhesRota');
-            div.innerHTML = `
+            document.getElementById('detalhesRota').innerHTML = `
         <p><strong>Identificador:</strong> ${r.identificador}</p>
         <p><strong>Tipo:</strong> ${r.tipo}</p>
-        <p><strong>Veículo sugerido:</strong> ${r.veiculo_sugerido}</p>
-        <p><strong>Duração estimada:</strong> ${r.duracao_minutos} min</p>
+        <p><strong>Veículo:</strong> ${r.veiculo_sugerido}</p>
+        <p><strong>Duração:</strong> ${r.duracao_minutos} min</p>
         <p><strong>Distância:</strong> ${r.distancia_km} km</p>
       `;
         }
