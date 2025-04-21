@@ -19,8 +19,7 @@ const { DOMParser } = require("@xmldom/xmldom");
 const tj = require("@mapbox/togeojson");
 const axios = require("axios");
 const intelligentRoutes = require('./routes/intelligentRoutes');
-const http = require('http').createServer(app);
-const io = require('socket.io')(http, { cors: { origin: '*' } });
+
 
 
 const {
@@ -111,6 +110,8 @@ function isAdmin(req, res, next) {
     });
 }
 
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, { cors: { origin: '*' } });
 
 // MIDDLEWARE: isAuthenticated (protege rotas e páginas)
 
