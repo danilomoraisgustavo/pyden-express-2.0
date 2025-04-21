@@ -814,36 +814,50 @@
     const iconStartEnd = "https://maps.google.com/mapfiles/ms/icons/green-dot.png";
     const iconEscola = "https://maps.google.com/mapfiles/kml/pal3/icon56.png";
     const iconPonto = "https://maps.google.com/mapfiles/kml/pal2/icon13.png";
-    const iconEscolaView = "../../assets/img/escola.png";
-    const iconAlunoView = "../../assets/img/alunos.png";
-    const iconPontoView = "../../assets/img/bus-stop.png";
 
+    /* mapas */
     let mapCreate, mapEdit, modalMapView;
+
+    /* marcadores */
     let startMarker = null;
     let editStartMarker = null;
     let escolaMarkers = [];
     let pontoMarkers = [];
     let editEscolaMarkers = [];
     let editPontoMarkers = [];
+
+    /* dados */
     let escolasData = [];
     let pontosData = [];
     let fornecedoresData = [];
+
+    /* seleções – modal NOVA */
     let isPlacingStart = false;
     let escolasSelecionadas = [];
     let zoneamentosSelecionados = [];
     let pontosParadaSelecionados = [];
     let fornecedoresSelecionados = [];
+
+    /* seleções – modal EDITAR */
     let isPlacingEditStart = false;
     let editEscolasSelecionadas = [];
     let editPontosParadaSelecionados = [];
     let editFornecedoresSelecionados = [];
     let editRotasEscolasData = [];
     let editRotasPontosData = [];
+
+    /* outros */
     let rotasTable = null;
     let currentRotaId = null;
     let directionsService = null;
     let directionsRenderer = null;
+
+    /* dados de alunos carregados para modal */
     let alunosRouteData = [];
+
+    /* ------------------------------------------------------------------ */
+    /* NOTIFICAÇÃO BOOTSTRAP‑NOTIFY                                       */
+    /* ------------------------------------------------------------------ */
     function showNotification(type, message) {
       const icon = {
         success: "fa fa-check-circle",
@@ -861,6 +875,10 @@
         }
       );
     }
+
+    /* ------------------------------------------------------------------ */
+    /* CARREGAR DADOS INICIAIS                                            */
+    /* ------------------------------------------------------------------ */
     function loadEscolasPontosForn() {
       Promise.all([
         fetch("/api/escolas").then(r => r.json()),
@@ -874,6 +892,10 @@
         initFornecedoresList();
       }).catch(() => showNotification("danger", "Erro ao carregar dados."));
     }
+
+    /* ------------------------------------------------------------------ */
+    /* MAPA – MODAL NOVA ROTA                                              */
+    /* ------------------------------------------------------------------ */
     function initMapCreate() {
       mapCreate = new google.maps.Map(
         document.getElementById("map-modal-create"),
@@ -896,6 +918,10 @@
         isPlacingStart = false;
       });
     }
+
+    /* ------------------------------------------------------------------ */
+    /* ESCOLAS – MARCADOR E CLICK                                          */
+    /* ------------------------------------------------------------------ */
     function placeEscolasCreate() {
       escolaMarkers.forEach(m => m.setMap(null));
       escolaMarkers = [];
@@ -921,6 +947,10 @@
         escolaMarkers.push(mk);
       });
     }
+
+    /* ------------------------------------------------------------------ */
+    /* ZONEAMENTOS – LISTA DINÂMICA                                        */
+    /* ------------------------------------------------------------------ */
     function buildZoneamentosList() {
       const lista = $("#listaZoneamentos").empty();
       zoneamentosSelecionados = [];
@@ -957,6 +987,10 @@
         });
       });
     }
+
+    /* ------------------------------------------------------------------ */
+    /* PONTOS – ADICIONAR / REMOVER POR ZONEAMENTO                         */
+    /* ------------------------------------------------------------------ */
     function addPointsFromZoneamento(zid) {
       pontosData.forEach(p => {
         if (p.status !== "ativo") return;
@@ -965,6 +999,7 @@
       });
       reloadPontos();
     }
+
     function removePointsFromZoneamento(zid) {
       pontosParadaSelecionados = pontosParadaSelecionados.filter(pid => {
         const p = pontosData.find(x => x.id === pid);
@@ -972,6 +1007,10 @@
       });
       reloadPontos();
     }
+
+    /* ------------------------------------------------------------------ */
+    /* PONTOS – REDESENHAR MARCADORES                                      */
+    /* ------------------------------------------------------------------ */
     function reloadPontos() {
       pontoMarkers.forEach(m => m.setMap(null));
       pontoMarkers = [];
@@ -987,6 +1026,10 @@
         pontoMarkers.push(mk);
       });
     }
+
+    /* ------------------------------------------------------------------ */
+    /* LISTA DE FORNECEDORES                                               */
+    /* ------------------------------------------------------------------ */
     function initFornecedoresList() {
       const lista = $("#listaFornecedores").empty();
       fornecedoresSelecionados = [];
@@ -1014,8 +1057,16 @@
         });
       });
     }
+
+    /* ------------------------------------------------------------------ */
+    /* ABRIR MODAL NOVA ROTA                                               */
+    /* ------------------------------------------------------------------ */
     $("#modalNovaRota").on("shown.bs.modal", () => { if (!mapCreate) initMapCreate(); });
     $("#startMarkerBtn").click(() => { isPlacingStart = true; showNotification("info", "Clique no mapa para definir o ponto."); });
+
+    /* ------------------------------------------------------------------ */
+    /* SUBMIT – CADASTRAR NOVA ROTA                                        */
+    /* ------------------------------------------------------------------ */
     $("#formDadosRota").on("submit", function (e) {
       e.preventDefault();
       const id = $("#identificador").val().trim();
@@ -1058,6 +1109,10 @@
         })
         .catch(() => showNotification("danger", "Erro ao cadastrar."));
     });
+
+    /* ------------------------------------------------------------------ */
+    /* TABELA – CARREGAR ROTAS                                             */
+    /* ------------------------------------------------------------------ */
     function loadRotas() {
       fetch("/api/rotas-simples-detalhes")
         .then(r => r.json())
@@ -1103,6 +1158,11 @@
         })
         .catch(() => showNotification("danger", "Erro ao carregar rotas."));
     }
+    loadRotas();
+
+    /* ------------------------------------------------------------------ */
+    /* EXCLUIR ROTA                                                        */
+    /* ------------------------------------------------------------------ */
     function deleteRota(id) {
       if (!confirm("Excluir esta rota?")) return;
       fetch("/api/rotas-simples/" + id, { method: "DELETE" })
@@ -1113,6 +1173,10 @@
         })
         .catch(() => showNotification("danger", "Erro interno."));
     }
+
+    /* ------------------------------------------------------------------ */
+    /* POPULAR TABELA DE ALUNOS E CONTADORES POR TURNO                     */
+    /* ------------------------------------------------------------------ */
     function populateAlunos(alunos) {
       alunosRouteData = alunos;
       const counts = { manha: 0, tarde: 0, noite: 0, integral: 0 };
@@ -1124,6 +1188,7 @@
       document.getElementById("contador-tarde").innerText = counts.tarde;
       document.getElementById("contador-noite").innerText = counts.noite;
       document.getElementById("contador-integral").innerText = counts.integral;
+
       const tbody = $("#tabela-alunos-rota tbody").empty();
       alunos.forEach(a => {
         tbody.append(`
@@ -1140,6 +1205,10 @@
       `);
       });
     }
+
+    /* ------------------------------------------------------------------ */
+    /* DOWNLOAD CSV DE ALUNOS                                              */
+    /* ------------------------------------------------------------------ */
     function downloadCsv() {
       if (!alunosRouteData.length) {
         showNotification("warning", "Nenhum aluno para exportar");
@@ -1180,6 +1249,10 @@
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     }
+
+    /* ------------------------------------------------------------------ */
+    /* VISUALIZAR ROTA                                                     */
+    /* ------------------------------------------------------------------ */
     function openRouteModal(enc) {
       const rt = JSON.parse(decodeURIComponent(enc));
       currentRotaId = rt.id;
@@ -1217,39 +1290,24 @@
               if (st === google.maps.DirectionsStatus.OK)
                 directionsRenderer.setDirections(res);
             });
-            (det.pontosParada || []).forEach(p => new google.maps.Marker({
-              position: { lat: +p.latitude, lng: +p.longitude },
-              map: modalMapView,
-              icon: iconPontoView,
-              title: p.nome_ponto
-            }));
-            (det.escolas || []).forEach(e => new google.maps.Marker({
-              position: { lat: +e.latitude, lng: +e.longitude },
-              map: modalMapView,
-              icon: iconEscolaView,
-              title: e.nome
-            }));
           });
         fetch(`/api/rotas-simples/${currentRotaId}/alunos`)
           .then(r => r.json())
-          .then(alunos => {
-            populateAlunos(alunos);
-            (alunos || []).forEach(a => new google.maps.Marker({
-              position: { lat: +a.latitude, lng: +a.longitude },
-              map: modalMapView,
-              icon: iconAlunoView,
-              title: a.nome
-            }));
-          })
+          .then(alunos => populateAlunos(alunos))
           .catch(() => showNotification("danger", "Erro ao carregar alunos."));
       }, 400);
     }
+
+    /* ------------------------------------------------------------------ */
+    /* DOWNLOADS – KML, KMZ, GPX E CSV                                     */
+    /* ------------------------------------------------------------------ */
     function downloadRota(rotaId, formato) {
       window.open(`/api/download-rota/${rotaId}?format=${formato}`, "_blank");
     }
     function downloadAll(fmt) {
       window.open(`/api/download-rotas-todas?format=${fmt}`, "_blank");
     }
+
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("downloadKml").addEventListener("click", e => {
         e.preventDefault();
@@ -1265,9 +1323,11 @@
       });
       document.getElementById("btnDownloadCsvAlunos").addEventListener("click", downloadCsv);
     });
+
     function openEditModal(encodedData) {
       const rotaData = JSON.parse(decodeURIComponent(encodedData));
       $("#modalEditarRota").modal("show");
+
       setTimeout(() => {
         if (!mapEdit) {
           mapEdit = new google.maps.Map(document.getElementById("map-modal-edit"), {
@@ -1275,6 +1335,7 @@
             zoom: 13,
             mapTypeId: "roadmap",
           });
+
           mapEdit.addListener("click", (event) => {
             if (isPlacingEditStart) {
               const lat = event.latLng.lat();
@@ -1295,17 +1356,21 @@
             }
           });
         }
+
         document.getElementById("editRotaId").value = rotaData.id || "";
         document.getElementById("editIdentificador").value = rotaData.identificador || "";
         document.getElementById("editDescricao").value = rotaData.descricao || "";
         document.getElementById("editAreaZona").value = rotaData.area_zona || "URBANA";
+
         editEscolasSelecionadas = [];
         editPontosParadaSelecionados = [];
         editFornecedoresSelecionados = [];
+
         editEscolaMarkers.forEach((m) => m.setMap(null));
         editPontoMarkers.forEach((m) => m.setMap(null));
         editEscolaMarkers = [];
         editPontoMarkers = [];
+
         fetch(`/api/rotas_simples/${rotaData.id}`)
           .then((r) => r.json())
           .then((detalhes) => {
@@ -1326,6 +1391,7 @@
               mapEdit.setCenter({ lat, lng });
               mapEdit.setZoom(13);
             }
+
             (detalhes.escolas || []).forEach((e) => {
               editEscolasSelecionadas.push(e.id);
             });
@@ -1335,22 +1401,32 @@
             (detalhes.fornecedores || []).forEach((f) => {
               editFornecedoresSelecionados.push(f.id);
             });
+
             const ePromise = fetch("/api/escolas").then((rr) => rr.json());
             const pPromise = fetch("/api/pontos").then((rr) => rr.json());
             const fPromise = fetch("/api/fornecedores").then((rr) => rr.json());
+
             Promise.all([ePromise, pPromise, fPromise])
               .then(([esc, pts, forn]) => {
                 editRotasEscolasData = esc;
                 editRotasPontosData = pts;
                 fornecedoresData = forn;
+
                 placeEditEscolas();
                 initEditFornecedoresList();
               })
-              .catch(() => showNotification("danger", "Erro ao recarregar dados para edição."));
+              .catch((err) => {
+                console.error(err);
+                showNotification("danger", "Erro ao recarregar dados para edição.");
+              });
           })
-          .catch(() => showNotification("danger", "Erro ao carregar detalhes para edição."));
+          .catch((err) => {
+            console.error(err);
+            showNotification("danger", "Erro ao carregar detalhes para edição.");
+          });
       }, 400);
     }
+
     function initEditFornecedoresList() {
       const lista = document.getElementById("editListaFornecedores");
       lista.innerHTML = "";
@@ -1376,6 +1452,7 @@
         });
         lista.appendChild(item);
       });
+
       document.getElementById("editFornecedoresBuscar").addEventListener("keyup", function () {
         const search = this.value.toLowerCase();
         const children = lista.querySelectorAll("div");
@@ -1385,12 +1462,14 @@
         });
       });
     }
+
     function placeEditEscolas() {
       editRotasEscolasData.forEach((escola) => {
         if (!escola.latitude || !escola.longitude) return;
         const lat = parseFloat(escola.latitude);
         const lng = parseFloat(escola.longitude);
         if (isNaN(lat) || isNaN(lng)) return;
+
         const marker = new google.maps.Marker({
           position: { lat, lng },
           map: mapEdit,
@@ -1398,6 +1477,7 @@
           title: escola.nome,
         });
         editEscolaMarkers.push(marker);
+
         marker.addListener("click", () => {
           if (!editEscolasSelecionadas.includes(escola.id)) {
             editEscolasSelecionadas.push(escola.id);
@@ -1411,9 +1491,11 @@
       });
       reloadEditPontos();
     }
+
     function reloadEditPontos() {
       editPontoMarkers.forEach((m) => m.setMap(null));
       editPontoMarkers = [];
+
       const zoneSet = new Set();
       editEscolasSelecionadas.forEach((eId) => {
         const esc = editRotasEscolasData.find((e) => e.id == eId);
@@ -1423,6 +1505,7 @@
           });
         }
       });
+
       editRotasPontosData.forEach((p) => {
         const ptZoneamentos = p.zoneamentos || [];
         const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
@@ -1430,6 +1513,7 @@
           const lat = parseFloat(p.latitude);
           const lng = parseFloat(p.longitude);
           if (isNaN(lat) || isNaN(lng)) return;
+
           const marker = new google.maps.Marker({
             position: { lat, lng },
             map: mapEdit,
@@ -1437,6 +1521,7 @@
             title: p.nome_ponto,
           });
           editPontoMarkers.push(marker);
+
           marker.addListener("click", () => {
             if (!editPontosParadaSelecionados.includes(p.id)) {
               editPontosParadaSelecionados.push(p.id);
@@ -1449,10 +1534,12 @@
         }
       });
     }
+
     $("#editStartMarkerBtn").click(function () {
       isPlacingEditStart = true;
       showNotification("info", "Clique no mapa para redefinir o Ponto de Partida/Chegada.");
     });
+
     $("#formEditarRota").on("submit", function (e) {
       e.preventDefault();
       const rotaId = $("#editRotaId").val().trim();
@@ -1461,10 +1548,12 @@
       const editLat = $("#editPartidaLat").val().trim();
       const editLng = $("#editPartidaLng").val().trim();
       const areaZona = $("#editAreaZona").val().trim();
+
       if (!rotaId || !identificador || !descricao || !editLat || !editLng || !areaZona) {
         showNotification("warning", "Preencha todos os campos e defina o ponto de partida!");
         return;
       }
+
       const rotaUpdate = {
         identificador: identificador,
         descricao: descricao,
@@ -1477,6 +1566,7 @@
         fornecedores: editFornecedoresSelecionados,
         areaZona: areaZona,
       };
+
       fetch(`/api/rotas-simples/${rotaId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -1492,10 +1582,12 @@
             showNotification("danger", "Erro ao atualizar rota: " + data.message);
           }
         })
-        .catch(() => showNotification("danger", "Erro interno ao atualizar rota."));
+        .catch((err) => {
+          console.error(err);
+          showNotification("danger", "Erro interno ao atualizar rota.");
+        });
     });
   </script>
-
 </body>
 
 </html>
