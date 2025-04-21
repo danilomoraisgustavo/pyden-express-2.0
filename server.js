@@ -10464,6 +10464,74 @@ function findImeiForSocket(socket) {
   });
 }
 
+// capacidade total e já ocupada
+app.get("/api/rotas/:id/capacidade", async (req, res) => {
+  const { id } = req.params
+  const cap = await pool.query(`
+    SELECT COALESCE(SUM(f.capacidade),0) AS total
+    FROM frota_rotas fr
+    JOIN frota f ON f.id = fr.frota_id
+    WHERE fr.rota_id = $1
+  `, [id])
+  const usados = await pool.query(`
+    SELECT COUNT(*) FROM alunos_rotas WHERE rota_id = $1
+  `, [id])
+  res.json({ total: cap.rows[0].total, usados: +usados.rows[0].count })
+})
+
+// alunos elegíveis (mesmo ponto e escola, não vinculados ainda)
+app.get("/api/rotas/:id/alunos-elegiveis", async (req, res) => {
+  const { id } = req.params
+  const data = await pool.query(`
+    SELECT a.id, a.pessoa_nome AS nome, a.turma, a.escola_id
+    FROM alunos_ativos a
+    JOIN alunos_pontos ap   ON ap.aluno_id = a.id
+    JOIN rotas_pontos  rp   ON rp.ponto_id = ap.ponto_id AND rp.rota_id = $1
+    JOIN rotas_escolas re   ON re.escola_id = a.escola_id AND re.rota_id = $1
+    LEFT JOIN alunos_rotas ar ON ar.aluno_id = a.id
+    WHERE ar.aluno_id IS NULL
+  `, [id])
+  res.json(data.rows)
+})
+
+// vincular alunos
+app.post("/api/rotas/:id/alunos", async (req, res) => {
+  const { id } = req.params
+  const { alunos } = req.body           // array de ids
+  if (!Array.isArray(alunos) || !alunos.length) return res.status(400).json({ success: false })
+  const caps = await pool.query(`SELECT COALESCE(SUM(f.capacidade),0) AS total FROM frota_rotas fr JOIN frota f ON f.id=fr.frota_id WHERE fr.rota_id=$1`, [id])
+  const total = +caps.rows[0].total
+  const usados = +(await pool.query(`SELECT COUNT(*) FROM alunos_rotas WHERE rota_id=$1`, [id])).rows[0].count
+  if (usados + alunos.length > total) return res.status(409).json({ success: false, message: "Lotação excedida" })
+  const client = await pool.connect()
+  try {
+    await client.query("BEGIN")
+    for (const aid of alunos) {
+      await client.query(`INSERT INTO alunos_rotas(aluno_id,rota_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [aid, id])
+    }
+    await client.query("COMMIT")
+    res.json({ success: true })
+  } catch (e) { await client.query("ROLLBACK"); res.status(500).json({ success: false }) } finally { client.release() }
+})
+
+// lista já vinculados + motorista + monitor
+app.get("/api/rotas/:id/vinculos-completos", async (req, res) => {
+  const { id } = req.params
+  const data = await pool.query(`
+    SELECT a.id,a.pessoa_nome,a.turma,
+           m.id AS motorista_id,m.nome_motorista,
+           mo.id AS monitor_id,mo.nome_monitor
+    FROM alunos_rotas ar
+    JOIN alunos_ativos a   ON a.id = ar.aluno_id
+    LEFT JOIN motoristas_rotas mr ON mr.rota_id = ar.rota_id
+    LEFT JOIN motoristas m  ON m.id = mr.motorista_id
+    LEFT JOIN monitores_rotas mor ON mor.rota_id = ar.rota_id
+    LEFT JOIN monitores mo ON mo.id = mor.monitor_id
+    WHERE ar.rota_id = $1
+  `, [id])
+  res.json(data.rows)
+})
+
 
 // LISTEN (FINAL)
 

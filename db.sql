@@ -460,6 +460,13 @@ CREATE TABLE IF NOT EXISTS alunos_ativos_estadual (
   updated_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS alunos_rotas (
+  aluno_id INT NOT NULL REFERENCES alunos_ativos(id) ON DELETE CASCADE,
+  rota_id  INT NOT NULL REFERENCES rotas_simples(id) ON DELETE CASCADE,
+  PRIMARY KEY (aluno_id, rota_id)
+);
+
+
 CREATE TABLE IF NOT EXISTS reavaliacoes (
   id                         SERIAL PRIMARY KEY,
   aluno_id                   INT NOT NULL,

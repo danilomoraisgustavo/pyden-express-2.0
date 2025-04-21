@@ -971,6 +971,80 @@
         .catch(() => showNotification("danger", "Erro interno ao atualizar rota."))
     })
   </script>
+  <script>
+    let alunosModal = null, capacidadeTotal = 0, capacidadeUsada = 0, rotasAlunosTable = null, rotaModalId = null, alunosDisponiveis = []
+    function addAlunoButton() {
+      $('#rotas-table tbody tr').each(function () {
+        if (!$(this).find('.btn-alunos').length) {
+          const rota = JSON.parse(decodeURIComponent($(this).find('button.btn-primary').attr('onclick').match(/\((.*?)\)/)[1]))
+          $(this).find('td:last').prepend(`<button class="btn btn-link btn-info btn-alunos" data-id="${rota.id}"><i class="fa fa-users"></i></button>`)
+        }
+      })
+    }
+    $(document).on('click', '.btn-alunos', function () {
+      rotaModalId = $(this).data('id')
+      $('#modalAlunosRota').modal('show')
+    })
+    $('#modalAlunosRota').on('shown.bs.modal', function () {
+      carregarCapacidadeEAlunos()
+    })
+    function carregarCapacidadeEAlunos() {
+      $.getJSON(`/api/rotas/${rotaModalId}/capacidade`, cap => {
+        capacidadeTotal = cap.total
+        capacidadeUsada = cap.usados
+        $('#capTotal').text(capacidadeTotal)
+        $('#capUsada').text(capacidadeUsada)
+        $('#capLivre').text(capacidadeTotal - capacidadeUsada)
+      })
+      $.getJSON(`/api/rotas/${rotaModalId}/alunos-elegiveis`, data => {
+        alunosDisponiveis = data
+        popularTabelaAlunos()
+      })
+    }
+    function popularTabelaAlunos() {
+      const tbody = $('#tblAlunosDisp tbody').empty()
+      alunosDisponiveis.forEach(a => {
+        tbody.append(`<tr><td><input type="checkbox" class="ck-aluno" value="${a.id}"></td><td>${a.id}</td><td>${a.nome}</td><td>${a.turma}</td></tr>`)
+      })
+      if (rotasAlunosTable) rotasAlunosTable.destroy()
+      rotasAlunosTable = $('#tblAlunosDisp').DataTable({ pageLength: 10, language: { search: "Pesquisar:" } })
+    }
+    $(document).on('change', '.ck-aluno', function () {
+      const sel = $('.ck-aluno:checked').length
+      $('#selCount').text(sel)
+      $('#btnVincularAlunos').prop('disabled', capacidadeTotal - capacidadeUsada < sel)
+    })
+    $('#btnVincularAlunos').click(function () {
+      const ids = $('.ck-aluno:checked').map((_, c) => +c.value).get()
+      if (!ids.length) return
+      $.ajax({ url: `/api/rotas/${rotaModalId}/alunos`, method: 'POST', contentType: 'application/json', data: JSON.stringify({ alunos: ids }) }).done(r => {
+        $('#modalAlunosRota').modal('hide'); showNotification('success', 'Alunos vinculados!')
+      }).fail(x => {
+        showNotification('danger', x.responseJSON && x.responseJSON.message ? x.responseJSON.message : 'Erro')
+      })
+    })
+    $(document).ready(function () {
+      $('body').append(`
+      <div class="modal fade" id="modalAlunosRota" tabindex="-1">
+       <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+         <div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+         <div class="modal-body">
+           <p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p>
+           <p>Selecionados: <span id="selCount">0</span></p>
+           <table id="tblAlunosDisp" class="table table-striped">
+            <thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody>
+           </table>
+         </div>
+         <div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div>
+        </div>
+       </div>
+      </div>`)
+      addAlunoButton()
+      $('#rotas-table').on('draw.dt', addAlunoButton)
+    })
+  </script>
+
 
 </body>
 
