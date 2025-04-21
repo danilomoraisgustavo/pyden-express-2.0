@@ -4,11 +4,11 @@
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Rotas Inteligentes</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
-    <link rel="icon" href="/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
 
     <!-- Webfont -->
-    <script src="/assets/js/plugin/webfont/webfont.min.js"></script>
+    <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
     <script>
         WebFont.load({
             google: { families: ["Public Sans:300,400,500,600,700"] },
@@ -17,47 +17,60 @@
                     "Font Awesome 5 Solid",
                     "Font Awesome 5 Regular",
                     "Font Awesome 5 Brands",
-                    "simple-line-icons"
+                    "simple-line-icons",
                 ],
-                urls: ["/assets/css/fonts.min.css"]
+                urls: ["../../assets/css/fonts.min.css"],
             },
             active: function () {
                 sessionStorage.fonts = true;
-            }
+            },
         });
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="/assets/css/plugins.min.css" />
-    <link rel="stylesheet" href="/assets/css/pydenadmin.min.css" />
-    <link rel="stylesheet" href="/assets/css/demo.css" />
-
-    <!-- Google Maps JS Key -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
+    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+    <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+    <link rel="stylesheet" href="../../assets/css/demo.css" />
 
     <style>
-        #mapInteligente {
-            width: 100%;
-            height: 500px;
+        .dataTables_wrapper .row>div:nth-child(2) {
+            display: flex !important;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .dataTables_filter {
+            margin: 0 !important;
+        }
+
+        .dataTables_filter label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+        }
+
+        .dataTables_filter input {
+            margin-left: 0.5rem;
         }
     </style>
 </head>
 
 <body>
     <div class="wrapper">
+        <!-- SIDEBAR (inalterado) -->
         <div class="sidebar" data-background-color="dark">
-            <!-- ... sidebar content ... -->
+            <!-- ... todo o seu menu lateral permanece igual ... -->
         </div>
+        <!-- END SIDEBAR -->
 
         <div class="main-panel">
             <div class="main-header" style="top: 0">
-                <!-- ... top bar content ... -->
+                <!-- ... header inalterado ... -->
             </div>
 
             <div class="container">
                 <div class="page-inner">
-
                     <div class="page-header">
                         <h3 class="fw-bold mb-3">Rotas Inteligentes</h3>
                         <ul class="breadcrumbs mb-3">
@@ -70,249 +83,238 @@
                     </div>
 
                     <div class="row mb-3">
-                        <div class="col-md-5">
-                            <label class="form-label">Selecione Escolas</label>
-                            <select id="selectEscolas" class="form-select" multiple></select>
+                        <div class="col text-end">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalGerarRota">
+                                <i class="fa fa-plus"></i> Nova Rota Inteligente
+                            </button>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Turno</label>
-                            <select id="selectTurno" class="form-select">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title mb-0">Rotas Geradas</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table id="rotas-inteligentes-table"
+                                            class="display table table-striped table-hover" style="width:100%">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Tipo</th>
+                                                    <th>Turno</th>
+                                                    <th>Veículo</th>
+                                                    <th>Capacidade</th>
+                                                    <th>Duração (min)</th>
+                                                    <th>Distância (km)</th>
+                                                    <th>Criada Em</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- container -->
+
+            <footer class="footer">
+                <div class="container-fluid d-flex justify-content-between">
+                    <nav class="pull-left">
+                        <ul class="nav">
+                            <li class="nav-item"><a class="nav-link" target="_blank"
+                                    href="https://pydenexpress.com/">PyDen Express</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#">Ajuda</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#">Termos de Uso</a></li>
+                        </ul>
+                    </nav>
+                    <div class="copyright">2025 &copy; Todos os direitos reservados</div>
+                    <div>Desenvolvido por <a target="_blank" href="http://www.pyden.tech">PyDen Technologies</a>&reg;.
+                    </div>
+                </div>
+            </footer>
+        </div><!-- main-panel -->
+    </div><!-- wrapper -->
+
+    <!-- MODAL: Gerar Rota Inteligente -->
+    <div class="modal fade" id="modalGerarRota" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gerar Rota Inteligente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formGerarRota">
+                        <div class="mb-3">
+                            <label for="zoneamentoSelect" class="form-label">Zoneamento</label>
+                            <select id="zoneamentoSelect" class="form-control" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="turnoSelect" class="form-label">Turno</label>
+                            <select id="turnoSelect" class="form-control" required>
                                 <option value="manha">Manhã</option>
                                 <option value="tarde">Tarde</option>
                                 <option value="noite">Noite</option>
                             </select>
                         </div>
-                        <div class="col-md-4 d-grid align-self-end">
-                            <button id="btnGerarRota" class="btn btn-success">Gerar Rota Inteligente</button>
-                        </div>
-                    </div>
-
-                    <div class="card mb-4">
-                        <div class="card-body p-0">
-                            <div id="mapInteligente"></div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="card-title mb-0">Rotas Inteligentes Cadastradas</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="tabelaRotasInteligentes" class="display table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Descrição</th>
-                                            <th>Turno</th>
-                                            <th>Veículo</th>
-                                            <th>Alunos</th>
-                                            <th>Capacidade</th>
-                                            <th>Duração (min)</th>
-                                            <th>Distância (km)</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
+                        <button type="submit" class="btn btn-success">Gerar</button>
+                    </form>
                 </div>
             </div>
-
-            <footer class="footer">
-                <!-- ... footer ... -->
-            </footer>
         </div>
     </div>
 
-    <!-- Scripts JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
-    <script src="/assets/js/pydenadmin.min.js"></script>
-    <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+    <!-- MODAL: Visualizar Resumo da Rota -->
+    <div class="modal fade" id="modalViewRota" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Resumo da Rota</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>ID:</strong> <span id="view-id"></span></p>
+                    <p><strong>Tipo:</strong> <span id="view-tipo"></span></p>
+                    <p><strong>Turno:</strong> <span id="view-turno"></span></p>
+                    <p><strong>Veículo:</strong> <span id="view-veiculo"></span></p>
+                    <p><strong>Capacidade:</strong> <span id="view-capacidade"></span></p>
+                    <p><strong>Duração:</strong> <span id="view-duracao"></span> min</p>
+                    <p><strong>Distância:</strong> <span id="view-distancia"></span> km</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS CORE / PLUGINS -->
+    <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+    <script src="../../assets/js/core/popper.min.js"></script>
+    <script src="../../assets/js/core/bootstrap.min.js"></script>
+    <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+    <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+    <script src="../../assets/js/pydenadmin.min.js"></script>
 
     <script>
-        let map;
-        let selectedZoneamentos = [];
-        let selectedPoints = [];
-        let markers = [];
-        let rotaPolyline;
-        const schoolsLayerIds = [];
-
-        function initMap() {
-            map = new google.maps.Map(document.getElementById('mapInteligente'), {
-                center: { lat: -3.7437, lng: -38.5267 },
-                zoom: 12
-            });
-            map.data.setStyle({ fillColor: '#FFCC00', strokeColor: '#FF9900', clickable: true });
-            map.data.addListener('click', event => {
-                const zoneId = event.feature.getProperty('id');
-                toggleZoneamentoSelection(zoneId, event.feature);
-            });
+        function showNotification(type, message) {
+            const icon = { success: 'fa fa-check-circle', danger: 'fa fa-exclamation-circle' }[type] || 'fa fa-bell';
+            $.notify({ icon, message }, { type, placement: { from: 'top', align: 'right' } });
         }
 
-        function carregarEscolas() {
-            fetch('/api/escolas')
-                .then(res => res.json())
-                .then(escolas => {
-                    const sel = $('#selectEscolas').empty();
-                    escolas.forEach(e => sel.append(`<option value="${e.id}">${e.nome}</option>`));
-                });
+        // Carrega zoneamentos no select
+        function loadZoneamentos() {
+            fetch('/api/zoneamentos')
+                .then(r => r.json())
+                .then(zs => {
+                    const sel = $('#zoneamentoSelect').empty();
+                    zs.forEach(z => sel.append(`<option value="${z.id}">${z.nome}</option>`));
+                })
+                .catch(() => showNotification('danger', 'Erro ao carregar zoneamentos'));
         }
 
-        function carregarZoneamentosParaEscolas(ids) {
-            map.data.forEach(feature => map.data.remove(feature));
-            selectedZoneamentos = [];
-            selectedPoints = [];
-            clearMarkers();
+        // Gera nova rota inteligente
+        $('#formGerarRota').on('submit', e => {
+            e.preventDefault();
+            const zoneamentoId = +$('#zoneamentoSelect').val();
+            const turno = $('#turnoSelect').val();
+            fetch('/api/rotas-inteligentes/criar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ zoneamentoId, turno })
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        showNotification('success', 'Rota gerada (ID ' + d.rota.id + ')');
+                        $('#modalGerarRota').modal('hide');
+                        loadRotasInteligentes();
+                    } else showNotification('danger', d.error || 'Erro');
+                })
+                .catch(() => showNotification('danger', 'Erro ao gerar rota'));
+        });
 
-            ids.forEach(id => {
-                fetch(`/api/zoneamentos?escolaId=${id}`)
-                    .then(res => res.json())
-                    .then(geojson => map.data.addGeoJson(geojson));
-            });
-        }
-
-        function toggleZoneamentoSelection(zoneId, feature) {
-            const idx = selectedZoneamentos.indexOf(zoneId);
-            if (idx === -1) {
-                selectedZoneamentos.push(zoneId);
-                feature.setProperty('fillColor', '#00CC66');
-                fetch(`/api/pontos/zoneamento/${zoneId}?status=ativo`)
-                    .then(res => res.json())
-                    .then(pontos => {
-                        pontos.forEach(p => {
-                            const m = new google.maps.Marker({
-                                position: { lat: p.latitude, lng: p.longitude },
-                                map,
-                                label: ''
-                            });
-                            markers.push(m);
-                            selectedPoints.push(p.id);
-                        });
-                    });
-            } else {
-                selectedZoneamentos.splice(idx, 1);
-                feature.setProperty('fillColor', '#FFCC00');
-                clearMarkers();
-                selectedPoints = [];
-                selectedZoneamentos.forEach(z => {
-                    fetch(`/api/pontos/zoneamento/${z}?status=ativo`)
-                        .then(res => res.json())
-                        .then(pontos => {
-                            pontos.forEach(p => {
-                                const m = new google.maps.Marker({
-                                    position: { lat: p.latitude, lng: p.longitude },
-                                    map,
-                                    label: ''
-                                });
-                                markers.push(m);
-                                selectedPoints.push(p.id);
-                            });
-                        });
-                });
-            }
-        }
-
-        function clearMarkers() {
-            markers.forEach(m => m.setMap(null));
-            markers = [];
-        }
-
-        function buscarRotas() {
+        // Lista todas as rotas inteligentes
+        let rotasTable;
+        function loadRotasInteligentes() {
             fetch('/api/rotas-inteligentes')
-                .then(res => res.json())
-                .then(rotas => {
-                    const table = $('#tabelaRotasInteligentes').DataTable();
-                    table.clear();
-                    rotas.forEach(r => {
-                        table.row.add([
-                            r.id,
-                            r.descricao,
-                            r.turno,
-                            r.veiculo_tipo,
-                            r.total_alunos,
-                            r.capacidade,
-                            r.duracao_min,
-                            r.distancia_km.toFixed(2),
-                            `
-                              <button class="btn btn-sm btn-primary ver-rota" data-id="${r.id}">Ver</button>
-                              <button class="btn btn-sm btn-danger excluir-rota" data-id="${r.id}">Excluir</button>
-                            `
-                        ]);
+                .then(r => r.json())
+                .then(rs => {
+                    const tbody = $('#rotas-inteligentes-table tbody').empty();
+                    rs.forEach(rt => {
+                        tbody.append(`
+              <tr>
+                <td>${rt.id}</td>
+                <td>${rt.tipo}</td>
+                <td>${rt.turno}</td>
+                <td>${rt.veiculo_tipo}</td>
+                <td>${rt.capacidade}</td>
+                <td>${rt.duracao_estimativa.match(/PT(\d+)M/)[1]}</td>
+                <td>${rt.distancia_total.toFixed(2)}</td>
+                <td>${new Date(rt.created_at).toLocaleString()}</td>
+                <td>
+                  <button class="btn btn-link btn-primary" onclick="viewRota(${rt.id})">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                  <button class="btn btn-link btn-danger" onclick="deleteRota(${rt.id})">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            `);
                     });
-                    table.draw();
-                });
+                    if (rotasTable) rotasTable.destroy();
+                    rotasTable = $('#rotas-inteligentes-table').DataTable({
+                        pageLength: 10,
+                        language: {
+                            decimal: ',', thousands: '.',
+                            info: "_START_–_END_ de _TOTAL_",
+                            lengthMenu: "Mostrar _MENU_",
+                            search: "Pesquisar:",
+                            paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
+                            emptyTable: "Nenhuma rota"
+                        }
+                    });
+                })
+                .catch(() => showNotification('danger', 'Erro ao carregar rotas'));
         }
 
-        function mostrarRotaNoMapa(id) {
-            if (rotaPolyline) rotaPolyline.setMap(null);
-            clearMarkers();
-            fetch(`/api/rotas-inteligentes/${id}`)
-                .then(res => res.json())
-                .then(r => {
-                    const path = r.pontos.map(p => ({ lat: p.lat, lng: p.lng }));
-                    rotaPolyline = new google.maps.Polyline({ path, map });
-                    r.pontos.forEach(p => {
-                        const m = new google.maps.Marker({
-                            position: { lat: p.lat, lng: p.lng },
-                            map,
-                            label: `${p.ordem}`
-                        });
-                        markers.push(m);
-                    });
-                });
+        // Exclui uma rota
+        function deleteRota(id) {
+            if (!confirm('Confirmar exclusão?')) return;
+            fetch('/api/rotas-inteligentes/' + id, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) { showNotification('success', 'Rota excluída'); loadRotasInteligentes(); }
+                    else showNotification('danger', d.error || 'Erro');
+                })
+                .catch(() => showNotification('danger', 'Erro ao excluir'));
         }
 
-        function excluirRota(id) {
-            if (!confirm('Confirma exclusão da rota?')) return;
-            fetch(`/api/rotas-inteligentes/${id}`, { method: 'DELETE' })
-                .then(() => socket.emit('rotasInvalidar'));
+        // Mostra modal de visualização
+        function viewRota(id) {
+            fetch('/api/rotas-inteligentes')
+                .then(r => r.json())
+                .then(rs => {
+                    const rt = rs.find(x => x.id === id);
+                    if (!rt) return showNotification('warning', 'Rota não encontrada');
+                    $('#view-id').text(rt.id);
+                    $('#view-tipo').text(rt.tipo);
+                    $('#view-turno').text(rt.turno);
+                    $('#view-veiculo').text(rt.veiculo_tipo);
+                    $('#view-capacidade').text(rt.capacidade);
+                    $('#view-duracao').text(rt.duracao_estimativa.match(/PT(\d+)M/)[1]);
+                    $('#view-distancia').text(rt.distancia_total.toFixed(2));
+                    $('#modalViewRota').modal('show');
+                });
         }
 
         $(document).ready(() => {
-            $('#tabelaRotasInteligentes').DataTable({ columnDefs: [{ orderable: false, targets: 8 }] });
-            initMap();
-            carregarEscolas();
-            buscarRotas();
-
-            socket = io();
-            socket.on('rotasAtualizadas', buscarRotas);
-
-            $('#selectEscolas').change(function () {
-                const ids = $(this).val() || [];
-                carregarZoneamentosParaEscolas(ids);
-            });
-
-            $('#btnGerarRota').click(() => {
-                if (!selectedPoints.length) return alert('Selecione pelo menos um zoneamento e ponto ativo.');
-                const escolaIds = $('#selectEscolas').val();
-                const turno = $('#selectTurno').val();
-                fetch('/api/rotas-inteligentes/criar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ escolaIds, pointIds: selectedPoints, turno })
-                })
-                    .then(res => res.json())
-                    .then(r => {
-                        if (r.success) {
-                            alert(`Rota criada: ID ${r.rota.id}`);
-                            socket.emit('rotasInvalidar');
-                        } else {
-                            alert('Erro: ' + r.error);
-                        }
-                    });
-            });
-
-            $('#tabelaRotasInteligentes tbody')
-                .on('click', '.ver-rota', function () { mostrarRotaNoMapa($(this).data('id')); })
-                .on('click', '.excluir-rota', function () { excluirRota($(this).data('id')); });
+            loadZoneamentos();
+            loadRotasInteligentes();
         });
     </script>
 </body>
