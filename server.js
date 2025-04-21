@@ -5905,6 +5905,11 @@ app.get("/api/download-rota/:id", async (req, res) => {
     res.status(500).send("Erro interno ao gerar download da rota específica.");
   }
 });
+
+// =========================================================
+// GET /api/rotas-simples/:id/alunos
+// Retorna lista de alunos vinculados à rota, com dados e turno extraído de turma
+// =========================================================
 app.get("/api/rotas-simples/:id/alunos", async (req, res) => {
   try {
     const { id } = req.params; // rota_id
@@ -5919,7 +5924,13 @@ app.get("/api/rotas-simples/:id/alunos", async (req, res) => {
         ap.ponto_id            AS ponto_id,
         p.latitude             AS ponto_latitude,
         p.longitude            AS ponto_longitude,
-        a.turno                AS turno
+        CASE
+          WHEN a.turma LIKE '%MAT'  THEN 'manha'
+          WHEN a.turma LIKE '%VESP' THEN 'tarde'
+          WHEN a.turma LIKE '%NOT'  THEN 'noite'
+          WHEN a.turma LIKE '%INT'  THEN 'integral'
+          ELSE lower(a.turma)
+        END                    AS turno
       FROM rotas_pontos rp
       JOIN alunos_pontos ap     ON ap.ponto_id = rp.ponto_id
       JOIN alunos_ativos a      ON a.id        = ap.aluno_id
@@ -5936,6 +5947,8 @@ app.get("/api/rotas-simples/:id/alunos", async (req, res) => {
     return res.status(500).json({ error: "Erro interno ao buscar alunos." });
   }
 });
+
+
 app.get("/api/rotas-simples-detalhes", async (req, res) => {
   try {
     const query = `
