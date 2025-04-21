@@ -479,6 +479,22 @@ CREATE TABLE IF NOT EXISTS reavaliacoes (
 );
 CREATE INDEX IF NOT EXISTS idx_reavaliacoes_aluno_id ON reavaliacoes(aluno_id);
 
+-- DDL para a tabela de rotas inteligentes
+CREATE TABLE IF NOT EXISTS rotas_inteligentes (
+  id                   SERIAL PRIMARY KEY,
+  identificador        VARCHAR(50) NOT NULL,
+  tipo                 VARCHAR(20) NOT NULL 
+                         CHECK (tipo IN ('infantil','normal','especial')),
+  escola_ids           INT[] NOT NULL,
+  ponto_ids            INT[] NOT NULL,
+  ordem_pontos         INT[] NOT NULL,        -- ordem em que os pontos são visitados
+  duracao_minutos      INTEGER NOT NULL,      -- duração estimada (min)
+  distancia_km         NUMERIC(8,2) NOT NULL, -- distância estimada (km)
+  veiculo_sugerido     VARCHAR(20) NOT NULL,   -- 'onibus','microonibus' ou 'van'
+  created_at           TIMESTAMP DEFAULT NOW()
+);
+
+
 -- ==========================================
 -- CONEXÃO COM O BANCO DE DADOS VIA PSQL
 -- ==========================================

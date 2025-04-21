@@ -18,6 +18,9 @@ const JSZip = require("jszip");
 const { DOMParser } = require("@xmldom/xmldom");
 const tj = require("@mapbox/togeojson");
 const axios = require("axios");
+const routeInteligentes = require('./routeInteligentes');
+
+
 
 const {
   Document,
@@ -51,6 +54,9 @@ const pool = new Pool({
     rejectUnauthorized: false,
   },
 });
+
+//IMPORTAÇÃO DE ROTAS INTELIGENTES
+app.use('/api', routeInteligentes);
 
 // CONFIGURAÇÃO DE SESSÃO (express-session + connect-pg-simple)
 
