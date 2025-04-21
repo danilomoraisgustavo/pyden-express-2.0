@@ -479,42 +479,6 @@ CREATE TABLE IF NOT EXISTS reavaliacoes (
 );
 CREATE INDEX IF NOT EXISTS idx_reavaliacoes_aluno_id ON reavaliacoes(aluno_id);
 
--- 1. Tabela principal de rotas inteligentes
-CREATE TABLE IF NOT EXISTS rotas_inteligentes (
-  id               SERIAL PRIMARY KEY,
-  tipo             VARCHAR(20) NOT NULL,            -- 'infantil' | 'normal' | 'especial'
-  turno            VARCHAR(10) NOT NULL,            -- 'manha' | 'tarde' | 'noite'
-  veiculo_tipo     VARCHAR(20) NOT NULL,            -- 'onibus' | 'microonibus' | 'van'
-  capacidade       INT NOT NULL,
-  duracao_estimativa INTERVAL NOT NULL,             -- ex: '1 hour 10 min'
-  distancia_total  DOUBLE PRECISION NOT NULL,       -- em km
-  zoneamento_id    INT REFERENCES zoneamentos(id) ON DELETE CASCADE,
-  escolas_ids      INT[] NOT NULL,                  -- array de até 2 IDs de escola
-  created_at       TIMESTAMP DEFAULT NOW() NOT NULL
-);
-
--- 2. Sequência de pontos de parada por rota
-CREATE TABLE IF NOT EXISTS rotas_inteligentes_pontos (
-  id       SERIAL PRIMARY KEY,
-  rota_id  INT NOT NULL REFERENCES rotas_inteligentes(id) ON DELETE CASCADE,
-  ponto_id INT NOT NULL REFERENCES pontos(id)            ON DELETE CASCADE,
-  ordem    INT NOT NULL                                   -- ordem de visita
-);
-
--- 3. Associação de alunos às rotas
-CREATE TABLE IF NOT EXISTS alunos_rotas_inteligentes (
-  id        SERIAL PRIMARY KEY,
-  aluno_id  INT NOT NULL REFERENCES alunos_ativos(id) ON DELETE CASCADE,
-  rota_id   INT NOT NULL REFERENCES rotas_inteligentes(id) ON DELETE CASCADE
-);
-
--- 4. Associação de escolas (até 2) à rota
-CREATE TABLE IF NOT EXISTS rotas_inteligentes_escolas (
-  rota_id   INT NOT NULL REFERENCES rotas_inteligentes(id) ON DELETE CASCADE,
-  escola_id INT NOT NULL REFERENCES escolas(id)           ON DELETE CASCADE,
-  PRIMARY KEY (rota_id, escola_id)
-);
-
 
 -- ==========================================
 -- CONEXÃO COM O BANCO DE DADOS VIA PSQL
