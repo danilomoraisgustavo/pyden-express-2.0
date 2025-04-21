@@ -5910,6 +5910,10 @@ app.get("/api/download-rota/:id", async (req, res) => {
 // GET /api/rotas-simples/:id/alunos
 // Retorna lista de alunos vinculados à rota, com dados e turno extraído de turma
 // =========================================================
+// =========================================================
+// GET /api/rotas-simples/:id/alunos
+// Retorna apenas os alunos cuja escola faz parte da rota
+// =========================================================
 app.get("/api/rotas-simples/:id/alunos", async (req, res) => {
   try {
     const { id } = req.params; // rota_id
@@ -5932,10 +5936,12 @@ app.get("/api/rotas-simples/:id/alunos", async (req, res) => {
           ELSE lower(a.turma)
         END                    AS turno
       FROM rotas_pontos rp
-      JOIN alunos_pontos ap     ON ap.ponto_id = rp.ponto_id
-      JOIN alunos_ativos a      ON a.id        = ap.aluno_id
-      LEFT JOIN escolas e       ON e.id        = a.escola_id
-      JOIN pontos p             ON p.id        = ap.ponto_id
+      JOIN rotas_escolas re   ON re.rota_id   = rp.rota_id
+      JOIN alunos_pontos ap   ON ap.ponto_id  = rp.ponto_id
+      JOIN alunos_ativos a    ON a.id         = ap.aluno_id
+                             AND a.escola_id = re.escola_id
+      LEFT JOIN escolas e     ON e.id         = a.escola_id
+      JOIN pontos p           ON p.id         = ap.ponto_id
       WHERE rp.rota_id = $1
       ORDER BY a.pessoa_nome;
     `;
