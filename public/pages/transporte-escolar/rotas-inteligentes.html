@@ -46,13 +46,97 @@
 
 <body>
     <div class="wrapper">
-        <!-- ... sidebar e top bar inalterados ... -->
+        <!-- SIDEBAR (mesmo do rotas-listar.html) -->
+        <div class="sidebar" data-background-color="dark">
+            <!-- ... todo o conteúdo da sidebar ... -->
+        </div>
+        <!-- END SIDEBAR -->
 
         <div class="main-panel">
-            <!-- ... todo o conteúdo interno ... -->
+            <!-- TOP BAR (mesmo do rotas-listar.html) -->
+            <div class="main-header" style="top: 0">
+                <!-- logo, toggles, notificações, user menu ... -->
+            </div>
 
-            <!-- FOOTER ... -->
+            <div class="container">
+                <div class="page-inner">
+
+                    <!-- Cabeçalho da página -->
+                    <div class="page-header">
+                        <h3 class="fw-bold mb-3">Rotas Inteligentes</h3>
+                        <ul class="breadcrumbs mb-3">
+                            <li class="nav-home"><a href="../../"><i class="icon-home"></i></a></li>
+                            <li class="separator"><i class="icon-arrow-right"></i></li>
+                            <li class="nav-item"><a href="#">Rotas</a></li>
+                            <li class="separator"><i class="icon-arrow-right"></i></li>
+                            <li class="nav-item"><a href="#">Inteligentes</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Seletor de parâmetros -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Zoneamento</label>
+                            <select id="selectZoneamento" class="form-select"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Turno</label>
+                            <select id="selectTurno" class="form-select">
+                                <option value="manha">Manhã</option>
+                                <option value="tarde">Tarde</option>
+                                <option value="noite">Noite</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-grid align-self-end">
+                            <button id="btnGerarRota" class="btn btn-success">Gerar Rota Inteligente</button>
+                        </div>
+                    </div>
+
+                    <!-- Mapa -->
+                    <div class="card mb-4">
+                        <div class="card-body p-0">
+                            <div id="mapInteligente"></div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de rotas -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">Rotas Inteligentes Cadastradas</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="tabelaRotasInteligentes" class="display table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Tipo</th>
+                                            <th>Turno</th>
+                                            <th>Veículo</th>
+                                            <th>Capacidade</th>
+                                            <th>Duração (min)</th>
+                                            <th>Distância (km)</th>
+                                            <th>Escolas</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- FOOTER (mesmo do rotas-listar.html) -->
+            <footer class="footer">
+                <!-- ... rodapé ... -->
+            </footer>
         </div>
+    </div>
+    <!-- FOOTER ... -->
+    </div>
     </div>
 
     <!-- ===== SCRIPTS ===== -->
