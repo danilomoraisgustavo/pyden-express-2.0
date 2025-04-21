@@ -18,8 +18,9 @@ const JSZip = require("jszip");
 const { DOMParser } = require("@xmldom/xmldom");
 const tj = require("@mapbox/togeojson");
 const axios = require("axios");
-const routeInteligentes = require('./routeInteligentes');
-
+const intelligentRoutes = require('./routes/intelligentRoutes');
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, { cors: { origin: '*' } });
 
 
 const {
@@ -39,6 +40,9 @@ const PDFDocument = require("pdfkit");
 // CONFIGURAÇÃO DO EXPRESS
 const app = express();
 
+//IMPORTAÇÃO DE ROUTER
+app.use('/api/rotas-inteligentes', intelligentRoutes);
+
 // Aumenta o limite padrão para o corpo JSON/urlencoded
 app.use(express.json({ limit: "200mb" }));
 app.use(express.urlencoded({ limit: "200mb", extended: true }));
@@ -53,27 +57,6 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
-});
-
-//IMPORTAÇÃO DE ROTAS INTELIGENTES
-app.use('/api', routeInteligentes);
-
-// ===> Retorna um ponto pelo ID
-app.get('/api/pontos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query(
-      `SELECT id, latitude, longitude FROM pontos WHERE id = $1`,
-      [id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Ponto não encontrado.' });
-    }
-    return res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Erro ao buscar ponto:', error);
-    return res.status(500).json({ error: 'Erro interno ao buscar ponto.' });
-  }
 });
 
 // CONFIGURAÇÃO DE SESSÃO (express-session + connect-pg-simple)
