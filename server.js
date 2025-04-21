@@ -4989,9 +4989,11 @@ app.patch("/api/notificacoes/marcar-lido", async (req, res) => {
 // ====================================================================================
 // ROTAS SIMPLES
 // ====================================================================================
-// ====> POST /api/rotas/cadastrar-simples  (lógica NOVA) <====
+// ====> API para cadastrar rota simples, incluindo associação a fornecedores
+// ====> server.js (ou equivalente) - Rotas de Cadastro / Edição
+
+// Cadastrar rota simples
 app.post("/api/rotas/cadastrar-simples", async (req, res) => {
-  const client = await pool.connect();
   try {
     const {
       identificador,
@@ -5000,72 +5002,73 @@ app.post("/api/rotas/cadastrar-simples", async (req, res) => {
       partidaLng,
       chegadaLat,
       chegadaLng,
+      pontosParada,
+      escolas,
+      fornecedores,
       areaZona,
-      escolas,               // [ids]
-      zoneamentos,           // [ids]  <<== Enviado pelo front
-      fornecedores           // [ids]
     } = req.body;
 
-    await client.query("BEGIN");
+    if (!identificador || !descricao || partidaLat == null || partidaLng == null || !areaZona) {
+      return res.status(400).json({ success: false, message: "Dados incompletos." });
+    }
 
-    // 1. insere rota
-    const { rows } = await client.query(
-      `INSERT INTO rotas_simples
-         (identificador, descricao, partida_lat, partida_lng,
-          chegada_lat, chegada_lng, area_zona)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      [identificador, descricao, partidaLat, partidaLng,
-        chegadaLat, chegadaLng, areaZona]
+    const userId = req.session?.userId || null;
+
+    const insertRotaQuery = `
+      INSERT INTO rotas_simples
+      (identificador, descricao, partida_lat, partida_lng, chegada_lat, chegada_lng, area_zona)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id;
+    `;
+    const rotaValues = [
+      identificador,
+      descricao,
+      partidaLat,
+      partidaLng,
+      chegadaLat || partidaLat,
+      chegadaLng || partidaLng,
+      areaZona,
+    ];
+    const rotaResult = await pool.query(insertRotaQuery, rotaValues);
+    if (rotaResult.rows.length === 0) {
+      return res.status(500).json({ success: false, message: "Falha ao cadastrar rota." });
+    }
+    const rotaId = rotaResult.rows[0].id;
+
+    if (pontosParada && Array.isArray(pontosParada)) {
+      const insertPontoQuery = `INSERT INTO rotas_pontos (rota_id, ponto_id) VALUES ($1, $2)`;
+      for (const pId of pontosParada) {
+        await pool.query(insertPontoQuery, [rotaId, pId]);
+      }
+    }
+
+    if (escolas && Array.isArray(escolas)) {
+      const insertEscolaQuery = `INSERT INTO rotas_escolas (rota_id, escola_id) VALUES ($1, $2)`;
+      for (const eId of escolas) {
+        await pool.query(insertEscolaQuery, [rotaId, eId]);
+      }
+    }
+
+    if (fornecedores && Array.isArray(fornecedores)) {
+      const insertFornQuery = `INSERT INTO fornecedores_rotas (rota_id, fornecedor_id) VALUES ($1, $2)`;
+      for (const fId of fornecedores) {
+        await pool.query(insertFornQuery, [rotaId, fId]);
+      }
+    }
+
+    const mensagem = `Rota simples criada: ${identificador}`;
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+       VALUES ($1, 'CREATE', 'rotas_simples', $2, $3)`,
+      [userId, rotaId, mensagem]
     );
-    const rotaId = rows[0].id;
 
-    // 2. relaciona escolas
-    if (Array.isArray(escolas) && escolas.length) {
-      for (const eid of escolas)
-        await client.query(
-          "INSERT INTO rotas_escolas (rota_id, escola_id) VALUES ($1,$2)",
-          [rotaId, eid]);
-    }
-
-    // 3. resolve TODOS os pontos “ativos” dos zoneamentos indicados
-    const pontosSet = new Set();
-    if (Array.isArray(zoneamentos) && zoneamentos.length) {
-      const { rows: pts } = await client.query(
-        `SELECT DISTINCT p.id
-           FROM pontos p
-           JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-          WHERE pz.zoneamento_id = ANY($1::int[])
-            AND p.status = TRUE`,
-        [zoneamentos]
-      );
-      pts.forEach(r => pontosSet.add(r.id));
-    }
-
-    // 4. grava rotas_pontos
-    for (const pid of pontosSet)
-      await client.query(
-        "INSERT INTO rotas_pontos (rota_id, ponto_id) VALUES ($1,$2)",
-        [rotaId, pid]);
-
-    // 5. fornecedores (tabela de N‑para‑N)
-    if (Array.isArray(fornecedores) && fornecedores.length) {
-      for (const fid of fornecedores)
-        await client.query(
-          "INSERT INTO fornecedores_rotas (rota_id, fornecedor_id) VALUES ($1,$2)",
-          [rotaId, fid]);
-    }
-
-    await client.query("COMMIT");
-    res.json({ success: true, rotaId });
-  } catch (e) {
-    await client.query("ROLLBACK");
-    console.error("POST /api/rotas/cadastrar-simples:", e);
-    res.status(500).json({ success: false, message: "Erro ao cadastrar rota." });
-  } finally {
-    client.release();
+    return res.json({ success: true, message: "Rota cadastrada com sucesso!", id: rotaId });
+  } catch (error) {
+    console.error("Erro ao cadastrar rota simples:", error);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
   }
 });
-
 
 // Editar rota simples
 app.put("/api/rotas-simples/:id", async (req, res) => {
