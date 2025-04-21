@@ -58,6 +58,24 @@ const pool = new Pool({
 //IMPORTAÇÃO DE ROTAS INTELIGENTES
 app.use('/api', routeInteligentes);
 
+// ===> Retorna um ponto pelo ID
+app.get('/api/pontos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT id, latitude, longitude FROM pontos WHERE id = $1`,
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Ponto não encontrado.' });
+    }
+    return res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Erro ao buscar ponto:', error);
+    return res.status(500).json({ error: 'Erro interno ao buscar ponto.' });
+  }
+});
+
 // CONFIGURAÇÃO DE SESSÃO (express-session + connect-pg-simple)
 
 app.use(
