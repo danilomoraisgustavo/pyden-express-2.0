@@ -479,7 +479,6 @@ CREATE TABLE IF NOT EXISTS reavaliacoes (
 );
 CREATE INDEX IF NOT EXISTS idx_reavaliacoes_aluno_id ON reavaliacoes(aluno_id);
 
-
 -- ==========================================
 -- CONEXÃO COM O BANCO DE DADOS VIA PSQL
 -- ==========================================
