@@ -759,6 +759,7 @@
 
           <div class="table-responsive mb-3" style="max-height: 300px; overflow-y: auto;">
             <table class="table table-striped table-bordered" id="tabela-alunos-rota">
+              <!-- Atualize o <thead> da tabela de alunos para incluir Turno -->
               <thead>
                 <tr>
                   <th>Nome do Aluno</th>
@@ -768,8 +769,10 @@
                   <th>ID Ponto</th>
                   <th>Lat Ponto</th>
                   <th>Lng Ponto</th>
+                  <th>Turno</th>
                 </tr>
               </thead>
+
               <tbody>
                 <!-- Será preenchido dinamicamente via JS -->
               </tbody>
@@ -1189,16 +1192,17 @@
       const tbody = $("#tabela-alunos-rota tbody").empty();
       alunos.forEach(a => {
         tbody.append(`
-          <tr>
-            <td>${a.nome}</td>
-            <td>${a.escola_nome}</td>
-            <td>${a.latitude}</td>
-            <td>${a.longitude}</td>
-            <td>${a.ponto_id}</td>
-            <td>${a.ponto_latitude}</td>
-            <td>${a.ponto_longitude}</td>
-          </tr>
-        `);
+        <tr>
+          <td>${a.nome}</td>
+          <td>${a.escola_nome}</td>
+          <td>${a.latitude}</td>
+          <td>${a.longitude}</td>
+          <td>${a.ponto_id}</td>
+          <td>${a.ponto_latitude}</td>
+          <td>${a.ponto_longitude}</td>
+          <td>${a.turno}</td>
+        </tr>
+      `);
       });
     }
 
@@ -1210,26 +1214,39 @@
         showNotification("warning", "Nenhum aluno para exportar");
         return;
       }
-      const header = ["Nome do Aluno", "Escola", "Lat Aluno", "Lng Aluno", "ID Ponto", "Lat Ponto", "Lng Ponto"];
+      const header = [
+        "Nome do Aluno",
+        "Escola",
+        "Lat Aluno",
+        "Lng Aluno",
+        "ID Ponto",
+        "Lat Ponto",
+        "Lng Ponto",
+        "Turno"
+      ];
       const rows = [header.join(",")];
       alunosRouteData.forEach(a => {
         const line = [
           `"${a.nome.replace(/"/g, '""')}"`,
           `"${a.escola_nome.replace(/"/g, '""')}"`,
-          a.latitude, a.longitude,
-          a.ponto_id, a.ponto_latitude, a.ponto_longitude
+          a.latitude,
+          a.longitude,
+          a.ponto_id,
+          a.ponto_latitude,
+          a.ponto_longitude,
+          `"${a.turno.replace(/"/g, '""')}"`
         ];
         rows.push(line.join(","));
       });
       const csvString = rows.join("\r\n");
       const blob = new Blob([csvString], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `alunos_rota_${currentRotaId}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `alunos_rota_${currentRotaId}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
     }
 
