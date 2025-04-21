@@ -804,871 +804,256 @@
   <script src="../../assets/js/setting-demo2.js"></script>
 
   <script>
-    /* ====> JS COMPLETO, COPIADO DO SEU CÓDIGO E ATUALIZADO PARA
-     * LIDAR COM A TABELA INTERMEDIÁRIA (FORNECEDORES_ROTAS) <====
-     */
+    /* ====> SCRIPT COMPLETO — ROTAS <==== */
 
-    let mapCreate;
-    let startMarker = null;
-    let isPlacingStart = false;
-
-    let mapEdit;
-    let editStartMarker = null;
-    let isPlacingEditStart = false;
-
-    const iconStartEnd =
-      "https://maps.google.com/mapfiles/ms/icons/green-dot.png";
+    /* ---------- ÍCONES ---------- */
+    const iconStartEnd = "https://maps.google.com/mapfiles/ms/icons/green-dot.png";
     const iconEscola = "https://maps.google.com/mapfiles/kml/pal3/icon56.png";
-    const iconPonto = "https://maps.google.com/mapfiles/kml/pal2/icon13.png";
+    const iconZona = "https://maps.google.com/mapfiles/ms/icons/yellow.png";
 
-    let escolasData = [];
-    let pontosData = [];
-    let fornecedoresData = [];
+    /* ---------- VARIÁVEIS GLOBAIS ---------- */
+    let mapCreate, startMarker = null, placingStart = false;
+    let escolas = [], zoneamentos = [], fornecedores = [];
+    let escolasSel = [], zonaSel = [], pontosSel = [], fornSel = [];
 
-    let escolaMarkers = [];
-    let pontoMarkers = [];
-    let escolasSelecionadas = [];
-    let pontosParadaSelecionados = [];
-    let fornecedoresSelecionados = [];
+    let rotasTable = null;
 
-    let editEscolaMarkers = [];
-    let editPontoMarkers = [];
-    let editEscolasSelecionadas = [];
-    let editPontosParadaSelecionados = [];
-    let editFornecedoresSelecionados = [];
-    let editRotasEscolasData = [];
-    let editRotasPontosData = [];
-
-    let modalMapView = null;
-    let directionsService = null;
-    let directionsRenderer = null;
-    let currentRotaId = null;
-    let rotasTable;
-
-    function showNotification(type, message) {
-      let icon = "fa fa-bell";
-      if (type === "success") icon = "fa fa-check-circle";
-      else if (type === "danger") icon = "fa fa-exclamation-circle";
-      else if (type === "warning") icon = "fa fa-exclamation-triangle";
-      else if (type === "info") icon = "fa fa-info-circle";
-
-      $.notify(
-        { icon: icon, message: message },
-        {
-          type: type,
-          placement: { from: "top", align: "right" },
-          offset: 20,
-          spacing: 10,
-          z_index: 1031,
-          delay: 3000,
-          timer: 1000,
-          animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" },
-        }
-      );
+    /* ---------- UTIL NOTIFICAÇÃO ---------- */
+    function notify(type, msg) {
+      const icons = {
+        success: "fa-check-circle", danger: "fa-exclamation-circle",
+        warning: "fa-exclamation-triangle", info: "fa-info-circle"
+      };
+      $.notify({ icon: `fa ${icons[type] || "fa-bell"}`, message: msg },
+        { type, placement: { from: "top", align: "right" }, delay: 3000, timer: 1000 });
     }
 
-    function loadEscolasEPontos() {
-      const escolasPromise = fetch("/api/escolas").then((r) => r.json());
-      const pontosPromise = fetch("/api/pontos").then((r) => r.json());
-      const fornecedoresPromise = fetch("/api/fornecedores").then((r) => r.json());
-      Promise.all([escolasPromise, pontosPromise, fornecedoresPromise])
-        .then(([escData, ptData, fornData]) => {
-          escolasData = escData;
-          pontosData = ptData;
-          fornecedoresData = fornData;
-          placeEscolas();
-          initFornecedoresList();
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("danger", "Erro ao carregar Escolas, Pontos ou Fornecedores.");
-        });
+    /* ---------- CARREGAR DADOS BÁSICOS ---------- */
+    async function loadDadosBase() {
+      [escolas, zoneamentos, fornecedores] = await Promise.all([
+        fetch("/api/escolas").then(r => r.json()),
+        fetch("/api/zoneamentos").then(r => r.json()),
+        fetch("/api/fornecedores").then(r => r.json())
+      ]);
     }
 
-    function placeEscolas() {
-      escolasData.forEach((escola) => {
-        if (!escola.latitude || !escola.longitude) return;
-        const lat = parseFloat(escola.latitude);
-        const lng = parseFloat(escola.longitude);
-        if (isNaN(lat) || isNaN(lng)) return;
-
-        const marker = new google.maps.Marker({
-          position: { lat, lng },
-          map: mapCreate,
-          icon: iconEscola,
-          title: escola.nome,
-        });
-        escolaMarkers.push(marker);
-
-        marker.addListener("click", () => {
-          if (!escolasSelecionadas.includes(escola.id)) {
-            escolasSelecionadas.push(escola.id);
-            showNotification("info", `Escola "${escola.nome}" selecionada!`);
-          } else {
-            escolasSelecionadas = escolasSelecionadas.filter((id) => id !== escola.id);
-            showNotification("warning", `Escola "${escola.nome}" removida da seleção!`);
-          }
-          reloadPontos();
-        });
-      });
-    }
-
-    function reloadPontos() {
-      pontoMarkers.forEach((m) => m.setMap(null));
-      pontoMarkers = [];
-      pontosParadaSelecionados = [];
-
-      if (escolasSelecionadas.length === 0) return;
-
-      const zoneSet = new Set();
-      escolasSelecionadas.forEach((eId) => {
-        const esc = escolasData.find((e) => e.id == eId);
-        if (esc && esc.zoneamentos) {
-          esc.zoneamentos.forEach((z) => {
-            zoneSet.add(z.id);
-          });
-        }
-      });
-
-      pontosData.forEach((p) => {
-        const ptZoneamentos = p.zoneamentos || [];
-        const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
-        if (hasZone) {
-          const lat = parseFloat(p.latitude);
-          const lng = parseFloat(p.longitude);
-          if (isNaN(lat) || isNaN(lng)) return;
-
-          const marker = new google.maps.Marker({
-            position: { lat, lng },
-            map: mapCreate,
-            icon: iconPonto,
-            title: p.nome_ponto,
-          });
-          pontoMarkers.push(marker);
-
-          marker.addListener("click", () => {
-            if (!pontosParadaSelecionados.includes(p.id)) {
-              pontosParadaSelecionados.push(p.id);
-              showNotification("info", `Ponto "${p.nome_ponto}" adicionado à rota!`);
-            } else {
-              pontosParadaSelecionados = pontosParadaSelecionados.filter((id) => id !== p.id);
-              showNotification("warning", `Ponto "${p.nome_ponto}" removido da rota!`);
-            }
-          });
-        }
-      });
-    }
-
-    function initFornecedoresList() {
-      const lista = document.getElementById("listaFornecedores");
-      lista.innerHTML = "";
-      fornecedoresData.forEach((forn) => {
-        const item = document.createElement("div");
-        item.style.padding = "5px";
-        item.style.cursor = "pointer";
-        item.innerHTML = `
-          <input type="checkbox" data-id="${forn.id}" style="margin-right:5px;" />
-          <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
-        `;
-        item.querySelector("input").addEventListener("change", function () {
-          const fid = parseInt(this.getAttribute("data-id"), 10);
-          if (this.checked) {
-            if (!fornecedoresSelecionados.includes(fid)) {
-              fornecedoresSelecionados.push(fid);
-            }
-          } else {
-            fornecedoresSelecionados = fornecedoresSelecionados.filter((x) => x !== fid);
-          }
-        });
-        lista.appendChild(item);
-      });
-
-      document.getElementById("fornecedoresBuscar").addEventListener("keyup", function () {
-        const search = this.value.toLowerCase();
-        const children = lista.querySelectorAll("div");
-        children.forEach((child) => {
-          const txt = child.innerText.toLowerCase();
-          child.style.display = txt.includes(search) ? "block" : "none";
-        });
-      });
-    }
-
+    /* ---------- MAPA DE CRIAÇÃO ---------- */
     function initMapCreate() {
-      mapCreate = new google.maps.Map(document.getElementById("map-modal-create"), {
-        center: { lat: -6.530066, lng: -49.85163 },
-        zoom: 13,
-        mapTypeId: "roadmap",
-      });
+      mapCreate = new google.maps.Map(
+        document.getElementById("map-modal-create"),
+        { center: { lat: -6.53, lng: -49.8516 }, zoom: 12, mapTypeId: "roadmap" });
 
-      loadEscolasEPontos();
+      plotEscolas();
 
-      mapCreate.addListener("click", (event) => {
-        if (isPlacingStart) {
-          const lat = event.latLng.lat();
-          const lng = event.latLng.lng();
-          if (startMarker) {
-            startMarker.setMap(null);
-          }
-          startMarker = new google.maps.Marker({
-            position: { lat, lng },
-            map: mapCreate,
-            icon: iconStartEnd,
-            title: "Partida/Chegada",
-          });
-          document.getElementById("partidaLat").value = lat;
-          document.getElementById("partidaLng").value = lng;
-          showNotification("success", "Ponto de Partida/Chegada definido!");
-          isPlacingStart = false;
-        }
+      mapCreate.addListener("click", e => {
+        if (!placingStart) return;
+        if (startMarker) startMarker.setMap(null);
+        startMarker = new google.maps.Marker({
+          map: mapCreate, position: e.latLng, icon: iconStartEnd,
+          title: "Partida/Chegada"
+        });
+        $("#partidaLat").val(e.latLng.lat());
+        $("#partidaLng").val(e.latLng.lng());
+        notify("success", "Ponto de partida/chegada definido!");
+        placingStart = false;
       });
     }
 
-    $("#modalNovaRota").on("shown.bs.modal", function () {
-      if (!mapCreate) {
-        initMapCreate();
-      }
-    });
+    /* ---------- PLOTAR ESCOLAS ---------- */
+    function plotEscolas() {
+      escolas.forEach(esc => {
+        if (!esc.latitude || !esc.longitude) return;
+        const mk = new google.maps.Marker({
+          map: mapCreate, position: { lat: +esc.latitude, lng: +esc.longitude },
+          icon: iconEscola, title: esc.nome
+        });
+        mk.addListener("click", () => {
+          toggleArray(esc.id, escolasSel,
+            `Escola “${esc.nome}” selecionada.`,
+            `Escola “${esc.nome}” removida.`);
+          desenharZoneamentos();
+        });
+      });
+    }
 
-    $("#startMarkerBtn").click(function () {
-      isPlacingStart = true;
-      showNotification("info", "Clique no mapa para definir o Ponto de Partida/Chegada.");
-    });
+    /* ---------- DESENHAR / SELECIONAR ZONEAMENTOS ---------- */
+    function desenharZoneamentos() {
+      // limpa polígonos anteriores
+      zoneamentos.forEach(z => { if (z._poly) { z._poly.setMap(null); delete z._poly; } });
+      zonaSel.length = 0;
+      pontosSel.length = 0;
 
-    $("#formDadosRota").on("submit", function (e) {
+      if (!escolasSel.length) return;
+
+      // zoneamentos ligados às escolas escolhidas
+      const permitidos = new Set();
+      escolasSel.forEach(eid => {
+        const esc = escolas.find(e => e.id === eid);
+        (esc.zoneamentos || []).forEach(z => permitidos.add(z.id));
+      });
+
+      zoneamentos.forEach(z => {
+        if (!permitidos.has(z.id)) return;
+        const coords = z.geojson.coordinates[0].map(c => ({ lat: c[1], lng: c[0] }));
+        const poly = new google.maps.Polygon({
+          paths: coords, strokeColor: "#ff9900", strokeOpacity: 0.8,
+          strokeWeight: 2, fillColor: "#ffd27f", fillOpacity: 0.25, map: mapCreate
+        });
+        z._poly = poly;
+        poly.addListener("click", () => {
+          toggleArray(z.id, zonaSel,
+            `Zoneamento “${z.nome}” selecionado.`,
+            `Zoneamento “${z.nome}” removido.`);
+          carregaPontosActivos();
+        });
+      });
+    }
+
+    /* ---------- CARREGAR PONTOS ATIVOS DO(S) ZONEAMENTO(S) ---------- */
+    async function carregaPontosActivos() {
+      pontosSel.length = 0;
+      if (!zonaSel.length) return;
+      const resp = await fetch(`/api/pontos?zoneamento_id=${zonaSel.join(",")}&status=ATIVO`);
+      const pts = await resp.json();
+      pts.forEach(p => pontosSel.push(p.id));
+      notify("info", `${pontosSel.length} ponto(s) ativos adicionados automaticamente.`);
+    }
+
+    /* ---------- LISTA DE FORNECEDORES ---------- */
+    function initListaFornecedores() {
+      const lista = $("#listaFornecedores").empty();
+      fornecedores.forEach(f => {
+        const id = `f_${f.id}`;
+        lista.append(`
+          <div><input type="checkbox" id="${id}" data-id="${f.id}">
+          <label for="${id}">${f.nome_fornecedor} (${f.cnpj})</label></div>`);
+        $(`#${id}`).on("change", function () {
+          const fid = +$(this).data("id");
+          if (this.checked && !fornSel.includes(fid)) fornSel.push(fid);
+          else if (!this.checked) fornSel = fornSel.filter(x => x !== fid);
+        });
+      });
+      $("#fornecedoresBuscar").on("keyup", function () {
+        const s = this.value.toLowerCase();
+        lista.children("div").each(function () {
+          $(this).toggle($(this).text().toLowerCase().includes(s));
+        });
+      });
+    }
+
+    /* ---------- FUNÇÃO GENÉRICA ---------- */
+    function toggleArray(id, arr, msgAdd, msgDel) {
+      const i = arr.indexOf(id);
+      if (i === -1) { arr.push(id); notify("info", msgAdd); }
+      else { arr.splice(i, 1); notify("warning", msgDel); }
+    }
+
+    /* ---------- SUBMISSÃO DO FORM NOVA ROTA ---------- */
+    $("#formDadosRota").on("submit", async function (e) {
       e.preventDefault();
       const identificador = $("#identificador").val().trim();
       const descricao = $("#descricao").val().trim();
-      const partidaLat = $("#partidaLat").val().trim();
-      const partidaLng = $("#partidaLng").val().trim();
       const areaZona = $("#area_zona").val().trim();
+      const lat = $("#partidaLat").val(), lng = $("#partidaLng").val();
 
-      if (!identificador || !descricao || !partidaLat || !partidaLng || !areaZona) {
-        showNotification("warning", "Preencha todos os campos e defina o ponto de partida!");
+      if (!identificador || !descricao || !lat || !lng || !escolasSel.length || !zonaSel.length) {
+        notify("warning", "Preencha todos os campos e escolha escola/zoneamento.");
         return;
       }
 
-      const rotaData = {
-        identificador: identificador,
-        descricao: descricao,
-        partidaLat: parseFloat(partidaLat),
-        partidaLng: parseFloat(partidaLng),
-        chegadaLat: parseFloat(partidaLat),
-        chegadaLng: parseFloat(partidaLng),
-        pontosParada: pontosParadaSelecionados,
-        escolas: escolasSelecionadas,
-        fornecedores: fornecedoresSelecionados,
-        areaZona: areaZona,
+      const rota = {
+        identificador, descricao,
+        partidaLat: +lat, partidaLng: +lng,
+        chegadaLat: +lat, chegadaLng: +lng,
+        escolas: escolasSel,
+        zoneamentos: zonaSel,
+        fornecedores: fornSel,
+        areaZona
       };
 
-      fetch("/api/rotas/cadastrar-simples", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(rotaData),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            showNotification("success", "Rota cadastrada com sucesso!");
-            $("#formDadosRota")[0].reset();
-            if (startMarker) {
-              startMarker.setMap(null);
-              startMarker = null;
-            }
-            escolaMarkers.forEach((m) => m.setMap(null));
-            pontoMarkers.forEach((m) => m.setMap(null));
-            escolaMarkers = [];
-            pontoMarkers = [];
-            escolasSelecionadas = [];
-            pontosParadaSelecionados = [];
-            fornecedoresSelecionados = [];
-            $("#modalNovaRota").modal("hide");
-            loadRotas();
-          } else {
-            showNotification("danger", "Erro ao cadastrar rota: " + data.message);
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("danger", "Erro interno ao cadastrar rota.");
-        });
+      const res = await fetch("/api/rotas/cadastrar-simples", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rota)
+      }).then(r => r.json());
+
+      if (res.success) {
+        notify("success", "Rota cadastrada com sucesso!");
+        $("#modalNovaRota").modal("hide");
+        limparSelecao();
+        loadRotas();
+      } else {
+        notify("danger", "Erro ao cadastrar rota.");
+      }
     });
 
-    function loadRotas() {
-      fetch("/api/rotas-simples-detalhes")
-        .then((r) => r.json())
-        .then((rotas) => {
-          const tableBody = $("#rotas-table tbody");
-          tableBody.empty();
-
-          rotas.forEach((rt) => {
-            const zoneamentosNomes = (rt.zoneamentos || []).map((z) => z.nome).join(", ");
-            const escolasNomes = (rt.escolas || []).map((e) => e.nome).join(", ");
-            const fornecedoresNomes =
-              rt.fornecedores && rt.fornecedores.length
-                ? rt.fornecedores.map((f) => f.nome_fornecedor).join(", ")
-                : "";
-
-            const rowData = encodeURIComponent(JSON.stringify(rt));
-
-            const row = `
-              <tr>
-                <td>${rt.identificador}</td>
-                <td>${rt.descricao || ""}</td>
-                <td>${rt.area_zona || ""}</td>
-                <td>${zoneamentosNomes || ""}</td>
-                <td>${escolasNomes || ""}</td>
-                <td>${fornecedoresNomes || ""}</td>
-                <td>
-                  <div class="form-button-action">
-                    <div class="btn-group dropend">
-                      <button 
-                        type="button" 
-                        class="btn btn-link btn-primary btn-lg" 
-                        data-bs-toggle="tooltip"
-                        title="Visualizar"
-                        onclick="openRouteModal('${rowData}')"
-                      >
-                        <i class="fa fa-eye"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-link btn-warning btn-lg"
-                        data-bs-toggle="tooltip"
-                        title="Editar"
-                        onclick="openEditModal('${rowData}')"
-                      >
-                        <i class="fa fa-edit"></i>
-                      </button>
-                      <button 
-                        type="button" 
-                        class="btn btn-link dropdown-toggle" 
-                        data-bs-toggle="dropdown" 
-                        aria-expanded="false"
-                        title="Baixar"
-                      >
-                        <i class="fa fa-download"></i>
-                      </button>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id}','kml')">Baixar KML</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id}','kmz')">Baixar KMZ</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="downloadRota('${rt.id}','gpx')">Baixar GPX</a></li>
-                      </ul>
-                      <button
-                        type="button"
-                        class="btn btn-link btn-danger btn-lg"
-                        data-bs-toggle="tooltip"
-                        title="Excluir"
-                        onclick="deleteRota(${rt.id})"
-                      >
-                        <i class="fa fa-trash"></i>
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-link btn-success btn-lg"
-                        data-bs-toggle="tooltip"
-                        title="Compartilhar Rota"
-                        onclick="shareRota(${rt.id})"
-                      >
-                        <i class="fa fa-share-alt"></i>
-                      </button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            `;
-            tableBody.append(row);
-          });
-
-          if (rotasTable) {
-            rotasTable.destroy();
-          }
-          rotasTable = $("#rotas-table").DataTable({
-            pageLength: 10,
-            language: {
-              decimal: ",",
-              thousands: ".",
-              info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-              infoEmpty: "Mostrando 0 até 0 de 0 registros",
-              infoFiltered: "(filtrado de _MAX_ registros no total)",
-              lengthMenu: "Mostrar _MENU_ registros",
-              loadingRecords: "Carregando...",
-              processing: "Processando...",
-              search: "Pesquisar:",
-              zeroRecords: "Nenhum registro encontrado",
-              paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
-              emptyTable: "Nenhuma rota disponível",
-            },
-          });
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("danger", "Erro ao carregar lista de rotas.");
-        });
+    /* ---------- LIMPAR SELEÇÃO ---------- */
+    function limparSelecao() {
+      if (startMarker) { startMarker.setMap(null); startMarker = null; }
+      escolasSel.length = 0; zonaSel.length = 0; pontosSel.length = 0; fornSel.length = 0;
+      zoneamentos.forEach(z => { if (z._poly) { z._poly.setMap(null); delete z._poly; } });
     }
 
+    /* ---------- BOTÕES MAPA ---------- */
+    $("#startMarkerBtn").on("click", () => {
+      placingStart = true;
+      notify("info", "Clique no mapa para posicionar partida/chegada.");
+    });
+
+    /* ---------- MODAL ABERTO ---------- */
+    $("#modalNovaRota").on("shown.bs.modal", async () => {
+      if (!mapCreate) { await loadDadosBase(); initMapCreate(); initListaFornecedores(); }
+    });
+
+    /* ---------- LISTAGEM DAS ROTAS ---------- */
+    function loadRotas() {
+      fetch("/api/rotas-simples-detalhes").then(r => r.json()).then(rs => {
+        const tbody = $("#rotas-table tbody").empty();
+        rs.forEach(rt => {
+          const zonas = (rt.zoneamentos || []).map(z => z.nome).join(", ");
+          const escolasN = (rt.escolas || []).map(e => e.nome).join(", ");
+          const fornN = (rt.fornecedores || []).map(f => f.nome_fornecedor).join(", ");
+          const row = `
+            <tr>
+              <td>${rt.identificador}</td>
+              <td>${rt.descricao || ""}</td>
+              <td>${rt.area_zona || ""}</td>
+              <td>${zonas}</td>
+              <td>${escolasN}</td>
+              <td>${fornN}</td>
+              <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteRota(${rt.id})">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>`;
+          tbody.append(row);
+        });
+        if (rotasTable) rotasTable.destroy();
+        rotasTable = $("#rotas-table").DataTable({ language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json" } });
+      });
+    }
     loadRotas();
 
-    function deleteRota(rotaId) {
-      if (!confirm("Tem certeza que deseja excluir esta rota?")) return;
-      fetch("/api/rotas-simples/" + rotaId, { method: "DELETE" })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            showNotification("success", "Rota excluída com sucesso!");
-            loadRotas();
-          } else {
-            showNotification("danger", "Não foi possível excluir a rota: " + (data.message || ""));
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("danger", "Erro interno ao excluir a rota.");
-        });
+    /* ---------- EXCLUSÃO ---------- */
+    function deleteRota(id) {
+      if (!confirm("Excluir esta rota?")) return;
+      fetch(`/api/rotas-simples/${id}`, { method: "DELETE" }).then(r => r.json()).then(d => {
+        if (d.success) { notify("success", "Rota excluída."); loadRotas(); }
+        else notify("danger", "Não foi possível excluir.");
+      });
     }
 
-    function shareRota(rotaId) {
-      fetch(`/api/rotas_simples/${rotaId}`)
-        .then((res) => res.json())
-        .then((detalhes) => {
-          if (!detalhes.partidaLat || !detalhes.partidaLng) {
-            showNotification("warning", "A rota não possui ponto de partida definido.");
-            return;
-          }
-          const routeCoords = [];
-          routeCoords.push({ lat: detalhes.partidaLat, lng: detalhes.partidaLng });
+    /* ---------- EXPORTAR TODAS ---------- */
+    function downloadAll(fmt) { window.open(`/api/download-rotas-todas?format=${fmt}`, "_blank"); }
 
-          (detalhes.pontosParada || []).forEach((pt) => {
-            if (pt.latitude && pt.longitude) {
-              routeCoords.push({ lat: pt.latitude, lng: pt.longitude });
-            }
-          });
-          (detalhes.escolas || []).forEach((es) => {
-            if (es.latitude && es.longitude) {
-              routeCoords.push({ lat: es.latitude, lng: es.longitude });
-            }
-          });
-
-          if (detalhes.chegadaLat && detalhes.chegadaLng) {
-            routeCoords.push({ lat: detalhes.chegadaLat, lng: detalhes.chegadaLng });
-          } else {
-            routeCoords.push({ lat: detalhes.partidaLat, lng: detalhes.partidaLng });
-          }
-
-          if (routeCoords.length < 2) {
-            showNotification("warning", "A rota não possui paradas suficientes para compartilhar.");
-            return;
-          }
-
-          const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-          const origin = routeCoords[0];
-          const destination = routeCoords[routeCoords.length - 1];
-          const midPoints = routeCoords.slice(1, routeCoords.length - 1);
-
-          if (isMobile) {
-            let deepLink = `comgooglemaps://?saddr=${origin.lat},${origin.lng}&daddr=${destination.lat},${destination.lng}`;
-            if (midPoints.length > 0) {
-              const wps = midPoints.map((m) => `${m.lat},${m.lng}`).join("|");
-              deepLink += `&waypoints=${encodeURIComponent(wps)}`;
-            }
-            deepLink += `&directionsmode=driving`;
-
-            let fallbackLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
-            fallbackLink += `&origin=${encodeURIComponent(origin.lat + "," + origin.lng)}`;
-            fallbackLink += `&destination=${encodeURIComponent(destination.lat + "," + destination.lng)}`;
-            if (midPoints.length > 0) {
-              const wps2 = midPoints.map((m) => `${m.lat},${m.lng}`).join("|");
-              fallbackLink += `&waypoints=${encodeURIComponent(wps2)}`;
-            }
-
-            window.location.href = deepLink;
-            setTimeout(() => {
-              window.location.href = fallbackLink;
-            }, 1000);
-          } else {
-            let shareLink = `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving`;
-            shareLink += `&origin=${encodeURIComponent(origin.lat + "," + origin.lng)}`;
-            shareLink += `&destination=${encodeURIComponent(destination.lat + "," + destination.lng)}`;
-
-            if (midPoints.length > 0) {
-              const wps = midPoints.map((m) => `${m.lat},${m.lng}`).join("|");
-              shareLink += `&waypoints=${encodeURIComponent(wps)}`;
-            }
-
-            navigator.clipboard
-              .writeText(shareLink)
-              .then(() => {
-                showNotification("info", "Link do trajeto copiado para a área de transferência!");
-              })
-              .catch(() => {
-                showNotification("warning", "Não foi possível copiar o link automaticamente.");
-              });
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("danger", "Erro ao carregar rota para compartilhar.");
-        });
-    }
-
-    function openRouteModal(encodedData) {
-      const rotaData = JSON.parse(decodeURIComponent(encodedData));
-      currentRotaId = rotaData.id;
-      $("#viewRouteModal").modal("show");
-
-      setTimeout(() => {
-        if (!modalMapView) {
-          modalMapView = new google.maps.Map(document.getElementById("map-modal-view"), {
-            center: { lat: -6.530066, lng: -49.85163 },
-            zoom: 13,
-            mapTypeId: "roadmap",
-          });
-          directionsService = new google.maps.DirectionsService();
-          directionsRenderer = new google.maps.DirectionsRenderer();
-          directionsRenderer.setMap(modalMapView);
-        }
-
-        if (rotaData.id) {
-          fetch(`/api/rotas_simples/${rotaData.id}`)
-            .then((r) => r.json())
-            .then((detalhesRota) => {
-              const origin = {
-                lat: parseFloat(detalhesRota.partidaLat),
-                lng: parseFloat(detalhesRota.partidaLng),
-              };
-              const destination = {
-                lat: parseFloat(detalhesRota.chegadaLat),
-                lng: parseFloat(detalhesRota.chegadaLng),
-              };
-
-              const waypoints = [];
-              (detalhesRota.pontosParada || []).forEach((pt) => {
-                waypoints.push({
-                  location: new google.maps.LatLng(parseFloat(pt.latitude), parseFloat(pt.longitude)),
-                  stopover: true,
-                });
-              });
-              (detalhesRota.escolas || []).forEach((es) => {
-                waypoints.push({
-                  location: new google.maps.LatLng(parseFloat(es.latitude), parseFloat(es.longitude)),
-                  stopover: true,
-                });
-              });
-
-              const request = {
-                origin: origin,
-                destination: destination,
-                waypoints: waypoints,
-                optimizeWaypoints: true,
-                travelMode: google.maps.TravelMode.DRIVING,
-              };
-              directionsService.route(request, function (result, status) {
-                if (status === google.maps.DirectionsStatus.OK) {
-                  directionsRenderer.setDirections(result);
-                }
-              });
-            })
-            .catch((err) => {
-              console.error(err);
-              showNotification("danger", "Erro ao carregar detalhes da rota para exibição.");
-            });
-        }
-      }, 400);
-    }
-
-    function downloadRota(rotaId, formato) {
-      window.open(`/api/download-rota/${rotaId}?format=${formato}`, "_blank");
-    }
-
-    function downloadAll(formato) {
-      window.open(`/api/download-rotas-todas?format=${formato}`, "_blank");
-    }
-
+    /* ---------- EVENTOS DOM ---------- */
     document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("downloadKml").addEventListener("click", (e) => {
-        e.preventDefault();
-        if (currentRotaId) {
-          downloadRota(currentRotaId, "kml");
-        }
-      });
-      document.getElementById("downloadKmz").addEventListener("click", (e) => {
-        e.preventDefault();
-        if (currentRotaId) {
-          downloadRota(currentRotaId, "kmz");
-        }
-      });
-      document.getElementById("downloadGpx").addEventListener("click", (e) => {
-        e.preventDefault();
-        if (currentRotaId) {
-          downloadRota(currentRotaId, "gpx");
-        }
-      });
-    });
-
-    function openEditModal(encodedData) {
-      const rotaData = JSON.parse(decodeURIComponent(encodedData));
-      $("#modalEditarRota").modal("show");
-
-      setTimeout(() => {
-        if (!mapEdit) {
-          mapEdit = new google.maps.Map(document.getElementById("map-modal-edit"), {
-            center: { lat: -6.530066, lng: -49.85163 },
-            zoom: 13,
-            mapTypeId: "roadmap",
-          });
-
-          mapEdit.addListener("click", (event) => {
-            if (isPlacingEditStart) {
-              const lat = event.latLng.lat();
-              const lng = event.latLng.lng();
-              if (editStartMarker) {
-                editStartMarker.setMap(null);
-              }
-              editStartMarker = new google.maps.Marker({
-                position: { lat, lng },
-                map: mapEdit,
-                icon: iconStartEnd,
-                title: "Partida/Chegada",
-              });
-              document.getElementById("editPartidaLat").value = lat;
-              document.getElementById("editPartidaLng").value = lng;
-              showNotification("success", "Novo ponto de Partida/Chegada definido!");
-              isPlacingEditStart = false;
-            }
-          });
-        }
-
-        document.getElementById("editRotaId").value = rotaData.id || "";
-        document.getElementById("editIdentificador").value = rotaData.identificador || "";
-        document.getElementById("editDescricao").value = rotaData.descricao || "";
-        document.getElementById("editAreaZona").value = rotaData.area_zona || "URBANA";
-
-        editEscolasSelecionadas = [];
-        editPontosParadaSelecionados = [];
-        editFornecedoresSelecionados = [];
-
-        editEscolaMarkers.forEach((m) => m.setMap(null));
-        editPontoMarkers.forEach((m) => m.setMap(null));
-        editEscolaMarkers = [];
-        editPontoMarkers = [];
-
-        fetch(`/api/rotas_simples/${rotaData.id}`)
-          .then((r) => r.json())
-          .then((detalhes) => {
-            document.getElementById("editPartidaLat").value = detalhes.partidaLat || "";
-            document.getElementById("editPartidaLng").value = detalhes.partidaLng || "";
-            if (editStartMarker) {
-              editStartMarker.setMap(null);
-            }
-            if (detalhes.partidaLat && detalhes.partidaLng) {
-              const lat = parseFloat(detalhes.partidaLat);
-              const lng = parseFloat(detalhes.partidaLng);
-              editStartMarker = new google.maps.Marker({
-                position: { lat, lng },
-                map: mapEdit,
-                icon: iconStartEnd,
-                title: "Partida/Chegada",
-              });
-              mapEdit.setCenter({ lat, lng });
-              mapEdit.setZoom(13);
-            }
-
-            (detalhes.escolas || []).forEach((e) => {
-              editEscolasSelecionadas.push(e.id);
-            });
-            (detalhes.pontosParada || []).forEach((p) => {
-              editPontosParadaSelecionados.push(p.id);
-            });
-            (detalhes.fornecedores || []).forEach((f) => {
-              editFornecedoresSelecionados.push(f.id);
-            });
-
-            const ePromise = fetch("/api/escolas").then((rr) => rr.json());
-            const pPromise = fetch("/api/pontos").then((rr) => rr.json());
-            const fPromise = fetch("/api/fornecedores").then((rr) => rr.json());
-
-            Promise.all([ePromise, pPromise, fPromise])
-              .then(([esc, pts, forn]) => {
-                editRotasEscolasData = esc;
-                editRotasPontosData = pts;
-                fornecedoresData = forn;
-
-                placeEditEscolas();
-                initEditFornecedoresList();
-              })
-              .catch((err) => {
-                console.error(err);
-                showNotification("danger", "Erro ao recarregar dados para edição.");
-              });
-          })
-          .catch((err) => {
-            console.error(err);
-            showNotification("danger", "Erro ao carregar detalhes para edição.");
-          });
-      }, 400);
-    }
-
-    function initEditFornecedoresList() {
-      const lista = document.getElementById("editListaFornecedores");
-      lista.innerHTML = "";
-      fornecedoresData.forEach((forn) => {
-        const item = document.createElement("div");
-        item.style.padding = "5px";
-        item.style.cursor = "pointer";
-        const isChecked = editFornecedoresSelecionados.includes(forn.id);
-        item.innerHTML = `
-          <input type="checkbox" data-id="${forn.id}" style="margin-right:5px;" ${isChecked ? "checked" : ""} />
-          <span>${forn.nome_fornecedor} (${forn.cnpj})</span>
-        `;
-        item.querySelector("input").addEventListener("change", function () {
-          const fid = parseInt(this.getAttribute("data-id"), 10);
-          if (this.checked) {
-            if (!editFornecedoresSelecionados.includes(fid)) {
-              editFornecedoresSelecionados.push(fid);
-            }
-          } else {
-            editFornecedoresSelecionados =
-              editFornecedoresSelecionados.filter((x) => x !== fid);
-          }
-        });
-        lista.appendChild(item);
-      });
-
-      document.getElementById("editFornecedoresBuscar").addEventListener("keyup", function () {
-        const search = this.value.toLowerCase();
-        const children = lista.querySelectorAll("div");
-        children.forEach((child) => {
-          const txt = child.innerText.toLowerCase();
-          child.style.display = txt.includes(search) ? "block" : "none";
-        });
-      });
-    }
-
-    function placeEditEscolas() {
-      editRotasEscolasData.forEach((escola) => {
-        if (!escola.latitude || !escola.longitude) return;
-        const lat = parseFloat(escola.latitude);
-        const lng = parseFloat(escola.longitude);
-        if (isNaN(lat) || isNaN(lng)) return;
-
-        const marker = new google.maps.Marker({
-          position: { lat, lng },
-          map: mapEdit,
-          icon: iconEscola,
-          title: escola.nome,
-        });
-        editEscolaMarkers.push(marker);
-
-        marker.addListener("click", () => {
-          if (!editEscolasSelecionadas.includes(escola.id)) {
-            editEscolasSelecionadas.push(escola.id);
-            showNotification("info", `Escola "${escola.nome}" selecionada!`);
-          } else {
-            editEscolasSelecionadas = editEscolasSelecionadas.filter((id) => id !== escola.id);
-            showNotification("warning", `Escola "${escola.nome}" removida da seleção!`);
-          }
-          reloadEditPontos();
-        });
-      });
-      reloadEditPontos();
-    }
-
-    function reloadEditPontos() {
-      editPontoMarkers.forEach((m) => m.setMap(null));
-      editPontoMarkers = [];
-
-      const zoneSet = new Set();
-      editEscolasSelecionadas.forEach((eId) => {
-        const esc = editRotasEscolasData.find((e) => e.id == eId);
-        if (esc && esc.zoneamentos) {
-          esc.zoneamentos.forEach((z) => {
-            zoneSet.add(z.id);
-          });
-        }
-      });
-
-      editRotasPontosData.forEach((p) => {
-        const ptZoneamentos = p.zoneamentos || [];
-        const hasZone = ptZoneamentos.some((z) => zoneSet.has(z.id));
-        if (hasZone) {
-          const lat = parseFloat(p.latitude);
-          const lng = parseFloat(p.longitude);
-          if (isNaN(lat) || isNaN(lng)) return;
-
-          const marker = new google.maps.Marker({
-            position: { lat, lng },
-            map: mapEdit,
-            icon: iconPonto,
-            title: p.nome_ponto,
-          });
-          editPontoMarkers.push(marker);
-
-          marker.addListener("click", () => {
-            if (!editPontosParadaSelecionados.includes(p.id)) {
-              editPontosParadaSelecionados.push(p.id);
-              showNotification("info", `Ponto "${p.nome_ponto}" adicionado à rota!`);
-            } else {
-              editPontosParadaSelecionados = editPontosParadaSelecionados.filter((id) => id !== p.id);
-              showNotification("warning", `Ponto "${p.nome_ponto}" removido da rota!`);
-            }
-          });
-        }
-      });
-    }
-
-    $("#editStartMarkerBtn").click(function () {
-      isPlacingEditStart = true;
-      showNotification("info", "Clique no mapa para redefinir o Ponto de Partida/Chegada.");
-    });
-
-    $("#formEditarRota").on("submit", function (e) {
-      e.preventDefault();
-      const rotaId = $("#editRotaId").val().trim();
-      const identificador = $("#editIdentificador").val().trim();
-      const descricao = $("#editDescricao").val().trim();
-      const editLat = $("#editPartidaLat").val().trim();
-      const editLng = $("#editPartidaLng").val().trim();
-      const areaZona = $("#editAreaZona").val().trim();
-
-      if (!rotaId || !identificador || !descricao || !editLat || !editLng || !areaZona) {
-        showNotification("warning", "Preencha todos os campos e defina o ponto de partida!");
-        return;
-      }
-
-      const rotaUpdate = {
-        identificador: identificador,
-        descricao: descricao,
-        partidaLat: parseFloat(editLat),
-        partidaLng: parseFloat(editLng),
-        chegadaLat: parseFloat(editLat),
-        chegadaLng: parseFloat(editLng),
-        pontosParada: editPontosParadaSelecionados,
-        escolas: editEscolasSelecionadas,
-        fornecedores: editFornecedoresSelecionados,
-        areaZona: areaZona,
-      };
-
-      fetch(`/api/rotas-simples/${rotaId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(rotaUpdate),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            showNotification("success", "Rota atualizada com sucesso!");
-            $("#modalEditarRota").modal("hide");
-            loadRotas();
-          } else {
-            showNotification("danger", "Erro ao atualizar rota: " + data.message);
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("danger", "Erro interno ao atualizar rota.");
-        });
+      $("#downloadKml").on("click", e => { e.preventDefault(); downloadAll("kml"); });
+      $("#downloadKmz").on("click", e => { e.preventDefault(); downloadAll("kmz"); });
+      $("#downloadGpx").on("click", e => { e.preventDefault(); downloadAll("gpx"); });
     });
   </script>
+
 </body>
 
 </html>
