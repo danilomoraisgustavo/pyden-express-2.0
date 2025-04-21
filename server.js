@@ -5908,40 +5908,41 @@ app.get("/api/download-rota/:id", async (req, res) => {
 
 // =========================================================
 // GET /api/rotas-simples/:id/alunos
-// Retorna lista de alunos vinculados à rota, com dados e turno extraído de turma
-// =========================================================
-// =========================================================
-// GET /api/rotas-simples/:id/alunos
-// Retorna apenas os alunos cuja escola faz parte da rota
+// Retorna apenas os alunos cuja escola está associada à rota
 // =========================================================
 app.get("/api/rotas-simples/:id/alunos", async (req, res) => {
   try {
-    const { id } = req.params; // rota_id
+    const { id } = req.params;
 
     const query = `
       SELECT
-        a.id                   AS aluno_id,
-        a.pessoa_nome          AS nome,
-        e.nome                 AS escola_nome,
-        a.latitude             AS latitude,
-        a.longitude            AS longitude,
-        ap.ponto_id            AS ponto_id,
-        p.latitude             AS ponto_latitude,
-        p.longitude            AS ponto_longitude,
+        a.id                     AS aluno_id,
+        a.pessoa_nome            AS nome,
+        e.nome                   AS escola_nome,
+        a.latitude               AS latitude,
+        a.longitude              AS longitude,
+        ap.ponto_id              AS ponto_id,
+        p.latitude               AS ponto_latitude,
+        p.longitude              AS ponto_longitude,
         CASE
           WHEN a.turma LIKE '%MAT'  THEN 'manha'
           WHEN a.turma LIKE '%VESP' THEN 'tarde'
           WHEN a.turma LIKE '%NOT'  THEN 'noite'
           WHEN a.turma LIKE '%INT'  THEN 'integral'
           ELSE lower(a.turma)
-        END                    AS turno
+        END                      AS turno
       FROM rotas_pontos rp
-      JOIN rotas_escolas re   ON re.rota_id   = rp.rota_id
-      JOIN alunos_pontos ap   ON ap.ponto_id  = rp.ponto_id
-      JOIN alunos_ativos a    ON a.id         = ap.aluno_id
-                             AND a.escola_id = re.escola_id
-      LEFT JOIN escolas e     ON e.id         = a.escola_id
-      JOIN pontos p           ON p.id         = ap.ponto_id
+      JOIN rotas_escolas re
+        ON re.rota_id = rp.rota_id
+      JOIN alunos_pontos ap
+        ON ap.ponto_id = rp.ponto_id
+      JOIN alunos_ativos a
+        ON a.id = ap.aluno_id
+       AND a.escola_id = re.escola_id
+      LEFT JOIN escolas e
+        ON e.id = a.escola_id
+      JOIN pontos p
+        ON p.id = ap.ponto_id
       WHERE rp.rota_id = $1
       ORDER BY a.pessoa_nome;
     `;
