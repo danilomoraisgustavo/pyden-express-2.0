@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS zoneamentos (
   geom GEOMETRY(Polygon, 4326) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS pontos (
+CREATE TABLE pontos (
   id                SERIAL PRIMARY KEY,
   nome_ponto        VARCHAR(255) NOT NULL,
   latitude          DOUBLE PRECISION,
@@ -25,9 +25,11 @@ CREATE TABLE IF NOT EXISTS pontos (
   complemento       VARCHAR(255),
   ponto_referencia  VARCHAR(255),
   bairro            VARCHAR(255),
-  cep               VARCHAR(20)
+  cep               VARCHAR(20),
+  geom              GEOMETRY(Point, 4326),
+  status            VARCHAR(10) DEFAULT 'inativo'
+                       CHECK (lower(status) IN ('ativo','inativo'))
 );
-
 
 -- tabela de ligação 1‑para‑1 (caso cada aluno só possa ter um ponto de parada)
 CREATE TABLE IF NOT EXISTS alunos_pontos (

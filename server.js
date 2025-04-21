@@ -4590,6 +4590,29 @@ app.post("/api/motoristas/check-cpf", async (req, res) => {
 /* ------------------------------------------------------------------
    LISTAR TODOS OS PONTOS (AGORA COM alunos_count)
 ------------------------------------------------------------------ */
+// ====>  NOVO  GET /api/zoneamentos/:id/pontos-ativos  <====
+app.get("/api/zoneamentos/:id/pontos-ativos", async (req, res) => {
+  try {
+    const { id } = req.params;           // zoneamento_id
+    const q = `
+      SELECT  p.id,
+              p.nome_ponto,
+              p.latitude,
+              p.longitude
+        FROM  pontos              p
+        JOIN  pontos_zoneamentos  z ON z.ponto_id = p.id
+       WHERE  z.zoneamento_id = $1
+         AND  p.status = 'ativo'
+       ORDER BY p.id;
+    `;
+    const { rows } = await pool.query(q, [id]);
+    return res.json(rows);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: "Erro interno." });
+  }
+});
+
 app.get("/api/pontos", async (req, res) => {
   try {
     const q = `
