@@ -4621,10 +4621,10 @@ app.get("/api/pontos", async (req, res) => {
         SELECT
           ap.ponto_id,
           CASE
-            WHEN a.turma ILIKE '%-MAT'  THEN 'manha'
-            WHEN a.turma ILIKE '%-VESP' THEN 'tarde'
-            WHEN a.turma ILIKE '%-NOT'  THEN 'noite'
-            WHEN a.turma ILIKE '%-INT'  THEN 'integral'
+            WHEN a.turma ILIKE '%MAT%'  THEN 'manha'
+            WHEN a.turma ILIKE '%VESP%' THEN 'tarde'
+            WHEN a.turma ILIKE '%NOT%'  THEN 'noite'
+            WHEN a.turma ILIKE '%INT%'  THEN 'integral'
             ELSE NULL
           END AS turno
         FROM alunos_ativos a
@@ -4636,11 +4636,11 @@ app.get("/api/pontos", async (req, res) => {
       alunos_agg AS (
         SELECT
           ponto_id,
-          COUNT(*)                                              AS total,
-          COUNT(*) FILTER (WHERE turno = 'manha')               AS manha,
-          COUNT(*) FILTER (WHERE turno = 'tarde')               AS tarde,
-          COUNT(*) FILTER (WHERE turno = 'noite')               AS noite,
-          COUNT(*) FILTER (WHERE turno = 'integral')            AS integral
+          COUNT(*)                               AS total,
+          COUNT(*) FILTER (WHERE turno = 'manha')    AS manha,
+          COUNT(*) FILTER (WHERE turno = 'tarde')    AS tarde,
+          COUNT(*) FILTER (WHERE turno = 'noite')    AS noite,
+          COUNT(*) FILTER (WHERE turno = 'integral') AS integral
         FROM alunos_turno
         GROUP BY ponto_id
       )
@@ -4657,21 +4657,21 @@ app.get("/api/pontos", async (req, res) => {
         p.bairro,
         p.cep,
         p.status,
-        COALESCE(a.total,0)     AS alunos_count,
-        COALESCE(a.manha,0)     AS alunos_manha,
-        COALESCE(a.tarde,0)     AS alunos_tarde,
-        COALESCE(a.noite,0)     AS alunos_noite,
-        COALESCE(a.integral,0)  AS alunos_integral,
+        COALESCE(a.total, 0)    AS alunos_count,
+        COALESCE(a.manha, 0)    AS alunos_manha,
+        COALESCE(a.tarde, 0)    AS alunos_tarde,
+        COALESCE(a.noite, 0)    AS alunos_noite,
+        COALESCE(a.integral, 0) AS alunos_integral,
         COALESCE(
           json_agg(
-            json_build_object('id',z.id,'nome',z.nome)
+            json_build_object('id', z.id, 'nome', z.nome)
           ) FILTER (WHERE z.id IS NOT NULL),
           '[]'
-        )                      AS zoneamentos
+        ) AS zoneamentos
       FROM pontos p
-      LEFT JOIN alunos_agg         a  ON a.ponto_id = p.id
+      LEFT JOIN alunos_agg          a  ON a.ponto_id = p.id
       LEFT JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
-      LEFT JOIN zoneamentos        z  ON z.id = pz.zoneamento_id
+      LEFT JOIN zoneamentos         z  ON z.id = pz.zoneamento_id
       GROUP BY
         p.id,
         a.total,
@@ -4688,6 +4688,7 @@ app.get("/api/pontos", async (req, res) => {
     res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
+
 
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
