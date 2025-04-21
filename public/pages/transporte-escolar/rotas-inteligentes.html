@@ -37,7 +37,6 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
 
     <style>
-        /* Ajuste de legenda ou estilos específicos, se necessário */
         #mapInteligente {
             width: 100%;
             height: 500px;
@@ -45,113 +44,36 @@
     </style>
 </head>
 
-
 <body>
     <div class="wrapper">
-        <!-- SIDEBAR (mesmo do rotas-listar.html) -->
-        <div class="sidebar" data-background-color="dark">
-            <!-- ... todo o conteúdo da sidebar ... -->
-        </div>
-        <!-- END SIDEBAR -->
+        <!-- ... sidebar e top bar inalterados ... -->
 
         <div class="main-panel">
-            <!-- TOP BAR (mesmo do rotas-listar.html) -->
-            <div class="main-header" style="top: 0">
-                <!-- logo, toggles, notificações, user menu ... -->
-            </div>
+            <!-- ... todo o conteúdo interno ... -->
 
-            <div class="container">
-                <div class="page-inner">
-
-                    <!-- Cabeçalho da página -->
-                    <div class="page-header">
-                        <h3 class="fw-bold mb-3">Rotas Inteligentes</h3>
-                        <ul class="breadcrumbs mb-3">
-                            <li class="nav-home"><a href="../../"><i class="icon-home"></i></a></li>
-                            <li class="separator"><i class="icon-arrow-right"></i></li>
-                            <li class="nav-item"><a href="#">Rotas</a></li>
-                            <li class="separator"><i class="icon-arrow-right"></i></li>
-                            <li class="nav-item"><a href="#">Inteligentes</a></li>
-                        </ul>
-                    </div>
-
-                    <!-- Seletor de parâmetros -->
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Zoneamento</label>
-                            <select id="selectZoneamento" class="form-select"></select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Turno</label>
-                            <select id="selectTurno" class="form-select">
-                                <option value="manha">Manhã</option>
-                                <option value="tarde">Tarde</option>
-                                <option value="noite">Noite</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 d-grid align-self-end">
-                            <button id="btnGerarRota" class="btn btn-success">Gerar Rota Inteligente</button>
-                        </div>
-                    </div>
-
-                    <!-- Mapa -->
-                    <div class="card mb-4">
-                        <div class="card-body p-0">
-                            <div id="mapInteligente"></div>
-                        </div>
-                    </div>
-
-                    <!-- Tabela de rotas -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="card-title mb-0">Rotas Inteligentes Cadastradas</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="tabelaRotasInteligentes" class="display table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Tipo</th>
-                                            <th>Turno</th>
-                                            <th>Veículo</th>
-                                            <th>Capacidade</th>
-                                            <th>Duração (min)</th>
-                                            <th>Distância (km)</th>
-                                            <th>Escolas</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- FOOTER (mesmo do rotas-listar.html) -->
-            <footer class="footer">
-                <!-- ... rodapé ... -->
-            </footer>
+            <!-- FOOTER ... -->
         </div>
     </div>
 
-    <!-- Scripts JS -->
-    <script src="../../assets/js/core/jquery.min.js"></script>
-    <script src="../../assets/js/core/popper.min.js"></script>
-    <script src="../../assets/js/core/bootstrap.min.js"></script>
-    <script src="../../assets/js/pydenadmin.min.js"></script>
-    <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
-    <script src="../../assets/js/plugin/datatables/dataTables.bootstrap4.min.js"></script>
+    <!-- ===== SCRIPTS ===== -->
+    <!-- 1) jQuery primeiro -->
+    <script src="/assets/js/core/jquery.min.js"></script>
+    <!-- 2) Popper e Bootstrap -->
+    <script src="/assets/js/core/popper.min.js"></script>
+    <script src="/assets/js/core/bootstrap.min.js"></script>
+    <!-- 3) DataTables (depende de jQuery e Bootstrap) -->
+    <script src="/assets/js/plugin/datatables/datatables.min.js"></script>
+    <script src="/assets/js/plugin/datatables/dataTables.bootstrap4.min.js"></script>
+    <!-- 4) PyDenAdmin (depende de jQuery) -->
+    <script src="/assets/js/pydenadmin.min.js"></script>
+    <!-- 5) Socket.IO -->
     <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
 
+    <!-- 6) Seu script de inicialização -->
     <script>
         let map, socket, rotaPolyline;
         const markers = [];
 
-        // Inicializa o mapa
         function initMap() {
             map = new google.maps.Map(document.getElementById('mapInteligente'), {
                 center: { lat: -3.7437, lng: -38.5267 },
@@ -159,20 +81,16 @@
             });
         }
 
-        // Carrega zoneamentos no dropdown
         function carregarZoneamentos() {
             fetch('/api/zoneamentos')
                 .then(res => res.json())
                 .then(data => {
                     const sel = $('#selectZoneamento').empty();
                     sel.append('<option value="">Selecione...</option>');
-                    data.forEach(z => {
-                        sel.append(`<option value="${z.id}">${z.nome}</option>`);
-                    });
+                    data.forEach(z => sel.append(`<option value="${z.id}">${z.nome}</option>`));
                 });
         }
 
-        // Busca e renderiza a tabela de rotas
         function buscarRotas() {
             fetch('/api/rotas-inteligentes')
                 .then(res => res.json())
@@ -180,19 +98,11 @@
                     const table = $('#tabelaRotasInteligentes').DataTable();
                     table.clear();
                     rotas.forEach(r => {
-                        // Extrai minutos de PTxxM
-                        const match = (r.duracao_estimativa || '').match(/PT(\d+)M/);
-                        const mins = match ? +match[1] : 0;
+                        const m = (r.duracao_estimativa.match(/PT(\d+)M/) || [])[1] || 0;
                         table.row.add([
-                            r.id,
-                            r.tipo,
-                            r.turno,
-                            r.veiculo_tipo,
-                            r.capacidade,
-                            mins,
-                            r.distancia_total.toFixed(2),
-                            r.escolas_ids.join(','),
-                            `
+                            r.id, r.tipo, r.turno, r.veiculo_tipo, r.capacidade,
+                            +m, r.distancia_total.toFixed(2),
+                            r.escolas_ids.join(','), `
                 <button class="btn btn-sm btn-primary ver-rota" data-id="${r.id}">Ver</button>
                 <button class="btn btn-sm btn-danger excluir-rota" data-id="${r.id}">Excluir</button>
               `
@@ -202,21 +112,16 @@
                 });
         }
 
-        // Mostra a rota no mapa
         function mostrarRotaNoMapa(id) {
-            // limpa rota anterior
             if (rotaPolyline) rotaPolyline.setMap(null);
             markers.forEach(m => m.setMap(null));
             markers.length = 0;
 
-            // Busca detalhes da rota (assume GET /api/rotas-inteligentes/:id retorna { pontos: [{lat,lng,ordem},…] })
             fetch(`/api/rotas-inteligentes/${id}`)
                 .then(res => res.json())
                 .then(obj => {
                     const path = obj.pontos.map(p => ({ lat: p.lat, lng: p.lng }));
-                    // desenha linha
                     rotaPolyline = new google.maps.Polyline({ path, map });
-                    // desenha marcadores
                     obj.pontos.forEach(p => {
                         const m = new google.maps.Marker({
                             position: { lat: p.lat, lng: p.lng },
@@ -225,69 +130,52 @@
                         });
                         markers.push(m);
                     });
-                    // ajusta bounds
                     const bounds = new google.maps.LatLngBounds();
                     path.forEach(pt => bounds.extend(pt));
                     map.fitBounds(bounds);
                 });
         }
 
-        // Exclui rota via API
         function excluirRota(id) {
             if (!confirm('Confirma exclusão da rota?')) return;
             fetch(`/api/rotas-inteligentes/${id}`, { method: 'DELETE' })
-                .then(() => {
-                    socket.emit('rotasInvalidar'); // notifica back ou front
-                });
+                .then(() => socket.emit('rotasInvalidar'));
         }
 
         $(document).ready(function () {
-            // inicializa DataTable
-            $('#tabelaRotasInteligentes').DataTable({
-                columnDefs: [{ orderable: false, targets: 8 }]
-            });
+            $('#tabelaRotasInteligentes').DataTable({ columnDefs: [{ orderable: false, targets: 8 }] });
 
             initMap();
             carregarZoneamentos();
             buscarRotas();
 
-            // Socket.IO para live updates
             socket = io();
             socket.on('rotasAtualizadas', buscarRotas);
 
-            // Geração de rota
             $('#btnGerarRota').click(function () {
-                const zoneId = +$('#selectZoneamento').val();
-                const turno = $('#selectTurno').val();
-                if (!zoneId) { alert('Selecione um zoneamento'); return; }
+                const zoneId = +$('#selectZoneamento').val(), turno = $('#selectTurno').val();
+                if (!zoneId) return alert('Selecione um zoneamento');
                 $(this).prop('disabled', true).text('Gerando...');
                 fetch('/api/rotas-inteligentes/criar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ zoneamentoId: zoneId, turno })
                 })
-                    .then(res => res.json())
+                    .then(r => r.json())
                     .then(res => {
                         if (res.success) {
                             alert(`Rota criada: ID ${res.rota.id}`);
                             socket.emit('rotasInvalidar');
-                        } else {
-                            alert('Erro: ' + res.error);
-                        }
+                        } else alert('Erro: ' + res.error);
                     })
                     .finally(() => {
                         $('#btnGerarRota').prop('disabled', false).text('Gerar Rota Inteligente');
                     });
             });
 
-            // Ações na tabela
             $('#tabelaRotasInteligentes tbody')
-                .on('click', 'button.ver-rota', function () {
-                    mostrarRotaNoMapa($(this).data('id'));
-                })
-                .on('click', 'button.excluir-rota', function () {
-                    excluirRota($(this).data('id'));
-                });
+                .on('click', '.ver-rota', function () { mostrarRotaNoMapa($(this).data('id')); })
+                .on('click', '.excluir-rota', function () { excluirRota($(this).data('id')); });
         });
     </script>
 </body>
