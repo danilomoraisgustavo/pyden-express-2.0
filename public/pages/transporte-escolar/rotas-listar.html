@@ -934,9 +934,7 @@
     $("#formDadosRota").on("submit", function (e) {
       e.preventDefault()
       const id = $("#identificador").val().trim(), des = $("#descricao").val().trim(), lat = $("#partidaLat").val().trim(), lng = $("#partidaLng").val().trim(), zona = $("#area_zona").val().trim()
-      if (!id || !des || !lat || !lng || !zona || !escolasSelecionadas.length || !zoneamentosSelecionados.length || !pontosParadaSelecionados.length) {
-        showNotification("warning", "Preencha campos obrigatórios."); return
-      }
+      if (!id || !des || !lat || !lng || !zona || !escolasSelecionadas.length || !zoneamentosSelecionados.length || !pontosParadaSelecionados.length) { showNotification("warning", "Preencha campos obrigatórios."); return }
       const body = { identificador: id, descricao: des, partidaLat: +lat, partidaLng: +lng, chegadaLat: +lat, chegadaLng: +lng, escolas: escolasSelecionadas, zoneamentos: zoneamentosSelecionados, pontosParada: pontosParadaSelecionados, fornecedores: fornecedoresSelecionados, areaZona: zona }
       fetch("/api/rotas/cadastrar-simples", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
         .then(r => r.json()).then(d => { if (d.success) { showNotification("success", "Rota cadastrada."); $("#modalNovaRota").modal("hide"); loadRotas() } else showNotification("danger", d.message || "Erro") })
@@ -963,7 +961,7 @@
       alunoMarkers.forEach(m => m.setMap(null)); alunoMarkers = []
       const counts = { manha: 0, tarde: 0, noite: 0, integral: 0 }
       alunos.forEach(a => {
-        const lower = a.turno.toLowerCase()
+        const lower = (a.turno || "").toLowerCase()
         if (lower.includes("mat")) counts.manha++
         else if (lower.includes("vesp")) counts.tarde++
         else if (lower.includes("not")) counts.noite++
@@ -977,7 +975,8 @@
       $("#contador-integral").text(counts.integral)
       const tbody = $("#tabela-alunos-rota tbody").empty()
       alunos.forEach(a => {
-        let turnoNorm = ""; const lower = a.turno.toLowerCase()
+        const lower = (a.turno || "").toLowerCase()
+        let turnoNorm = ""
         if (lower.includes("mat")) turnoNorm = "Manhã"
         else if (lower.includes("vesp")) turnoNorm = "Tarde"
         else if (lower.includes("not")) turnoNorm = "Noite"
@@ -1026,15 +1025,29 @@
       setTimeout(() => {
         if (!mapEdit) {
           mapEdit = new google.maps.Map(document.getElementById("map-modal-edit"), { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13, mapTypeId: "roadmap" })
-          mapEdit.addListener("click", e => { if (isPlacingEditStart) { const lat = e.latLng.lat(), lng = e.latLng.lng(); if (editStartMarker) editStartMarker.setMap(null); editStartMarker = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" }); $("#editPartidaLat").val(lat); $("#editPartidaLng").val(lng); showNotification("success", "Novo ponto de Partida/Chegada definido!"); isPlacingEditStart = false } })
+          mapEdit.addListener("click", e => {
+            if (isPlacingEditStart) {
+              const lat = e.latLng.lat(), lng = e.latLng.lng()
+              if (editStartMarker) editStartMarker.setMap(null)
+              editStartMarker = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" })
+              $("#editPartidaLat").val(lat); $("#editPartidaLng").val(lng)
+              showNotification("success", "Novo ponto de Partida/Chegada definido!"); isPlacingEditStart = false
+            }
+          })
         }
         $("#editRotaId").val(rd.id || ""); $("#editIdentificador").val(rd.identificador || ""); $("#editDescricao").val(rd.descricao || ""); $("#editAreaZona").val(rd.area_zona || "URBANA")
         editEscolasSelecionadas = []; editPontosParadaSelecionados = []; editFornecedoresSelecionados = []
         editEscolaMarkers.forEach(m => m.setMap(null)); editPontoMarkers.forEach(m => m.setMap(null)); editEscolaMarkers = []; editPontoMarkers = []
         fetch(`/api/rotas_simples/${rd.id}`).then(r => r.json()).then(d => {
           $("#editPartidaLat").val(d.partidaLat || ""); $("#editPartidaLng").val(d.partidaLng || ""); if (editStartMarker) editStartMarker.setMap(null)
-          if (d.partidaLat && d.partidaLng) { const lat = parseFloat(d.partidaLat), lng = parseFloat(d.partidaLng); editStartMarker = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" }); mapEdit.setCenter({ lat, lng }); mapEdit.setZoom(13) }
-          ; (d.escolas || []).forEach(e => editEscolasSelecionadas.push(e.id)); (d.pontosParada || []).forEach(p => editPontosParadaSelecionados.push(p.id)); (d.fornecedores || []).forEach(f => editFornecedoresSelecionados.push(f.id))
+          if (d.partidaLat && d.partidaLng) {
+            const lat = parseFloat(d.partidaLat), lng = parseFloat(d.partidaLng)
+            editStartMarker = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" })
+            mapEdit.setCenter({ lat, lng }); mapEdit.setZoom(13)
+          }
+          ; (d.escolas || []).forEach(e => editEscolasSelecionadas.push(e.id))
+            ; (d.pontosParada || []).forEach(p => editPontosParadaSelecionados.push(p.id))
+            ; (d.fornecedores || []).forEach(f => editFornecedoresSelecionados.push(f.id))
           Promise.all([fetch("/api/escolas").then(r => r.json()), fetch("/api/pontos").then(r => r.json()), fetch("/api/fornecedores").then(r => r.json())])
             .then(([esc, pts, forn]) => { editRotasEscolasData = esc; editRotasPontosData = pts; fornecedoresData = forn; placeEditEscolas(); initEditFornecedoresList() })
             .catch(() => showNotification("danger", "Erro ao recarregar dados para edição."))
@@ -1080,7 +1093,10 @@
     function reloadEditPontos() {
       editPontoMarkers.forEach(m => m.setMap(null)); editPontoMarkers = []
       const zoneSet = new Set()
-      editEscolasSelecionadas.forEach(eid => { const esc = editRotasEscolasData.find(x => x.id === eid); esc.zoneamentos.forEach(z => zoneSet.add(z.id)) })
+      editEscolasSelecionadas.forEach(eid => {
+        const esc = editRotasEscolasData.find(x => x.id === eid)
+        esc.zoneamentos.forEach(z => zoneSet.add(z.id))
+      })
       editRotasPontosData.forEach(p => {
         if (!p.zoneamentos.some(z => zoneSet.has(z.id))) return
         const lat = parseFloat(p.latitude), lng = parseFloat(p.longitude)
@@ -1104,6 +1120,7 @@
         .catch(() => showNotification("danger", "Erro interno ao atualizar rota."))
     })
   </script>
+
 </body>
 
 </html>
