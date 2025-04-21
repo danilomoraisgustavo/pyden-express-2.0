@@ -2,62 +2,34 @@
 <html lang="pt-br">
 
 <head>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Zoneamento - Listar e Cadastrar</title>
-  <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
-  <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
-
+  <meta charset="utf-8">
+  <title>Cadastrar Veículo • Transporte Escolar</title>
+  <meta content="width=device-width,initial-scale=1" name="viewport">
+  <link rel="icon" href="../../assets/img/pydenadmin/favicon.png">
   <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
   <script>
     WebFont.load({
       google: { families: ["Public Sans:300,400,500,600,700"] },
-      custom: {
-        families: [
-          "Font Awesome 5 Solid",
-          "Font Awesome 5 Regular",
-          "Font Awesome 5 Brands",
-          "simple-line-icons",
-        ],
-        urls: ["../../assets/css/fonts.min.css"],
-      },
-      active: function () {
-        sessionStorage.fonts = true;
-      },
+      custom: { families: ["Font Awesome 5 Solid", "Font Awesome 5 Regular", "Font Awesome 5 Brands", "simple-line-icons"], urls: ["../../assets/css/fonts.min.css"] },
+      active() { sessionStorage.fonts = true; }
     });
   </script>
-
-  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
-  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
-  <link rel="stylesheet" href="../../assets/css/demo.css" />
-
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&libraries=drawing">
-  </script>
-
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../assets/css/plugins.min.css">
+  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css">
+  <link rel="stylesheet" href="../../assets/css/demo.css">
+  <link rel="stylesheet" href="../../assets/js/plugin/select2/css/select2.min.css">
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
   <style>
-    #mapList {
-      height: 500px;
+    #mapGaragem {
+      height: 350px;
       width: 100%;
-    }
-
-    #mapCreate {
-      height: 500px;
-      width: 100%;
-    }
-
-    #mapEdit {
-      height: 500px;
-      width: 100%;
+      margin-bottom: 20px;
     }
 
     .required-label::after {
       content: " *";
       color: red;
-    }
-
-    .map-instructions {
-      font-size: 14px;
-      margin-bottom: 10px;
     }
 
     .select2-container {
@@ -68,730 +40,157 @@
 
 <body>
   <div class="wrapper">
-    <!-- SIDEBAR -->
-    <div class="sidebar" data-background-color="dark">
-      <div class="sidebar-logo">
-        <div class="logo-header" data-background-color="dark">
-          <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
-            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
-          </a>
-          <div class="nav-toggle">
-            <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
-            <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
-          </div>
-          <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
-        </div>
-      </div>
-      <div class="sidebar-wrapper scrollbar scrollbar-inner">
-        <div class="sidebar-content">
-          <ul class="nav nav-secondary">
-            <li class="nav-section">
-              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
-              <h4 class="text-section">Transporte Escolar</h4>
-            </li>
-            <li class="nav-item">
-              <a href="../../pages/transporte-escolar/dashboard-escolar.html">
-                <i class="fas fa-tachometer-alt"></i>
-                <p>Dashboard Escolar</p>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
-                <i class="fas fa-user-graduate"></i>
-                <p>Alunos</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teAlunos">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html">
-                      <span class="sub-item">Listar Solicitações de Transporte</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/alunos-listar.html">
-                      <span class="sub-item">Listar Alunos</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
-                <i class="fas fa-id-card"></i>
-                <p>Motoristas</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teMotoristas">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/motoristas-listar.html">
-                      <span class="sub-item">Listar Motoristas</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/motoristas-licencas.html">
-                      <span class="sub-item">Licenças e Certificações</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="false">
-                <i class="fas fa-user-check"></i>
-                <p>Monitores</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teMonitores">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/monitores-listar.html">
-                      <span class="sub-item">Listar Monitores</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
-                <i class="fas fa-bus"></i>
-                <p>Veículos</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teVeiculos">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/veiculos-listar.html">
-                      <span class="sub-item">Listar Veículos</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/veiculos-manutencao.html">
-                      <span class="sub-item">Manutenção</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/veiculos-documentacao.html">
-                      <span class="sub-item">Documentação e Seguros</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teRotas" aria-expanded="false">
-                <i class="fas fa-route"></i>
-                <p>Rotas</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teRotas">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/rotas-listar.html">
-                      <span class="sub-item">Listar Rotas</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/pontos-cadastrar.html">
-                      <span class="sub-item">Pontos de Parada</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
-                <i class="fas fa-school"></i>
-                <p>Zoneamento</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teZoneamento">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/zoneamento-listar.html">
-                      <span class="sub-item">Listar Zoneamento</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/zoneamento-cadastrar.html">
-                      <span class="sub-item">Cadastrar Zoneamento</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teEscolas" aria-expanded="false">
-                <i class="fas fa-school"></i>
-                <p>Escolas</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teEscolas">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/escolas-listar.html">
-                      <span class="sub-item">Listar Escolas</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#teFornecedores" aria-expanded="false">
-                <i class="fas fa-truck-loading"></i>
-                <p>Fornecedores</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="teFornecedores">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/fornecedores-listar.html">
-                      <span class="sub-item">Listar Fornecedores</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-escolar/fornecedores-cadastrar.html">
-                      <span class="sub-item">Cadastrar Fornecedor</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="nav-section">
-              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
-              <h4 class="text-section">Transporte Administrativo</h4>
-            </li>
-            <li class="nav-item">
-              <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
-                <i class="fas fa-tachometer-alt"></i>
-                <p>Dashboard Administrativo</p>
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
-                <i class="fas fa-id-card"></i>
-                <p>Motoristas</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taMotoristas">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/motoristas-listar.html">
-                      <span class="sub-item">Listar Motoristas</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/motoristas-cadastrar.html">
-                      <span class="sub-item">Cadastrar Motorista</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/motoristas-licencas.html">
-                      <span class="sub-item">Licenças e Certificações</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
-                <i class="fas fa-warehouse"></i>
-                <p>Frota Administrativa</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taFrota">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/frota-listar.html">
-                      <span class="sub-item">Listar Frota</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/frota-manutencao.html">
-                      <span class="sub-item">Manutenção</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/frota-rotas.html">
-                      <span class="sub-item">Rotas Internas</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
-                <i class="far fa-calendar-alt"></i>
-                <p>Agenda de Viagens</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taAgenda">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/agenda-viagens-listar.html">
-                      <span class="sub-item">Listar Viagens</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/agenda-viagens-nova.html">
-                      <span class="sub-item">Agendar Nova Viagem</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/agenda-viagens-historico.html">
-                      <span class="sub-item">Histórico de Viagens</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#taLogistica" aria-expanded="false">
-                <i class="fas fa-truck-loading"></i>
-                <p>Logística Interna</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="taLogistica">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-administrativo/logistica-materiais.html">
-                      <span class="sub-item">Transporte de Materiais</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/logistica-manutencoes.html">
-                      <span class="sub-item">Agendamento Manutenção</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/transporte-administrativo/logistica-suprimentos.html">
-                      <span class="sub-item">Controle de Suprimentos</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-section">
-              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
-              <h4 class="text-section">Financeiro</h4>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#finRelatorios" aria-expanded="false">
-                <i class="far fa-chart-bar"></i>
-                <p>Relatórios Financeiros</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="finRelatorios">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-mensal.html">
-                      <span class="sub-item">Relatório Mensal</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-custos-setor.html">
-                      <span class="sub-item">Custos por Setor</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-comparativos.html">
-                      <span class="sub-item">Comparativos</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
-                <i class="fas fa-chart-line"></i>
-                <p>Relatórios</p>
-                <span class="caret"></span>
-              </a>
-              <div class="collapse" id="finOutrosRelatorios">
-                <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/financeiro/gerar-memorando.html">
-                      <span class="sub-item">Memorandos</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-rotas.html">
-                      <span class="sub-item">Por Rota</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="../../pages/financeiro/relatorios-geral.html">
-                      <span class="sub-item">Geral</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <!-- END SIDEBAR -->
+    <!-- ======== SIDEBAR ========= -->
+    <!-- copie/cole exatamente o bloco de sidebar que já existe nas demais páginas -->
+    <!-- … (sidebar idêntica) … -->
 
     <div class="main-panel">
-      <div class="main-header" style="top: 0;">
-        <div class="main-header-logo">
-          <div class="logo-header" data-background-color="dark">
-            <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
-              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
-                height="20" />
-            </a>
-            <div class="nav-toggle">
-              <button class="btn btn-toggle toggle-sidebar">
-                <i class="gg-menu-right"></i>
-              </button>
-              <button class="btn btn-toggle sidenav-toggler">
-                <i class="gg-menu-left"></i>
-              </button>
-            </div>
-            <button class="topbar-toggler more">
-              <i class="gg-more-vertical-alt"></i>
-            </button>
-          </div>
-        </div>
-
-        <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
-          <div class="container-fluid">
-            <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fa fa-envelope"></i>
-                </a>
-                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
-                  <li>
-                    <div class="dropdown-title d-flex justify-content-between align-items-center">
-                      Mensagens
-                      <a href="#" class="small">Marcar todas como lidas</a>
-                    </div>
-                  </li>
-                  <li>
-                    <div class="message-notif-scroll scrollbar-outer">
-                      <div class="notif-center">
-                        <a href="#">
-                          <div class="notif-img">
-                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
-                          </div>
-                          <div class="notif-content">
-                            <span class="subject">Jimmy Denis</span>
-                            <span class="block">Como você está?</span>
-                            <span class="time">Há 5 minutos</span>
-                          </div>
-                        </a>
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <a class="see-all" href="javascript:void(0);">
-                      Ver todas as mensagens
-                      <i class="fa fa-angle-right"></i>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
-                  aria-haspopup="true" aria-expanded="false">
-                  <i class="fa fa-bell"></i>
-                  <span class="notification" id="notifCount">0</span>
-                </a>
-                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
-                  <li>
-                    <div class="dropdown-title" id="notifTitle">
-                      Você não tem novas notificações
-                    </div>
-                  </li>
-                  <li>
-                    <div class="notif-scroll scrollbar-outer">
-                      <div class="notif-center" id="notifList"></div>
-                    </div>
-                  </li>
-                  <li>
-                    <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
-                      Ver todas as notificações
-                      <i class="fa fa-angle-right"></i>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fas fa-layer-group"></i>
-                </a>
-                <div class="dropdown-menu quick-actions animated fadeIn">
-                  <div class="quick-actions-header">
-                    <span class="title mb-1">Ações Rápidas</span>
-                    <span class="subtitle op-7">Atalhos</span>
-                  </div>
-                  <div class="quick-actions-scroll scrollbar-outer">
-                    <div class="quick-actions-items">
-                      <div class="row m-0">
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-primary rounded-circle">
-                              <i class="fas fa-school"></i>
-                            </div>
-                            <span class="text">Cad. Escola</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/monitores-cadastrar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-success rounded-circle">
-                              <i class="fas fa-user-check"></i>
-                            </div>
-                            <span class="text">Cad. Monitor</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/rotas-listar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-warning rounded-circle">
-                              <i class="fas fa-route"></i>
-                            </div>
-                            <span class="text">Listar Rotas</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-administrativo/frota-listar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-info rounded-circle">
-                              <i class="fas fa-warehouse"></i>
-                            </div>
-                            <span class="text">Listar Frota</span>
-                          </div>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-
-              <li class="nav-item topbar-user dropdown hidden-caret">
-                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
-                  <div class="avatar-sm">
-                    <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
-                  </div>
-                  <span class="profile-username">
-                    <span class="op-7">Olá,</span>
-                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
-                  </span>
-                </a>
-                <ul class="dropdown-menu dropdown-user animated fadeIn">
-                  <div class="dropdown-user-scroll scrollbar-outer">
-                    <li>
-                      <div class="user-box">
-                        <div class="avatar-lg">
-                          <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
-                        </div>
-                        <div class="u-text">
-                          <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
-                          <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
-                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">
-                            Ver Perfil
-                          </a>
-                        </div>
-                      </div>
-                    </li>
-                    <li>
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu Perfil</a>
-                      <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item" href="/pages/usuarios/configuracoes.html">Configurações</a>
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
-                    </li>
-                  </div>
-                </ul>
-              </li>
-            </ul>
-          </div>
-        </nav>
-      </div>
+      <!-- ====== TOP BAR ====== -->
+      <!-- copie/cole o mesmo header/top‑bar que já usa -->
+      <!-- … (header idêntico) … -->
 
       <div class="container">
         <div class="page-inner">
           <div class="page-header">
-            <h3 class="fw-bold mb-3">Listar Zoneamento</h3>
+            <h3 class="fw-bold mb-3">Cadastrar Veículo</h3>
             <ul class="breadcrumbs mb-3">
-              <li class="nav-home">
-                <a href="../../">
-                  <i class="icon-home"></i>
-                </a>
-              </li>
-              <li class="separator">
-                <i class="icon-arrow-right"></i>
-              </li>
-              <li class="nav-item">
-                <a href="#">Zoneamento</a>
-              </li>
-              <li class="separator">
-                <i class="icon-arrow-right"></i>
-              </li>
-              <li class="nav-item">
-                <a href="#">Listar e Cadastrar</a>
-              </li>
+              <li class="nav-home"><a href="../../"><i class="icon-home"></i></a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Veículos</a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Cadastrar</a></li>
             </ul>
           </div>
 
-          <!-- BOTÃO PARA ABRIR MODAL DE CADASTRO -->
-          <div class="mb-3 text-end">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCadastroZoneamento">
-              Cadastrar Zoneamento
-            </button>
-          </div>
-
-          <!-- MAPA DE LISTAGEM E SELEÇÃO DE ZONEAMENTOS -->
           <div class="row">
             <div class="col-md-12">
               <div class="card">
-                <div class="card-header">
-                  <div class="card-title">Visualização de Zoneamentos</div>
-                </div>
                 <div class="card-body">
-                  <div class="mb-3">
-                    <select id="zoneamentoSelect" class="form-control mt-2">
-                      <option value="">Selecione um zoneamento</option>
-                    </select>
-                  </div>
-                  <div id="mapList"></div>
+                  <form id="formVeiculo" enctype="multipart/form-data">
+                    <h5>Informações Básicas</h5>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label required-label">Nome / Identificação</label>
+                        <input type="text" name="cor_veiculo" class="form-control" placeholder="Ex: Ônibus 50 lugares"
+                          required>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label required-label">Placa</label>
+                        <input type="text" name="placa" class="form-control text-uppercase" maxlength="8" required>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label required-label">Tipo de Veículo</label>
+                        <select name="tipo_veiculo" class="form-select" required>
+                          <option value="">Selecione</option>
+                          <option>Ônibus 50</option>
+                          <option>Ônibus 42</option>
+                          <option>Microônibus 33</option>
+                          <option>Van 15</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label required-label">Capacidade</label>
+                        <input type="number" name="capacidade" class="form-control" min="1" required>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label required-label">Fornecedor</label>
+                        <select id="selFornecedor" name="fornecedor_id" class="form-select" required></select>
+                      </div>
+                      <div class="col-md-2 mb-3">
+                        <label class="form-label">Ano</label>
+                        <input type="number" name="ano" class="form-control" min="1980">
+                      </div>
+                      <div class="col-md-2 mb-3">
+                        <label class="form-label">Marca</label>
+                        <input type="text" name="marca" class="form-control">
+                      </div>
+                      <div class="col-md-2 mb-3">
+                        <label class="form-label">Modelo</label>
+                        <input type="text" name="modelo" class="form-control">
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Tipo Combustível</label>
+                        <input type="text" name="tipo_combustivel" class="form-control">
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Data Aquisição</label>
+                        <input type="date" name="data_aquisicao" class="form-control">
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Associar Rota (opcional)</label>
+                        <select id="selRota" name="associarRotaId" class="form-select">
+                          <option value="">Nenhuma</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <h5>Local da Garagem</h5>
+                    <div id="mapGaragem"></div>
+                    <div class="row mb-3">
+                      <div class="col-md-6">
+                        <label class="form-label">Latitude</label>
+                        <input type="text" name="latitude_garagem" id="latGaragem" class="form-control" readonly>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label">Longitude</label>
+                        <input type="text" name="longitude_garagem" id="lngGaragem" class="form-control" readonly>
+                      </div>
+                    </div>
+
+                    <h5>Conforto / Acessórios</h5>
+                    <div class="row mb-3">
+                      <div class="col-md-2 form-check"><input class="form-check-input" type="checkbox" name="adaptado"
+                          value="Sim" id="chkAdaptado"><label class="form-check-label"
+                          for="chkAdaptado">Adaptado</label></div>
+                      <div class="col-md-2 form-check"><input class="form-check-input" type="checkbox" name="elevador"
+                          value="Sim" id="chkElevador"><label class="form-check-label"
+                          for="chkElevador">Elevador</label></div>
+                      <div class="col-md-2 form-check"><input class="form-check-input" type="checkbox"
+                          name="ar_condicionado" value="Sim" id="chkAr"><label class="form-check-label" for="chkAr">Ar
+                          Cond.</label></div>
+                      <div class="col-md-2 form-check"><input class="form-check-input" type="checkbox" name="gps"
+                          value="Sim" id="chkGps"><label class="form-check-label" for="chkGps">GPS</label></div>
+                      <div class="col-md-2 form-check"><input class="form-check-input" type="checkbox"
+                          name="cinto_seguranca" value="Sim" id="chkCinto"><label class="form-check-label"
+                          for="chkCinto">Cinto Seg.</label></div>
+                    </div>
+
+                    <h5>Documentos</h5>
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Documentação (PDF / Imagem)</label>
+                        <input type="file" name="documentacao" accept="application/pdf,image/*" class="form-control">
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Licença / CRLV</label>
+                        <input type="file" name="licenca" accept="application/pdf,image/*" class="form-control">
+                      </div>
+                    </div>
+
+                    <h5>Motoristas Associados (opcional)</h5>
+                    <select id="selMotoristas" multiple class="form-select"></select>
+
+                    <div class="mt-4 text-end">
+                      <button type="submit" class="btn btn-success">Cadastrar Veículo</button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- TABELA DE LISTAGEM -->
-          <div class="row mt-4">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <h4 class="card-title mb-0">Lista de Zoneamentos</h4>
-                </div>
-                <div class="card-body">
-                  <div class="table-responsive">
-                    <table id="zoneamentos-table" class="display table table-striped table-hover">
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Nome</th>
-                          <th>Ações</th>
-                        </tr>
-                      </thead>
-                      <tfoot>
-                        <tr>
-                          <th>ID</th>
-                          <th>Nome</th>
-                          <th>Ações</th>
-                        </tr>
-                      </tfoot>
-                      <tbody>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
-
-
-      <!-- MODAL DE CADASTRO DE ZONEAMENTO -->
-      <div class="modal fade" id="modalCadastroZoneamento" tabindex="-1" aria-labelledby="modalCadastroZoneamentoLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-xl" style="max-width: 90%;">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="modalCadastroZoneamentoLabel">Cadastrar Zoneamento</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-              </button>
-            </div>
-            <div class="modal-body">
-              <form id="zoneamento-form">
-                <div class="mb-3">
-                  <label for="nomeZoneamento" class="form-label required-label">Nome do Zoneamento</label>
-                  <input type="text" class="form-control" id="nomeZoneamento" name="nome_zoneamento" required />
-                </div>
-                <div class="mb-3 map-instructions">
-                  Use as ferramentas do mapa para desenhar o polígono <strong>ou a linha</strong>.
-                </div>
-                <div id="mapCreate"></div>
-                <input type="hidden" name="geojson" id="geojson" />
-                <button type="submit" class="btn btn-primary mt-3">Cadastrar Zoneamento</button>
-              </form>
-
-              <hr />
-
-              <h3 class="mt-5">Importar Zoneamentos</h3>
-              <p>Selecione um arquivo GeoJSON, KML, KMZ ou GPX para importar.</p>
-              <form id="importForm" enctype="multipart/form-data">
-                <div class="mb-3">
-                  <label for="file">Selecione o arquivo:</label>
-                  <input type="file" name="file" id="file" accept=".geojson,.json,.kml,.kmz,.gpx" required />
-                </div>
-                <button type="submit" class="btn btn-success">Importar</button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- MODAL DE EDIÇÃO DE ZONEAMENTO -->
-      <div class="modal fade" id="modalEdicaoZoneamento" tabindex="-1" aria-labelledby="modalEdicaoZoneamentoLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-xl" style="max-width: 90%;">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="modalEdicaoZoneamentoLabel">Editar Zoneamento</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-              </button>
-            </div>
-            <div class="modal-body">
-              <form id="editZoneamentoForm">
-                <input type="hidden" id="editZoneamentoId" />
-                <div class="mb-3">
-                  <label for="editNomeZoneamento" class="form-label required-label">Nome do Zoneamento</label>
-                  <input type="text" class="form-control" id="editNomeZoneamento" required />
-                </div>
-                <div class="mb-3 map-instructions">
-                  Edite o polígono ou a linha no mapa.
-                </div>
-                <div id="mapEdit"></div>
-                <button type="submit" class="btn btn-primary mt-3">Salvar Alterações</button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-
 
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
-          <nav class="pull-left">
-            <ul class="nav">
-              <li class="nav-item"><a class="nav-link" target="_blank" href="https://pydenexpress.com/">PyDen
-                  Express</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Ajuda</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Termos de Uso</a></li>
-            </ul>
-          </nav>
-          <div class="copyright">
-            2025 &copy; Todos os direitos reservados
-          </div>
-          <div>
-            Desenvolvido por <a target="_blank" href="http://www.pyden.tech">PyDen Technologies</a>&reg;.
-          </div>
+          <div class="copyright"><a href="http://www.pyden.tech">PyDen Technologies</a>&reg; 2025 ©</div>
         </div>
       </footer>
     </div>
@@ -800,672 +199,50 @@
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
-  <script src="../../assets/js/usuario.js"></script>
+  <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
   <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
   <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
-  <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+  <script src="../../assets/js/plugin/select2/js/select2.full.min.js"></script>
   <script src="../../assets/js/pydenadmin.min.js"></script>
-  <script src="../../assets/js/setting-demo2.js"></script>
 
   <script>
-    // VARIÁVEIS GLOBAIS PARA LISTAGEM
-    let mapList;
-    let zoneamentos = [];
-    let overlays = [];
-    let infoWindow;
-    // VARIÁVEIS GLOBAIS PARA CADASTRO
-    let mapCreate;
-    let drawingManagerCreate;
-    let selectedShapeCreate;
-    // VARIÁVEIS GLOBAIS PARA EDIÇÃO
-    let mapEdit;
-    let drawingManagerEdit;
-    let selectedShapeEdit;
+    /* ----- MAPA DA GARAGEM ----- */
+    let mapG, markerG
+    function initMapG() { mapG = new google.maps.Map(document.getElementById("mapGaragem"), { center: { lat: -6.530066, lng: -49.85163 }, zoom: 12, mapTypeId: "roadmap" }); mapG.addListener("click", e => { const lat = e.latLng.lat(), lng = e.latLng.lng(); if (markerG) markerG.setPosition(e.latLng); else markerG = new google.maps.Marker({ position: e.latLng, map: mapG }); $("#latGaragem").val(lat); $("#lngGaragem").val(lng) }) }
+    window.addEventListener("load", initMapG)
 
-    // NOTIFICAÇÕES
-    function showNotification(type, message, title = "") {
-      $.notify({
-        title: title,
-        message: message,
-        icon: type === 'success' ? 'fa fa-check-circle' :
-          type === 'danger' ? 'fa fa-exclamation-circle' :
-            type === 'warning' ? 'fa fa-exclamation-triangle' :
-              type === 'info' ? 'fa fa-info-circle' : ''
-      }, {
-        type: type,
-        placement: {
-          from: "top",
-          align: "right"
-        },
-        offset: 20,
-        spacing: 10,
-        z_index: 1031,
-        delay: 3000,
-        timer: 1000,
-        animate: {
-          enter: 'animated fadeInDown',
-          exit: 'animated fadeOutUp'
-        }
-      });
-    }
+    /* ----- SELECT2 ----- */
+    $("#selMotoristas").select2({ placeholder: "Selecione motoristas" })
+    $("#selFornecedor").select2({ placeholder: "Selecione o fornecedor" })
+    $("#selRota").select2({ placeholder: "Selecione a rota" })
 
-    // INICIALIZAR MAPA DA LISTAGEM
-    function initMapList() {
-      mapList = new google.maps.Map(document.getElementById('mapList'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13,
-        mapTypeId: 'satellite'
-      });
-      infoWindow = new google.maps.InfoWindow();
-    }
-
-    // CARREGAR ZONEAMENTOS DO SERVIDOR
-    function loadZoneamentos() {
-      fetch('/api/zoneamentos')
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar zoneamentos');
-          return res.json();
-        })
-        .then(data => {
-          zoneamentos = data;
-          const select = document.getElementById('zoneamentoSelect');
-          select.innerHTML = '<option value="">Selecione um zoneamento</option>';
-          zoneamentos.forEach(z => {
-            const option = document.createElement('option');
-            option.value = z.id;
-            option.textContent = z.nome;
-            select.appendChild(option);
-          });
-          drawAllZoneamentos();
-          populateTable();
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Não foi possível carregar os zoneamentos.');
-        });
-    }
-
-    // POPULAR TABELA
-    function populateTable() {
-      const tableBody = $('#zoneamentos-table tbody');
-      tableBody.empty();
-
-      zoneamentos.forEach(z => {
-        const row = `
-          <tr>
-            <td>${z.id}</td>
-            <td>${z.nome}</td>
-            <td>
-              <div class="form-button-action">
-                <button type="button" class="btn btn-link btn-primary btn-lg"
-                  onclick="focusZoneamento(${z.id})" data-bs-toggle="tooltip"
-                  title="Focar no Mapa">
-                  <i class="fa fa-map-marker-alt"></i>
-                </button>
-                <button type="button" class="btn btn-link btn-info btn-lg"
-                  onclick="editZoneamento(${z.id})" data-bs-toggle="tooltip"
-                  title="Editar Zoneamento">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button type="button" class="btn btn-link btn-danger btn-lg"
-                  onclick="deleteZoneamento(${z.id})" data-bs-toggle="tooltip"
-                  title="Excluir Zoneamento">
-                  <i class="fa fa-trash-alt"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-        tableBody.append(row);
-      });
-
-      if ($.fn.DataTable.isDataTable('#zoneamentos-table')) {
-        $('#zoneamentos-table').DataTable().clear().destroy();
-      }
-
-      $('#zoneamentos-table').DataTable({
-        pageLength: 10,
-        language: {
-          decimal: ",",
-          thousands: ".",
-          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-          infoEmpty: "Mostrando 0 até 0 de 0 registros",
-          infoFiltered: "(filtrado de _MAX_ registros no total)",
-          lengthMenu: "Mostrar _MENU_ registros",
-          loadingRecords: "Carregando...",
-          processing: "Processando...",
-          search: "Pesquisar:",
-          zeroRecords: "Nenhum registro encontrado",
-          paginate: {
-            first: "Primeiro",
-            last: "Último",
-            next: "Próximo",
-            previous: "Anterior"
-          },
-          emptyTable: "Nenhum dado disponível na tabela"
-        }
-      });
-    }
-
-    // DESENHAR TODOS ZONEAMENTOS NO MAPA DA LISTAGEM
-    function drawAllZoneamentos() {
-      overlays.forEach(o => o.setMap(null));
-      overlays = [];
-      let bounds = new google.maps.LatLngBounds();
-      let somethingDrawn = false;
-
-      zoneamentos.forEach(z => {
-        if (!z.geojson) return;
-
-        if (z.geojson.type === 'Polygon') {
-          const coords = z.geojson.coordinates[0].map(c => ({ lat: c[1], lng: c[0] }));
-          const poly = new google.maps.Polygon({
-            paths: coords,
-            fillColor: '#1E90FF',
-            fillOpacity: 0.2,
-            strokeWeight: 2,
-            strokeColor: '#1E90FF',
-            map: mapList
-          });
-          coords.forEach(c => bounds.extend(c));
-          overlays.push(poly);
-          somethingDrawn = true;
-
-          google.maps.event.addListener(poly, 'click', (event) => {
-            const contentString = `<div><h5>${z.nome}</h5></div>`;
-            infoWindow.setContent(contentString);
-            infoWindow.setPosition(event.latLng);
-            infoWindow.open(mapList);
-          });
-
-        } else if (z.geojson.type === 'LineString') {
-          const coords = z.geojson.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
-          const line = new google.maps.Polyline({
-            path: coords,
-            strokeWeight: 3,
-            strokeColor: '#FF1493',
-            map: mapList
-          });
-          coords.forEach(c => bounds.extend(c));
-          overlays.push(line);
-          somethingDrawn = true;
-
-          google.maps.event.addListener(line, 'click', (event) => {
-            const contentString = `<div><h5>${z.nome}</h5></div>`;
-            infoWindow.setContent(contentString);
-            infoWindow.setPosition(event.latLng);
-            infoWindow.open(mapList);
-          });
-        }
-      });
-
-      if (somethingDrawn) {
-        mapList.fitBounds(bounds);
-      } else {
-        showNotification('info', 'Nenhum zoneamento disponível para exibir.');
-      }
-    }
-
-    // DESENHAR APENAS UM ZONEAMENTO
-    function drawSingleZoneamento(z) {
-      overlays.forEach(o => o.setMap(null));
-      overlays = [];
-
-      if (!z || !z.geojson) {
-        showNotification('warning', 'O zoneamento selecionado não possui geometria.');
-        return;
-      }
-
-      const tipo = z.geojson.type;
-      let bounds = new google.maps.LatLngBounds();
-
-      if (tipo === 'Polygon') {
-        const coords = z.geojson.coordinates[0].map(c => ({ lat: c[1], lng: c[0] }));
-        const poly = new google.maps.Polygon({
-          paths: coords,
-          fillColor: '#1E90FF',
-          fillOpacity: 0.2,
-          strokeWeight: 2,
-          strokeColor: '#1E90FF',
-          map: mapList
-        });
-        overlays.push(poly);
-        coords.forEach(pt => bounds.extend(pt));
-        mapList.fitBounds(bounds);
-
-        google.maps.event.addListener(poly, 'click', (event) => {
-          const contentString = `<div><h5>${z.nome}</h5></div>`;
-          infoWindow.setContent(contentString);
-          infoWindow.setPosition(event.latLng);
-          infoWindow.open(mapList);
-        });
-
-      } else if (tipo === 'LineString') {
-        const coords = z.geojson.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
-        const line = new google.maps.Polyline({
-          path: coords,
-          strokeWeight: 3,
-          strokeColor: '#FF1493',
-          map: mapList
-        });
-        overlays.push(line);
-        coords.forEach(pt => bounds.extend(pt));
-        mapList.fitBounds(bounds);
-
-        google.maps.event.addListener(line, 'click', (event) => {
-          const contentString = `<div><h5>${z.nome}</h5></div>`;
-          infoWindow.setContent(contentString);
-          infoWindow.setPosition(event.latLng);
-          infoWindow.open(mapList);
-        });
-
-      } else {
-        showNotification('warning', 'O zoneamento selecionado não é Polygon nem LineString.');
-      }
-    }
-
-    // FOCO NO MAPA
-    function focusZoneamento(id) {
-      const z = zoneamentos.find(zone => zone.id == id);
-      if (!z) return;
-      drawSingleZoneamento(z);
-      document.getElementById('mapList').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // EXCLUIR ZONEAMENTO
-    function deleteZoneamento(id) {
-      fetch('/api/zoneamento/' + id, { method: 'DELETE' })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            showNotification('success', 'Zoneamento excluído com sucesso!');
-            loadZoneamentos();
-          } else {
-            showNotification('danger', 'Erro ao excluir zoneamento: ' + data.message);
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Erro ao excluir zoneamento. Tente novamente.');
-        });
-    }
-
-    // ABRIR MODAL DE EDIÇÃO
-    function editZoneamento(id) {
-      const z = zoneamentos.find(zone => zone.id == id);
-      if (!z) return;
-      $('#modalEdicaoZoneamento').modal('show');
-      document.getElementById('editZoneamentoId').value = z.id;
-      document.getElementById('editNomeZoneamento').value = z.nome;
-      setTimeout(() => {
-        initMapEdit(); // Inicializa o mapa de edição após abrir o modal
-        loadShapeOnEditMap(z);
-      }, 500);
-    }
-
-    // CARREGAR SHAPE NO MAPA DE EDIÇÃO
-    function loadShapeOnEditMap(z) {
-      if (!z.geojson) return;
-      if (selectedShapeEdit) {
-        selectedShapeEdit.setMap(null);
-      }
-      const tipo = z.geojson.type;
-      if (tipo === 'Polygon') {
-        const coords = z.geojson.coordinates[0].map(c => ({ lat: c[1], lng: c[0] }));
-        const poly = new google.maps.Polygon({
-          paths: coords,
-          fillColor: '#1E90FF',
-          fillOpacity: 0.4,
-          strokeWeight: 2,
-          strokeColor: '#1E90FF',
-          editable: true,
-          map: mapEdit
-        });
-        selectedShapeEdit = poly;
-        mapEdit.fitBounds(getBoundsFromCoords(coords));
-      } else if (tipo === 'LineString') {
-        const coords = z.geojson.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
-        const line = new google.maps.Polyline({
-          path: coords,
-          strokeWeight: 3,
-          strokeColor: '#FF1493',
-          editable: true,
-          map: mapEdit
-        });
-        selectedShapeEdit = line;
-        mapEdit.fitBounds(getBoundsFromCoords(coords));
-      }
-    }
-
-    // AJUDAR NO FIT BOUNDS
-    function getBoundsFromCoords(coords) {
-      const bounds = new google.maps.LatLngBounds();
-      coords.forEach(pt => bounds.extend(pt));
-      return bounds;
-    }
-
-    // INICIALIZAR MAPA DE CRIAÇÃO
-    function initMapCreate() {
-      mapCreate = new google.maps.Map(document.getElementById("mapCreate"), {
-        center: { lat: -6.530066, lng: -49.85163 },
-        zoom: 13,
-        mapTypeId: "satellite",
-      });
-
-      drawingManagerCreate = new google.maps.drawing.DrawingManager({
-        drawingMode: null,
-        drawingControl: true,
-        drawingControlOptions: {
-          position: google.maps.ControlPosition.TOP_LEFT,
-          drawingModes: ["polygon", "polyline"],
-        },
-        polygonOptions: {
-          fillColor: "#1E90FF",
-          fillOpacity: 0.4,
-          strokeWeight: 2,
-          strokeColor: "#1E90FF",
-          clickable: true,
-          editable: true,
-          zIndex: 1,
-        },
-        polylineOptions: {
-          strokeWeight: 3,
-          strokeColor: "#FF1493",
-          clickable: true,
-          editable: true,
-          zIndex: 2,
-        },
-      });
-      drawingManagerCreate.setMap(mapCreate);
-
-      google.maps.event.addListener(drawingManagerCreate, "overlaycomplete", function (e) {
-        if (selectedShapeCreate) {
-          selectedShapeCreate.setMap(null);
-        }
-        drawingManagerCreate.setDrawingMode(null);
-        selectedShapeCreate = e.overlay;
-        selectedShapeCreate.type = e.type;
-      });
-    }
-
-    // INICIALIZAR MAPA DE EDIÇÃO
-    function initMapEdit() {
-      if (mapEdit) {
-        // Se já tiver sido criado, não recria
-        google.maps.event.trigger(mapEdit, 'resize');
-        return;
-      }
-      mapEdit = new google.maps.Map(document.getElementById("mapEdit"), {
-        center: { lat: -6.530066, lng: -49.85163 },
-        zoom: 13,
-        mapTypeId: "satellite",
-      });
-
-      drawingManagerEdit = new google.maps.drawing.DrawingManager({
-        drawingMode: null,
-        drawingControl: true,
-        drawingControlOptions: {
-          position: google.maps.ControlPosition.TOP_LEFT,
-          drawingModes: ["polygon", "polyline"],
-        },
-        polygonOptions: {
-          fillColor: "#1E90FF",
-          fillOpacity: 0.4,
-          strokeWeight: 2,
-          strokeColor: "#1E90FF",
-          clickable: true,
-          editable: true,
-          zIndex: 1,
-        },
-        polylineOptions: {
-          strokeWeight: 3,
-          strokeColor: "#FF1493",
-          clickable: true,
-          editable: true,
-          zIndex: 2,
-        },
-      });
-      drawingManagerEdit.setMap(mapEdit);
-
-      google.maps.event.addListener(drawingManagerEdit, "overlaycomplete", function (e) {
-        if (selectedShapeEdit) {
-          selectedShapeEdit.setMap(null);
-        }
-        drawingManagerEdit.setDrawingMode(null);
-        selectedShapeEdit = e.overlay;
-        selectedShapeEdit.type = e.type;
-      });
-    }
-
-    // SUBMIT DO CADASTRO
-    function submitCadastro(e) {
-      e.preventDefault();
-      const nome = document.getElementById("nomeZoneamento").value.trim();
-      if (!nome) {
-        showNotification("danger", "Por favor, insira o nome do Zoneamento.");
-        return;
-      }
-      if (!selectedShapeCreate) {
-        showNotification("danger", "Por favor, desenhe o polígono ou a linha no mapa.");
-        return;
-      }
-      let geometryType = "";
-      let coords = [];
-
-      if (selectedShapeCreate.type === google.maps.drawing.OverlayType.POLYGON) {
-        geometryType = "Polygon";
-        const paths = selectedShapeCreate.getPath().getArray();
-        coords = paths.map((latlng) => [latlng.lng(), latlng.lat()]);
-        coords.push([coords[0][0], coords[0][1]]);
-      } else if (selectedShapeCreate.type === google.maps.drawing.OverlayType.POLYLINE) {
-        geometryType = "LineString";
-        const path = selectedShapeCreate.getPath().getArray();
-        coords = path.map((latlng) => [latlng.lng(), latlng.lat()]);
-      } else {
-        showNotification("danger", "Tipo de desenho não suportado.");
-        return;
-      }
-
-      let geometryObj = {};
-      if (geometryType === "Polygon") {
-        geometryObj = {
-          type: "Polygon",
-          coordinates: [coords],
-        };
-      } else {
-        geometryObj = {
-          type: "LineString",
-          coordinates: coords,
-        };
-      }
-
-      const geojson = {
-        type: "Feature",
-        properties: { nome: nome },
-        geometry: geometryObj,
-      };
-
-      const body = {
-        nome_zoneamento: nome,
-        geojson: JSON.stringify(geojson),
-      };
-
-      fetch("/api/zoneamento/cadastrar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+    function carregarCombos() {
+      fetch("/api/fornecedores-admin").then(r => r.json()).then(data => {
+        data.forEach(f => $("#selFornecedor").append(`<option value='${f.id}'>${f.nome_fornecedor}</option>`))
       })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            showNotification("success", "Zoneamento cadastrado com sucesso!");
-            document.getElementById("zoneamento-form").reset();
-            if (selectedShapeCreate) {
-              selectedShapeCreate.setMap(null);
-              selectedShapeCreate = null;
-            }
-            $('#modalCadastroZoneamento').modal('hide');
-            loadZoneamentos();
-          } else {
-            showNotification("danger", "Erro ao cadastrar zoneamento: " + data.message);
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("danger", "Erro ao cadastrar zoneamento. Tente novamente.");
-        });
-    }
-
-    // SUBMIT DA IMPORTAÇÃO
-    function submitImport(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-
-      fetch("/api/zoneamento/importar", {
-        method: "POST",
-        body: formData,
+      fetch("/api/motoristas?simples=1").then(r => r.json()).then(data => {
+        data.forEach(m => $("#selMotoristas").append(`<option value='${m.id}'>${m.nome_motorista}</option>`))
       })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            showNotification("success", data.message || "Importação concluída com sucesso!");
-            document.getElementById("importForm").reset();
-            $('#modalCadastroZoneamento').modal('hide');
-            loadZoneamentos();
-          } else {
-            showNotification("danger", data.message || "Erro ao importar.");
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          showNotification("danger", "Erro ao importar zoneamentos. Tente novamente.");
-        });
-    }
-
-    // SUBMIT DA EDIÇÃO
-    function submitEdicao(e) {
-      e.preventDefault();
-      const id = document.getElementById('editZoneamentoId').value;
-      const nome = document.getElementById('editNomeZoneamento').value.trim();
-      if (!id || !nome) {
-        showNotification('danger', 'Erro: Campos inválidos.');
-        return;
-      }
-      if (!selectedShapeEdit) {
-        showNotification('danger', 'Por favor, desenhe ou edite o polígono/linha no mapa.');
-        return;
-      }
-
-      let geometryType = "";
-      let coords = [];
-
-      if (selectedShapeEdit.type === google.maps.drawing.OverlayType.POLYGON) {
-        geometryType = "Polygon";
-        const paths = selectedShapeEdit.getPath().getArray();
-        coords = paths.map((latlng) => [latlng.lng(), latlng.lat()]);
-        coords.push([coords[0][0], coords[0][1]]);
-      } else if (selectedShapeEdit.type === google.maps.drawing.OverlayType.POLYLINE) {
-        geometryType = "LineString";
-        const path = selectedShapeEdit.getPath().getArray();
-        coords = path.map((latlng) => [latlng.lng(), latlng.lat()]);
-      } else {
-        showNotification("danger", "Tipo de desenho não suportado.");
-        return;
-      }
-
-      let geometryObj = {};
-      if (geometryType === "Polygon") {
-        geometryObj = {
-          type: "Polygon",
-          coordinates: [coords],
-        };
-      } else {
-        geometryObj = {
-          type: "LineString",
-          coordinates: coords,
-        };
-      }
-
-      const geojson = {
-        type: "Feature",
-        properties: { nome: nome },
-        geometry: geometryObj,
-      };
-
-      const body = {
-        nome_zoneamento: nome,
-        geojson: JSON.stringify(geojson),
-      };
-
-      fetch("/api/zoneamento/" + id, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      fetch("/api/rotas-simples-detalhes").then(r => r.json()).then(data => {
+        data.forEach(rt => $("#selRota").append(`<option value='${rt.id}'>${rt.identificador}</option>`))
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            showNotification('success', 'Zoneamento atualizado com sucesso!');
-            $('#modalEdicaoZoneamento').modal('hide');
-            loadZoneamentos();
-          } else {
-            showNotification('danger', 'Erro ao atualizar zoneamento: ' + data.message);
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Erro ao atualizar zoneamento. Tente novamente.');
-        });
     }
+    carregarCombos()
 
-    document.addEventListener('DOMContentLoaded', function () {
-      // Inicializa mapa de listagem
-      initMapList();
-      // Carrega zoneamentos
-      loadZoneamentos();
-
-      // Atualiza desenho ao selecionar no <select>
-      document.getElementById('zoneamentoSelect').addEventListener('change', function () {
-        const val = this.value;
-        if (!val) {
-          drawAllZoneamentos();
-          return;
-        }
-        const z = zoneamentos.find(zone => zone.id == val);
-        if (!z) return;
-        drawSingleZoneamento(z);
-      });
-
-      // Modal de Cadastro - Inicia mapa ao abrir
-      $('#modalCadastroZoneamento').on('shown.bs.modal', function () {
-        setTimeout(() => {
-          if (!mapCreate) {
-            initMapCreate();
-          } else {
-            google.maps.event.trigger(mapCreate, 'resize');
-          }
-        }, 500);
-      }).on('hide.bs.modal', function () {
-        if (selectedShapeCreate) {
-          selectedShapeCreate.setMap(null);
-          selectedShapeCreate = null;
-        }
-        document.getElementById("zoneamento-form").reset();
-      });
-
-      // Modal de Edição - limpa forma ao fechar
-      $('#modalEdicaoZoneamento').on('hide.bs.modal', function () {
-        if (selectedShapeEdit) {
-          selectedShapeEdit.setMap(null);
-          selectedShapeEdit = null;
-        }
-      });
-
-      // SUBMIT FORMULÁRIOS
-      document.getElementById("zoneamento-form").addEventListener("submit", submitCadastro);
-      document.getElementById("importForm").addEventListener("submit", submitImport);
-      document.getElementById("editZoneamentoForm").addEventListener("submit", submitEdicao);
-    });
+    /* ----- SUBMISSÃO ----- */
+    $("#formVeiculo").on("submit", function (e) {
+      e.preventDefault()
+      const fd = new FormData(this)
+      const motoristas = $("#selMotoristas").val() || []
+      fd.append("motoristasAssociados", JSON.stringify(motoristas))
+      fetch("/api/frota/cadastrar", { method: "POST", body: fd })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) { showNotification("success", d.message || "Veículo cadastrado!"); this.reset(); $("#selMotoristas").val(null).trigger("change"); $("#selFornecedor").val(null).trigger("change"); $("#selRota").val(null).trigger("change"); if (markerG) markerG.setMap(null); markerG = null; $("#latGaragem,#lngGaragem").val("") }
+          else showNotification("danger", d.message || "Erro ao cadastrar")
+        })
+        .catch(() => showNotification("danger", "Erro interno ao cadastrar"))
+    })
   </script>
 </body>
 

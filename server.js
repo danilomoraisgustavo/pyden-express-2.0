@@ -2730,8 +2730,6 @@ app.post(
   }
 );
 
-
-
 app.delete("/api/frota/:id", async (req, res) => {
   try {
     const { id } = req.params;
