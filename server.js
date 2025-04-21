@@ -40,9 +40,6 @@ const PDFDocument = require("pdfkit");
 // CONFIGURAÇÃO DO EXPRESS
 const app = express();
 
-//IMPORTAÇÃO DE ROUTER
-app.use('/api/rotas-inteligentes', intelligentRoutes);
-
 // Aumenta o limite padrão para o corpo JSON/urlencoded
 app.use(express.json({ limit: "200mb" }));
 app.use(express.urlencoded({ limit: "200mb", extended: true }));
@@ -76,6 +73,9 @@ app.use(
     },
   })
 );
+
+//IMPORTAÇÃO DE ROUTER
+app.use('/api/rotas-inteligentes', intelligentRoutes);
 
 function isAdmin(req, res, next) {
   if (!req.session || !req.session.userId) {
