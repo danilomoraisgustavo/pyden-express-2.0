@@ -1938,29 +1938,76 @@ app.post("/api/zoneamento/cadastrar", async (req, res) => {
   }
 });
 
+// ===============================
+// 1. ZONEAMENTOS (estendido)
+// ===============================
 app.get("/api/zoneamentos", async (req, res) => {
   try {
-    const query = `
-            SELECT
-                id,
-                nome,
-                ST_AsGeoJSON(geom) as geojson
-            FROM zoneamentos;
-        `;
-    const result = await pool.query(query);
-    const zoneamentos = result.rows.map((row) => ({
-      id: row.id,
-      nome: row.nome,
-      geojson: JSON.parse(row.geojson),
+    const escolaIds = req.query.escolaId
+      ? (Array.isArray(req.query.escolaId) ? req.query.escolaId : [req.query.escolaId])
+      : null;
+
+    let sql, params;
+    if (escolaIds) {
+      sql = `
+        SELECT z.id,
+               z.nome,
+               ST_AsGeoJSON(z.geom) AS geojson
+          FROM zoneamentos z
+          JOIN escolas_zoneamentos ez ON ez.zoneamento_id = z.id
+         WHERE ez.escola_id = ANY($1)
+      `;
+      params = [escolaIds];
+    } else {
+      sql = `
+        SELECT id,
+               nome,
+               ST_AsGeoJSON(geom) AS geojson
+          FROM zoneamentos
+      `;
+      params = [];
+    }
+
+    const result = await pool.query(sql, params);
+    const zoneamentos = result.rows.map(r => ({
+      id: r.id,
+      nome: r.nome,
+      geojson: JSON.parse(r.geojson)
     }));
     res.json(zoneamentos);
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor.",
-    });
+    console.error("Erro em GET /api/zoneamentos:", error);
+    res.status(500).json({ success: false, message: "Erro interno ao listar zoneamentos." });
   }
 });
+
+// ===============================
+// 2. PONTOS ATIVOS POR ZONEAMENTO
+// ===============================
+app.get("/api/pontos/zoneamento/:zoneamentoId", async (req, res) => {
+  try {
+    const { zoneamentoId } = req.params;
+    const status = req.query.status || "ativo";
+
+    const sql = `
+      SELECT p.id,
+             p.nome_ponto AS nome,
+             p.latitude  AS lat,
+             p.longitude AS lng
+        FROM pontos p
+        JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+       WHERE pz.zoneamento_id = $1
+         AND lower(p.status) = lower($2)
+    `;
+    const result = await pool.query(sql, [zoneamentoId, status]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Erro em GET /api/pontos/zoneamento/:zoneamentoId:", error);
+    res.status(500).json({ success: false, message: "Erro interno ao listar pontos." });
+  }
+});
+
 
 app.delete("/api/zoneamento/:id", async (req, res) => {
   try {
