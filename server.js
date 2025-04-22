@@ -2730,6 +2730,69 @@ app.post(
   }
 );
 
+app.get("/api/frota/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const q = `
+      SELECT f.*,
+             fr.nome_fornecedor
+      FROM   frota f
+      LEFT JOIN fornecedores fr ON fr.id = f.fornecedor_id
+      WHERE  f.id = $1
+      LIMIT  1`;
+    const { rows } = await pool.query(q, [id]);
+    if (!rows.length) return res.status(404).json({ success: false, message: "Veículo não encontrado" });
+    res.json(rows[0]);
+  } catch (e) {
+    console.error("GET /api/frota/:id", e);
+    res.status(500).json({ success: false, message: "Erro interno" });
+  }
+});
+
+// === FROTA ⇄ ROTAS – LISTAR VÍNCULOS ================================
+app.get("/api/frota/:id/rotas", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const q = `
+      SELECT r.id, r.identificador, r.descricao
+      FROM   rotas_simples   r
+      JOIN   frota_rotas     fr ON fr.rota_id = r.id
+      WHERE  fr.frota_id = $1
+      ORDER  BY r.identificador`;
+    const { rows } = await pool.query(q, [id]);
+    res.json(rows);           // ← devolve [] se não houver vínculos
+  } catch (e) {
+    console.error("GET /api/frota/:id/rotas", e);
+    res.status(500).json({ success: false, message: "Erro interno" });
+  }
+});
+
+// === FROTA ⇄ ROTAS – ATUALIZAR VÍNCULOS =============================
+app.post("/api/frota/:id/rotas", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rotas } = req.body;       // array de IDs vindo do front‑end
+    if (!Array.isArray(rotas)) {
+      return res.status(400).json({ success: false, message: "Formato inválido" });
+    }
+
+    // remove os vínculos que não constam mais
+    await pool.query("DELETE FROM frota_rotas WHERE frota_id = $1 AND rota_id <> ALL($2::int[])", [id, rotas]);
+
+    // adiciona os que faltam (ON CONFLICT evita duplicar)
+    const ins = `
+      INSERT INTO frota_rotas (frota_id, rota_id)
+      SELECT $1, UNNEST($2::int[])
+      ON CONFLICT (frota_id, rota_id) DO NOTHING`;
+    await pool.query(ins, [id, rotas]);
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error("POST /api/frota/:id/rotas", e);
+    res.status(500).json({ success: false, message: "Erro interno" });
+  }
+});
+
 app.delete("/api/frota/:id", async (req, res) => {
   try {
     const { id } = req.params;
