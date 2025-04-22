@@ -780,7 +780,7 @@
     $("#selRota").select2({ placeholder: "Selecione a rota" })
 
     function carregarCombos() {
-      fetch("/api/fornecedores-admin").then(r => r.json()).then(data => {
+      fetch("/api/fornecedores").then(r => r.json()).then(data => {
         data.forEach(f => $("#selFornecedor").append(`<option value='${f.id}'>${f.nome_fornecedor}</option>`))
       })
       fetch("/api/motoristas?simples=1").then(r => r.json()).then(data => {
