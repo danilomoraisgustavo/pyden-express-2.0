@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Cadastro de Veículos • Transporte Escolar</title>
+  <title>Veículos • Transporte Escolar</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="../../assets/img/pydenadmin/favicon.png">
 
@@ -34,7 +34,7 @@
 
 <body>
   <div class="wrapper">
-    <!-- ====== SIDEBAR (copie igual ao layout existente) ================= -->
+    <!-- ===== SIDEBAR (COPIE O MESMO QUE JÁ USA) ========================== -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
@@ -49,11 +49,11 @@
         </div>
       </div>
       <div class="sidebar-wrapper scrollbar-inner">
-        <!-- cole aqui sua árvore de menus -->
+        <!-- ...sidebar original... -->
       </div>
     </div>
 
-    <!-- ====== MAIN ====================================================== -->
+    <!-- ===== MAIN ======================================================== -->
     <div class="main-panel">
       <div class="main-header" style="top:0">
         <div class="main-header-logo">
@@ -68,25 +68,28 @@
             <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
           </div>
         </div>
-        <!-- copie o mesmo top‑bar da sua aplicação -->
+        <!-- copie o top‑bar original aqui -->
       </div>
 
       <div class="container">
         <div class="page-inner">
           <div class="page-header">
-            <h3 class="fw-bold mb-3">Veículos da Frota</h3>
+            <h3 class="fw-bold mb-3">Frota de Veículos</h3>
             <ul class="breadcrumbs mb-3">
               <li class="nav-home"><a href="../../"><i class="icon-home"></i></a></li>
               <li class="separator"><i class="icon-arrow-right"></i></li>
               <li class="nav-item"><a href="#">Veículos</a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Listar</a></li>
             </ul>
           </div>
 
+          <!-- ===== LISTA + BOTÃO NOVO ===================================== -->
           <div class="row">
             <div class="col-md-12">
               <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                  <div class="card-title">Lista da Frota</div>
+                  <span class="card-title">Frota Cadastrada</span>
                   <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoVeiculo">
                     <i class="fa fa-plus"></i> Novo Veículo
                   </button>
@@ -118,68 +121,53 @@
 
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
-          <nav>
-            <ul class="nav">
-              <li class="nav-item"><a class="nav-link" href="#">ThemeKita</a></li>
-            </ul>
-          </nav>
           <div class="copyright"><a href="http://www.pyden.tech">PyDen Technologies</a>® 2025 ©</div>
         </div>
       </footer>
     </div>
   </div>
 
-  <!-- ====== MODAL NOVO / EDITAR ======================================== -->
+  <!-- ===== MODAL CADASTRAR ============================================== -->
   <div class="modal fade" id="modalNovoVeiculo" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title fw-bold" id="titleVeic">Cadastrar Veículo</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title fw-bold">Cadastrar Veículo</h5><button class="btn-close"
+            data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <form id="formVeiculo" enctype="multipart/form-data">
-            <input type="hidden" name="idVeic" id="idVeic">
+            <!-- campos (os mesmos já mostrados anteriormente) -->
             <div class="row mb-3">
-              <div class="col-md-4"><label class="form-label required">Placa</label>
-                <input type="text" name="placa" class="form-control" required>
-              </div>
-              <div class="col-md-4"><label class="form-label required">Tipo</label>
-                <select name="tipo_veiculo" class="form-select" required>
+              <div class="col-md-4"><label class="form-label required">Placa</label><input name="placa"
+                  class="form-control" required></div>
+              <div class="col-md-4"><label class="form-label required">Tipo</label><select name="tipo_veiculo"
+                  class="form-select" required>
                   <option value="">Selecione</option>
                   <option>Ônibus 50</option>
                   <option>Ônibus 42</option>
                   <option>Microônibus 33</option>
                   <option>Van 15</option>
-                </select>
-              </div>
-              <div class="col-md-4"><label class="form-label required">Capacidade</label>
-                <input type="number" name="capacidade" class="form-control" min="1" required>
-              </div>
+                </select></div>
+              <div class="col-md-4"><label class="form-label required">Capacidade</label><input type="number"
+                  name="capacidade" class="form-control" required></div>
             </div>
             <div class="row mb-3">
-              <div class="col-md-4"><label class="form-label">Cor</label><input type="text" name="cor_veiculo"
-                  class="form-control"></div>
+              <div class="col-md-4"><label class="form-label">Cor</label><input name="cor_veiculo" class="form-control">
+              </div>
               <div class="col-md-4"><label class="form-label">Ano</label><input type="number" name="ano"
-                  class="form-control" min="1950" max="2099"></div>
-              <div class="col-md-4"><label class="form-label">Marca</label><input type="text" name="marca"
                   class="form-control"></div>
-            </div>
-            <div class="row mb-3">
-              <div class="col-md-6"><label class="form-label">Modelo</label><input type="text" name="modelo"
-                  class="form-control"></div>
-              <div class="col-md-6"><label class="form-label">Tipo Combustível</label><input type="text"
-                  name="tipo_combustivel" class="form-control"></div>
-            </div>
-            <div class="row mb-3">
-              <div class="col-md-6"><label class="form-label required">Fornecedor</label>
-                <select name="fornecedor_id" id="selFornecedor" class="form-select" required></select>
+              <div class="col-md-4"><label class="form-label">Marca</label><input name="marca" class="form-control">
               </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6"><label class="form-label">Fornecedor</label><select id="selFornecedor"
+                  name="fornecedor_id" class="form-select" required></select></div>
               <div class="col-md-6"><label class="form-label">Data Aquisição</label><input type="date"
                   name="data_aquisicao" class="form-control"></div>
             </div>
-            <h6 class="mt-3">Recursos</h6>
-            <div class="row">
+            <!-- acessórios -->
+            <div class="row mb-2">
               <div class="col-md-2 form-check"><input class="form-check-input" type="checkbox" name="adaptado"
                   value="Sim"><label class="form-check-label">Adaptado</label></div>
               <div class="col-md-2 form-check"><input class="form-check-input" type="checkbox" name="elevador"
@@ -191,42 +179,72 @@
               <div class="col-md-2 form-check"><input class="form-check-input" type="checkbox" name="cinto_seguranca"
                   value="Sim"><label class="form-check-label">Cinto</label></div>
             </div>
-            <div class="mt-4 text-end">
-              <button type="submit" class="btn btn-success">Salvar</button>
-            </div>
+            <div class="mt-3 text-end"><button class="btn btn-success">Salvar</button></div>
           </form>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ====== MODAL ASSOCIA ROTAS ======================================== -->
-  <div class="modal fade" id="modalRotas" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+  <!-- ===== MODAL ATRIBUIR ROTA ========================================= -->
+  <div class="modal fade" id="modalAtribuirRota" tabindex="-1">
+    <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title fw-bold">Associar Rotas ao Veículo</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title">Atribuir Rota</h5><button class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <p id="subTitleRotas" class="fw-bold"></p>
-          <table id="tblRotas" class="table table-striped">
-            <thead>
-              <tr>
-                <th></th>
-                <th>ID</th>
-                <th>Identificador</th>
-                <th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
+          <form id="formAtribuirRota">
+            <input type="hidden" id="rotFrotaId">
+            <label class="form-label">Rota</label>
+            <select id="rotSelect" class="form-select" required></select>
+            <div class="text-end mt-3"><button class="btn btn-primary">Atribuir</button></div>
+          </form>
         </div>
-        <div class="modal-footer"><button class="btn btn-primary" id="btnSalvarRotas" disabled>Salvar</button></div>
       </div>
     </div>
   </div>
 
+  <!-- ===== MODAL EDITAR ================================================= -->
+  <div class="modal fade" id="modalEditarVeiculo" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Veículo</h5><button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formEditVeiculo" enctype="multipart/form-data">
+            <input type="hidden" id="edit_id" name="id">
+            <!-- apenas alguns campos principais; adicione outros se quiser -->
+            <div class="row mb-3">
+              <div class="col-md-4"><label class="form-label required">Placa</label><input id="edit_placa" name="placa"
+                  class="form-control" required></div>
+              <div class="col-md-4"><label class="form-label required">Tipo</label><select id="edit_tipo"
+                  name="tipo_veiculo" class="form-select" required>
+                  <option>Ônibus 50</option>
+                  <option>Ônibus 42</option>
+                  <option>Microônibus 33</option>
+                  <option>Van 15</option>
+                </select></div>
+              <div class="col-md-4"><label class="form-label required">Capacidade</label><input id="edit_cap"
+                  type="number" name="capacidade" class="form-control" required></div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-4"><label class="form-label">Cor</label><input id="edit_cor" name="cor_veiculo"
+                  class="form-control"></div>
+              <div class="col-md-4"><label class="form-label">Ano</label><input id="edit_ano" type="number" name="ano"
+                  class="form-control"></div>
+              <div class="col-md-4"><label class="form-label">Marca</label><input id="edit_marca" name="marca"
+                  class="form-control"></div>
+            </div>
+            <div class="text-end"><button class="btn btn-success">Salvar</button></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCRIPTS ====================================================== -->
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
   <script src="../../assets/js/core/popper.min.js"></script>
   <script src="../../assets/js/core/bootstrap.min.js"></script>
@@ -237,125 +255,95 @@
   <script src="../../assets/js/usuario.js"></script>
 
   <script>
-    function n(msg, t = "info") {
-      const ic = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" };
-      $.notify({ icon: ic[t] || "fa fa-bell", message: msg }, { type: t, placement: { from: "top", align: "right" }, delay: 3e3 });
+    /* UTIL ---------------------------------------------------------------- */
+    function notify(t, m) {
+      const i = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" };
+      $.notify({ icon: i[t] || "fa fa-bell", message: m }, { type: t, placement: { from: "top", align: "right" }, delay: 3000 });
     }
 
-    let tbl = null, tblRot = null, currentVeicId = null;
-
-    // ---------- LISTAGEM ---------------------------------------------------
+    /* ========= LISTAGEM ================================================= */
+    let tbl = null;
     function loadFrota() {
-      fetch("/api/frota")
-        .then(r => r.json())
-        .then(vs => {
-          const tb = $("#tblFrota tbody").empty();
-          vs.forEach(v => {
-            tb.append(`<tr>
-         <td>${v.id}</td><td>${v.placa}</td><td>${v.tipo_veiculo}</td>
-         <td>${v.capacidade}</td><td>${v.fornecedor_nome || ""}</td><td>${v.ano || ""}</td>
-         <td>
-          <button class="btn btn-link btn-warning btn-edit" data-id="${v.id}"><i class="fa fa-edit"></i></button>
-          <button class="btn btn-link btn-info btn-route" data-id="${v.id}" data-placa="${v.placa}"><i class="fa fa-route"></i></button>
-          <button class="btn btn-link btn-danger btn-del" data-id="${v.id}"><i class="fa fa-trash"></i></button>
-         </td>
-       </tr>`);
-          });
-          if (tbl) tbl.destroy();
-          tbl = $("#tblFrota").DataTable({ pageLength: 10, language: { search: "Pesquisar:" } });
-        })
-        .catch(() => n("Erro ao carregar frota", "danger"));
+      fetch("/api/frota").then(r => r.json()).then(lista => {
+        const tb = $("#tblFrota tbody").empty();
+        lista.forEach(v => {
+          tb.append(`<tr>
+        <td>${v.id}</td><td>${v.placa}</td><td>${v.tipo_veiculo}</td>
+        <td>${v.capacidade}</td><td>${v.fornecedor_nome || ""}</td><td>${v.ano || ""}</td>
+        <td>
+          <button class="btn btn-link btn-info btn-sm" title="Atribuir Rota" onclick="openRotaModal(${v.id})"><i class="fa fa-route"></i></button>
+          <button class="btn btn-link btn-warning btn-sm" title="Editar" onclick="openEdit(${v.id})"><i class="fa fa-edit"></i></button>
+          <button class="btn btn-link btn-danger btn-sm" title="Excluir" onclick="delVeic(${v.id})"><i class="fa fa-trash"></i></button>
+        </td></tr>`);
+        });
+        if (tbl) tbl.destroy();
+        tbl = $("#tblFrota").DataTable({ language: { search: "Pesquisar:" } });
+      }).catch(() => notify("danger", "Erro ao listar frota"));
     }
 
-    // ---------- FORNECEDORES ----------------------------------------------
+    /* ========= CADASTRO ================================================= */
     function loadFornecedores() {
-      fetch("/api/fornecedores")
-        .then(r => r.json())
-        .then(f => {
-          const s = $("#selFornecedor").empty().append('<option value="">Selecione</option>');
-          f.forEach(o => s.append(`<option value="${o.id}">${o.nome_fornecedor}</option>`));
-        });
+      fetch("/api/fornecedores").then(r => r.json()).then(fs => {
+        const sel = $("#selFornecedor").empty().append('<option value="">Selecione</option>');
+        fs.forEach(f => sel.append(`<option value="${f.id}">${f.nome_fornecedor}</option>`));
+      });
     }
-
-    // ---------- NOVO / EDITAR ---------------------------------------------
-    $("#modalNovoVeiculo").on("show.bs.modal", e => {
-      loadFornecedores();
-      const id = $(e.relatedTarget).data("id");
-      if (id) { // editar
-        $("#titleVeic").text("Editar Veículo");
-        fetch(`/api/frota/${id}`).then(r => r.json()).then(v => {
-          $("#idVeic").val(v.id);
-          Object.entries(v).forEach(([k, val]) => {
-            const el = $(`[name='${k}']`);
-            if (el.attr("type") === "checkbox") el.prop("checked", val);
-            else el.val(val);
-          });
-        });
-      } else { // novo
-        $("#titleVeic").text("Cadastrar Veículo");
-        $("#formVeiculo")[0].reset();
-        $("#idVeic").val("");
-      }
-    });
+    $("#modalNovoVeiculo").on("shown.bs.modal", loadFornecedores);
 
     $("#formVeiculo").on("submit", function (e) {
       e.preventDefault();
-      const id = $("#idVeic").val();
-      const fd = new FormData(this);
-      const url = id ? `/api/frota/${id}` : "/api/frota/cadastrar";
-      const m = id ? "PUT" : "POST";
-      $.ajax({ url, method: m, data: fd, processData: false, contentType: false })
-        .done(d => { if (d.success) { n(d.message, "success"); $("#modalNovoVeiculo").modal("hide"); loadFrota(); } else n(d.message, "danger"); })
-        .fail(() => n("Falha ao salvar.", "danger"));
+      $.ajax({ url: "/api/frota/cadastrar", method: "POST", data: new FormData(this), processData: false, contentType: false })
+        .done(d => { if (d.success) { notify("success", d.message); $("#modalNovoVeiculo").modal("hide"); this.reset(); loadFrota(); } else notify("danger", d.message) })
+        .fail(() => notify("danger", "Falha ao cadastrar"));
     });
 
-    // ---------- EXCLUIR ----------------------------------------------------
-    $(document).on("click", ".btn-del", function () {
-      const id = $(this).data("id");
+    /* ========= EXCLUIR =================================================== */
+    function delVeic(id) {
       if (!confirm("Excluir veículo?")) return;
-      $.ajax({ url: `/api/frota/${id}`, method: "DELETE" })
-        .done(d => { if (d.success) { n("Veículo removido", "success"); loadFrota(); } else n(d.message, "danger"); })
-        .fail(() => n("Erro ao excluir", "danger"));
+      fetch(`/api/frota/${id}`, { method: "DELETE" }).then(r => r.json()).then(d => {
+        d.success ? notify("success", "Excluído!") : notify("danger", d.message || "Erro");
+        if (d.success) loadFrota();
+      }).catch(() => notify("danger", "Erro ao excluir"));
+    }
+
+    /* ========= EDITAR ==================================================== */
+    function openEdit(id) {
+      fetch(`/api/frota/${id}`).then(r => r.json()).then(v => {
+        $("#edit_id").val(v.id);
+        $("#edit_placa").val(v.placa); $("#edit_tipo").val(v.tipo_veiculo);
+        $("#edit_cap").val(v.capacidade); $("#edit_cor").val(v.cor_veiculo || "");
+        $("#edit_ano").val(v.ano || ""); $("#edit_marca").val(v.marca || "");
+        $("#modalEditarVeiculo").modal("show");
+      }).catch(() => notify("danger", "Erro ao obter dados"));
+    }
+    $("#formEditVeiculo").on("submit", function (e) {
+      e.preventDefault();
+      const id = $("#edit_id").val();
+      $.ajax({ url: `/api/frota/${id}`, method: "PUT", data: new FormData(this), processData: false, contentType: false })
+        .done(d => { d.success ? (notify("success", "Atualizado!"), $("#modalEditarVeiculo").modal("hide"), loadFrota()) : notify("danger", d.message) })
+        .fail(() => notify("danger", "Falha ao atualizar"));
     });
 
-    // ---------- EDITAR (abre modal) ---------------------------------------
-    $(document).on("click", ".btn-edit", function () {
-      $('#modalNovoVeiculo').modal('show').data("bs.modal")._config.relatedTarget = this;
+    /* ========= ATRIBUIR ROTA ============================================ */
+    function openRotaModal(fid) {
+      $("#rotFrotaId").val(fid);
+      const sel = $("#rotSelect").empty();
+      fetch("/api/rotas-simples-detalhes").then(r => r.json()).then(rs => {
+        rs.forEach(r => sel.append(`<option value="${r.id}">${r.identificador} - ${(r.descricao || "")}</option>`));
+        $("#modalAtribuirRota").modal("show");
+      }).catch(() => notify("danger", "Erro ao carregar rotas"));
+    }
+    $("#formAtribuirRota").on("submit", function (e) {
+      e.preventDefault();
+      const body = { frota_id: $("#rotFrotaId").val(), rota_id: $("#rotSelect").val() };
+      fetch("/api/frota/atribuir-rota", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(r => r.json()).then(d => { d.success ? notify("success", "Rota atribuída!") : notify("danger", d.message) })
+        .catch(() => notify("danger", "Falha ao atribuir rota"))
+        .finally(() => $("#modalAtribuirRota").modal("hide"));
     });
 
-    // ---------- ASSOCIAR ROTAS --------------------------------------------
-    $(document).on("click", ".btn-route", function () {
-      currentVeicId = $(this).data("id");
-      $("#subTitleRotas").text(`Veículo ${$(this).data("placa")} (id ${currentVeicId})`);
-      $("#btnSalvarRotas").prop("disabled", true);
-      $('#modalRotas').modal('show');
-    });
-
-    $('#modalRotas').on('shown.bs.modal', function () {
-      fetch(`/api/rotas-simples`).then(r => r.json()).then(rs => {
-        fetch(`/api/frota/${currentVeicId}/rotas`).then(r => r.json()).then(exist => {
-          const body = $("#tblRotas tbody").empty();
-          rs.forEach(rt => {
-            const ck = exist.some(e => e.id === rt.id) ? "checked" : "";
-            body.append(`<tr><td><input type="checkbox" class="ckRota" value="${rt.id}" ${ck}></td><td>${rt.id}</td><td>${rt.identificador}</td><td>${rt.descricao || ""}</td></tr>`);
-          });
-          if (tblRot) tblRot.destroy();
-          tblRot = $("#tblRotas").DataTable({ pageLength: 8, ordering: false, language: { search: "Pesquisar:" } });
-        });
-      });
-    });
-
-    $(document).on("change", ".ckRota", () => $("#btnSalvarRotas").prop("disabled", false));
-
-    $("#btnSalvarRotas").click(function () {
-      const ids = $(".ckRota:checked").map((_, c) => +c.value).get();
-      $.ajax({ url: `/api/frota/${currentVeicId}/rotas`, method: "POST", contentType: "application/json", data: JSON.stringify({ rotas: ids }) })
-        .done(() => { n("Rotas atualizadas!", "success"); $('#modalRotas').modal('hide'); })
-        .fail(() => n("Erro ao salvar rotas", "danger"));
-    });
-
-    // ----------------------------------------------------------------------
-    $(document).ready(() => { loadFrota(); });
+    /* ========= INIT ===================================================== */
+    $(document).ready(loadFrota);
   </script>
 </body>
 
