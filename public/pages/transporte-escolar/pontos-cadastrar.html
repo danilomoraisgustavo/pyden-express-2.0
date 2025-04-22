@@ -766,8 +766,17 @@
     let pontos = []
     let markersPontos = []
 
-    const iconActive = "../../assets/img/bus-stop.png"
-    const iconInactive = "../../assets/img/bus-stop-inativo.png"
+    const iconActive = {
+      url: "../../assets/img/bus-stop.png",
+      scaledSize: new google.maps.Size(24, 24),   // ⇦ ajuste aqui (ex.: 24×24 px)
+      anchor: new google.maps.Point(12, 24)       //     metade da largura, altura total
+    }
+
+    const iconInactive = {
+      url: "../../assets/img/bus-stop-inativo.png",
+      scaledSize: new google.maps.Size(24, 24),
+      anchor: new google.maps.Point(12, 24)
+    }
 
     function initMapPontos() {
       mapPontos = new google.maps.Map(document.getElementById('map'), {
