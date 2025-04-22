@@ -2793,6 +2793,70 @@ app.post("/api/frota/:id/rotas", async (req, res) => {
   }
 });
 
+// ====>  src/routes/frota.js   (ou onde você mantém as rotas Express) <====
+app.post("/api/frota/atribuir-rota", async (req, res) => {
+  try {
+    const { frota_id, rota_id } = req.body;
+
+    /* ---------- validação básica ------------------------------------ */
+    if (!frota_id || !rota_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "frota_id e rota_id são obrigatórios." });
+    }
+
+    /* ---------- existência de frota e rota -------------------------- */
+    const checkFrota = await pool.query("SELECT id FROM frota WHERE id = $1", [
+      frota_id,
+    ]);
+    if (checkFrota.rowCount === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Veículo não encontrado." });
+    }
+
+    const checkRota = await pool.query(
+      "SELECT id FROM rotas_simples WHERE id = $1",
+      [rota_id]
+    );
+    if (checkRota.rowCount === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Rota não encontrada." });
+    }
+
+    /* ---------- insere relacionamento ------------------------------- */
+    await pool.query(
+      `
+      INSERT INTO frota_rotas (frota_id, rota_id)
+      VALUES ($1, $2)
+      ON CONFLICT (frota_id, rota_id) DO NOTHING
+    `,
+      [frota_id, rota_id]
+    );
+
+    /* ---------- notificação opcional -------------------------------- */
+    const userId = req.session?.userId || null;
+    await pool.query(
+      `
+      INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+      VALUES ($1,'CREATE','frota_rotas',$2,$3)
+    `,
+      [userId, frota_id, `Veículo ${frota_id} vinculado à rota ${rota_id}`]
+    );
+
+    return res.json({
+      success: true,
+      message: "Rota atribuída ao veículo com sucesso!",
+    });
+  } catch (err) {
+    console.error("Erro em /api/frota/atribuir-rota :", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Erro interno do servidor." });
+  }
+});
+
 app.delete("/api/frota/:id", async (req, res) => {
   try {
     const { id } = req.params;
