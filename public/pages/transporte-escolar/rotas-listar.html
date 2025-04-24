@@ -771,40 +771,57 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Cadastrar Itinerário</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title">Cadastrar Nova Rota</h5><button type="button" class="btn-close"
+            data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+          <div class="mb-3"><button id="startMarkerBtn" class="btn btn-primary mb-2">Definir Ponto de
+              Partida/Chegada</button>
+            <div id="map-modal-create"></div>
+          </div>
+          <hr />
           <form id="formDadosRota">
-            <!-- Seleção de Escolas -->
-            <div class="mb-3">
-              <label class="form-label">Selecionar Escolas</label>
-              <select multiple class="form-control" id="escolasSelect"></select>
+            <div class="row">
+              <div class="col-md-3 mb-3"><label class="form-label">Identificador</label><input type="text"
+                  class="form-control" id="identificador" required /></div>
+              <div class="col-md-9 mb-3"><label class="form-label">Descrição da Rota</label><input type="text"
+                  class="form-control" id="descricao" required /></div>
             </div>
-
-            <!-- Seleção de Zoneamentos -->
+            <div class="mb-3"><label class="form-label">É zona rural ou urbana?</label><select class="form-control"
+                id="area_zona" required>
+                <option value="URBANA">Urbana</option>
+                <option value="RURAL">Rural</option>
+              </select></div>
             <div class="mb-3">
-              <label class="form-label">Selecionar Zoneamentos</label>
-              <select multiple class="form-control" id="zoneamentosSelect"></select>
+              <label class="form-label">Pesquisar Zoneamentos</label>
+              <input type="text" class="form-control" id="zoneamentosBuscar"
+                placeholder="Digite para filtrar zoneamentos..." />
+              <div id="listaZoneamentos"
+                style="max-height:200px;overflow-y:auto;border:1px solid #ccc;margin-top:10px;padding:5px;"></div>
             </div>
-
-            <!-- Tipo de Rota -->
             <div class="mb-3">
-              <label class="form-label">Tipo de Rota</label>
-              <select class="form-control" id="tipoRotaSelect">
-                <option value="onibus">Ônibus</option>
-                <option value="microonibus">Microônibus</option>
-                <option value="van">Van</option>
-              </select>
+              <label class="form-label">Pesquisar Fornecedores</label>
+              <input type="text" class="form-control" id="fornecedoresBuscar"
+                placeholder="Digite para filtrar fornecedores..." />
+              <div id="listaFornecedores"
+                style="max-height:200px;overflow-y:auto;border:1px solid #ccc;margin-top:10px;padding:5px;"></div>
             </div>
-
-            <button type="submit" class="btn btn-success mt-4">Salvar Itinerário</button>
+            <input type="hidden" id="partidaLat" /><input type="hidden" id="partidaLng" />
+            <div class="mt-3">
+              <strong>Legenda:</strong>
+              <div class="legend-marker"><img src="https://maps.google.com/mapfiles/ms/icons/green-dot.png" alt="">Ponto
+                de Partida/Chegada</div>
+              <div class="legend-marker"><img src="https://maps.google.com/mapfiles/kml/pal3/icon56.png" alt="">Escola
+              </div>
+              <div class="legend-marker"><img src="https://maps.google.com/mapfiles/kml/pal2/icon13.png" alt="">Ponto de
+                Parada</div>
+            </div>
+            <button type="submit" class="btn btn-success mt-4">Salvar Rota</button>
           </form>
         </div>
       </div>
     </div>
   </div>
-
 
   <!-- MODAL EDITAR ROTA -->
   <div class="modal fade" id="modalEditarRota" tabindex="-1" aria-labelledby="modalEditarRotaLabel" aria-hidden="true">
@@ -1114,54 +1131,6 @@
     $("#btnVincularAlunos").click(function () { const ids = $(".ck-aluno:checked").map((_, c) => +c.value).get(); if (!ids.length) return; $.ajax({ url: `/api/rotas/${rotaModalId}/alunos`, method: "POST", contentType: "application/json", data: JSON.stringify({ alunos: ids }) }).done(() => { $("#modalAlunosRota").modal("hide"); showNotification("success", "Alunos vinculados!"); loadRotas() }).fail(x => { showNotification("danger", x.responseJSON && x.responseJSON.message ? x.responseJSON.message : "Erro") }) })
     $(document).ready(function () { $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`); })
   </script>
-  <script>
-    // 1) Carrega combo de escolas e zoneamentos
-    async function loadEscolasZoneamentos() {
-      try {
-        const [escResp, zonResp] = await Promise.all([
-          fetch('/api/escolas').then(r => r.json()),
-          fetch('/api/zoneamentos').then(r => r.json())
-        ]);
-        const escSel = document.getElementById('escolasSelect');
-        escResp.forEach(e => escSel.add(new Option(e.nome, e.id)));
-        const zonSel = document.getElementById('zoneamentosSelect');
-        zonResp.forEach(z => zonSel.add(new Option(z.nome, z.id)));
-      } catch {
-        alert('Erro ao carregar escolas ou zoneamentos.');
-      }
-    }
-
-    // 2) Abre modal: popula dados
-    $('#modalNovaRota').on('show.bs.modal', () => {
-      loadEscolasZoneamentos();
-    });
-
-    // 3) Submit do novo itinerário
-    $('#formDadosRota').on('submit', function (e) {
-      e.preventDefault();
-      const escolas_ids = $('#escolasSelect').val().map(Number);
-      const zoneamentos_ids = $('#zoneamentosSelect').val().map(Number);
-      const tipo_rota = $('#tipoRotaSelect').val();
-      const descricao = escolas_ids.join(',') + ' - ' + zoneamentos_ids.join(', ');
-      fetch('/api/itinerarios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ escolas_ids, zoneamentos_ids, descricao, tipo_rota })
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (data.id) {
-            $('#modalNovaRota').modal('hide');
-            rotasTable.ajax.reload();  // assume DataTable chama `/api/itinerarios`
-            showNotification('success', 'Itinerário criado com sucesso (ID ' + data.id + ')');
-          } else {
-            showNotification('danger', 'Erro ao criar itinerário.');
-          }
-        })
-        .catch(() => showNotification('danger', 'Erro ao conectar com o servidor.'));
-    });
-  </script>
-
 </body>
 
 </html>
