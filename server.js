@@ -5351,6 +5351,29 @@ app.post('/api/itinerarios', async (req, res) => {
   }
 });
 
+app.get('/api/itinerarios', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, descricao, tipo, escolas_ids, zoneamentos_ids
+         FROM itinerarios
+        ORDER BY id`
+    );
+    res.json(result.rows);
+  } catch {
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+app.delete('/api/itinerarios/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM itinerarios WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false });
+  }
+});
+
+
 
 app.get("/api/estatisticas-transporte", async (req, res) => {
   try {

@@ -958,150 +958,62 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
   <script src="../../assets/js/setting-demo2.js"></script>
   <script src="../../assets/js/usuario.js"></script>
-
   <script>
-    const iconEscolaUrl = "../../assets/img/escola.png", iconEscolaSelectedUrl = "../../assets/img/escola-selected.png", iconPontoUrl = "../../assets/img/bus-stop.png";
-    let mapCreate, escolasData = [], pontosData = [], escolasSelecionadas = [], zoneamentosSelecionados = [], pontoMarkers = [];
-
-    function initMapCreate() {
-      mapCreate = new google.maps.Map(document.getElementById("map-modal-create"), { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13 });
-      fetch("/api/escolas").then(r => r.json()).then(e => { escolasData = e; placeEscolasMarkers(); }).catch(() => { });
-      fetch("/api/pontos").then(r => r.json()).then(p => { pontosData = p; }).catch(() => { });
+    let zoneamentosData = [], rotasTable;
+    async function loadZoneamentos() {
+      zoneamentosData = await fetch('/api/zoneamentos').then(r => r.json());
     }
-
-    function placeEscolasMarkers() {
-      escolasData.forEach(es => {
-        if (!es.latitude || !es.longitude) return;
-        let mk = new google.maps.Marker({
-          position: { lat: +es.latitude, lng: +es.longitude },
-          map: mapCreate,
-          icon: { url: iconEscolaUrl, scaledSize: new google.maps.Size(24, 24) },
-          title: es.nome
-        });
-        mk.addListener("click", () => {
-          let i = escolasSelecionadas.indexOf(es.id);
-          if (i < 0) { escolasSelecionadas.push(es.id); mk.setIcon(iconEscolaSelectedUrl); }
-          else { escolasSelecionadas.splice(i, 1); mk.setIcon(iconEscolaUrl); }
-          buildZoneamentosList();
-        });
+    async function loadItinerarios() {
+      const tb = document.querySelector('#rotas-table tbody');
+      tb.innerHTML = '';
+      const data = await fetch('/api/itinerarios').then(r => r.json());
+      data.forEach(it => {
+        const esc = it.escolas_ids.map(id => {
+          const e = escolasData.find(x => x.id === id);
+          return e ? e.nome : id;
+        }).join(', ');
+        const zn = it.zoneamentos_ids.map(id => {
+          const z = zoneamentosData.find(x => x.id === id);
+          return z ? z.nome : id;
+        }).join(', ');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${it.id}</td>
+          <td>${it.descricao}</td>
+          <td>${it.tipo}</td>
+          <td>${esc}</td>
+          <td>${zn}</td>
+          <td>
+            <button class="btn btn-link btn-danger btn-excluir" data-id="${it.id}">
+              <i class="fa fa-trash"></i>
+            </button>
+          </td>`;
+        tb.appendChild(row);
       });
-    }
-
-    function buildZoneamentosList() {
-      let zones = {};
-      escolasSelecionadas.forEach(id => {
-        let es = escolasData.find(x => x.id === id);
-        if (es) es.zoneamentos.forEach(z => zones[z.id] = z.nome);
-      });
-      let cont = document.getElementById("listaZoneamentos");
-      cont.innerHTML = "";
-      Object.entries(zones).forEach(([id, nome]) => {
-        let chk = document.createElement("input");
-        chk.type = "checkbox"; chk.value = id;
-        chk.onchange = () => {
-          let zid = +id;
-          if (chk.checked) zoneamentosSelecionados.push(zid);
-          else zoneamentosSelecionados = zoneamentosSelecionados.filter(x => x !== zid);
-          reloadPontos();
-        };
-        let lbl = document.createElement("label");
-        lbl.textContent = nome;
-        let div = document.createElement("div");
-        div.append(chk, lbl);
-        cont.appendChild(div);
-      });
-    }
-
-    function reloadPontos() {
-      pontoMarkers.forEach(m => m.setMap(null));
-      pontoMarkers = [];
-      pontosData.forEach(p => {
-        if (zoneamentosSelecionados.includes(p.zoneamento_id)) {
-          let mk = new google.maps.Marker({
-            position: { lat: +p.latitude, lng: +p.longitude },
-            map: mapCreate,
-            icon: { url: iconPontoUrl, scaledSize: new google.maps.Size(24, 24) }
-          });
-          pontoMarkers.push(mk);
+      if (rotasTable) rotasTable.destroy();
+      rotasTable = $('#rotas-table').DataTable({
+        pageLength: 10,
+        language: {
+          decimal: ",", thousands: ".", info: "Mostrando _START_ até _END_ de _TOTAL_",
+          lengthMenu: "Mostrar _MENU_", search: "Pesquisar:", paginate: {
+            first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior"
+          },
+          zeroRecords: "Nenhum registro", emptyTable: "Nenhuma rota"
         }
       });
-    }
-
-    document.getElementById("formDadosItinerario").onsubmit = e => {
-      e.preventDefault();
-      fetch("/api/itinerarios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          escolas_ids: escolasSelecionadas,
-          zoneamentos_ids: zoneamentosSelecionados,
-          tipo: document.getElementById("tipoRota").value
-        })
-      })
-        .then(r => r.json())
-        .then(resp => {
-          if (resp.id) {
-            alert(`Itinerário #${resp.id} criado:\n${resp.descricao}`);
-            location.reload();
-          } else alert("Erro ao criar itinerário");
+      document.querySelectorAll('.btn-excluir').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Excluir este itinerário?')) return;
+          const id = btn.dataset.id;
+          const res = await fetch(`/api/itinerarios/${id}`, { method: 'DELETE' }).then(r => r.json());
+          if (res.success) loadItinerarios();
+          else alert('Erro ao excluir');
         });
-    };
-
-    google.maps.event.addDomListener(window, "load", initMapCreate);
-    let rotasTable, modalMapView, directionsService, directionsRenderer;
-
-    function loadRotas() {
-      fetch("/api/itinerarios").then(r => r.json()).then(rotas => {
-        const tbody = document.querySelector("#rotas-table tbody");
-        tbody.innerHTML = "";
-        rotas.forEach(rt => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-        <td>${rt.id}</td>
-        <td>${rt.descricao}</td>
-        <td>${rt.tipo}</td>
-        <td>
-          <button class="btn btn-link btn-primary btn-view" data-id="${rt.id}"><i class="fa fa-eye"></i></button>
-          <button class="btn btn-link btn-danger btn-delete" data-id="${rt.id}"><i class="fa fa-trash"></i></button>
-        </td>`;
-          tbody.appendChild(tr);
-        });
-        if (rotasTable) rotasTable.destroy();
-        rotasTable = $("#rotas-table").DataTable({ pageLength: 10, language: { decimal: ",", thousands: ".", info: "Mostrando _START_ até _END_ de _TOTAL_", lengthMenu: "Mostrar _MENU_", search: "Pesquisar:", paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" }, zeroRecords: "Nenhum registro", emptyTable: "Nenhuma rota" } });
       });
     }
-
-    document.addEventListener("click", e => {
-      const vd = e.target.closest(".btn-view");
-      const dd = e.target.closest(".btn-delete");
-      if (dd) {
-        const id = dd.dataset.id;
-        if (confirm("Excluir itinerário?")) fetch("/api/itinerarios/" + id, { method: "DELETE" })
-          .then(r => r.json()).then(d => { if (d.success) loadRotas(); });
-      }
-      if (vd) {
-        const id = vd.dataset.id;
-        $("#viewRouteModal").modal("show");
-        setTimeout(() => {
-          if (!modalMapView) {
-            modalMapView = new google.maps.Map(document.getElementById("map-modal-view"), { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13 });
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer({ map: modalMapView });
-          }
-          fetch("/api/itinerarios/" + id).then(r => r.json()).then(d => {
-            const o = { lat: +d.partidaLat, lng: +d.partidaLng }, D = { lat: +d.chegadaLat, lng: +d.chegadaLng };
-            const w = d.pontos_ids.map(pid => {
-              const p = pontosData.find(x => x.id === pid);
-              return { location: new google.maps.LatLng(+p.latitude, +p.longitude), stopover: true };
-            });
-            directionsService.route({ origin: o, destination: D, waypoints: w, travelMode: google.maps.TravelMode.DRIVING }, (r, s) => { if (s === "OK") directionsRenderer.setDirections(r); });
-          });
-        }, 400);
-      }
-    });
-
-    loadRotas();
+    Promise.all([loadEscolas(), loadZoneamentos()]).then(loadItinerarios);
   </script>
+
 </body>
 
 </html>
