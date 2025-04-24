@@ -1115,8 +1115,6 @@
     $(document).ready(function () { $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`); })
   </script>
   <script>
-    let escolasData = [];
-
     // 1. Carrega escolas (já trazem seus zoneamentos vinculados)
     async function loadEscolas() {
       escolasData = await fetch('/api/escolas').then(r => r.json());
