@@ -5310,6 +5310,55 @@ app.put("/api/rotas-simples/:id", async (req, res) => {
 });
 
 
+// POST /api/itinerarios — cria Itinerário (rota mestre)
+app.post('/api/itinerarios', async (req, res) => {
+  try {
+    const { escolas_ids, zoneamentos_ids, tipo } = req.body;
+    // Valida payload
+    if (
+      !Array.isArray(escolas_ids) ||
+      !Array.isArray(zoneamentos_ids) ||
+      !['normal', 'especial'].includes(tipo)
+    ) {
+      return res.status(400).json({ error: 'Dados inválidos.' });
+    }
+
+    // 1) Reúne todos os pontos de parada dos zoneamentos selecionados
+    const pts = await pool.query(
+      'SELECT id FROM pontos WHERE zoneamento_id = ANY($1)',
+      [zoneamentos_ids]
+    );
+    const pontos_ids = pts.rows.map(r => r.id);
+
+    // 2) Monta descrição automática: "Escola A, Escola B – Zona X, Zona Y"
+    const esc = await pool.query(
+      'SELECT nome FROM escolas WHERE id = ANY($1)', [escolas_ids]
+    );
+    const zn = await pool.query(
+      'SELECT nome FROM zoneamentos WHERE id = ANY($1)', [zoneamentos_ids]
+    );
+    const nomesEsc = esc.rows.map(r => r.nome);
+    const nomesZn = zn.rows.map(r => r.nome);
+    const descricao = `${nomesEsc.join(', ')} - ${nomesZn.join(', ')}`;
+
+    // 3) Insere no banco
+    const ins = await pool.query(
+      `INSERT INTO itinerarios
+         (escolas_ids, zoneamentos_ids, descricao, pontos_ids, tipo)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING id, descricao`,
+      [escolas_ids, zoneamentos_ids, descricao, pontos_ids, tipo]
+    );
+
+    // 4) Retorna id e descrição gerada
+    res.json(ins.rows[0]);
+  } catch (err) {
+    console.error('Erro ao criar itinerário:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+
 app.get("/api/estatisticas-transporte", async (req, res) => {
   try {
     const meses = [
