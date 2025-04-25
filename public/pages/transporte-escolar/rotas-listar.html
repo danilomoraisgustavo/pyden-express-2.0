@@ -1247,27 +1247,34 @@
     }
 
     // 5) Submete o itinerário ao backend
+    // 5) Submete o itinerário ao backend (sem "tipo")
     document.getElementById('btnSalvarItinerario').onclick = async () => {
       const zoneamentos_ids = Array.from(
         document.querySelectorAll('#listaZoneamentos input:checked')
       ).map(cb => parseInt(cb.value));
-      const tipo = document.getElementById('tipoRota').value;
 
-      const resp = await fetch('/api/itinerarios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          escolas_ids: escolasSelecionadas,
-          zoneamentos_ids,
-          tipo
-        })
-      }).then(r => r.json());
+      // monta payload apenas com as colunas existentes
+      const payload = {
+        escolas_ids: escolasSelecionadas,
+        zoneamentos_ids
+      };
 
-      if (resp.id) {
-        alert(`Itinerário #${resp.id} criado:\n${resp.descricao}`);
-        location.reload();
-      } else {
-        alert('Erro ao criar itinerário');
+      try {
+        const resp = await fetch('/api/itinerarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        if (resp.id) {
+          alert(`Itinerário #${resp.id} criado:\n${resp.descricao}`);
+          location.reload();
+        } else {
+          alert('Erro ao criar itinerário');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro de rede ao criar itinerário');
       }
     };
 
