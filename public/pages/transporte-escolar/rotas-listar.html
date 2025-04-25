@@ -944,10 +944,17 @@
             <td>${zn}</td>
             <td>${es}</td>
             <td>
-              <button class="btn btn-link btn-primary"
+              <!-- Editar -->
+              <button class="btn btn-link btn-secondary me-1"
+                      onclick="openEditModal('${row}')">
+                <i class="fa fa-edit"></i>
+              </button>
+              <!-- Visualizar -->
+              <button class="btn btn-link btn-primary me-1"
                       onclick="openRouteModal('${row}')">
                 <i class="fa fa-eye"></i>
               </button>
+              <!-- Deletar -->
               <button class="btn btn-link btn-danger"
                       onclick="deleteItinerario(${it.id})">
                 <i class="fa fa-trash"></i>
