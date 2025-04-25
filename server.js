@@ -2749,6 +2749,109 @@ app.get("/api/frota/:id", async (req, res) => {
   }
 });
 
+
+// GET /api/itinerarios — lista Itinerários (rotas mestres)
+app.get('/api/itinerarios', async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        i.id,
+        i.escolas_ids,
+        i.zoneamentos_ids,
+        i.descricao,
+        i.pontos_ids,
+        -- nomes das escolas
+        (
+          SELECT COALESCE(
+            json_agg(json_build_object('id', e.id, 'nome', e.nome))
+            FILTER (WHERE e.id IS NOT NULL),
+            '[]'
+          )
+          FROM escolas e
+          WHERE e.id = ANY(i.escolas_ids)
+        ) AS escolas,
+        -- nomes dos zoneamentos
+        (
+          SELECT COALESCE(
+            json_agg(json_build_object('id', z.id, 'nome', z.nome))
+            FILTER (WHERE z.id IS NOT NULL),
+            '[]'
+          )
+          FROM zoneamentos z
+          WHERE z.id = ANY(i.zoneamentos_ids)
+        ) AS zoneamentos
+      FROM itinerarios i
+      ORDER BY i.id ASC
+    `;
+    const { rows } = await pool.query(query);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao listar itinerários:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// POST /api/itinerarios — cria novo Itinerário
+app.post('/api/itinerarios', async (req, res) => {
+  try {
+    const { escolas_ids, zoneamentos_ids } = req.body;
+    if (
+      !Array.isArray(escolas_ids) ||
+      !Array.isArray(zoneamentos_ids)
+    ) {
+      return res.status(400).json({ error: 'Dados inválidos.' });
+    }
+
+    // 1) Reúne todos os pontos de parada
+    const pts = await pool.query(
+      'SELECT id FROM pontos WHERE zoneamento_id = ANY($1)',
+      [zoneamentos_ids]
+    );
+    const pontos_ids = pts.rows.map(r => r.id);
+
+    // 2) Monta descrição: "Esc A, Esc B - Zona X, Zona Y"
+    const esc = await pool.query(
+      'SELECT nome FROM escolas WHERE id = ANY($1)',
+      [escolas_ids]
+    );
+    const zn = await pool.query(
+      'SELECT nome FROM zoneamentos WHERE id = ANY($1)',
+      [zoneamentos_ids]
+    );
+    const nomesEsc = esc.rows.map(r => r.nome);
+    const nomesZn = zn.rows.map(r => r.nome);
+    const descricao = `${nomesEsc.join(', ')} - ${nomesZn.join(', ')}`;
+
+    // 3) Insere no banco usando os nomes exatos das colunas
+    const ins = await pool.query(
+      `INSERT INTO itinerarios
+         (escolas_ids, zoneamentos_ids, descricao, pontos_ids)
+       VALUES ($1,$2,$3,$4)
+       RETURNING id, descricao`,
+      [escolas_ids, zoneamentos_ids, descricao, pontos_ids]
+    );
+
+    res.json(ins.rows[0]);
+  } catch (err) {
+    console.error('Erro ao criar itinerário:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// DELETE /api/itinerarios/:id — exclui um itinerário
+app.delete('/api/itinerarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM itinerarios WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao excluir itinerário:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+
+
 // === FROTA ⇄ ROTAS – LISTAR VÍNCULOS ================================
 app.get("/api/frota/:id/rotas", async (req, res) => {
   try {
