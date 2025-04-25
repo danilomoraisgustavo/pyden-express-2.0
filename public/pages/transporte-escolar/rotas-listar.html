@@ -983,7 +983,6 @@
     let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", directionsService = null, directionsRenderer = null, alunosRouteData = []
     let currentRouteDistanceKm = 0
     function showNotification(t, m) { const i = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" }; $.notify({ icon: i[t] || "fa fa-bell", message: m }, { type: t, placement: { from: "top", align: "right" }, offset: 20, spacing: 10, z_index: 1031, delay: 3000, timer: 1000, animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" } }) }
-    function loadEscolasPontosForn() { Promise.all([fetch("/api/escolas").then(r => r.json()), fetch("/api/pontos").then(r => r.json()), fetch("/api/fornecedores").then(r => r.json())]).then(([e, p, f]) => { escolasData = e; pontosData = p; fornecedoresData = f; placeEscolasCreate(); initFornecedoresList() }).catch(() => showNotification("danger", "Erro ao carregar dados.")) }
     function loadRotas() {
       fetch("/api/itinerarios")
         .then(r => r.json())
