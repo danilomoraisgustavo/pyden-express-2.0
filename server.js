@@ -5358,6 +5358,47 @@ app.post('/api/itinerarios', async (req, res) => {
   }
 });
 
+// GET /api/itinerarios — lista Itinerários (rotas mestres)
+app.get('/api/itinerarios', async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        i.id,
+        i.descricao,
+        i.tipo,
+        i.escolas_ids,
+        i.zoneamentos_ids,
+        i.pontos_ids,
+        -- carrega nomes das escolas
+        (
+          SELECT COALESCE(
+            json_agg(json_build_object('id', e.id, 'nome', e.nome))
+            FILTER (WHERE e.id IS NOT NULL),
+            '[]'
+          )
+          FROM escolas e
+          WHERE e.id = ANY(i.escolas_ids)
+        ) AS escolas,
+        -- carrega nomes dos zoneamentos
+        (
+          SELECT COALESCE(
+            json_agg(json_build_object('id', z.id, 'nome', z.nome))
+            FILTER (WHERE z.id IS NOT NULL),
+            '[]'
+          )
+          FROM zoneamentos z
+          WHERE z.id = ANY(i.zoneamentos_ids)
+        ) AS zoneamentos
+      FROM itinerarios i
+      ORDER BY i.id ASC
+    `;
+    const { rows } = await pool.query(query);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao listar itinerários:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
 
 app.get("/api/estatisticas-transporte", async (req, res) => {
   try {
