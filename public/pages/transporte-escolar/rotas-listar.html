@@ -1012,9 +1012,6 @@
     document.getElementById("downloadGpx").addEventListener("click", e => { e.preventDefault(); if (currentRotaId) downloadRota(currentRotaId, "gpx") })
     document.getElementById("btnDownloadCsvAlunos").addEventListener("click", () => { if (!alunosRouteData.length) { showNotification("warning", "Nenhum aluno para exportar"); return } const h = ["Nome do Aluno", "Escola", "Lat Aluno", "Lng Aluno", "ID Ponto", "Lat Ponto", "Lng Ponto", "Turno"], rows = [h.join(",")]; alunosRouteData.forEach(a => { rows.push([`"${a.nome.replace(/"/g, '""')}"`, `"${a.escola_nome.replace(/"/g, '""')}"`, a.latitude, a.longitude, a.ponto_id, a.ponto_latitude, a.ponto_longitude, `"${a.turno.replace(/"/g, '""')}"`].join(",")) }); const blob = new Blob([rows.join("\r\n")], { type: "text/csv" }), url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `alunos_rota_${currentRotaId}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url) })
 
-    // Variáveis de edição
-    let mapEdit;
-    let editEscolasData = [], editEscolasMarkers = {}, editEscolasSelecionadas = [];
 
     // Abre o modal de edição, recebe o objeto roteiro serializado
     function openEditModal(enc) {
@@ -1142,15 +1139,6 @@
         showNotification('danger', 'Erro de rede ao atualizar itinerário');
       }
     };
-
-    e.preventDefault()
-    const id = $("#editRotaId").val().trim(), ident = $("#editIdentificador").val().trim(), desc = $("#editDescricao").val().trim(), lat = $("#editPartidaLat").val().trim(), lng = $("#editPartidaLng").val().trim(), zona = $("#editAreaZona").val().trim()
-    if (!id || !ident || !desc || !lat || !lng || !zona) { showNotification("warning", "Preencha todos os campos e defina o ponto de partida!"); return }
-    const body = { identificador: ident, descricao: desc, partidaLat: parseFloat(lat), partidaLng: parseFloat(lng), chegadaLat: parseFloat(lat), chegadaLng: parseFloat(lng), pontosParada: editPontosParadaSelecionados, escolas: editEscolasSelecionadas, fornecedores: editFornecedoresSelecionados, areaZona: zona }
-    fetch(`/api/rotas-simples/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-      .then(r => r.json()).then(d => { if (d.success) { showNotification("success", "Rota atualizada com sucesso!"); $("#modalEditarRota").modal("hide"); loadRotas() } else showNotification("danger", "Erro ao atualizar rota: " + d.message) })
-      .catch(() => showNotification("danger", "Erro interno ao atualizar rota."))
-    })
   </script>
   <script>
     let alunosModal = null, capacidadeTotal = 0, capacidadeUsada = 0, rotasAlunosTable = null, rotaModalId = null, alunosDisponiveis = []
