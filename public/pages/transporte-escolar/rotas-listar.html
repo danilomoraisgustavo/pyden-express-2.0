@@ -974,11 +974,11 @@
     const iconEscolaUrl = "../../assets/img/escola.png"
     const iconPontoUrl = "../../assets/img/bus-stop.png"
     const iconAlunoUrl = "../../assets/img/alunos.png"
-    let mapEdit, modalMapView
+    let mapCreate, mapEdit, modalMapView
     let startMarker = null, editStartMarker = null
     let escolaMarkers = [], pontoMarkers = [], editEscolaMarkers = [], editPontoMarkers = [], alunoMarkers = []
-    let pontosData = [], fornecedoresData = []
-    let isPlacingStart = false, zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = []
+    let escolasData = [], pontosData = [], fornecedoresData = []
+    let isPlacingStart = false, escolasSelecionadas = [], zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = []
     let isPlacingEditStart = false, editEscolasSelecionadas = [], editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = []
     let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", directionsService = null, directionsRenderer = null, alunosRouteData = []
     let currentRouteDistanceKm = 0
@@ -1121,8 +1121,6 @@
     $(document).ready(function () { $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`); })
   </script>
   <script>
-    let mapCreate;
-    let escolasData = [], escolasMarkers = {}, escolasSelecionadas = [];
     const defaultIconUrl = "../../assets/img/escola.png";
     const selectedIconUrl = "../../assets/img/escola-selecionada.png";
 
