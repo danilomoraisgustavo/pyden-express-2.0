@@ -771,53 +771,42 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Cadastrar Nova Rota</h5><button type="button" class="btn-close"
-            data-bs-dismiss="modal"></button>
+          <h5 class="modal-title">Cadastrar Nova Rota</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3"><button id="startMarkerBtn" class="btn btn-primary mb-2">Definir Ponto de
-              Partida/Chegada</button>
-            <div id="map-modal-create"></div>
+          <!-- 1) Mapa para selecionar escolas -->
+          <div class="mb-3">
+            <label class="form-label">Mapa de Escolas</label>
+            <div id="map-modal-create" style="height:400px;width:100%;"></div>
           </div>
-          <hr />
-          <form id="formDadosRota">
-            <div class="row">
-              <div class="col-md-3 mb-3"><label class="form-label">Identificador</label><input type="text"
-                  class="form-control" id="identificador" required /></div>
-              <div class="col-md-9 mb-3"><label class="form-label">Descrição da Rota</label><input type="text"
-                  class="form-control" id="descricao" required /></div>
+
+          <!-- 2) Lista de escolas selecionadas -->
+          <div class="mb-3">
+            <label class="form-label">Escolas Selecionadas</label>
+            <div id="listaEscolasSelecionadas" style="min-height:50px;border:1px solid #ccc;padding:8px;"></div>
+          </div>
+
+          <!-- 3) Zoneamentos associados -->
+          <div class="mb-3">
+            <label class="form-label">Zoneamentos</label>
+            <div id="listaZoneamentos" style="min-height:100px;border:1px solid #ccc;padding:8px;overflow-y:auto;">
             </div>
-            <div class="mb-3"><label class="form-label">É zona rural ou urbana?</label><select class="form-control"
-                id="area_zona" required>
-                <option value="URBANA">Urbana</option>
-                <option value="RURAL">Rural</option>
-              </select></div>
-            <div class="mb-3">
-              <label class="form-label">Pesquisar Zoneamentos</label>
-              <input type="text" class="form-control" id="zoneamentosBuscar"
-                placeholder="Digite para filtrar zoneamentos..." />
-              <div id="listaZoneamentos"
-                style="max-height:200px;overflow-y:auto;border:1px solid #ccc;margin-top:10px;padding:5px;"></div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Pesquisar Fornecedores</label>
-              <input type="text" class="form-control" id="fornecedoresBuscar"
-                placeholder="Digite para filtrar fornecedores..." />
-              <div id="listaFornecedores"
-                style="max-height:200px;overflow-y:auto;border:1px solid #ccc;margin-top:10px;padding:5px;"></div>
-            </div>
-            <input type="hidden" id="partidaLat" /><input type="hidden" id="partidaLng" />
-            <div class="mt-3">
-              <strong>Legenda:</strong>
-              <div class="legend-marker"><img src="https://maps.google.com/mapfiles/ms/icons/green-dot.png" alt="">Ponto
-                de Partida/Chegada</div>
-              <div class="legend-marker"><img src="https://maps.google.com/mapfiles/kml/pal3/icon56.png" alt="">Escola
-              </div>
-              <div class="legend-marker"><img src="https://maps.google.com/mapfiles/kml/pal2/icon13.png" alt="">Ponto de
-                Parada</div>
-            </div>
-            <button type="submit" class="btn btn-success mt-4">Salvar Rota</button>
-          </form>
+          </div>
+
+          <!-- 4) Tipo de rota -->
+          <div class="mb-3">
+            <label class="form-label">Tipo de Rota</label>
+            <select class="form-control" id="tipoRota" required>
+              <option value="normal">Normal</option>
+              <option value="especial">Especial</option>
+            </select>
+          </div>
+
+          <!-- 5) Botão de salvar -->
+          <div class="text-end">
+            <button id="btnSalvarItinerario" class="btn btn-success">Salvar Itinerário</button>
+          </div>
         </div>
       </div>
     </div>
@@ -985,11 +974,11 @@
     const iconEscolaUrl = "../../assets/img/escola.png"
     const iconPontoUrl = "../../assets/img/bus-stop.png"
     const iconAlunoUrl = "../../assets/img/alunos.png"
-    let mapCreate, mapEdit, modalMapView
+    let mapEdit, modalMapView
     let startMarker = null, editStartMarker = null
     let escolaMarkers = [], pontoMarkers = [], editEscolaMarkers = [], editPontoMarkers = [], alunoMarkers = []
-    let escolasData = [], pontosData = [], fornecedoresData = []
-    let isPlacingStart = false, escolasSelecionadas = [], zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = []
+    let pontosData = [], fornecedoresData = []
+    let isPlacingStart = false, zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = []
     let isPlacingEditStart = false, editEscolasSelecionadas = [], editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = []
     let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", directionsService = null, directionsRenderer = null, alunosRouteData = []
     let currentRouteDistanceKm = 0
@@ -1130,6 +1119,112 @@
     $(document).on("change", ".ck-aluno", function () { const sel = $(".ck-aluno:checked").length; $("#selCount").text(sel); $("#btnVincularAlunos").prop("disabled", capacidadeTotal - capacidadeUsada < sel) })
     $("#btnVincularAlunos").click(function () { const ids = $(".ck-aluno:checked").map((_, c) => +c.value).get(); if (!ids.length) return; $.ajax({ url: `/api/rotas/${rotaModalId}/alunos`, method: "POST", contentType: "application/json", data: JSON.stringify({ alunos: ids }) }).done(() => { $("#modalAlunosRota").modal("hide"); showNotification("success", "Alunos vinculados!"); loadRotas() }).fail(x => { showNotification("danger", x.responseJSON && x.responseJSON.message ? x.responseJSON.message : "Erro") }) })
     $(document).ready(function () { $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`); })
+  </script>
+  <script>
+    let mapCreate;
+    let escolasData = [], escolasMarkers = {}, escolasSelecionadas = [];
+    const defaultIconUrl = "../../assets/img/escola.png";
+    const selectedIconUrl = "../../assets/img/escola-selecionada.png";
+
+    // 1) Inicializa mapa e posiciona marcadores de escolas
+    function initMapCreate() {
+      mapCreate = new google.maps.Map(
+        document.getElementById("map-modal-create"),
+        { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13 }
+      );
+      fetch('/api/escolas')
+        .then(r => r.json())
+        .then(data => {
+          escolasData = data;
+          data.forEach(e => {
+            const marker = new google.maps.Marker({
+              position: { lat: e.latitude, lng: e.longitude },
+              map: mapCreate,
+              icon: defaultIconUrl
+            });
+            marker.addListener('click', () => toggleEscola(e.id));
+            escolasMarkers[e.id] = marker;
+          });
+        });
+    }
+
+    // 2) Alterna seleção de escola e atualiza ícone
+    function toggleEscola(id) {
+      const idx = escolasSelecionadas.indexOf(id);
+      if (idx === -1) {
+        escolasSelecionadas.push(id);
+        escolasMarkers[id].setIcon(selectedIconUrl);
+      } else {
+        escolasSelecionadas.splice(idx, 1);
+        escolasMarkers[id].setIcon(defaultIconUrl);
+      }
+      renderEscolasSelecionadas();
+      updateZoneamentos();
+    }
+
+    // 3) Renderiza botões das escolas selecionadas
+    function renderEscolasSelecionadas() {
+      const container = document.getElementById('listaEscolasSelecionadas');
+      container.innerHTML = '';
+      escolasSelecionadas.forEach(id => {
+        const esc = escolasData.find(e => e.id === id);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-sm btn-outline-primary me-1 mb-1';
+        btn.textContent = esc.nome;
+        btn.onclick = () => toggleEscola(id);
+        container.appendChild(btn);
+      });
+    }
+
+    // 4) Atualiza checkboxes de zoneamentos das escolas marcadas
+    function updateZoneamentos() {
+      const zonas = {};
+      escolasSelecionadas.forEach(id => {
+        const esc = escolasData.find(e => e.id === id);
+        esc.zoneamentos.forEach(z => zonas[z.id] = z.nome);
+      });
+      const contZ = document.getElementById('listaZoneamentos');
+      contZ.innerHTML = '';
+      Object.entries(zonas).forEach(([id, nome]) => {
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = id; cb.id = 'zon_' + id;
+        const lbl = document.createElement('label');
+        lbl.htmlFor = cb.id; lbl.textContent = nome;
+        const div = document.createElement('div');
+        div.append(cb, ' ', lbl);
+        contZ.appendChild(div);
+      });
+    }
+
+    // 5) Submete o itinerário ao backend
+    document.getElementById('btnSalvarItinerario').onclick = async () => {
+      const zoneamentos_ids = Array.from(
+        document.querySelectorAll('#listaZoneamentos input:checked')
+      ).map(cb => parseInt(cb.value));
+      const tipo = document.getElementById('tipoRota').value;
+
+      const resp = await fetch('/api/itinerarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          escolas_ids: escolasSelecionadas,
+          zoneamentos_ids,
+          tipo
+        })
+      }).then(r => r.json());
+
+      if (resp.id) {
+        alert(`Itinerário #${resp.id} criado:\n${resp.descricao}`);
+        location.reload();
+      } else {
+        alert('Erro ao criar itinerário');
+      }
+    };
+
+    // 6) Inicia o mapa sempre que o modal abrir
+    const modal = document.getElementById('modalNovaRota');
+    modal.addEventListener('shown.bs.modal', initMapCreate);
   </script>
 </body>
 
