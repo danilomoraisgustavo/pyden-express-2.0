@@ -2858,6 +2858,189 @@ app.get('/api/itinerarios', async (req, res) => {
   }
 });
 
+// PUT /api/itinerarios/:id — atualiza um itinerário existente
+app.put('/api/itinerarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { escolas_ids, zoneamentos_ids } = req.body;
+
+    // Validação básica
+    if (
+      !Array.isArray(escolas_ids) ||
+      !Array.isArray(zoneamentos_ids)
+    ) {
+      return res.status(400).json({ error: 'Dados inválidos.' });
+    }
+
+    // 1) Reúne os pontos de parada ativos via tabela de junção
+    const pts = await pool.query(
+      `SELECT p.id
+         FROM pontos p
+         JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+        WHERE pz.zoneamento_id = ANY($1)
+          AND p.status = 'ativo'`,
+      [zoneamentos_ids]
+    );
+    const pontos_ids = pts.rows.map(r => r.id);  // :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
+
+    // 2) Reconstrói descrição: "Esc A, Esc B - Zona X, Zona Y"
+    const esc = await pool.query(
+      'SELECT nome FROM escolas WHERE id = ANY($1)',
+      [escolas_ids]
+    );
+    const zn = await pool.query(
+      'SELECT nome FROM zoneamentos WHERE id = ANY($1)',
+      [zoneamentos_ids]
+    );
+    const nomesEsc = esc.rows.map(r => r.nome);
+    const nomesZn = zn.rows.map(r => r.nome);
+    const descricao = `${nomesEsc.join(', ')} - ${nomesZn.join(', ')}`;
+
+    // 3) Atualiza no banco
+    const up = await pool.query(
+      `UPDATE itinerarios
+         SET escolas_ids     = $1,
+             zoneamentos_ids = $2,
+             descricao       = $3,
+             pontos_ids      = $4
+       WHERE id = $5
+       RETURNING id, descricao`,
+      [escolas_ids, zoneamentos_ids, descricao, pontos_ids, id]
+    );
+
+    if (up.rowCount === 0) {
+      return res.status(404).json({ error: 'Itinerário não encontrado.' });
+    }
+
+    // 4) Retorna confirmação
+    res.json({ success: true, id: up.rows[0].id, descricao: up.rows[0].descricao });
+  } catch (err) {
+    console.error('Erro ao atualizar itinerário:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+// GET /api/itinerarios/:id/pontos-ativos
+app.get('/api/itinerarios/:id/pontos-ativos', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const q = `
+      SELECT p.id, p.nome_ponto, p.latitude, p.longitude
+        FROM pontos p
+        JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+        JOIN itinerarios i       ON i.id = $1
+       WHERE p.status = 'ativo'
+         AND pz.zoneamento_id = ANY(i.zoneamentos_ids)
+       ORDER BY p.id;
+    `;
+    const { rows } = await pool.query(q, [id]);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar pontos ativos.' });
+  }
+});
+
+// POST /api/itinerarios/:id/linhas/generate
+app.post('/api/itinerarios/:id/linhas/generate', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 1) Busca pontos ativos + alunos associados
+    const pts = await pool.query(`
+      SELECT p.id,
+             json_agg(ap.aluno_id) AS alunos_ids
+        FROM pontos p
+        JOIN pontos_zoneamentos pz ON pz.ponto_id = p.id
+        LEFT JOIN alunos_pontos ap   ON ap.ponto_id = p.id
+       WHERE p.status = 'ativo'
+         AND pz.zoneamento_id = ANY(
+               SELECT unnest(zoneamentos_ids) 
+                 FROM itinerarios WHERE id=$1
+             )
+       GROUP BY p.id
+    `, [id]);
+
+    // 2) Ponto especial: alunos com deficiências (door-to-door)
+    const special = await pool.query(`
+      SELECT a.id AS aluno_id,
+             a.latitude, a.longitude
+        FROM alunos_ativos a
+       WHERE a.deficiencia IS NOT NULL
+         AND a.latitude IS NOT NULL
+         AND a.longitude IS NOT NULL
+         AND a.id IN (
+           SELECT aluno_id FROM alunos_pontos
+         )
+    `);
+
+    // 3) Concatena normal + especial
+    const normalPts = pts.rows.map(r => ({
+      ponto_id: r.id,
+      alunos: r.alunos_ids
+    }));
+    const specialPts = special.rows.map(a => ({
+      ponto_id: null,
+      alunos: [a.aluno_id],
+      lat: +a.latitude, lng: +a.longitude
+    }));
+
+    const allStops = [...normalPts, ...specialPts];
+
+    // 4) Algoritmo de clustering/grupo por capacidade
+    const lines = gerarLinhas(allStops);
+
+    // 5) Persiste em linha_rotas
+    const inserted = [];
+    for (const ln of lines) {
+      const ins = await pool.query(`
+        INSERT INTO linhas_rotas
+          (itinerario_id, nome_linha, descricao, veiculo_tipo, capacidade, geom, alunos_ids, paradas_ids)
+        VALUES ($1,$2,$3,$4,$5,
+                ST_SetSRID(ST_GeomFromGeoJSON($6),4326),
+                $7,$8)
+        RETURNING id, nome_linha, veiculo_tipo, capacidade, alunos_ids, paradas_ids, ST_AsGeoJSON(geom) AS geom
+      `, [
+        id, ln.nome, ln.descricao, ln.veiculo_tipo, ln.capacidade,
+        JSON.stringify({
+          type: "LineString",
+          coordinates: ln.coordinates
+        }),
+        ln.alunos_ids,
+        ln.paradas_ids
+      ]);
+      const row = ins.rows[0];
+      // converte geom
+      row.geom = JSON.parse(row.geom);
+      inserted.push(row);
+    }
+
+    res.json(inserted);
+  } catch (err) {
+    console.error('Erro ao gerar linhas:', err);
+    res.status(500).json({ error: 'Erro interno ao gerar linhas.' });
+  }
+});
+
+// GET /api/itinerarios/:id/linhas
+app.get('/api/itinerarios/:id/linhas', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT id, nome_linha, descricao, veiculo_tipo,
+             capacidade, alunos_ids, paradas_ids,
+             ST_AsGeoJSON(geom) AS geom
+        FROM linhas_rotas
+       WHERE itinerario_id = $1
+       ORDER BY nome_linha
+    `, [req.params.id]);
+    // desserializa geom
+    rows.forEach(r => r.geom = JSON.parse(r.geom));
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Não foi possível listar linhas.' });
+  }
+});
+
 
 // === FROTA ⇄ ROTAS – LISTAR VÍNCULOS ================================
 app.get("/api/frota/:id/rotas", async (req, res) => {
