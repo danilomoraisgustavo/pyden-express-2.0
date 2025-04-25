@@ -963,6 +963,9 @@
     async function loadZoneamentos() {
       zoneamentosData = await fetch('/api/zoneamentos').then(r => r.json());
     }
+    async function loadEscolas() {
+      escolasData = await fetch('/api/escolas').then(r => r.json());
+    }
     async function loadItinerarios() {
       const tbody = document.querySelector('#rotas-table tbody');
       tbody.innerHTML = '';
