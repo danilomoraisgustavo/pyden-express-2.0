@@ -1246,18 +1246,13 @@
       });
     }
 
-    // 5) Submete o itinerário ao backend
-    // 5) Submete o itinerário ao backend (sem "tipo")
+    // 5) Submete o itinerário ao backend (sem window.alert)
     document.getElementById('btnSalvarItinerario').onclick = async () => {
       const zoneamentos_ids = Array.from(
         document.querySelectorAll('#listaZoneamentos input:checked')
       ).map(cb => parseInt(cb.value));
 
-      // monta payload apenas com as colunas existentes
-      const payload = {
-        escolas_ids: escolasSelecionadas,
-        zoneamentos_ids
-      };
+      const payload = { escolas_ids: escolasSelecionadas, zoneamentos_ids };
 
       try {
         const resp = await fetch('/api/itinerarios', {
@@ -1267,16 +1262,34 @@
         }).then(r => r.json());
 
         if (resp.id) {
-          alert(`Itinerário #${resp.id} criado:\n${resp.descricao}`);
-          location.reload();
+          showNotification('success', `Itinerário #${resp.id} criado: ${resp.descricao}`);
+          // fecha o modal e recarrega a lista sem usar alert()
+          $('#modalNovaRota').modal('hide');
+          loadRotas();
         } else {
-          alert('Erro ao criar itinerário');
+          showNotification('danger', 'Erro ao criar itinerário');
         }
       } catch (err) {
         console.error(err);
-        alert('Erro de rede ao criar itinerário');
+        showNotification('danger', 'Erro de rede ao criar itinerário');
       }
     };
+
+    // Função de exclusão usando showNotification
+    function deleteItinerario(id) {
+      if (!confirm("Deseja realmente excluir este itinerário?")) return;
+      fetch(`/api/itinerarios/${id}`, { method: "DELETE" })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            showNotification('success', 'Itinerário excluído com sucesso');
+            loadRotas();
+          } else {
+            showNotification('danger', d.error || 'Erro ao excluir itinerário');
+          }
+        })
+        .catch(() => showNotification('danger', 'Erro interno ao excluir itinerário'));
+    }
 
     // 6) Inicia o mapa sempre que o modal abrir
     const modal = document.getElementById('modalNovaRota');
