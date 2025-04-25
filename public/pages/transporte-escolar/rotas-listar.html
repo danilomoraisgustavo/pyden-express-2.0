@@ -837,33 +837,65 @@
   </div>
 
 
-  <!-- MODAL GERENCIAR LINHAS -->
-  <div class="modal fade" id="modalGerenciarLinhas" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+  <!-- MODAL VIEW ROTA -->
+  <div class="modal fade" id="viewRouteModal" tabindex="-1" aria-labelledby="viewRouteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" style="max-width: 90%;">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Linhas do Itinerário</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title" id="viewRouteModalLabel">Visualizar Rota</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
-          <!-- Info do Itinerário -->
+          <div id="map-modal-view"></div>
+          <hr />
+
           <div class="mb-3">
-            <strong>Itinerário #<span id="glItinerarioId"></span>:</strong>
-            <span id="glDescricao"></span>
+            <h6>Atendimento por turno:</h6>
+            <div class="row text-center">
+              <div class="col"><strong>Manhã:</strong> <span id="contador-manha">0</span></div>
+              <div class="col"><strong>Tarde:</strong> <span id="contador-tarde">0</span></div>
+              <div class="col"><strong>Noite:</strong> <span id="contador-noite">0</span></div>
+              <div class="col"><strong>Integral:</strong> <span id="contador-integral">0</span></div>
+            </div>
           </div>
 
-          <!-- Mapa com todos os pontos (e, depois, linhas desenhadas) -->
-          <div id="map-modal-linhas" style="height:400px;width:100%;"></div>
+          <div class="table-responsive mb-3" style="max-height: 300px; overflow-y: auto;">
+            <table class="table table-striped table-bordered" id="tabela-alunos-rota">
+              <!-- Atualize o <thead> da tabela de alunos para incluir Turno -->
+              <thead>
+                <tr>
+                  <th>Nome do Aluno</th>
+                  <th>Escola</th>
+                  <th>Lat Aluno</th>
+                  <th>Lng Aluno</th>
+                  <th>ID Ponto</th>
+                  <th>Lat Ponto</th>
+                  <th>Lng Ponto</th>
+                  <th>Turno</th>
+                </tr>
+              </thead>
 
-          <!-- Botão para gerar linhas automaticamente -->
-          <div class="text-end my-3">
-            <button id="btnGerarLinhas" class="btn btn-primary">
-              Gerar Linhas Automáticas
+              <tbody>
+                <!-- Será preenchido dinamicamente via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <div class="dropdown-download me-auto">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Exportar Rota
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" id="downloadKml">Baixar em KML</a></li>
+                <li><a class="dropdown-item" href="#" id="downloadKmz">Baixar em KMZ</a></li>
+                <li><a class="dropdown-item" href="#" id="downloadGpx">Baixar em GPX</a></li>
+              </ul>
+            </div>
+            <button class="btn btn-primary ms-2" id="btnDownloadCsvAlunos">
+              Baixar CSV Alunos
             </button>
           </div>
-
-          <!-- Lista de Linhas Criadas -->
-          <div id="glListaLinhas"></div>
         </div>
       </div>
     </div>
@@ -1250,8 +1282,6 @@
     // 6) Inicia o mapa sempre que o modal abrir
     const modal = document.getElementById('modalNovaRota');
     modal.addEventListener('shown.bs.modal', initMapCreate);
-
-
   </script>
 </body>
 
