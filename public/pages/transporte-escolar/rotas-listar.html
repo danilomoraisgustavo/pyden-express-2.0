@@ -964,8 +964,8 @@
       zoneamentosData = await fetch('/api/zoneamentos').then(r => r.json());
     }
     async function loadItinerarios() {
-      const tb = document.querySelector('#rotas-table tbody');
-      tb.innerHTML = '';
+      const tbody = document.querySelector('#rotas-table tbody');
+      tbody.innerHTML = '';
       const data = await fetch('/api/itinerarios').then(r => r.json());
       data.forEach(it => {
         const esc = it.escolas_ids.map(id => {
@@ -976,38 +976,36 @@
           const z = zoneamentosData.find(x => x.id === id);
           return z ? z.nome : id;
         }).join(', ');
-        const row = document.createElement('tr');
-        row.innerHTML = `
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
           <td>${it.id}</td>
           <td>${it.descricao}</td>
           <td>${it.tipo}</td>
-          <td>${esc}</td>
           <td>${zn}</td>
-          <td>
-            <button class="btn btn-link btn-danger btn-excluir" data-id="${it.id}">
-              <i class="fa fa-trash"></i>
-            </button>
-          </td>`;
-        tb.appendChild(row);
+          <td>${esc}</td>
+          <td></td>
+          <td><button class="btn btn-link btn-danger btn-excluir" data-id="${it.id}"><i class="fa fa-trash"></i></button></td>`;
+        tbody.appendChild(tr);
       });
       if (rotasTable) rotasTable.destroy();
       rotasTable = $('#rotas-table').DataTable({
         pageLength: 10,
         language: {
-          decimal: ",", thousands: ".", info: "Mostrando _START_ até _END_ de _TOTAL_",
-          lengthMenu: "Mostrar _MENU_", search: "Pesquisar:", paginate: {
-            first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior"
-          },
-          zeroRecords: "Nenhum registro", emptyTable: "Nenhuma rota"
+          decimal: ",",
+          thousands: ".",
+          info: "Mostrando _START_ até _END_ de _TOTAL_",
+          lengthMenu: "Mostrar _MENU_",
+          search: "Pesquisar:",
+          paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
+          zeroRecords: "Nenhum registro",
+          emptyTable: "Nenhuma rota"
         }
       });
       document.querySelectorAll('.btn-excluir').forEach(btn => {
         btn.addEventListener('click', async () => {
           if (!confirm('Excluir este itinerário?')) return;
-          const id = btn.dataset.id;
-          const res = await fetch(`/api/itinerarios/${id}`, { method: 'DELETE' }).then(r => r.json());
-          if (res.success) loadItinerarios();
-          else alert('Erro ao excluir');
+          await fetch(`/api/itinerarios/${btn.dataset.id}`, { method: 'DELETE' });
+          loadItinerarios();
         });
       });
     }
