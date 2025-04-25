@@ -805,80 +805,37 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="modalEditarRotaLabel">Editar Rota</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+          <!-- 1) Mapa para selecionar escolas -->
           <div class="mb-3">
-            <button id="editStartMarkerBtn" class="btn btn-primary mb-2">
-              Redefinir Ponto de Partida/Chegada
-            </button>
-            <div id="map-modal-edit"></div>
+            <label class="form-label">Mapa de Escolas</label>
+            <div id="map-modal-edit" style="height:400px;width:100%;"></div>
           </div>
-          <hr />
-          <form id="formEditarRota">
-            <input type="hidden" id="editRotaId" />
 
-            <div class="row">
-              <div class="col-md-3 mb-3">
-                <label for="editIdentificador" class="form-label">Identificador</label>
-                <input type="text" class="form-control" id="editIdentificador" required />
-              </div>
-              <div class="col-md-9 mb-3">
-                <label for="editDescricao" class="form-label">Descrição da Rota</label>
-                <input type="text" class="form-control" id="editDescricao" required />
-              </div>
+          <!-- 2) Lista de escolas selecionadas -->
+          <div class="mb-3">
+            <label class="form-label">Escolas Selecionadas</label>
+            <div id="editListaEscolasSelecionadas" style="min-height:50px;border:1px solid #ccc;padding:8px;"></div>
+          </div>
+
+          <!-- 3) Zoneamentos associados -->
+          <div class="mb-3">
+            <label class="form-label">Zoneamentos</label>
+            <div id="editListaZoneamentos" style="min-height:100px;border:1px solid #ccc;padding:8px;overflow-y:auto;">
             </div>
-            <div class="mb-3">
-              <label for="editAreaZona" class="form-label">É zona rural ou urbana?</label>
-              <select class="form-control" id="editAreaZona" required>
-                <option value="URBANA">Urbana</option>
-                <option value="RURAL">Rural</option>
-              </select>
-            </div>
+          </div>
 
-            <div class="mb-3">
-              <label for="editFornecedoresBuscar" class="form-label">Pesquisar Fornecedores</label>
-              <input type="text" class="form-control" id="editFornecedoresBuscar"
-                placeholder="Digite para filtrar fornecedores..." />
-              <div id="editListaFornecedores" style="
-                    max-height: 200px;
-                    overflow-y: auto;
-                    border: 1px solid #ccc;
-                    margin-top: 10px;
-                    padding: 5px;
-                  "></div>
-            </div>
-
-            <input type="hidden" id="editPartidaLat" />
-            <input type="hidden" id="editPartidaLng" />
-            <input type="hidden" id="editPontosParadaSelecionados" />
-            <input type="hidden" id="editEscolasSelecionadas" />
-            <input type="hidden" id="editFornecedoresSelecionados" />
-
-            <div class="mt-3">
-              <strong>Legenda:</strong>
-              <div class="legend-marker">
-                <img src="https://maps.google.com/mapfiles/ms/icons/green-dot.png" alt="Partida/Chegada" />
-                Ponto de Partida/Chegada
-              </div>
-              <div class="legend-marker">
-                <img src="https://maps.google.com/mapfiles/kml/pal3/icon56.png" alt="Escola" />
-                Escola (clique para adicionar/remover)
-              </div>
-              <div class="legend-marker">
-                <img src="https://maps.google.com/mapfiles/kml/pal2/icon13.png" alt="Ponto de Parada" />
-                Ponto de Parada (clique para adicionar/remover)
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-success mt-4">
-              Salvar Alterações
-            </button>
-          </form>
+          <!-- 4) Botão de salvar -->
+          <div class="text-end">
+            <button id="btnSalvarEdicao" class="btn btn-success">Salvar Alterações</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
 
   <!-- MODAL VIEW ROTA -->
   <div class="modal fade" id="viewRouteModal" tabindex="-1" aria-labelledby="viewRouteModalLabel" aria-hidden="true">
@@ -962,11 +919,12 @@
     const iconPontoUrl = "../../assets/img/bus-stop.png"
     const iconAlunoUrl = "../../assets/img/alunos.png"
     let mapEdit, modalMapView
+    let editEscolasData = [], editEscolasMarkers = {}, editEscolasSelecionadas = [];
     let startMarker = null, editStartMarker = null
     let escolaMarkers = [], pontoMarkers = [], editEscolaMarkers = [], editPontoMarkers = [], alunoMarkers = []
     let pontosData = [], fornecedoresData = []
     let isPlacingStart = false, zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = []
-    let isPlacingEditStart = false, editEscolasSelecionadas = [], editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = []
+    let isPlacingEditStart = false, editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = []
     let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", directionsService = null, directionsRenderer = null, alunosRouteData = []
     let currentRouteDistanceKm = 0
     function showNotification(t, m) { const i = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" }; $.notify({ icon: i[t] || "fa fa-bell", message: m }, { type: t, placement: { from: "top", align: "right" }, offset: 20, spacing: 10, z_index: 1031, delay: 3000, timer: 1000, animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" } }) }
@@ -1054,104 +1012,144 @@
     document.getElementById("downloadGpx").addEventListener("click", e => { e.preventDefault(); if (currentRotaId) downloadRota(currentRotaId, "gpx") })
     document.getElementById("btnDownloadCsvAlunos").addEventListener("click", () => { if (!alunosRouteData.length) { showNotification("warning", "Nenhum aluno para exportar"); return } const h = ["Nome do Aluno", "Escola", "Lat Aluno", "Lng Aluno", "ID Ponto", "Lat Ponto", "Lng Ponto", "Turno"], rows = [h.join(",")]; alunosRouteData.forEach(a => { rows.push([`"${a.nome.replace(/"/g, '""')}"`, `"${a.escola_nome.replace(/"/g, '""')}"`, a.latitude, a.longitude, a.ponto_id, a.ponto_latitude, a.ponto_longitude, `"${a.turno.replace(/"/g, '""')}"`].join(",")) }); const blob = new Blob([rows.join("\r\n")], { type: "text/csv" }), url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `alunos_rota_${currentRotaId}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url) })
 
+    // Variáveis de edição
+    let mapEdit;
+    let editEscolasData = [], editEscolasMarkers = {}, editEscolasSelecionadas = [];
+
+    // Abre o modal de edição, recebe o objeto roteiro serializado
     function openEditModal(enc) {
-      const rd = JSON.parse(decodeURIComponent(enc)); $("#modalEditarRota").modal("show")
-      setTimeout(() => {
+      const it = JSON.parse(decodeURIComponent(enc));
+      $('#modalEditarRota').modal('show');
+
+      setTimeout(async () => {
+        // 1) Inicializa mapa (se ainda não)
         if (!mapEdit) {
-          mapEdit = new google.maps.Map(document.getElementById("map-modal-edit"), { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13, mapTypeId: "roadmap" })
-          mapEdit.addListener("click", e => {
-            if (isPlacingEditStart) {
-              const lat = e.latLng.lat(), lng = e.latLng.lng()
-              if (editStartMarker) editStartMarker.setMap(null)
-              editStartMarker = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" })
-              $("#editPartidaLat").val(lat); $("#editPartidaLng").val(lng)
-              showNotification("success", "Novo ponto de Partida/Chegada definido!"); isPlacingEditStart = false
-            }
-          })
+          mapEdit = new google.maps.Map(
+            document.getElementById('map-modal-edit'),
+            { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13 }
+          );
         }
-        $("#editRotaId").val(rd.id || ""); $("#editIdentificador").val(rd.identificador || ""); $("#editDescricao").val(rd.descricao || ""); $("#editAreaZona").val(rd.area_zona || "URBANA")
-        editEscolasSelecionadas = []; editPontosParadaSelecionados = []; editFornecedoresSelecionados = []
-        editEscolaMarkers.forEach(m => m.setMap(null)); editPontoMarkers.forEach(m => m.setMap(null)); editEscolaMarkers = []; editPontoMarkers = []
-        fetch(`/api/rotas_simples/${rd.id}`).then(r => r.json()).then(d => {
-          $("#editPartidaLat").val(d.partidaLat || ""); $("#editPartidaLng").val(d.partidaLng || ""); if (editStartMarker) editStartMarker.setMap(null)
-          if (d.partidaLat && d.partidaLng) {
-            const lat = parseFloat(d.partidaLat), lng = parseFloat(d.partidaLng)
-            editStartMarker = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" })
-            mapEdit.setCenter({ lat, lng }); mapEdit.setZoom(13)
-          }
-          ; (d.escolas || []).forEach(e => editEscolasSelecionadas.push(e.id))
-            ; (d.pontosParada || []).forEach(p => editPontosParadaSelecionados.push(p.id))
-            ; (d.fornecedores || []).forEach(f => editFornecedoresSelecionados.push(f.id))
-          Promise.all([fetch("/api/escolas").then(r => r.json()), fetch("/api/pontos").then(r => r.json()), fetch("/api/fornecedores").then(r => r.json())])
-            .then(([esc, pts, forn]) => { editRotasEscolasData = esc; editRotasPontosData = pts; fornecedoresData = forn; placeEditEscolas(); initEditFornecedoresList() })
-            .catch(() => showNotification("danger", "Erro ao recarregar dados para edição."))
-        }).catch(() => showNotification("danger", "Erro ao carregar detalhes para edição."))
-      }, 400)
+        // 2) Carrega todas as escolas (com seus zoneamentos)
+        editEscolasData = await fetch('/api/escolas').then(r => r.json());
+
+        // 3) Limpa seleções anteriores
+        editEscolasSelecionadas = [...it.escolas_ids];
+        Object.values(editEscolasMarkers).forEach(m => m.setMap(null));
+        editEscolasMarkers = {};
+
+        // 4) Posiciona marcadores e set listener
+        editEscolasData.forEach(e => {
+          const mk = new google.maps.Marker({
+            position: { lat: +e.latitude, lng: +e.longitude },
+            map: mapEdit,
+            icon: editEscolasSelecionadas.includes(e.id)
+              ? selectedIconUrl
+              : defaultIconUrl
+          });
+          mk.addListener('click', () => {
+            // toggle seleção
+            const idx = editEscolasSelecionadas.indexOf(e.id);
+            if (idx === -1) {
+              editEscolasSelecionadas.push(e.id);
+              mk.setIcon(selectedIconUrl);
+              showNotification('info', `Escola "${e.nome}" selecionada`);
+            } else {
+              editEscolasSelecionadas.splice(idx, 1);
+              mk.setIcon(defaultIconUrl);
+              showNotification('warning', `Escola "${e.nome}" removida`);
+            }
+            renderEditEscolasSelecionadas();
+            renderEditZoneamentos();
+          });
+          editEscolasMarkers[e.id] = mk;
+        });
+
+        // 5) Renderiza listas iniciais
+        renderEditEscolasSelecionadas();
+        renderEditZoneamentos();
+
+      }, 300);
     }
 
-    function initEditFornecedoresList() {
-      const lista = document.getElementById("editListaFornecedores"); lista.innerHTML = ""
-      fornecedoresData.forEach(f => {
-        const ck = editFornecedoresSelecionados.includes(f.id) ? " checked" : ""
-        const div = document.createElement("div"); div.style.padding = "5px"; div.style.cursor = "pointer"
-        div.innerHTML = `<input type="checkbox" data-id="${f.id}" style="margin-right:5px" ${ck}><span>${f.nome_fornecedor} (${f.cnpj})</span>`
-        div.querySelector("input").addEventListener("change", function () {
-          const fid = parseInt(this.getAttribute("data-id"), 10)
-          if (this.checked) { if (!editFornecedoresSelecionados.includes(fid)) editFornecedoresSelecionados.push(fid) }
-          else editFornecedoresSelecionados = editFornecedoresSelecionados.filter(x => x !== fid)
-        })
-        lista.appendChild(div)
-      })
-      document.getElementById("editFornecedoresBuscar").addEventListener("keyup", function () {
-        const s = this.value.toLowerCase()
-        lista.querySelectorAll("div").forEach(c => { c.style.display = c.innerText.toLowerCase().includes(s) ? "block" : "none" })
-      })
+    // Renderiza botões das escolas selecionadas
+    function renderEditEscolasSelecionadas() {
+      const cont = document.getElementById('editListaEscolasSelecionadas');
+      cont.innerHTML = '';
+      editEscolasSelecionadas.forEach(id => {
+        const esc = editEscolasData.find(e => e.id === id);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-sm btn-outline-primary me-1 mb-1';
+        btn.textContent = esc.nome;
+        btn.onclick = () => {
+          // simula clique no mapa
+          editEscolasMarkers[id].dispatchEvent(new google.maps.event.addDomListener(
+            window, 'click', () => { }
+          ));
+          toggle; // realmente usa o listener acima
+        };
+        cont.appendChild(btn);
+      });
     }
 
-    function placeEditEscolas() {
-      editRotasEscolasData.forEach(es => {
-        if (!es.latitude || !es.longitude) return
-        const lat = parseFloat(es.latitude), lng = parseFloat(es.longitude)
-        if (isNaN(lat) || isNaN(lng)) return
-        const mk = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconEscolaUrl, scaledSize: new google.maps.Size(24, 24) }, title: es.nome })
-        editEscolaMarkers.push(mk)
-        mk.addListener("click", () => {
-          if (!editEscolasSelecionadas.includes(es.id)) { editEscolasSelecionadas.push(es.id); showNotification("info", `Escola "${es.nome}" selecionada!`) }
-          else { editEscolasSelecionadas = editEscolasSelecionadas.filter(id => id !== es.id); showNotification("warning", `Escola "${es.nome}" removida da seleção!`) }
-          reloadEditPontos()
-        })
-      })
-      reloadEditPontos()
+    // Monta e renderiza checkboxes de zoneamentos
+    function renderEditZoneamentos() {
+      const zonas = {};
+      editEscolasSelecionadas.forEach(id => {
+        const esc = editEscolasData.find(e => e.id === id);
+        esc.zoneamentos.forEach(z => zonas[z.id] = z.nome);
+      });
+      const cont = document.getElementById('editListaZoneamentos');
+      cont.innerHTML = '';
+      Object.entries(zonas).forEach(([id, nome]) => {
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = id; cb.id = 'edit_zon_' + id;
+        const lbl = document.createElement('label');
+        lbl.htmlFor = cb.id; lbl.textContent = nome;
+        const div = document.createElement('div');
+        div.append(cb, ' ', lbl);
+        cont.appendChild(div);
+      });
     }
 
-    function reloadEditPontos() {
-      editPontoMarkers.forEach(m => m.setMap(null)); editPontoMarkers = []
-      const zoneSet = new Set()
-      editEscolasSelecionadas.forEach(eid => {
-        const esc = editRotasEscolasData.find(x => x.id === eid)
-        esc.zoneamentos.forEach(z => zoneSet.add(z.id))
-      })
-      editRotasPontosData.forEach(p => {
-        if (!p.zoneamentos.some(z => zoneSet.has(z.id))) return
-        const lat = parseFloat(p.latitude), lng = parseFloat(p.longitude)
-        if (isNaN(lat) || isNaN(lng)) return
-        const mk = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconPontoUrl, scaledSize: new google.maps.Size(24, 24) }, title: p.nome_ponto })
-        editPontoMarkers.push(mk)
-        mk.addListener("click", () => {
-          if (!editPontosParadaSelecionados.includes(p.id)) { editPontosParadaSelecionados.push(p.id); showNotification("info", `Ponto "${p.nome_ponto}" adicionado à rota!`) }
-          else { editPontosParadaSelecionados = editPontosParadaSelecionados.filter(id => id !== p.id); showNotification("warning", `Ponto "${p.nome_ponto}" removido da rota!`) }
-        })
-      })
-    }
+    // Salva edição via PUT /api/itinerarios/:id
+    document.getElementById('btnSalvarEdicao').onclick = async () => {
+      const zoneamentos_ids = Array.from(
+        document.querySelectorAll('#editListaZoneamentos input:checked')
+      ).map(cb => parseInt(cb.value));
+      const payload = {
+        escolas_ids: editEscolasSelecionadas,
+        zoneamentos_ids
+      };
+      const id = JSON.parse(decodeURIComponent(openEditModal.arguments[0])).id;
 
-    $("#formEditarRota").on("submit", function (e) {
-      e.preventDefault()
-      const id = $("#editRotaId").val().trim(), ident = $("#editIdentificador").val().trim(), desc = $("#editDescricao").val().trim(), lat = $("#editPartidaLat").val().trim(), lng = $("#editPartidaLng").val().trim(), zona = $("#editAreaZona").val().trim()
-      if (!id || !ident || !desc || !lat || !lng || !zona) { showNotification("warning", "Preencha todos os campos e defina o ponto de partida!"); return }
-      const body = { identificador: ident, descricao: desc, partidaLat: parseFloat(lat), partidaLng: parseFloat(lng), chegadaLat: parseFloat(lat), chegadaLng: parseFloat(lng), pontosParada: editPontosParadaSelecionados, escolas: editEscolasSelecionadas, fornecedores: editFornecedoresSelecionados, areaZona: zona }
-      fetch(`/api/rotas-simples/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then(r => r.json()).then(d => { if (d.success) { showNotification("success", "Rota atualizada com sucesso!"); $("#modalEditarRota").modal("hide"); loadRotas() } else showNotification("danger", "Erro ao atualizar rota: " + d.message) })
-        .catch(() => showNotification("danger", "Erro interno ao atualizar rota."))
+      try {
+        const resp = await fetch(`/api/itinerarios/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        if (resp.success) {
+          showNotification('success', 'Itinerário atualizado com sucesso');
+          $('#modalEditarRota').modal('hide');
+          loadRotas();
+        } else {
+          showNotification('danger', resp.error || 'Erro ao atualizar itinerário');
+        }
+      } catch (err) {
+        console.error(err);
+        showNotification('danger', 'Erro de rede ao atualizar itinerário');
+      }
+    };
+
+    e.preventDefault()
+    const id = $("#editRotaId").val().trim(), ident = $("#editIdentificador").val().trim(), desc = $("#editDescricao").val().trim(), lat = $("#editPartidaLat").val().trim(), lng = $("#editPartidaLng").val().trim(), zona = $("#editAreaZona").val().trim()
+    if (!id || !ident || !desc || !lat || !lng || !zona) { showNotification("warning", "Preencha todos os campos e defina o ponto de partida!"); return }
+    const body = { identificador: ident, descricao: desc, partidaLat: parseFloat(lat), partidaLng: parseFloat(lng), chegadaLat: parseFloat(lat), chegadaLng: parseFloat(lng), pontosParada: editPontosParadaSelecionados, escolas: editEscolasSelecionadas, fornecedores: editFornecedoresSelecionados, areaZona: zona }
+    fetch(`/api/rotas-simples/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(r => r.json()).then(d => { if (d.success) { showNotification("success", "Rota atualizada com sucesso!"); $("#modalEditarRota").modal("hide"); loadRotas() } else showNotification("danger", "Erro ao atualizar rota: " + d.message) })
+      .catch(() => showNotification("danger", "Erro interno ao atualizar rota."))
     })
   </script>
   <script>
