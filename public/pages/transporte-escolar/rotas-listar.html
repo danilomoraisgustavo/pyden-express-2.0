@@ -960,6 +960,157 @@
   <script src="../../assets/js/usuario.js"></script>
 
   <script>
+    const iconStartEndUrl = "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+    const iconEscolaUrl = "../../assets/img/escola.png"
+    const iconPontoUrl = "../../assets/img/bus-stop.png"
+    const iconAlunoUrl = "../../assets/img/alunos.png"
+    let mapCreate, mapEdit, modalMapView
+    let startMarker = null, editStartMarker = null
+    let escolaMarkers = [], pontoMarkers = [], editEscolaMarkers = [], editPontoMarkers = [], alunoMarkers = []
+    let escolasData = [], pontosData = [], fornecedoresData = []
+    let isPlacingStart = false, escolasSelecionadas = [], zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = []
+    let isPlacingEditStart = false, editEscolasSelecionadas = [], editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = []
+    let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", directionsService = null, directionsRenderer = null, alunosRouteData = []
+    let currentRouteDistanceKm = 0
+    function showNotification(t, m) { const i = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" }; $.notify({ icon: i[t] || "fa fa-bell", message: m }, { type: t, placement: { from: "top", align: "right" }, offset: 20, spacing: 10, z_index: 1031, delay: 3000, timer: 1000, animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" } }) }
+    function loadEscolasPontosForn() { Promise.all([fetch("/api/escolas").then(r => r.json()), fetch("/api/pontos").then(r => r.json()), fetch("/api/fornecedores").then(r => r.json())]).then(([e, p, f]) => { escolasData = e; pontosData = p; fornecedoresData = f; placeEscolasCreate(); initFornecedoresList() }).catch(() => showNotification("danger", "Erro ao carregar dados.")) }
+    function initMapCreate() { mapCreate = new google.maps.Map(document.getElementById("map-modal-create"), { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13, mapTypeId: "roadmap" }); loadEscolasPontosForn(); mapCreate.addListener("click", e => { if (!isPlacingStart) return; const lat = e.latLng.lat(), lng = e.latLng.lng(); if (startMarker) startMarker.setMap(null); startMarker = new google.maps.Marker({ position: { lat, lng }, map: mapCreate, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" }); $("#partidaLat").val(lat); $("#partidaLng").val(lng); showNotification("success", "Ponto definido."); isPlacingStart = false }) }
+    function placeEscolasCreate() { escolaMarkers.forEach(m => m.setMap(null)); escolaMarkers = []; escolasData.forEach(es => { if (!es.latitude || !es.longitude) return; const mk = new google.maps.Marker({ position: { lat: +es.latitude, lng: +es.longitude }, map: mapCreate, icon: { url: iconEscolaUrl, scaledSize: new google.maps.Size(24, 24) }, title: es.nome }); mk.addListener("click", () => { const idx = escolasSelecionadas.indexOf(es.id); if (idx === -1) { escolasSelecionadas.push(es.id); showNotification("info", `Escola "${es.nome}" selecionada`) } else { escolasSelecionadas.splice(idx, 1); showNotification("warning", `Escola "${es.nome}" removida`) } buildZoneamentosList() }); escolaMarkers.push(mk) }) }
+    function buildZoneamentosList() { const l = $("#listaZoneamentos").empty(); zoneamentosSelecionados = []; pontosParadaSelecionados = []; reloadPontos(); const m = new Map(); escolasSelecionadas.forEach(eid => { const es = escolasData.find(x => x.id === eid); es.zoneamentos.forEach(z => m.set(z.id, z.nome)) }); m.forEach((nome, id) => { const d = $(`<div style="padding:5px;cursor:pointer"><input type="checkbox" data-id='${id}' style="margin-right:5px"><span>${nome}</span></div>`)[0]; d.querySelector("input").addEventListener("change", function () { const zid = parseInt(this.getAttribute("data-id"), 10); if (this.checked) { zoneamentosSelecionados.push(zid); addPointsFromZoneamento(zid) } else { zoneamentosSelecionados = zoneamentosSelecionados.filter(x => x !== zid); removePointsFromZoneamento(zid) } }); l.append(d) }); $("#zoneamentosBuscar").off("keyup").on("keyup", function () { const s = this.value.toLowerCase(); $("#listaZoneamentos>div").each(function () { this.style.display = this.innerText.toLowerCase().includes(s) ? "block" : "none" }) }) }
+    function addPointsFromZoneamento(zid) { pontosData.forEach(p => { if (p.status === "ativo" && p.zoneamentos.some(z => z.id === zid) && !pontosParadaSelecionados.includes(p.id)) pontosParadaSelecionados.push(p.id) }); reloadPontos() }
+    function removePointsFromZoneamento(zid) { pontosParadaSelecionados = pontosParadaSelecionados.filter(pid => { const p = pontosData.find(x => x.id === pid); return !p.zoneamentos.some(z => z.id === zid) }); reloadPontos() }
+    function reloadPontos() { pontoMarkers.forEach(m => m.setMap(null)); pontoMarkers = []; pontosParadaSelecionados.forEach(pid => { const p = pontosData.find(x => x.id === pid); if (!p || !p.latitude || !p.longitude) return; const mk = new google.maps.Marker({ position: { lat: +p.latitude, lng: +p.longitude }, map: mapCreate, icon: { url: iconPontoUrl, scaledSize: new google.maps.Size(24, 24) }, title: p.nome_ponto }); pontoMarkers.push(mk) }) }
+    function initFornecedoresList() { const l = $("#listaFornecedores").empty(); fornecedoresSelecionados = []; fornecedoresData.forEach(f => { const d = $(`<div style="padding:5px;cursor:pointer"><input type="checkbox" data-id='${f.id}' style="margin-right:5px"><span>${f.nome_fornecedor} (${f.cnpj})</span></div>`)[0]; d.querySelector("input").addEventListener("change", function () { const fid = parseInt(this.getAttribute("data-id"), 10); if (this.checked) { if (!fornecedoresSelecionados.includes(fid)) fornecedoresSelecionados.push(fid) } else fornecedoresSelecionados = fornecedoresSelecionados.filter(x => x !== fid) }); l.append(d) }); $("#fornecedoresBuscar").off("keyup").on("keyup", function () { const s = this.value.toLowerCase(); $("#listaFornecedores>div").each(function () { this.style.display = this.innerText.toLowerCase().includes(s) ? "block" : "none" }) }) }
+    $("#modalNovaRota").on("shown.bs.modal", () => { if (!mapCreate) initMapCreate() })
+    $("#startMarkerBtn").click(() => { isPlacingStart = true; showNotification("info", "Clique no mapa para definir o ponto.") })
+    $("#formDadosRota").on("submit", function (e) { e.preventDefault(); const id = $("#identificador").val().trim(), des = $("#descricao").val().trim(), lat = $("#partidaLat").val().trim(), lng = $("#partidaLng").val().trim(), zona = $("#area_zona").val().trim(); if (!id || !des || !lat || !lng || !zona || !escolasSelecionadas.length || !zoneamentosSelecionados.length || !pontosParadaSelecionados.length) { showNotification("warning", "Preencha campos obrigatórios."); return } const body = { identificador: id, descricao: des, partidaLat: +lat, partidaLng: +lng, chegadaLat: +lat, chegadaLng: +lng, escolas: escolasSelecionadas, zoneamentos: zoneamentosSelecionados, pontosParada: pontosParadaSelecionados, fornecedores: fornecedoresSelecionados, areaZona: zona }; fetch("/api/rotas/cadastrar-simples", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).then(d => { if (d.success) { showNotification("success", "Rota cadastrada."); $("#modalNovaRota").modal("hide"); loadRotas() } else showNotification("danger", d.message || "Erro") }).catch(() => showNotification("danger", "Erro ao cadastrar.")) })
+    function loadRotas() { fetch("/api/rotas-simples-detalhes").then(r => r.json()).then(rotas => { const tb = $("#rotas-table tbody").empty(); rotas.forEach(rt => { const zn = (rt.zoneamentos || []).map(z => z.nome).join(", "), es = (rt.escolas || []).map(e => e.nome).join(", "), fn = rt.fornecedores && rt.fornecedores.length ? rt.fornecedores.map(f => f.nome_fornecedor).join(", ") : "", row = encodeURIComponent(JSON.stringify(rt)); tb.append(`<tr><td>${rt.identificador}</td><td>${rt.descricao || ""}</td><td>${rt.area_zona || ""}</td><td>${zn}</td><td>${es}</td><td>${fn}</td><td><button class="btn btn-link btn-info btn-alunos" data-id="${rt.id}"><i class="fa fa-users"></i></button><button class="btn btn-link btn-primary" onclick="openRouteModal('${row}')"><i class="fa fa-eye"></i></button><button class="btn btn-link btn-danger" onclick="deleteRota(${rt.id})"><i class="fa fa-trash"></i></button></td></tr>`) }); if (rotasTable) rotasTable.destroy(); rotasTable = $("#rotas-table").DataTable({ pageLength: 10, language: { decimal: ",", thousands: ".", info: "Mostrando _START_ até _END_ de _TOTAL_", infoEmpty: "Mostrando 0 até 0 de 0", infoFiltered: "(filtrado de _MAX_ no total)", lengthMenu: "Mostrar _MENU_", loadingRecords: "Carregando...", processing: "Processando...", search: "Pesquisar:", zeroRecords: "Nenhum registro", paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" }, emptyTable: "Nenhuma rota" } }) }).catch(() => showNotification("danger", "Erro ao carregar rotas.")) }
+    loadRotas()
+    function deleteRota(id) { if (!confirm("Excluir esta rota?")) return; fetch("/api/rotas-simples/" + id, { method: "DELETE" }).then(r => r.json()).then(d => { if (d.success) { showNotification("success", "Rota excluída"); loadRotas() } else showNotification("danger", d.message || "Erro") }).catch(() => showNotification("danger", "Erro interno.")) }
+    function turnoNormalizado(s) { const l = (s || "").toLowerCase(); if (l.includes("vesp") || l.includes("tarde")) return "tarde"; if (l.includes("mat") || l.includes("manh")) return "manha"; if (l.includes("not") || l.includes("noit")) return "noite"; if (l.includes("int") || l.includes("integral")) return "integral"; return "" }
+    function vehicleSuggestionSmart(qtd, zona) { const fleet = [{ name: "Ônibus 50", cap: 50, emp: "Locan" }, { name: "Ônibus 42", cap: 42, emp: "SEMED" }, { name: "Microônibus 33", cap: 33, emp: "Talismã" }, { name: "Van 15", cap: 15, emp: "Talismã" }]; const res = []; let remain = qtd; if (zona === "RURAL") { while (remain > 0) { if (remain <= 15) { res.push({ v: "Van 15", emp: "Talismã", q: 1 }); remain = 0 } else if (remain <= 33) { res.push({ v: "Microônibus 33", emp: "Talismã", q: 1 }); remain = 0 } else if (remain <= 50) { const chooseMicro = Math.ceil(remain / 33); const seatsMicro = chooseMicro * 33; const wasteMicro = seatsMicro - remain; const wasteBus = 50 - remain; if (chooseMicro <= 2 && wasteMicro < wasteBus) { res.push({ v: "Microônibus 33", emp: "Talismã", q: chooseMicro }); remain = 0 } else { res.push({ v: "Ônibus 50", emp: "Locan", q: 1 }); remain = 0 } } else { res.push({ v: "Microônibus 33", emp: "Talismã", q: 1 }); remain -= 33 } } } else { fleet.forEach(f => { if (remain <= 0) return; const need = Math.ceil(remain / f.cap); res.push({ v: f.name, emp: f.emp, q: need }); remain = 0 }) } return res }
+    function renderVehicleSuggestions(counts) { let div = document.getElementById("sugestoes-veiculos"); if (!div) { div = document.createElement("div"); div.id = "sugestoes-veiculos"; div.className = "mt-3"; document.querySelector("#viewRouteModal .modal-body").appendChild(div) } let html = "<h6>Sugestão de Frota:</h6>"; Object.keys(counts).forEach(t => { const q = counts[t]; if (q > 0) { const list = vehicleSuggestionSmart(q, currentAreaZona); html += `<div><strong>${t.charAt(0).toUpperCase() + t.slice(1)} (${q} alunos):</strong> `; list.forEach(l => { html += `${l.q} x ${l.v} - ${l.emp}; ` }); html += "</div>" } }); html += `<div><strong>Distância estimada:</strong> ${currentRouteDistanceKm.toFixed(1)} km</div>`; div.innerHTML = html }
+    function populateAlunos(alunos) { alunosRouteData = alunos; alunoMarkers.forEach(m => m.setMap(null)); alunoMarkers = []; const c = { manha: 0, tarde: 0, noite: 0, integral: 0 }; alunos.forEach(a => { const t = turnoNormalizado(a.turno); if (c[t] !== undefined) c[t]++; const mk = new google.maps.Marker({ position: { lat: +a.latitude, lng: +a.longitude }, map: modalMapView, icon: { url: iconAlunoUrl, scaledSize: new google.maps.Size(24, 24) }, title: a.nome }); alunoMarkers.push(mk) }); $("#contador-manha").text(c.manha); $("#contador-tarde").text(c.tarde); $("#contador-noite").text(c.noite); $("#contador-integral").text(c.integral); const tb = $("#tabela-alunos-rota tbody").empty(); alunos.forEach(a => { const n = turnoNormalizado(a.turno); const label = n === "manha" ? "Manhã" : n === "tarde" ? "Tarde" : n === "noite" ? "Noite" : n === "integral" ? "Integral" : a.turno; tb.append(`<tr><td>${a.nome}</td><td>${a.escola_nome}</td><td>${a.latitude}</td><td>${a.longitude}</td><td>${a.ponto_id}</td><td>${a.ponto_latitude}</td><td>${a.ponto_longitude}</td><td>${label}</td></tr>`) }); renderVehicleSuggestions(c) }
+    function openRouteModal(enc) { const rt = JSON.parse(decodeURIComponent(enc)); currentRotaId = rt.id; currentAreaZona = rt.area_zona || "URBANA"; $("#viewRouteModal").modal("show"); setTimeout(() => { if (!modalMapView) { modalMapView = new google.maps.Map(document.getElementById("map-modal-view"), { center: { lat: -6.53, lng: -49.85 }, zoom: 13, mapTypeId: "roadmap" }); directionsService = new google.maps.DirectionsService(); directionsRenderer = new google.maps.DirectionsRenderer({ map: modalMapView }) } fetch("/api/rotas_simples/" + rt.id).then(r => r.json()).then(det => { const o = { lat: +det.partidaLat, lng: +det.partidaLng }, d = { lat: +det.chegadaLat, lng: +det.chegadaLng }, wps = []; det.pontosParada.forEach(p => wps.push({ location: new google.maps.LatLng(+p.latitude, +p.longitude), stopover: true })); det.escolas.forEach(e => wps.push({ location: new google.maps.LatLng(+e.latitude, +e.longitude), stopover: true })); directionsService.route({ origin: o, destination: d, waypoints: wps, optimizeWaypoints: true, travelMode: google.maps.TravelMode.DRIVING }, (res, st) => { if (st === google.maps.DirectionsStatus.OK) { directionsRenderer.setDirections(res); let dist = 0; res.routes[0].legs.forEach(l => dist += l.distance.value); currentRouteDistanceKm = dist / 1000 } }) }); fetch(`/api/rotas-simples/${currentRotaId}/alunos`).then(r => r.json()).then(a => populateAlunos(a)).catch(() => showNotification("danger", "Erro ao carregar alunos.")) }, 400) }
+    function downloadRota(id, fmt) { window.open(`/api/download-rota/${id}?format=${fmt}`, "_blank") }
+    function downloadAll(fmt) { window.open(`/api/download-rotas-todas?format=${fmt}`, "_blank") }
+    document.getElementById("downloadKml").addEventListener("click", e => { e.preventDefault(); if (currentRotaId) downloadRota(currentRotaId, "kml") })
+    document.getElementById("downloadKmz").addEventListener("click", e => { e.preventDefault(); if (currentRotaId) downloadRota(currentRotaId, "kmz") })
+    document.getElementById("downloadGpx").addEventListener("click", e => { e.preventDefault(); if (currentRotaId) downloadRota(currentRotaId, "gpx") })
+    document.getElementById("btnDownloadCsvAlunos").addEventListener("click", () => { if (!alunosRouteData.length) { showNotification("warning", "Nenhum aluno para exportar"); return } const h = ["Nome do Aluno", "Escola", "Lat Aluno", "Lng Aluno", "ID Ponto", "Lat Ponto", "Lng Ponto", "Turno"], rows = [h.join(",")]; alunosRouteData.forEach(a => { rows.push([`"${a.nome.replace(/"/g, '""')}"`, `"${a.escola_nome.replace(/"/g, '""')}"`, a.latitude, a.longitude, a.ponto_id, a.ponto_latitude, a.ponto_longitude, `"${a.turno.replace(/"/g, '""')}"`].join(",")) }); const blob = new Blob([rows.join("\r\n")], { type: "text/csv" }), url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `alunos_rota_${currentRotaId}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url) })
+    $("#editStartMarkerBtn").click(() => { isPlacingEditStart = true; showNotification("info", "Clique no mapa para redefinir o Ponto de Partida/Chegada.") })
+
+    function openEditModal(enc) {
+      const rd = JSON.parse(decodeURIComponent(enc)); $("#modalEditarRota").modal("show")
+      setTimeout(() => {
+        if (!mapEdit) {
+          mapEdit = new google.maps.Map(document.getElementById("map-modal-edit"), { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13, mapTypeId: "roadmap" })
+          mapEdit.addListener("click", e => {
+            if (isPlacingEditStart) {
+              const lat = e.latLng.lat(), lng = e.latLng.lng()
+              if (editStartMarker) editStartMarker.setMap(null)
+              editStartMarker = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" })
+              $("#editPartidaLat").val(lat); $("#editPartidaLng").val(lng)
+              showNotification("success", "Novo ponto de Partida/Chegada definido!"); isPlacingEditStart = false
+            }
+          })
+        }
+        $("#editRotaId").val(rd.id || ""); $("#editIdentificador").val(rd.identificador || ""); $("#editDescricao").val(rd.descricao || ""); $("#editAreaZona").val(rd.area_zona || "URBANA")
+        editEscolasSelecionadas = []; editPontosParadaSelecionados = []; editFornecedoresSelecionados = []
+        editEscolaMarkers.forEach(m => m.setMap(null)); editPontoMarkers.forEach(m => m.setMap(null)); editEscolaMarkers = []; editPontoMarkers = []
+        fetch(`/api/rotas_simples/${rd.id}`).then(r => r.json()).then(d => {
+          $("#editPartidaLat").val(d.partidaLat || ""); $("#editPartidaLng").val(d.partidaLng || ""); if (editStartMarker) editStartMarker.setMap(null)
+          if (d.partidaLat && d.partidaLng) {
+            const lat = parseFloat(d.partidaLat), lng = parseFloat(d.partidaLng)
+            editStartMarker = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconStartEndUrl, scaledSize: new google.maps.Size(24, 24) }, title: "Partida/Chegada" })
+            mapEdit.setCenter({ lat, lng }); mapEdit.setZoom(13)
+          }
+          ; (d.escolas || []).forEach(e => editEscolasSelecionadas.push(e.id))
+            ; (d.pontosParada || []).forEach(p => editPontosParadaSelecionados.push(p.id))
+            ; (d.fornecedores || []).forEach(f => editFornecedoresSelecionados.push(f.id))
+          Promise.all([fetch("/api/escolas").then(r => r.json()), fetch("/api/pontos").then(r => r.json()), fetch("/api/fornecedores").then(r => r.json())])
+            .then(([esc, pts, forn]) => { editRotasEscolasData = esc; editRotasPontosData = pts; fornecedoresData = forn; placeEditEscolas(); initEditFornecedoresList() })
+            .catch(() => showNotification("danger", "Erro ao recarregar dados para edição."))
+        }).catch(() => showNotification("danger", "Erro ao carregar detalhes para edição."))
+      }, 400)
+    }
+
+    function initEditFornecedoresList() {
+      const lista = document.getElementById("editListaFornecedores"); lista.innerHTML = ""
+      fornecedoresData.forEach(f => {
+        const ck = editFornecedoresSelecionados.includes(f.id) ? " checked" : ""
+        const div = document.createElement("div"); div.style.padding = "5px"; div.style.cursor = "pointer"
+        div.innerHTML = `<input type="checkbox" data-id="${f.id}" style="margin-right:5px" ${ck}><span>${f.nome_fornecedor} (${f.cnpj})</span>`
+        div.querySelector("input").addEventListener("change", function () {
+          const fid = parseInt(this.getAttribute("data-id"), 10)
+          if (this.checked) { if (!editFornecedoresSelecionados.includes(fid)) editFornecedoresSelecionados.push(fid) }
+          else editFornecedoresSelecionados = editFornecedoresSelecionados.filter(x => x !== fid)
+        })
+        lista.appendChild(div)
+      })
+      document.getElementById("editFornecedoresBuscar").addEventListener("keyup", function () {
+        const s = this.value.toLowerCase()
+        lista.querySelectorAll("div").forEach(c => { c.style.display = c.innerText.toLowerCase().includes(s) ? "block" : "none" })
+      })
+    }
+
+    function placeEditEscolas() {
+      editRotasEscolasData.forEach(es => {
+        if (!es.latitude || !es.longitude) return
+        const lat = parseFloat(es.latitude), lng = parseFloat(es.longitude)
+        if (isNaN(lat) || isNaN(lng)) return
+        const mk = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconEscolaUrl, scaledSize: new google.maps.Size(24, 24) }, title: es.nome })
+        editEscolaMarkers.push(mk)
+        mk.addListener("click", () => {
+          if (!editEscolasSelecionadas.includes(es.id)) { editEscolasSelecionadas.push(es.id); showNotification("info", `Escola "${es.nome}" selecionada!`) }
+          else { editEscolasSelecionadas = editEscolasSelecionadas.filter(id => id !== es.id); showNotification("warning", `Escola "${es.nome}" removida da seleção!`) }
+          reloadEditPontos()
+        })
+      })
+      reloadEditPontos()
+    }
+
+    function reloadEditPontos() {
+      editPontoMarkers.forEach(m => m.setMap(null)); editPontoMarkers = []
+      const zoneSet = new Set()
+      editEscolasSelecionadas.forEach(eid => {
+        const esc = editRotasEscolasData.find(x => x.id === eid)
+        esc.zoneamentos.forEach(z => zoneSet.add(z.id))
+      })
+      editRotasPontosData.forEach(p => {
+        if (!p.zoneamentos.some(z => zoneSet.has(z.id))) return
+        const lat = parseFloat(p.latitude), lng = parseFloat(p.longitude)
+        if (isNaN(lat) || isNaN(lng)) return
+        const mk = new google.maps.Marker({ position: { lat, lng }, map: mapEdit, icon: { url: iconPontoUrl, scaledSize: new google.maps.Size(24, 24) }, title: p.nome_ponto })
+        editPontoMarkers.push(mk)
+        mk.addListener("click", () => {
+          if (!editPontosParadaSelecionados.includes(p.id)) { editPontosParadaSelecionados.push(p.id); showNotification("info", `Ponto "${p.nome_ponto}" adicionado à rota!`) }
+          else { editPontosParadaSelecionados = editPontosParadaSelecionados.filter(id => id !== p.id); showNotification("warning", `Ponto "${p.nome_ponto}" removido da rota!`) }
+        })
+      })
+    }
+
+    $("#formEditarRota").on("submit", function (e) {
+      e.preventDefault()
+      const id = $("#editRotaId").val().trim(), ident = $("#editIdentificador").val().trim(), desc = $("#editDescricao").val().trim(), lat = $("#editPartidaLat").val().trim(), lng = $("#editPartidaLng").val().trim(), zona = $("#editAreaZona").val().trim()
+      if (!id || !ident || !desc || !lat || !lng || !zona) { showNotification("warning", "Preencha todos os campos e defina o ponto de partida!"); return }
+      const body = { identificador: ident, descricao: desc, partidaLat: parseFloat(lat), partidaLng: parseFloat(lng), chegadaLat: parseFloat(lat), chegadaLng: parseFloat(lng), pontosParada: editPontosParadaSelecionados, escolas: editEscolasSelecionadas, fornecedores: editFornecedoresSelecionados, areaZona: zona }
+      fetch(`/api/rotas-simples/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(r => r.json()).then(d => { if (d.success) { showNotification("success", "Rota atualizada com sucesso!"); $("#modalEditarRota").modal("hide"); loadRotas() } else showNotification("danger", "Erro ao atualizar rota: " + d.message) })
+        .catch(() => showNotification("danger", "Erro interno ao atualizar rota."))
+    })
+  </script>
+  <script>
+    let alunosModal = null, capacidadeTotal = 0, capacidadeUsada = 0, rotasAlunosTable = null, rotaModalId = null, alunosDisponiveis = []
+    $(document).on("click", ".btn-alunos", function () { rotaModalId = $(this).data("id"); $("#modalAlunosRota").modal("show") })
+    $("#modalAlunosRota").on("shown.bs.modal", function () { carregarCapacidadeEAlunos() })
+    function carregarCapacidadeEAlunos() { $.getJSON(`/api/rotas/${rotaModalId}/capacidade`, cap => { capacidadeTotal = cap.total; capacidadeUsada = cap.usados; $("#capTotal").text(capacidadeTotal); $("#capUsada").text(capacidadeUsada); $("#capLivre").text(capacidadeTotal - capacidadeUsada) }); $.getJSON(`/api/rotas/${rotaModalId}/alunos-elegiveis`, data => { alunosDisponiveis = data; popularTabelaAlunos() }) }
+    function popularTabelaAlunos() { const tbody = $("#tblAlunosDisp tbody").empty(); alunosDisponiveis.forEach(a => { tbody.append(`<tr><td><input type="checkbox" class="ck-aluno" value="${a.id}"></td><td>${a.id}</td><td>${a.nome}</td><td>${a.turma}</td></tr>`) }); if (rotasAlunosTable) rotasAlunosTable.destroy(); rotasAlunosTable = $("#tblAlunosDisp").DataTable({ pageLength: 10, language: { search: "Pesquisar:" } }) }
+    $(document).on("change", ".ck-aluno", function () { const sel = $(".ck-aluno:checked").length; $("#selCount").text(sel); $("#btnVincularAlunos").prop("disabled", capacidadeTotal - capacidadeUsada < sel) })
+    $("#btnVincularAlunos").click(function () { const ids = $(".ck-aluno:checked").map((_, c) => +c.value).get(); if (!ids.length) return; $.ajax({ url: `/api/rotas/${rotaModalId}/alunos`, method: "POST", contentType: "application/json", data: JSON.stringify({ alunos: ids }) }).done(() => { $("#modalAlunosRota").modal("hide"); showNotification("success", "Alunos vinculados!"); loadRotas() }).fail(x => { showNotification("danger", x.responseJSON && x.responseJSON.message ? x.responseJSON.message : "Erro") }) })
+    $(document).ready(function () { $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`); })
+  </script>
+  <script>
     // 1. Carrega escolas (já trazem seus zoneamentos vinculados)
     async function loadEscolas() {
       escolasData = await fetch('/api/escolas').then(r => r.json());
