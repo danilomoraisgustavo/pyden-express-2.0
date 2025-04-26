@@ -5063,33 +5063,21 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
 // No seu server.js, importe axios ou node-fetch caso queira usar a Directions API:
 const fetch = require('node-fetch');
 
-// POST /api/itinerarios/:itinerario_id/linhas/gerar
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   const client = await pool.connect();
   try {
     const { itinerario_id } = req.params;
     await client.query('BEGIN');
+    await client.query('DELETE FROM linhas_rotas WHERE itinerario_id = $1', [itinerario_id]);
 
-    // 1) Apaga linhas pré-existentes para este itinerário
-    await client.query(
-      'DELETE FROM linhas_rotas WHERE itinerario_id = $1',
-      [itinerario_id]
-    );
-
-    // 2) Carrega pontos do itinerário
     const itRes = await client.query(
       'SELECT pontos_ids FROM itinerarios WHERE id = $1',
       [itinerario_id]
     );
-    if (!itRes.rowCount) {
-      throw new Error('Itinerário não encontrado');
-    }
+    if (!itRes.rowCount) throw new Error('Itinerário não encontrado');
     const pontosIds = itRes.rows[0].pontos_ids;
-    if (pontosIds.length === 0) {
-      throw new Error('Itinerário sem pontos');
-    }
+    if (pontosIds.length === 0) throw new Error('Itinerário sem pontos');
 
-    // 3) Busca alunos e determina turno e especial/normal
     const { rows: stuRows } = await client.query(
       `SELECT ap.ponto_id, a.id AS aluno_id, a.latitude, a.longitude, a.deficiencia, a.turma
          FROM alunos_ativos a
@@ -5120,7 +5108,6 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       }
     });
 
-    // 4) Carrega coordenadas dos pontos
     const { rows: ptsRows } = await client.query(
       `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
          FROM pontos
@@ -5132,7 +5119,6 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       pontoMap[p.id] = { lat: parseFloat(p.lat), lng: parseFloat(p.lng) };
     });
 
-    // 5) Função de distância Haversine
     const hav = (φ1, λ1, φ2, λ2) => {
       const r = Math.PI / 180, R = 6371;
       const dφ = (φ2 - φ1) * r, dλ = (λ2 - λ1) * r;
@@ -5141,7 +5127,6 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
-    // 6) Capacidades e insert helper
     const caps = [50, 42, 32, 16];
     const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt) => {
       await client.query(
@@ -5156,9 +5141,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
 
     let nextName = 'A'.charCodeAt(0);
 
-    // 7) Processa cada turno separadamente
     const processTurno = async (normalMap, specialList, turno) => {
-      // linhas normais
       let normalStops = Object.entries(normalMap)
         .map(([pid, arr]) => ({ ponto_id: +pid, alunos_ids: arr.slice() }))
         .filter(x => x.alunos_ids.length);
@@ -5169,14 +5152,12 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
         let capacidadeRest = caps[0];
         const lineParadas = [], lineAlunos = [];
 
-        // aloca do primeiro ponto
         const take = Math.min(stop.alunos_ids.length, capacidadeRest);
         lineAlunos.push(...stop.alunos_ids.splice(0, take));
         capacidadeRest -= take;
         lineParadas.push(stop.ponto_id);
         if (stop.alunos_ids.length) normalStops.unshift(stop);
 
-        // expande para pontos mais próximos
         while (capacidadeRest > 0 && normalStops.length) {
           const last = pontoMap[lineParadas[lineParadas.length - 1]];
           let bestIdx = 0, bestDist = Infinity;
@@ -5193,44 +5174,47 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
           if (nxt.alunos_ids.length) normalStops.splice(bestIdx, 0, nxt);
         }
 
-        // calcula tipo pelo comprimento total
-        const totalDist = lineParadas.slice(1).reduce((sum, pid, i, arr) => {
-          const p1 = pontoMap[arr[i - 1]], p2 = pontoMap[pid];
-          return sum + hav(p1.lat, p1.lng, p2.lat, p2.lng);
-        }, 0);
+        let totalDist = 0;
+        for (let i = 1; i < lineParadas.length; i++) {
+          const p1 = pontoMap[lineParadas[i - 1]];
+          const p2 = pontoMap[lineParadas[i]];
+          totalDist += hav(p1.lat, p1.lng, p2.lat, p2.lng);
+        }
+
         const vt = totalDist > 60 ? 'van'
           : totalDist > 30 ? 'microonibus'
             : 'onibus';
-        const cp = vt === 'onibus' ? '50' : vt === 'microonibus' ? '32' : '16';
-        const coords = lineParadas.map(pid => {
-          const c = pontoMap[pid];
-          return `${c.lng} ${c.lat}`;
-        }).join(',');
+        const cp = vt === 'onibus' ? 50
+          : vt === 'microonibus' ? 32
+            : 16;
+        const coords = lineParadas.map(pid => `${pontoMap[pid].lng} ${pontoMap[pid].lat}`).join(',');
         const ewkt = `SRID=4326;LINESTRING(${coords})`;
         const nome = String.fromCharCode(nextName++);
         const desc = `Linha ${nome} (${turno})`;
-        await insertLine(nome, desc, vt, parseInt(cp), lineAlunos, lineParadas, ewkt);
+        await insertLine(nome, desc, vt, cp, lineAlunos, lineParadas, ewkt);
       }
 
-      // linhas especiais
       let specials = specialList.slice();
       while (specials.length) {
         const grp = specials.splice(0, caps[0]);
         const alunos_ids = grp.map(x => x.aluno_id);
         const paradas_ids = grp.map(x => x.ponto_id);
-        const totalDist = grp.slice(1).reduce((s, x, i, a) => {
-          const p1 = a[i - 1], p2 = x;
-          return s + hav(p1.lat, p1.lng, p2.lat, p2.lng);
-        }, 0);
+
+        let totalDist = 0;
+        for (let i = 1; i < grp.length; i++) {
+          const p1 = grp[i - 1], p2 = grp[i];
+          totalDist += hav(p1.lat, p1.lng, p2.lat, p2.lng);
+        }
+
         const vt = totalDist > 60 ? 'van'
           : totalDist > 30 ? 'microonibus'
             : 'onibus';
-        const cp = vt === 'onibus' ? '50' : vt === 'microonibus' ? '32' : '16';
+        const cp = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16;
         const coords = grp.map(x => `${x.lng} ${x.lat}`).join(',');
         const ewkt = `SRID=4326;LINESTRING(${coords})`;
         const nome = String.fromCharCode(nextName++);
         const desc = `Especial ${nome} (${turno})`;
-        await insertLine(nome, desc, vt, parseInt(cp), alunos_ids, paradas_ids, ewkt);
+        await insertLine(nome, desc, vt, cp, alunos_ids, paradas_ids, ewkt);
       }
     };
 
