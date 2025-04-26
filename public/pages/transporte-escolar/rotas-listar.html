@@ -859,8 +859,38 @@
                 <th>Descrição</th>
                 <th>Veículo</th>
                 <th>Capacidade</th>
-                <th># Alunos</th>
+                <th>Manhã</th>
+                <th>Tarde</th>
+                <th>Noite</th>
+                <th>Integral</th>
                 <th># Paradas</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Alunos por Linha e Turno -->
+  <div class="modal fade" id="modalAlunosLinha" tabindex="-1" aria-labelledby="modalAlunosLinhaLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalAlunosLinhaLabel">Alunos da Linha</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="alunosLinhaId" />
+          <input type="hidden" id="alunosLinhaTurno" />
+          <table class="table table-hover" id="alunos-linha-table">
+            <thead>
+              <tr>
+                <th>Nome do Aluno</th>
+                <th>Ponto de Parada</th>
+                <th>Turno</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -1402,6 +1432,71 @@
       } finally {
         client.release();
       }
+    }
+    // substitui loadLinhas anterior
+    function loadLinhas(itinerarioId) {
+      fetch(`/api/itinerarios/${itinerarioId}/linhas`)
+        .then(r => r.json())
+        .then(linhas => {
+          const tb = $('#linhas-table tbody').empty();
+          linhas.forEach(l => {
+            const qtdParadas = (l.paradas_ids || []).length;
+            tb.append(`
+          <tr>
+            <td>${l.nome_linha}</td>
+            <td>${l.descricao}</td>
+            <td>${l.veiculo_tipo}</td>
+            <td>${l.capacidade}</td>
+            <td>
+              <a href="#" onclick="openAlunosLinha(${l.id},'manha')">
+                ${l.alunos_manha}
+              </a>
+            </td>
+            <td>
+              <a href="#" onclick="openAlunosLinha(${l.id},'tarde')">
+                ${l.alunos_tarde}
+              </a>
+            </td>
+            <td>
+              <a href="#" onclick="openAlunosLinha(${l.id},'noite')">
+                ${l.alunos_noite}
+              </a>
+            </td>
+            <td>
+              <a href="#" onclick="openAlunosLinha(${l.id},'integral')">
+                ${l.alunos_integral}
+              </a>
+            </td>
+            <td>${qtdParadas}</td>
+          </tr>
+        `);
+          });
+        })
+        .catch(() => showNotification('danger', 'Erro ao carregar linhas'));
+    }
+
+    // abre o modal de alunos e carrega a lista
+    function openAlunosLinha(linhaId, turno) {
+      $('#alunosLinhaId').val(linhaId);
+      $('#alunosLinhaTurno').val(turno);
+      $('#modalAlunosLinhaLabel').text(`Alunos (${turno.charAt(0).toUpperCase() + turno.slice(1)})`);
+      $('#modalAlunosLinha').modal('show');
+
+      fetch(`/api/linhas/${linhaId}/alunos?turno=${turno}`)
+        .then(r => r.json())
+        .then(alunos => {
+          const tb = $('#alunos-linha-table tbody').empty();
+          alunos.forEach(a => {
+            tb.append(`
+          <tr>
+            <td>${a.nome}</td>
+            <td>${a.ponto_nome}</td>
+            <td>${a.turno}</td>
+          </tr>
+        `);
+          });
+        })
+        .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
     }
 
   </script>
