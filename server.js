@@ -5067,90 +5067,123 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   const client = await pool.connect();
   try {
     const { itinerario_id } = req.params;
-    await client.query('BEGIN');
-    await client.query('DELETE FROM linhas_rotas WHERE itinerario_id = $1', [itinerario_id]);
 
-    const it = await client.query(
-      'SELECT pontos_ids, escolas_ids FROM itinerarios WHERE id = $1',
+    // passa a usar explicitamente o schema public
+    await client.query(`SET search_path TO public`);
+
+    await client.query('BEGIN');
+    await client.query(
+      'DELETE FROM public.linhas_rotas WHERE itinerario_id = $1',
       [itinerario_id]
     );
-    if (!it.rowCount) throw new Error('Itinerário não encontrado');
-    const pontosIds = it.rows[0].pontos_ids;
-    const escolasIds = it.rows[0].escolas_ids;
+
+    const itRes = await client.query(
+      'SELECT pontos_ids, escolas_ids FROM public.itinerarios WHERE id = $1',
+      [itinerario_id]
+    );
+    if (!itRes.rowCount) throw new Error('Itinerário não encontrado');
+    const pontosIds = itRes.rows[0].pontos_ids;
+    const escolasIds = itRes.rows[0].escolas_ids;
     if (!pontosIds.length) throw new Error('Itinerário sem pontos');
 
-    const ptsEscola = await client.query(
-      `SELECT ST_Y(geom) AS lat, ST_X(geom) AS lng
-         FROM escolas
-        WHERE id = ANY($1)
-        LIMIT 1`,
+    // pega coords de uma das escolas para montar o trajeto
+    const escRes = await client.query(
+      'SELECT ST_Y(geom) AS lat, ST_X(geom) AS lng FROM public.escolas WHERE id = ANY($1) LIMIT 1',
       [escolasIds]
     );
-    const school = { lat: parseFloat(ptsEscola.rows[0].lat), lng: parseFloat(ptsEscola.rows[0].lng) };
+    if (!escRes.rowCount) throw new Error('Escola não encontrada');
+    const school = {
+      lat: parseFloat(escRes.rows[0].lat),
+      lng: parseFloat(escRes.rows[0].lng)
+    };
 
+    // carrega alunos associados aos pontos
     const { rows: stu } = await client.query(
       `SELECT ap.ponto_id, a.id AS aluno_id, a.latitude, a.longitude, a.deficiencia, a.turma
-         FROM alunos_ativos a
-         JOIN alunos_pontos ap ON ap.aluno_id = a.id
+         FROM public.alunos_ativos a
+         JOIN public.alunos_pontos ap ON ap.aluno_id = a.id
         WHERE ap.ponto_id = ANY($1)
           AND a.latitude IS NOT NULL
           AND a.longitude IS NOT NULL`,
       [pontosIds]
     );
 
+    // monta mapa de stops com listas de alunos por turno
     const stopsMap = {};
     stu.forEach(s => {
-      if (!stopsMap[s.ponto_id]) stopsMap[s.ponto_id] = { lat: parseFloat(s.latitude), lng: parseFloat(s.longitude), alunos: { manha: [], tarde: [], noite: [], integral: [] } };
-      const t = /MAT/i.test(s.turma) ? 'manha'
+      const pid = s.ponto_id;
+      if (!stopsMap[pid]) stopsMap[pid] = {
+        lat: parseFloat(s.latitude),
+        lng: parseFloat(s.longitude),
+        alunos: { manha: [], tarde: [], noite: [], integral: [] }
+      };
+      const turno = /MAT/i.test(s.turma) ? 'manha'
         : /VESP/i.test(s.turma) ? 'tarde'
           : /NOT/i.test(s.turma) ? 'noite'
             : /INT/i.test(s.turma) ? 'integral'
               : 'manha';
-      stopsMap[s.ponto_id].alunos[t].push(s.aluno_id);
+      stopsMap[pid].alunos[turno].push(s.aluno_id);
     });
 
+    // garante que todos os pontos do itinerário tenham coords
     const { rows: pts } = await client.query(
       `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
-         FROM pontos
+         FROM public.pontos
         WHERE id = ANY($1)`,
       [pontosIds]
     );
     pts.forEach(p => {
-      if (!stopsMap[p.id]) stopsMap[p.id] = { lat: parseFloat(p.lat), lng: parseFloat(p.lng), alunos: { manha: [], tarde: [], noite: [], integral: [] } };
+      if (!stopsMap[p.id]) {
+        stopsMap[p.id] = {
+          lat: parseFloat(p.lat), lng: parseFloat(p.lng),
+          alunos: { manha: [], tarde: [], noite: [], integral: [] }
+        };
+      }
     });
 
+    // transforma em array para clusterização
     let stops = Object.entries(stopsMap).map(([pid, v]) => ({
-      ponto_id: +pid, lat: v.lat, lng: v.lng, alunos: v.alunos
+      ponto_id: +pid,
+      lat: v.lat,
+      lng: v.lng,
+      alunos: v.alunos
     }));
 
     const hav = (φ1, λ1, φ2, λ2) => {
       const r = Math.PI / 180, R = 6371;
       const dφ = (φ2 - φ1) * r, dλ = (λ2 - λ1) * r;
-      const a = Math.sin(dφ / 2) ** 2 + Math.cos(φ1 * r) * Math.cos(φ2 * r) * Math.sin(dλ / 2) ** 2;
+      const a = Math.sin(dφ / 2) ** 2 +
+        Math.cos(φ1 * r) * Math.cos(φ2 * r) * Math.sin(dλ / 2) ** 2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
     const caps = [50, 42, 32, 16];
     const insertLine = async (nm, ds, vt, cp, alunos_ids, paradas_ids, ewkt) => {
       await client.query(
-        `INSERT INTO linhas_rotas(itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,alunos_ids,paradas_ids,geom)
-         VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+        `INSERT INTO public.linhas_rotas
+           (itinerario_id,nome_linha,descricao,
+            veiculo_tipo,capacidade,
+            alunos_ids,paradas_ids,geom)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [itinerario_id, nm, ds, vt, cp, alunos_ids, paradas_ids, ewkt]
       );
     };
 
-    let nextName = 'A'.charCodeAt(0);
+    let nextChar = 'A'.charCodeAt(0);
 
+    // enquanto houver stops, monta cada linha
     while (stops.length) {
+      // escolhe stop com maior soma de alunos em qualquer turno
       stops.sort((a, b) => {
-        const A = Object.values(a.alunos).reduce((s, v) => s + v.length, 0);
-        const B = Object.values(b.alunos).reduce((s, v) => s + v.length, 0);
-        return B - A;
+        const sa = Object.values(a.alunos).reduce((s, u) => s + u.length, 0);
+        const sb = Object.values(b.alunos).reduce((s, u) => s + u.length, 0);
+        return sb - sa;
       });
       const cluster = [stops.shift()];
       const counts = { manha: 0, tarde: 0, noite: 0, integral: 0 };
       Object.entries(cluster[0].alunos).forEach(([t, arr]) => counts[t] += arr.length);
 
+      // adiciona stops vizinhos enquanto couber até 50 alunos por turno
       let added = true;
       while (added) {
         added = false;
@@ -5159,37 +5192,57 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
           const s = stops[i];
           const last = cluster[cluster.length - 1];
           const d = hav(last.lat, last.lng, s.lat, s.lng);
-          const ok = Object.entries(s.alunos).every(([t, arr]) => counts[t] + arr.length <= caps[0]);
+          const ok = Object.entries(s.alunos).every(([t, arr]) =>
+            counts[t] + arr.length <= caps[0]
+          );
           if (ok && d < bestDist) { bestDist = d; bestIdx = i; }
         }
         if (bestIdx >= 0) {
-          const s = stops.splice(bestIdx, 1)[0];
-          cluster.push(s);
-          Object.entries(s.alunos).forEach(([t, arr]) => counts[t] += arr.length);
+          const nxt = stops.splice(bestIdx, 1)[0];
+          cluster.push(nxt);
+          Object.entries(nxt.alunos).forEach(([t, arr]) => counts[t] += arr.length);
           added = true;
         }
       }
 
       const paradas_ids = cluster.map(s => s.ponto_id);
-      const alunos_ids = Array.from(new Set(cluster.flatMap(s => [
-        ...s.alunos.manha, ...s.alunos.tarde, ...s.alunos.noite, ...s.alunos.integral
-      ])));
+      const alunos_ids = Array.from(new Set(
+        cluster.flatMap(s => [
+          ...s.alunos.manha,
+          ...s.alunos.tarde,
+          ...s.alunos.noite,
+          ...s.alunos.integral
+        ])
+      ));
 
+      // monta LINESTRING completo: empresa → manha → escola → vespertino → escola → noite → escola → empresa
       const routePts = [];
-      routePts.push([company.lng, company.lat]);
+      // ponto da empresa (mesmo geom das escolas ou outro fixo)
+      routePts.push([school.lng, school.lat]);
+      // manhã: empresa → pontos → escola
       cluster.forEach(s => routePts.push([s.lng, s.lat]));
+      routePts.push([school.lng, school.lat]);
+      // tarde: escola → pontos → escola
       routePts.push([school.lng, school.lat]);
       cluster.forEach(s => routePts.push([s.lng, s.lat]));
       routePts.push([school.lng, school.lat]);
+      // noite: escola → pontos → empresa
+      routePts.push([school.lng, school.lat]);
       cluster.forEach(s => routePts.push([s.lng, s.lat]));
-      routePts.push([company.lng, company.lat]);
+      routePts.push([school.lng, school.lat]);
 
       const ewkt = 'SRID=4326;LINESTRING(' + routePts.map(c => c.join(' ')).join(',') + ')';
 
-      const vt = alunos_ids.length <= 33 ? 'microonibus' : alunos_ids.length <= 50 ? 'onibus' : 'van';
-      const cp = vt === 'onibus' ? 50 : vt === 'microonibus' ? 33 : 16;
+      // escolhe veículo: ≤33 micro, ≤50 ônibus, >50 van
+      const totalAlunos = alunos_ids.length;
+      const vt = totalAlunos <= 33 ? 'microonibus'
+        : totalAlunos <= 50 ? 'onibus'
+          : 'van';
+      const cp = vt === 'onibus' ? 50
+        : vt === 'microonibus' ? 33
+          : 16;
 
-      const nome = String.fromCharCode(nextName++);
+      const nome = String.fromCharCode(nextChar++);
       const desc = `Linha ${nome}`;
       await insertLine(nome, desc, vt, cp, alunos_ids, paradas_ids, ewkt);
     }
@@ -5204,6 +5257,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     client.release();
   }
 });
+
 
 
 // GET /api/linhas/:linha_id/alunos — lista alunos associados a uma subrota, filtrados por turno
