@@ -1295,6 +1295,169 @@
     // 6) Inicia o mapa sempre que o modal abrir
     const modal = document.getElementById('modalNovaRota');
     modal.addEventListener('shown.bs.modal', initMapCreate);
+
+    async function gerarLinhasInteligentes(itinerario_id, pool) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        // 1) Busca pontos do itinerário
+        const itRes = await client.query(
+          'SELECT pontos_ids FROM itinerarios WHERE id = $1',
+          [itinerario_id]
+        );
+        if (itRes.rowCount === 0) throw new Error('Itinerário não encontrado');
+        const pontosIds = itRes.rows[0].pontos_ids;
+        if (pontosIds.length === 0) { await client.query('ROLLBACK'); return; }
+
+        // 2) Busca alunos com turno em cada ponto
+        const qStu = `
+      WITH alunos_turno AS (
+        SELECT
+          ap.ponto_id,
+          a.id              AS aluno_id,
+          a.latitude,
+          a.longitude,
+          CASE
+            WHEN a.turma ILIKE '%MAT%'  THEN 'manha'
+            WHEN a.turma ILIKE '%VESP%' THEN 'tarde'
+            WHEN a.turma ILIKE '%NOT%'  THEN 'noite'
+            ELSE NULL
+          END AS turno
+        FROM alunos_ativos a
+        JOIN alunos_pontos ap ON ap.aluno_id = a.id
+        WHERE ap.ponto_id = ANY($1)
+      )
+      SELECT * FROM alunos_turno;
+    `;
+        const { rows: stuRows } = await client.query(qStu, [pontosIds]);
+
+        // 3) Agrupa alunos por turno e por ponto
+        const turnoMap = { manha: {}, tarde: {}, noite: {} };
+        stuRows.forEach(s => {
+          if (!s.turno) return;
+          const m = turnoMap[s.turno];
+          if (!m[s.ponto_id]) m[s.ponto_id] = [];
+          m[s.ponto_id].push(s.aluno_id);
+        });
+
+        // 4) Carrega coordenadas dos pontos
+        const qPts = `
+      SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
+      FROM pontos
+      WHERE id = ANY($1)
+    `;
+        const { rows: ptsRows } = await client.query(qPts, [pontosIds]);
+        const pontoMap = {};
+        ptsRows.forEach(p => {
+          pontoMap[p.id] = { lat: +p.lat, lng: +p.lng };
+        });
+
+        // 5) Função de distância Haversine (km)
+        const haversine = (la1, ln1, la2, ln2) => {
+          const toRad = v => v * Math.PI / 180;
+          const R = 6371;
+          const dLat = toRad(la2 - la1), dLon = toRad(ln2 - ln1);
+          const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(la1)) * Math.cos(toRad(la2)) *
+            Math.sin(dLon / 2) ** 2;
+          return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        };
+
+        // 6) Configurações de veículos
+        const vehicleConfig = [
+          { type: 'onibus', cap: 50, maxDist: 30 },
+          { type: 'microonibus', cap: 32, maxDist: 60 },
+          { type: 'van', cap: 16, maxDist: Infinity }
+        ];
+
+        // 7) Insere uma linha na tabela
+        let nextChar = 'A'.charCodeAt(0);
+        async function insertLine(nome, desc, tipo, cap, alunos_ids, paradas_ids, ewkt) {
+          await client.query(
+            `INSERT INTO linhas_rotas
+          (itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,alunos_ids,paradas_ids,geom)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+            [itinerario_id, nome, desc, tipo, cap, alunos_ids, paradas_ids, ewkt]
+          );
+        }
+
+        // 8) Função genérica para gerar linhas de um turno
+        async function processTurno(shift) {
+          // transforma mapa em lista mutável
+          let stops = Object.entries(turnoMap[shift])
+            .map(([pid, alunos]) => ({ ponto_id: +pid, alunos_ids: alunos.slice() }))
+            .filter(s => s.alunos_ids.length);
+
+          while (stops.length) {
+            // prioridade: ponto com mais alunos
+            stops.sort((a, b) => b.alunos_ids.length - a.alunos_ids.length);
+            const base = stops.shift();
+            let capLeft = vehicleConfig[0].cap;
+            const lineStops = [], lineAlunos = [];
+
+            // aloca alunos do ponto base
+            const use = Math.min(base.alunos_ids.length, capLeft);
+            lineAlunos.push(...base.alunos_ids.splice(0, use));
+            capLeft -= use;
+            lineStops.push(base.ponto_id);
+            if (base.alunos_ids.length) stops.unshift(base);
+
+            // adiciona stops mais próximos
+            while (capLeft > 0 && stops.length) {
+              const last = pontoMap[lineStops[lineStops.length - 1]];
+              let bestIdx = 0, bestDist = Infinity;
+              stops.forEach((s, i) => {
+                const c = pontoMap[s.ponto_id];
+                const d = haversine(last.lat, last.lng, c.lat, c.lng);
+                if (d < bestDist) { bestDist = d; bestIdx = i; }
+              });
+              const next = stops.splice(bestIdx, 1)[0];
+              const take2 = Math.min(next.alunos_ids.length, capLeft);
+              lineAlunos.push(...next.alunos_ids.splice(0, take2));
+              capLeft -= take2;
+              lineStops.push(next.ponto_id);
+              if (next.alunos_ids.length) stops.splice(bestIdx, 0, next);
+            }
+
+            // calcula distância total da linha
+            let totalDist = 0;
+            for (let i = 1; i < lineStops.length; i++) {
+              const p1 = pontoMap[lineStops[i - 1]];
+              const p2 = pontoMap[lineStops[i]];
+              totalDist += haversine(p1.lat, p1.lng, p2.lat, p2.lng);
+            }
+
+            // escolhe veículo pelo totalDist
+            const vc = vehicleConfig.find(v => totalDist <= v.maxDist);
+            const tipo = vc.type, cap = vc.cap;
+
+            // monta EWKT da rota
+            const coords = lineStops
+              .map(pid => pontoMap[pid])
+              .map(c => `${c.lng} ${c.lat}`)
+              .join(',');
+            const ewkt = `SRID=4326;LINESTRING(${coords})`;
+
+            const nome = String.fromCharCode(nextChar++);
+            const desc = `Itinerário ${itinerario_id} - ${shift}`;
+            await insertLine(nome, desc, tipo, cap, lineAlunos, lineStops, ewkt);
+          }
+        }
+
+        // 9) Gera para cada turno
+        for (const shift of ['manha', 'tarde', 'noite']) {
+          await processTurno(shift);
+        }
+
+        await client.query('COMMIT');
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      } finally {
+        client.release();
+      }
+    }
   </script>
 </body>
 
