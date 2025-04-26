@@ -5028,6 +5028,204 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   }
 });
 
+// No seu server.js, importe axios ou node-fetch caso queira usar a Directions API:
+const fetch = require('node-fetch');
+
+// POST /api/itinerarios/:itinerario_id/linhas/gerar
+app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { itinerario_id } = req.params;
+    await client.query('BEGIN');
+
+    // 1) Carrega os pontos do itinerário
+    const itRes = await client.query(
+      'SELECT pontos_ids FROM itinerarios WHERE id = $1',
+      [itinerario_id]
+    );
+    if (itRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Itinerário não encontrado.' });
+    }
+    const pontosIds = itRes.rows[0].pontos_ids;
+    if (pontosIds.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Itinerário sem pontos.' });
+    }
+
+    // 2) Busca alunos por ponto e separa normal vs especial
+    const stuQ = `
+      SELECT
+        ap.ponto_id,
+        a.id         AS aluno_id,
+        a.latitude,
+        a.longitude,
+        a.deficiencia
+      FROM alunos_ativos a
+      JOIN alunos_pontos ap ON ap.aluno_id = a.id
+      WHERE ap.ponto_id = ANY($1)
+    `;
+    const { rows: stuRows } = await client.query(stuQ, [pontosIds]);
+
+    // Mapa ponto_id -> lista de alunos (normal)
+    const normalStopsMap = {};
+    // Lista de alunos especiais { aluno_id, ponto_id, lat, lng }
+    const specialStudents = [];
+
+    stuRows.forEach(s => {
+      if (Array.isArray(s.deficiencia) && s.deficiencia.length > 0) {
+        specialStudents.push({
+          aluno_id: s.aluno_id,
+          ponto_id: s.ponto_id,
+          lat: +s.latitude,
+          lng: +s.longitude
+        });
+      } else {
+        if (!normalStopsMap[s.ponto_id]) normalStopsMap[s.ponto_id] = [];
+        normalStopsMap[s.ponto_id].push(s.aluno_id);
+      }
+    });
+
+    // 3) Carrega coordenadas dos pontos
+    const ptsQ = `
+      SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
+      FROM pontos
+      WHERE id = ANY($1)
+    `;
+    const { rows: ptsRows } = await client.query(ptsQ, [pontosIds]);
+    const pontoMap = {};
+    ptsRows.forEach(p => {
+      pontoMap[p.id] = { lat: +p.lat, lng: +p.lng };
+    });
+
+    // 4) Prepara lista de stops normais
+    let normalStops = Object.entries(normalStopsMap)
+      .map(([pid, alunos]) => ({
+        ponto_id: parseInt(pid, 10),
+        alunos_ids: alunos.slice()
+      }))
+      .filter(s => s.alunos_ids.length > 0);
+
+    // Função de distância Haversine (km)
+    const haversine = (lat1, lng1, lat2, lng2) => {
+      const toRad = v => (v * Math.PI) / 180;
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    // Capacidades e tipos
+    const vehicleCaps = [50, 42, 32, 16];
+    const vehicleType = cap =>
+      cap > 32 ? 'onibus' : cap === 32 ? 'microonibus' : 'van';
+
+    let nextName = 'A'.charCodeAt(0);
+    const insertLine = async (nome_linha, description, cap, alunos_ids, stops_ids, geomEWKT) => {
+      const q = `
+        INSERT INTO linhas_rotas
+          (itinerario_id, nome_linha, descricao, veiculo_tipo, capacidade, alunos_ids, paradas_ids, geom)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      `;
+      await client.query(q, [
+        itinerario_id,
+        nome_linha,
+        description,
+        vehicleType(cap),
+        cap,
+        alunos_ids,
+        stops_ids,
+        geomEWKT
+      ]);
+    };
+
+    // 5) Gera linhas normais
+    while (normalStops.length) {
+      // start com o stop de maior demanda
+      normalStops.sort((a, b) => b.alunos_ids.length - a.alunos_ids.length);
+      const stop = normalStops.shift();
+
+      let capLeft = vehicleCaps[0];
+      const lineStops = [];
+      const lineAlunos = [];
+
+      // aloca alunos deste stop
+      const assignCount = Math.min(stop.alunos_ids.length, capLeft);
+      lineAlunos.push(...stop.alunos_ids.splice(0, assignCount));
+      capLeft -= assignCount;
+      lineStops.push(stop.ponto_id);
+      if (stop.alunos_ids.length) normalStops.unshift(stop);
+
+      // adiciona outros stops mais próximos
+      while (capLeft > 0 && normalStops.length) {
+        const last = pontoMap[lineStops[lineStops.length - 1]];
+        let bestIdx = 0,
+          bestDist = Infinity;
+        normalStops.forEach((s, i) => {
+          const coord = pontoMap[s.ponto_id];
+          const d = haversine(last.lat, last.lng, coord.lat, coord.lng);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        });
+        const next = normalStops.splice(bestIdx, 1)[0];
+        const cnt = Math.min(next.alunos_ids.length, capLeft);
+        lineAlunos.push(...next.alunos_ids.splice(0, cnt));
+        capLeft -= cnt;
+        lineStops.push(next.ponto_id);
+        if (next.alunos_ids.length) normalStops.splice(bestIdx, 0, next);
+      }
+
+      // decide capacidade real da linha
+      const used = lineAlunos.length;
+      let cap = vehicleCaps.find(c => used <= c);
+
+      // WKT da rota: linha ligando os pontos (ordem greedy)
+      const coords = lineStops
+        .map(pid => pontoMap[pid])
+        .map(p => `${p.lng} ${p.lat}`)
+        .join(',');
+      const ewkt = `SRID=4326;LINESTRING(${coords})`;
+
+      const nome = String.fromCharCode(nextName++);
+      const desc = `Linhas ${nome} Itinerário ${itinerario_id}`;
+      await insertLine(nome, desc, cap, lineAlunos, lineStops, ewkt);
+    }
+
+    // 6) Gera linhas especiais (cada aluno especial é “stop”)
+    let specialStops = specialStudents.slice();
+    while (specialStops.length) {
+      // agrupa até 50
+      const grupo = specialStops.splice(0, vehicleCaps[0]);
+      const alunos_ids = grupo.map(s => s.aluno_id);
+      const stops_ids = grupo.map(s => s.ponto_id);
+      const cap = vehicleCaps.find(c => alunos_ids.length <= c);
+
+      // WKT unindo as casas dos alunos
+      const ewkt = `SRID=4326;LINESTRING(${grupo
+        .map(s => `${s.lng} ${s.lat}`)
+        .join(',')})`;
+      const nome = String.fromCharCode(nextName++);
+      const desc = `Especial ${nome} Itinerário ${itinerario_id}`;
+      await insertLine(nome, desc, cap, alunos_ids, stops_ids, ewkt);
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Erro ao gerar linhas inteligentes:', err);
+    res.status(500).json({ error: 'Erro interno ao gerar linhas.' });
+  } finally {
+    client.release();
+  }
+});
+
+
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
 ------------------------------------------------------------------ */
