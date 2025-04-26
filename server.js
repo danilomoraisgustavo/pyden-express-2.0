@@ -5070,7 +5070,6 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   try {
     const { itinerario_id } = req.params;
 
-    // 1) Começa transação e força schema public
     await client.query('BEGIN');
     await client.query('SET search_path TO public');
 
@@ -5093,7 +5092,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     const escolasIds = itRes.rows[0].escolas_ids;
     if (pontosIds.length === 0) throw new Error('Itinerário sem pontos');
 
-    // 4) Pega coords de uma escola para início/fim das rotas
+    // 4) Coords de uma escola (origem/destino)
     const escRes = await client.query(
       `SELECT latitude AS lat, longitude AS lng
          FROM public.escolas
@@ -5108,14 +5107,21 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     };
 
     // 5) Carrega alunos + seus pontos + turnos + deficiências
+    //    ---> ADICIONADO filtro por escola
     const { rows: alunos } = await client.query(
-      `SELECT ap.ponto_id, a.id AS aluno_id, a.latitude, a.longitude, a.deficiencia, a.turma
+      `SELECT ap.ponto_id,
+              a.id         AS aluno_id,
+              a.latitude,
+              a.longitude,
+              a.deficiencia,
+              a.turma
          FROM public.alunos_ativos a
          JOIN public.alunos_pontos ap ON ap.aluno_id = a.id
-        WHERE ap.ponto_id = ANY($1)
-          AND a.latitude IS NOT NULL
-          AND a.longitude IS NOT NULL`,
-      [pontosIds]
+        WHERE ap.ponto_id   = ANY($1)
+          AND a.escola_id   = ANY($2)      -- <--- filtro por escolas do itinerário
+          AND a.latitude   IS NOT NULL
+          AND a.longitude  IS NOT NULL`,
+      [pontosIds, escolasIds]
     );
 
     // 6) Agrupa por ponto e turno
@@ -5159,7 +5165,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       ponto_id: +pid, lat: v.lat, lng: v.lng, alunos: v.alunos
     }));
 
-    // 9) Utilitários de distância
+    // 9) Utilitário de distância Haversine
     const hav = (φ1, λ1, φ2, λ2) => {
       const r = Math.PI / 180, R = 6371;
       const dφ = (φ2 - φ1) * r, dλ = (λ2 - λ1) * r;
@@ -5169,23 +5175,22 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     };
     const MAX_POR_TURNO = 50;
 
-    // 10) Função de inserção usando ST_GeomFromEWKT
+    // 10) Função de inserção
     const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt) => {
       await client.query(
         `INSERT INTO public.linhas_rotas
-           (itinerario_id, nome_linha, descricao,
-            veiculo_tipo, capacidade,
-            alunos_ids, paradas_ids, geom)
-         VALUES ($1,$2,$3,$4,$5,$6,$7, ST_GeomFromEWKT($8))`,
+           (itinerario_id,nome_linha,descricao,
+            veiculo_tipo,capacidade,
+            alunos_ids,paradas_ids,geom)
+         VALUES($1,$2,$3,$4,$5,$6,$7, ST_GeomFromEWKT($8))`,
         [itinerario_id, nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt]
       );
     };
 
     let nextChar = 'A'.charCodeAt(0);
 
-    // 11) Clusteriza stops enquanto houver
+    // 11) Clusteriza e gera cada linha
     while (stops.length) {
-      // 11.1 – Escolhe stop de maior demanda total (todos turnos)
       stops.sort((a, b) => {
         const sa = Object.values(a.alunos).reduce((s, u) => s + u.length, 0);
         const sb = Object.values(b.alunos).reduce((s, u) => s + u.length, 0);
@@ -5193,19 +5198,16 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       });
       const cluster = [stops.shift()];
       const counts = { manha: 0, tarde: 0, noite: 0, integral: 0 };
-      Object.entries(cluster[0].alunos)
-        .forEach(([t, arr]) => counts[t] += arr.length);
+      Object.entries(cluster[0].alunos).forEach(([t, arr]) => counts[t] += arr.length);
 
-      // 11.2 – Adiciona vizinhos mais próximos enquanto todos turnos ≤ 50
       let added;
       do {
         added = false;
         let bestIdx = -1, bestDist = Infinity;
         for (let i = 0; i < stops.length; i++) {
           const s = stops[i];
-          const d = hav(cluster[cluster.length - 1].lat,
-            cluster[cluster.length - 1].lng,
-            s.lat, s.lng);
+          const last = cluster[cluster.length - 1];
+          const d = hav(last.lat, last.lng, s.lat, s.lng);
           const ok = Object.entries(s.alunos)
             .every(([t, arr]) => counts[t] + arr.length <= MAX_POR_TURNO);
           if (ok && d < bestDist) { bestDist = d; bestIdx = i; }
@@ -5213,13 +5215,11 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
         if (bestIdx >= 0) {
           const nxt = stops.splice(bestIdx, 1)[0];
           cluster.push(nxt);
-          Object.entries(nxt.alunos)
-            .forEach(([t, arr]) => counts[t] += arr.length);
+          Object.entries(nxt.alunos).forEach(([t, arr]) => counts[t] += arr.length);
           added = true;
         }
       } while (added);
 
-      // 11.3 – Prepara arrays e EWKT único
       const paradas_ids = cluster.map(s => s.ponto_id);
       const alunos_ids = Array.from(new Set(cluster.flatMap(s => [
         ...s.alunos.manha,
@@ -5227,7 +5227,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
         ...s.alunos.noite,
         ...s.alunos.integral
       ])));
-      // monta três viagens: empresa→stops→empresa
+
       const routePts = [];
       for (let v = 0; v < 3; v++) {
         routePts.push([school.lng, school.lat]);
@@ -5238,26 +5238,17 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
         routePts.map(c => c.join(' ')).join(',') +
         ')';
 
-      // 11.4 – Define veículo / capacidade pelo pico de um turno
       const maxTur = Math.max(
-        counts.manha,
-        counts.tarde,
-        counts.noite,
-        counts.integral
+        counts.manha, counts.tarde, counts.noite, counts.integral
       );
-      const vt = maxTur <= 33 ? 'microonibus'
-        : maxTur <= 50 ? 'onibus'
-          : 'van';
-      const cap = vt === 'onibus' ? 50
-        : vt === 'microonibus' ? 33
-          : 16;
+      const vt = maxTur <= 33 ? 'microonibus' : maxTur <= 50 ? 'onibus' : 'van';
+      const cap = vt === 'onibus' ? 50 : vt === 'microonibus' ? 33 : 16;
 
       const nome = String.fromCharCode(nextChar++);
       const desc = `Linha ${nome}`;
       await insertLine(nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt);
     }
 
-    // 12) Finaliza
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
