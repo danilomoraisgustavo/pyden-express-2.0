@@ -1558,14 +1558,12 @@
 
             // 4) coloca marcadores customizados
             // garagem (início e fim)
-            new google.maps.Marker({ position: origin, map: mapRoute, icon: 'public/assets/img/garagem.png' });
-            new google.maps.Marker({ position: destination, map: mapRoute, icon: 'public/assets/img/garagem.png' });
+            new google.maps.Marker({ position: origin, map: mapRoute, icon: '../../public/assets/img/garagem.png' });
+            new google.maps.Marker({ position: destination, map: mapRoute, icon: '../../public/assets/img/garagem.png' });
             // pontos de parada
             waypoints.forEach(wp => {
-              new google.maps.Marker({ position: wp.location, map: mapRoute, icon: 'public/assets/img/bus-stop.png' });
+              new google.maps.Marker({ position: wp.location, map: mapRoute, icon: '../../public/assets/img/bus-stop.png' });
             });
-            // escola (se você tiver a coordenada separada, adicione outro marker)
-            // new google.maps.Marker({ position: {lat: escolaLat, lng: escolaLng}, map: mapRoute, icon: 'public/assets/img/escola.png' });
           } else {
             showNotification('danger', 'Não foi possível traçar a rota: ' + status);
           }
