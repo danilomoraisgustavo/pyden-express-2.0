@@ -1133,6 +1133,100 @@
     $(document).ready(function () { $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`); })
   </script>
   <script>
+    let mapLinhas, linhasMarkers = [], generatedLines = [];
+
+    async function openLinhasModal(enc) {
+      const it = JSON.parse(decodeURIComponent(enc));
+      $('#modalLinhasItinerario').modal('show');
+      $('#linhasItinTitulo').text(`#${it.id}`);
+
+      // Inicializa mapa
+      if (!mapLinhas) {
+        mapLinhas = new google.maps.Map(
+          document.getElementById('map-linhas'),
+          { center: { lat: -6.53, lng: -49.85 }, zoom: 12 }
+        );
+      }
+      // Limpa marcadores e linhas
+      linhasMarkers.forEach(m => m.setMap(null)); linhasMarkers = [];
+      generatedLines.forEach(l => l.setMap(null)); generatedLines = [];
+
+      // Busca pontos com agregados
+      const pontos = await fetch(`/api/itinerarios/${it.id}/pontos`)
+        .then(r => r.json());
+      const tbody = document.getElementById('linhasItinPontos');
+      tbody.innerHTML = '';
+
+      // Renderiza tabela e marcadores
+      pontos.forEach(p => {
+        // Tabela
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+      <td>${p.nome_ponto}</td>
+      <td>${p.alunos_count}</td>
+      <td>${p.alunos_manha}</td>
+      <td>${p.alunos_tarde}</td>
+      <td>${p.alunos_noite}</td>
+      <td>${p.alunos_integral}</td>
+      <td><button class="btn btn-sm btn-info"
+                  onclick="showAlunosDoPonto(${p.id}, ${it.id})">
+            <i class="fa fa-user-graduate"></i>
+          </button></td>
+    `;
+        tbody.appendChild(tr);
+
+        // Mapa
+        const mk = new google.maps.Marker({
+          position: { lat: +p.latitude, lng: +p.longitude },
+          map: mapLinhas,
+          label: `${p.alunos_count}`,
+          title: p.nome_ponto
+        });
+        linhasMarkers.push(mk);
+      });
+    }
+
+    // Gera linhas automáticas
+    document.getElementById('btnGerarLinhas').onclick = async () => {
+      showNotification('info', 'Gerando linhas, aguarde...');
+      const itId = $('#linhasItinTitulo').text().slice(1);
+      const resp = await fetch(`/api/itinerarios/${itId}/linhas/gerar`, { method: 'POST' })
+        .then(r => r.json());
+      if (!resp.lines) return showNotification('danger', 'Falha ao gerar linhas');
+
+      // Desenha cada linha no mapa e guarda no array
+      generatedLines.forEach(l => l.setMap(null));
+      generatedLines = resp.lines.map(line => {
+        const path = google.maps.geometry.encoding.decodePath(line.polyline);
+        return new google.maps.Polyline({
+          path,
+          map: mapLinhas,
+          strokeWeight: 4
+        });
+      });
+      showNotification('success', 'Linhas geradas com sucesso');
+    };
+
+    // Salva linhas no banco
+    document.getElementById('btnSalvarLinhas').onclick = async () => {
+      const itId = $('#linhasItinTitulo').text().slice(1);
+      const resp = await fetch(`/api/itinerarios/${itId}/linhas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linhas: await fetch(`/api/itinerarios/${itId}/linhas/gerar`).then(r => r.json()).then(d => d.lines) })
+      }).then(r => r.json());
+
+      if (resp.success) {
+        showNotification('success', 'Linhas salvas com sucesso');
+        $('#modalLinhasItinerario').modal('hide');
+        loadRotas();
+      } else {
+        showNotification('danger', resp.error || 'Erro ao salvar linhas');
+      }
+    };
+
+  </script>
+  <script>
     let mapCreate;
     let escolasData = [], escolasMarkers = {}, escolasSelecionadas = [];
     const defaultIconUrl = "../../assets/img/escola.png";
