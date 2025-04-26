@@ -1438,29 +1438,12 @@
             <td>${l.descricao}</td>
             <td>${l.veiculo_tipo}</td>
             <td>${l.capacidade}</td>
-            <td>
-              <a href="#" onclick="openAlunosLinha(${l.id},'manha')">
-                ${l.alunos_manha}
-              </a>
-            </td>
-            <td>
-              <a href="#" onclick="openAlunosLinha(${l.id},'tarde')">
-                ${l.alunos_tarde}
-              </a>
-            </td>
-            <td>
-              <a href="#" onclick="openAlunosLinha(${l.id},'noite')">
-                ${l.alunos_noite}
-              </a>
-            </td>
-            <td>
-              <a href="#" onclick="openAlunosLinha(${l.id},'integral')">
-                ${l.alunos_integral}
-              </a>
-            </td>
+            <td><a href="#" onclick="openAlunosLinha(${l.id},'manha')">${l.alunos_manha}</a></td>
+            <td><a href="#" onclick="openAlunosLinha(${l.id},'tarde')">${l.alunos_tarde}</a></td>
+            <td><a href="#" onclick="openAlunosLinha(${l.id},'noite')">${l.alunos_noite}</a></td>
+            <td><a href="#" onclick="openAlunosLinha(${l.id},'integral')">${l.alunos_integral}</a></td>
             <td>${qtdParadas}</td>
             <td>
-              <!-- botão para abrir o modal de mapa -->
               <button class="btn btn-link btn-show-map"
                       data-geo='${JSON.stringify(l.geojson)}'>
                 <i class="fa fa-map-marker-alt"></i>
@@ -1512,7 +1495,7 @@
 
     let mapRoute, routeBounds, rawPolyline;
 
-    // redimensiona o mapa corretamente quando o modal for mostrado
+    // dispara resize quando o modal abre
     $('#modalRouteMap').on('shown.bs.modal', () => {
       if (mapRoute) {
         google.maps.event.trigger(mapRoute, 'resize');
@@ -1525,7 +1508,7 @@
       $('#modalRouteMap').modal('show');
 
       setTimeout(() => {
-        // 1) inicializa mapa + services uma única vez
+        // 1) inicializa mapa e services uma vez
         if (!mapRoute) {
           mapRoute = new google.maps.Map(
             document.getElementById('mapRoute'),
@@ -1541,20 +1524,34 @@
           });
         }
 
-        // 2) limpa trajeto anterior
+        // 2) limpa rotas anteriores
         directionsRenderer.set('directions', null);
         if (rawPolyline) {
           rawPolyline.setMap(null);
           rawPolyline = null;
         }
 
-        // 3) prepara marcadores e path
-        const coords = geojson.coordinates; // [[lng,lat],...]
-        const path = coords.map(c => ({ lat: c[1], lng: c[0] }));
-        const dest = path[path.length - 1]; // última coordenada como escola/garagem
-        const start = path[0];               // primeira como ponto de partida
+        // 3) separa escola e paradas únicas
+        const schoolPt = geojson.coordinates[0];
+        const allParadas = geojson.coordinates.slice(1)
+          .filter(c => c[0] !== schoolPt[0] || c[1] !== schoolPt[1]);
+        const uniq = Array.from(new Set(allParadas.map(c => c.join(','))))
+          .map(s => s.split(',').map(Number));
 
-        // ícones dimensionados
+        if (uniq.length === 0) {
+          showNotification('warning', 'Não há paradas para traçar rota.');
+          return;
+        }
+
+        // 4) origem, destino e waypoints
+        const origin = { lat: uniq[0][1], lng: uniq[0][0] };
+        const destination = { lat: schoolPt[1], lng: schoolPt[0] };
+        const waypoints = uniq.slice(1).map(c => ({
+          location: { lat: c[1], lng: c[0] },
+          stopover: true
+        }));
+
+        // ícones customizados
         const garagemIcon = {
           url: '/assets/img/garagem.png',
           scaledSize: new google.maps.Size(32, 32)
@@ -1564,40 +1561,39 @@
           scaledSize: new google.maps.Size(24, 24)
         };
 
-        // 4) tenta DirectionsService (usando start→dest com waypoints)
-        // OBS: só use se tiver no máximo 23 waypoints
-        const maxWaypoints = 23;
-        const waypoints = path.slice(1, -1)
-          .map(p => ({ location: p, stopover: true }))
-          .slice(0, maxWaypoints);
-
+        // 5) tenta via DirectionsService
         directionsService.route({
-          origin: start,
-          destination: dest,
+          origin,
+          destination,
           waypoints,
           travelMode: 'DRIVING',
           optimizeWaypoints: false
         }, (result, status) => {
           if (status === 'OK') {
-            // desenha rota oficial
             directionsRenderer.setDirections(result);
+
+            // ajusta bounds
             routeBounds = new google.maps.LatLngBounds();
             result.routes[0].overview_path.forEach(p => routeBounds.extend(p));
             mapRoute.fitBounds(routeBounds);
 
-            // marcadores custom
-            new google.maps.Marker({ position: start, map: mapRoute, icon: garagemIcon });
-            new google.maps.Marker({ position: dest, map: mapRoute, icon: garagemIcon });
+            // marcadores na escola (garagem) e pontos
+            new google.maps.Marker({ position: destination, map: mapRoute, icon: garagemIcon });
             waypoints.forEach(wp => {
               new google.maps.Marker({ position: wp.location, map: mapRoute, icon: pontoIcon });
             });
           } else {
-            // fallback: Polyline direta
-            showNotification('warning',
-              'Não foi possível traçar via Directions (' + status + '). Exibindo percurso bruto.');
+            // fallback: desenha polyline “bruta”
+            showNotification('warning', 'Não foi possível traçar via Directions. Exibindo percurso bruto.');
+
+            const rawPath = [
+              { lat: schoolPt[1], lng: schoolPt[0] },
+              ...uniq.map(c => ({ lat: c[1], lng: c[0] })),
+              { lat: schoolPt[1], lng: schoolPt[0] }
+            ];
 
             rawPolyline = new google.maps.Polyline({
-              path,
+              path: rawPath,
               geodesic: true,
               strokeOpacity: 0.7,
               strokeWeight: 4,
@@ -1605,21 +1601,21 @@
             });
 
             routeBounds = new google.maps.LatLngBounds();
-            path.forEach(p => routeBounds.extend(p));
+            rawPath.forEach(p => routeBounds.extend(p));
             mapRoute.fitBounds(routeBounds);
 
-            // marcadores custom no fallback
-            new google.maps.Marker({ position: start, map: mapRoute, icon: garagemIcon });
-            coords.slice(1, -1).forEach(c => {
+            // marcadores no fallback
+            new google.maps.Marker({ position: rawPath[0], map: mapRoute, icon: garagemIcon });
+            uniq.forEach(c => {
               new google.maps.Marker({
                 position: { lat: c[1], lng: c[0] },
                 map: mapRoute,
                 icon: pontoIcon
               });
             });
-            new google.maps.Marker({ position: dest, map: mapRoute, icon: garagemIcon });
           }
         });
+
       }, 300);
     });
 

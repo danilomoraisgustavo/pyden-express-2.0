@@ -5012,9 +5012,6 @@ app.get("/api/pontos", async (req, res) => {
 app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   try {
     const { itinerario_id } = req.params;
-    // força usar o schema público
-    await pool.query(`SET search_path TO public`);
-
     const query = `
       SELECT
         lr.id,
@@ -5024,8 +5021,7 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
         lr.capacidade,
         lr.alunos_ids,
         lr.paradas_ids,
-        -- retorna o geom como objeto GeoJSON
-        ST_AsGeoJSON(lr.geom)::json AS geojson,
+        ST_AsGeoJSON(lr.geom) AS geojson,
         -- Contagem por turno
         COALESCE((
           SELECT COUNT(*) 
@@ -5051,7 +5047,7 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
           WHERE a.id = ANY(lr.alunos_ids) 
             AND a.turma ILIKE '%INT%'
         ), 0) AS alunos_integral
-      FROM public.linhas_rotas lr
+      FROM linhas_rotas lr
       WHERE lr.itinerario_id = $1
       ORDER BY lr.nome_linha;
     `;
@@ -5062,7 +5058,6 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
-
 
 // No seu server.js, importe axios ou node-fetch caso queira usar a Directions API:
 const fetch = require('node-fetch');
