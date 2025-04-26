@@ -1424,20 +1424,42 @@
       }
     }
     // substitui loadLinhas anterior
+    // Front-end: carrega e renderiza a tabela de linhas, incluindo botão de mapa
     function loadLinhas(itinerarioId) {
       fetch(`/api/itinerarios/${itinerarioId}/linhas`)
         .then(r => r.json())
         .then(linhas => {
           const tb = $('#linhas-table tbody').empty();
           linhas.forEach(l => {
-            const geo = JSON.stringify(l.geojson);
+            const qtdParadas = (l.paradas_ids || []).length;
+            const geo = JSON.stringify(l.geojson || {});
             tb.append(`
           <tr>
             <td>${l.nome_linha}</td>
             <td>${l.descricao}</td>
             <td>${l.veiculo_tipo}</td>
             <td>${l.capacidade}</td>
-            <!-- demais colunas... -->
+            <td>
+              <a href="#" onclick="openAlunosLinha(${l.id},'manha')">
+                ${l.alunos_manha}
+              </a>
+            </td>
+            <td>
+              <a href="#" onclick="openAlunosLinha(${l.id},'tarde')">
+                ${l.alunos_tarde}
+              </a>
+            </td>
+            <td>
+              <a href="#" onclick="openAlunosLinha(${l.id},'noite')">
+                ${l.alunos_noite}
+              </a>
+            </td>
+            <td>
+              <a href="#" onclick="openAlunosLinha(${l.id},'integral')">
+                ${l.alunos_integral}
+              </a>
+            </td>
+            <td>${qtdParadas}</td>
             <td>
               <button class="btn btn-sm btn-outline-primary btn-show-map"
                       data-geo='${geo.replace(/'/g, "&#39;")}'>
@@ -1450,6 +1472,16 @@
         })
         .catch(() => showNotification('danger', 'Erro ao carregar linhas'));
     }
+
+    // ex.: listener para abrir o modal de mapa (supondo que já exista o código que desenha a rota)
+    $(document).on('click', '.btn-show-map', function () {
+      const geojson = JSON.parse($(this).attr('data-geo'));
+      $('#modalRouteMap').modal('show');
+      setTimeout(() => {
+        // inicializar ou limpar o mapa e desenhar a linha usando geojson.coordinates...
+        // (conforme código exemplo anterior)
+      }, 300);
+    });
 
     // abre o modal de alunos e carrega a lista
     function openAlunosLinha(linhaId, turno) {
@@ -1474,43 +1506,6 @@
         })
         .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
     }
-
-    let mapRoute;
-
-    $(document).on('click', '.btn-show-map', function () {
-      const geojson = JSON.parse($(this).attr('data-geo'));
-      $('#modalRouteMap').modal('show');
-
-      setTimeout(() => {
-        // inicializa o mapa na primeira vez
-        if (!mapRoute) {
-          mapRoute = new google.maps.Map(document.getElementById('mapRoute'), {
-            center: { lat: geojson.coordinates[0][1], lng: geojson.coordinates[0][0] },
-            zoom: 13
-          });
-        }
-        // limpa polylines existentes
-        if (directionsRenderer) {
-          directionsRenderer.setMap(null);
-          directionsRenderer = null;
-        }
-        // monta array de LatLng
-        const path = geojson.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
-        // desenha Polyline
-        const routeLine = new google.maps.Polyline({
-          path,
-          geodesic: true,
-          strokeOpacity: 0.8,
-          strokeWeight: 4
-        });
-        routeLine.setMap(mapRoute);
-        // ajusta bounds
-        const bounds = new google.maps.LatLngBounds();
-        path.forEach(p => bounds.extend(p));
-        mapRoute.fitBounds(bounds);
-      }, 300);
-    });
-
 
   </script>
 </body>
