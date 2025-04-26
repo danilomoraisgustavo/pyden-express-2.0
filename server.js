@@ -5165,6 +5165,12 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     let stops = Object.entries(stopsMap).map(([pid, v]) => ({
       ponto_id: +pid, lat: v.lat, lng: v.lng, alunos: v.alunos
     }));
+    // Filtra só os pontos que têm pelo menos 1 aluno em algum turno
+    stops = stops.filter(s => {
+      const total = Object.values(s.alunos)
+        .reduce((sum, arr) => sum + arr.length, 0);
+      return total > 0;
+    });
 
     // 9) Utilitário de distância Haversine
     const hav = (φ1, λ1, φ2, λ2) => {
