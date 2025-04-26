@@ -1040,6 +1040,36 @@
       }, 300);
     }
 
+    // 3) Função front-end para abrir modal e carregar linhas
+    function openLinhasModal(enc) {
+      const it = JSON.parse(decodeURIComponent(enc));
+      const id = it.id;
+      $('#linhasItinerarioId').val(id);
+      $('#modalLinhasItinerario').modal('show');
+
+      fetch(`/api/itinerarios/${id}/linhas`)
+        .then(r => r.json())
+        .then(linhas => {
+          const tb = $('#linhas-table tbody').empty();
+          linhas.forEach(l => {
+            const qtdAlunos = (l.alunos_ids || []).length;
+            const qtdParadas = (l.paradas_ids || []).length;
+            tb.append(`
+          <tr>
+            <td>${l.nome_linha}</td>
+            <td>${l.descricao}</td>
+            <td>${l.veiculo_tipo}</td>
+            <td>${l.capacidade}</td>
+            <td>${qtdAlunos}</td>
+            <td>${qtdParadas}</td>
+          </tr>
+        `);
+          });
+        })
+        .catch(() => showNotification('danger', 'Erro ao carregar linhas'));
+    }
+
+
     // Renderiza botões das escolas selecionadas
     function renderEditEscolasSelecionadas() {
       const cont = document.getElementById('editListaEscolasSelecionadas');
