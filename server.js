@@ -5268,8 +5268,6 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   }
 });
 
-
-
 // GET /api/linhas/:linha_id/alunos — lista alunos associados a uma subrota, filtrados por turno
 app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
   try {
