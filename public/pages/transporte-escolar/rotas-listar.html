@@ -1558,12 +1558,35 @@
 
             // 4) coloca marcadores customizados
             // garagem (início e fim)
-            new google.maps.Marker({ position: origin, map: mapRoute, icon: '../../assets/img/garagem.png' });
-            new google.maps.Marker({ position: destination, map: mapRoute, icon: '../../assets/img/garagem.png' });
-            // pontos de parada
-            waypoints.forEach(wp => {
-              new google.maps.Marker({ position: wp.location, map: mapRoute, icon: '../../assets/img/bus-stop.png' });
+            // define ícones com tamanho fixo
+            const garagemIcon = {
+              url: '/assets/img/garagem.png',
+              scaledSize: new google.maps.Size(32, 32)
+            };
+            const pontoIcon = {
+              url: '/assets/img/bus-stop.png',
+              scaledSize: new google.maps.Size(24, 24)
+            };
+
+            // dentro do seu callback do DirectionsService:
+            new google.maps.Marker({
+              position: origin,
+              map: mapRoute,
+              icon: garagemIcon
             });
+            new google.maps.Marker({
+              position: destination,
+              map: mapRoute,
+              icon: garagemIcon
+            });
+            waypoints.forEach(wp => {
+              new google.maps.Marker({
+                position: wp.location,
+                map: mapRoute,
+                icon: pontoIcon
+              });
+            });
+
           } else {
             showNotification('danger', 'Não foi possível traçar a rota: ' + status);
           }
