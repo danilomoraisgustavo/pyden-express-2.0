@@ -1300,156 +1300,101 @@
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
-
-        // 1) Busca pontos do itinerário
         const itRes = await client.query(
           'SELECT pontos_ids FROM itinerarios WHERE id = $1',
           [itinerario_id]
         );
-        if (itRes.rowCount === 0) throw new Error('Itinerário não encontrado');
+        if (!itRes.rowCount) throw new Error('Itinerário não encontrado');
         const pontosIds = itRes.rows[0].pontos_ids;
-        if (pontosIds.length === 0) { await client.query('ROLLBACK'); return; }
-
-        // 2) Busca alunos com turno em cada ponto
-        const qStu = `
-      WITH alunos_turno AS (
-        SELECT
-          ap.ponto_id,
-          a.id              AS aluno_id,
-          a.latitude,
-          a.longitude,
-          CASE
-            WHEN a.turma ILIKE '%MAT%'  THEN 'manha'
-            WHEN a.turma ILIKE '%VESP%' THEN 'tarde'
-            WHEN a.turma ILIKE '%NOT%'  THEN 'noite'
-            ELSE NULL
-          END AS turno
-        FROM alunos_ativos a
-        JOIN alunos_pontos ap ON ap.aluno_id = a.id
-        WHERE ap.ponto_id = ANY($1)
-      )
-      SELECT * FROM alunos_turno;
-    `;
-        const { rows: stuRows } = await client.query(qStu, [pontosIds]);
-
-        // 3) Agrupa alunos por turno e por ponto
-        const turnoMap = { manha: {}, tarde: {}, noite: {} };
+        const { rows: stuRows } = await client.query(
+          `SELECT ap.ponto_id, a.id AS aluno_id, a.latitude, a.longitude, a.deficiencia
+         FROM alunos_ativos a
+         JOIN alunos_pontos ap ON ap.aluno_id = a.id
+        WHERE ap.ponto_id = ANY($1)`,
+          [pontosIds]
+        );
+        const normalStopsMap = {};
+        const specialStudents = [];
         stuRows.forEach(s => {
-          if (!s.turno) return;
-          const m = turnoMap[s.turno];
-          if (!m[s.ponto_id]) m[s.ponto_id] = [];
-          m[s.ponto_id].push(s.aluno_id);
-        });
-
-        // 4) Carrega coordenadas dos pontos
-        const qPts = `
-      SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
-      FROM pontos
-      WHERE id = ANY($1)
-    `;
-        const { rows: ptsRows } = await client.query(qPts, [pontosIds]);
-        const pontoMap = {};
-        ptsRows.forEach(p => {
-          pontoMap[p.id] = { lat: +p.lat, lng: +p.lng };
-        });
-
-        // 5) Função de distância Haversine (km)
-        const haversine = (la1, ln1, la2, ln2) => {
-          const toRad = v => v * Math.PI / 180;
-          const R = 6371;
-          const dLat = toRad(la2 - la1), dLon = toRad(ln2 - ln1);
-          const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(la1)) * Math.cos(toRad(la2)) *
-            Math.sin(dLon / 2) ** 2;
-          return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        };
-
-        // 6) Configurações de veículos
-        const vehicleConfig = [
-          { type: 'onibus', cap: 50, maxDist: 30 },
-          { type: 'microonibus', cap: 32, maxDist: 60 },
-          { type: 'van', cap: 16, maxDist: Infinity }
-        ];
-
-        // 7) Insere uma linha na tabela
-        let nextChar = 'A'.charCodeAt(0);
-        async function insertLine(nome, desc, tipo, cap, alunos_ids, paradas_ids, ewkt) {
-          await client.query(
-            `INSERT INTO linhas_rotas
-          (itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,alunos_ids,paradas_ids,geom)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-            [itinerario_id, nome, desc, tipo, cap, alunos_ids, paradas_ids, ewkt]
-          );
-        }
-
-        // 8) Função genérica para gerar linhas de um turno
-        async function processTurno(shift) {
-          // transforma mapa em lista mutável
-          let stops = Object.entries(turnoMap[shift])
-            .map(([pid, alunos]) => ({ ponto_id: +pid, alunos_ids: alunos.slice() }))
-            .filter(s => s.alunos_ids.length);
-
-          while (stops.length) {
-            // prioridade: ponto com mais alunos
-            stops.sort((a, b) => b.alunos_ids.length - a.alunos_ids.length);
-            const base = stops.shift();
-            let capLeft = vehicleConfig[0].cap;
-            const lineStops = [], lineAlunos = [];
-
-            // aloca alunos do ponto base
-            const use = Math.min(base.alunos_ids.length, capLeft);
-            lineAlunos.push(...base.alunos_ids.splice(0, use));
-            capLeft -= use;
-            lineStops.push(base.ponto_id);
-            if (base.alunos_ids.length) stops.unshift(base);
-
-            // adiciona stops mais próximos
-            while (capLeft > 0 && stops.length) {
-              const last = pontoMap[lineStops[lineStops.length - 1]];
-              let bestIdx = 0, bestDist = Infinity;
-              stops.forEach((s, i) => {
-                const c = pontoMap[s.ponto_id];
-                const d = haversine(last.lat, last.lng, c.lat, c.lng);
-                if (d < bestDist) { bestDist = d; bestIdx = i; }
-              });
-              const next = stops.splice(bestIdx, 1)[0];
-              const take2 = Math.min(next.alunos_ids.length, capLeft);
-              lineAlunos.push(...next.alunos_ids.splice(0, take2));
-              capLeft -= take2;
-              lineStops.push(next.ponto_id);
-              if (next.alunos_ids.length) stops.splice(bestIdx, 0, next);
-            }
-
-            // calcula distância total da linha
-            let totalDist = 0;
-            for (let i = 1; i < lineStops.length; i++) {
-              const p1 = pontoMap[lineStops[i - 1]];
-              const p2 = pontoMap[lineStops[i]];
-              totalDist += haversine(p1.lat, p1.lng, p2.lat, p2.lng);
-            }
-
-            // escolhe veículo pelo totalDist
-            const vc = vehicleConfig.find(v => totalDist <= v.maxDist);
-            const tipo = vc.type, cap = vc.cap;
-
-            // monta EWKT da rota
-            const coords = lineStops
-              .map(pid => pontoMap[pid])
-              .map(c => `${c.lng} ${c.lat}`)
-              .join(',');
-            const ewkt = `SRID=4326;LINESTRING(${coords})`;
-
-            const nome = String.fromCharCode(nextChar++);
-            const desc = `Itinerário ${itinerario_id} - ${shift}`;
-            await insertLine(nome, desc, tipo, cap, lineAlunos, lineStops, ewkt);
+          if (Array.isArray(s.deficiencia) && s.deficiencia.length) {
+            specialStudents.push({ aluno_id: s.aluno_id, ponto_id: s.ponto_id, lat: +s.latitude, lng: +s.longitude });
+          } else {
+            normalStopsMap[s.ponto_id] = (normalStopsMap[s.ponto_id] || []).concat(s.aluno_id);
           }
+        });
+        const { rows: ptsRows } = await client.query(
+          `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
+         FROM pontos
+        WHERE id = ANY($1)`,
+          [pontosIds]
+        );
+        const pontoMap = {};
+        ptsRows.forEach(p => { pontoMap[p.id] = { lat: +p.lat, lng: +p.lng }; });
+        let normalStops = Object.entries(normalStopsMap)
+          .map(([pid, arr]) => ({ ponto_id: +pid, alunos_ids: arr.slice() }))
+          .filter(x => x.alunos_ids.length);
+        const hav = (φ1, λ1, φ2, λ2) => {
+          const r = Math.PI / 180, R = 6371,
+            dφ = (φ2 - φ1) * r, dλ = (λ2 - λ1) * r,
+            a = Math.sin(dφ / 2) ** 2 + Math.cos(φ1 * r) * Math.cos(φ2 * r) * Math.sin(dλ / 2) ** 2;
+          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        };
+        let nc = 'A'.charCodeAt(0);
+        const ins = async (n, d, vt, c, al, pt, ewkt) => {
+          await client.query(
+            `INSERT INTO linhas_rotas(itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,alunos_ids,paradas_ids,geom)
+         VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+            [itinerario_id, n, d, vt, c, al, pt, ewkt]
+          );
+        };
+        while (normalStops.length) {
+          normalStops.sort((a, b) => b.alunos_ids.length - a.alunos_ids.length);
+          const s = normalStops.shift(), ls = [], la = [];
+          let cap = 50;
+          const t = Math.min(s.alunos_ids.length, cap);
+          la.push(...s.alunos_ids.splice(0, t)); cap -= t; ls.push(s.ponto_id);
+          if (s.alunos_ids.length) normalStops.unshift(s);
+          while (cap > 0 && normalStops.length) {
+            const last = pontoMap[ls[ls.length - 1]];
+            let bi = 0, bd = 1 / 0;
+            normalStops.forEach((x, i) => {
+              const c = pontoMap[x.ponto_id], d = hav(last.lat, last.lng, c.lat, c.lng);
+              if (d < bd) { bd = d; bi = i; }
+            });
+            const nx = normalStops.splice(bi, 1)[0],
+              t2 = Math.min(nx.alunos_ids.length, cap);
+            la.push(...nx.alunos_ids.splice(0, t2)); cap -= t2; ls.push(nx.ponto_id);
+            if (nx.alunos_ids.length) normalStops.splice(bi, 0, nx);
+          }
+          const coord = ls.map(id => pontoMap[id]).map(c => `${c.lng} ${c.lat}`).join(','),
+            ew = `SRID=4326;LINESTRING(${coord})`,
+            dist = ls.slice(1).reduce((sum, id, i, a) => {
+              const p1 = pontoMap[a[i - 1]], p2 = pontoMap[id];
+              return sum + hav(p1.lat, p1.lng, p2.lat, p2.lng);
+            }, 0),
+            vt = dist <= 30 ? 'onibus' : dist <= 60 ? 'microonibus' : 'van',
+            cp = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16,
+            nm = String.fromCharCode(nc++),
+            ds = `Linha ${nm}`;
+          await ins(nm, ds, vt, cp, la, ls, ew);
         }
-
-        // 9) Gera para cada turno
-        for (const shift of ['manha', 'tarde', 'noite']) {
-          await processTurno(shift);
+        let sp = specialStudents.slice();
+        while (sp.length) {
+          const grp = sp.splice(0, 50),
+            la = grp.map(x => x.aluno_id),
+            ls = grp.map(x => x.ponto_id),
+            coord = grp.map(x => `${x.lng} ${x.lat}`).join(','),
+            ew = `SRID=4326;LINESTRING(${coord})`,
+            dist = grp.slice(1).reduce((s, x, i, a) => {
+              const p1 = a[i - 1], p2 = x;
+              return s + hav(p1.lat, p1.lng, p2.lat, p2.lng);
+            }, 0),
+            vt = dist <= 30 ? 'onibus' : dist <= 60 ? 'microonibus' : 'van',
+            cp = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16,
+            nm = String.fromCharCode(nc++),
+            ds = `Especial ${nm}`;
+          await ins(nm, ds, vt, cp, la, ls, ew);
         }
-
         await client.query('COMMIT');
       } catch (e) {
         await client.query('ROLLBACK');
@@ -1458,6 +1403,7 @@
         client.release();
       }
     }
+
   </script>
 </body>
 
