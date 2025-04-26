@@ -5021,7 +5021,7 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
         lr.capacidade,
         lr.alunos_ids,
         lr.paradas_ids,
-        ST_AsGeoJSON(lr.geom) AS geojson,
+        ST_AsGeoJSON(lr.geom)::json AS geojson,
         -- Contagem por turno
         COALESCE((
           SELECT COUNT(*) 
