@@ -1510,11 +1510,13 @@
     }
 
 
-    let mapRoute, routeBounds;
+    let mapRoute,
+      routeBounds,
+      rawPolyline;
 
-    // dispara resize sempre que o modal abre
-    $('#modalRouteMap').on('shown.bs-modal', () => {
+    $('#modalRouteMap').on('shown.bs.modal', () => {
       if (mapRoute) {
+        // reposiciona o mapa ao modal ficar visível
         google.maps.event.trigger(mapRoute, 'resize');
         if (routeBounds) mapRoute.fitBounds(routeBounds);
       }
@@ -1538,22 +1540,26 @@
           });
         }
 
-        // 2) separa school vs paradas
-        const coords = geojson.coordinates;        // [[lng,lat], [lng,lat], ...]
-        const schoolPt = coords[0];                  // o primeiro ponto do LINESTRING é a escola
-        const allParadas = coords.slice(1)             // remove o school inicial
-          .filter(c => c[0] !== schoolPt[0] || c[1] !== schoolPt[1]); // remove eventuais repetições da escola
+        // 2) limpa rotas anteriores
+        directionsRenderer.set('directions', null);
+        if (rawPolyline) {
+          rawPolyline.setMap(null);
+          rawPolyline = null;
+        }
 
-        // torna únicos (evita duplicates)
+        // 3) separa escola e paradas
+        const schoolPt = geojson.coordinates[0];
+        const allParadas = geojson.coordinates
+          .slice(1)
+          .filter(c => c[0] !== schoolPt[0] || c[1] !== schoolPt[1]);
         const uniq = Array.from(new Set(allParadas.map(c => c.join(','))))
           .map(s => s.split(',').map(Number));
 
-        if (uniq.length < 1) {
+        if (uniq.length === 0) {
           showNotification('warning', 'Não há paradas para traçar rota.');
           return;
         }
 
-        // 3) configura origem, destino e waypoints
         const origin = { lat: uniq[0][1], lng: uniq[0][0] };
         const destination = { lat: schoolPt[1], lng: schoolPt[0] };
         const waypoints = uniq.slice(1).map(c => ({
@@ -1561,7 +1567,7 @@
           stopover: true
         }));
 
-        // 4) faz a requisição Directions
+        // 4) tenta via DirectionsService
         directionsService.route({
           origin,
           destination,
@@ -1569,30 +1575,62 @@
           travelMode: 'DRIVING',
           optimizeWaypoints: false
         }, (result, status) => {
+          const garagemIcon = {
+            url: '/assets/img/garagem.png',
+            scaledSize: new google.maps.Size(32, 32)
+          };
+          const pontoIcon = {
+            url: '/assets/img/bus-stop.png',
+            scaledSize: new google.maps.Size(24, 24)
+          };
+
           if (status === 'OK') {
+            // desenha rota oficial
             directionsRenderer.setDirections(result);
-            // ajusta bounds
             routeBounds = new google.maps.LatLngBounds();
             result.routes[0].overview_path.forEach(p => routeBounds.extend(p));
             mapRoute.fitBounds(routeBounds);
 
-            // 5) desenha marcadores custom
-            const garagemIcon = {
-              url: '/assets/img/garagem.png',
-              scaledSize: new google.maps.Size(32, 32)
-            };
-            const pontoIcon = {
-              url: '/assets/img/bus-stop.png',
-              scaledSize: new google.maps.Size(24, 24)
-            };
-            // garagem na escola
+            // marcadores custom
             new google.maps.Marker({ position: destination, map: mapRoute, icon: garagemIcon });
-            // pontos de parada
             waypoints.forEach(wp => {
               new google.maps.Marker({ position: wp.location, map: mapRoute, icon: pontoIcon });
             });
+
           } else {
-            showNotification('danger', 'Não foi possível traçar a rota: ' + status);
+            // fallback: desenha a polilinha simples pelos pontos
+            showNotification('warning', 'Não foi possível traçar via Directions. Exibindo percurso bruto.');
+
+            const rawPath = [
+              // começamos na escola
+              { lat: schoolPt[1], lng: schoolPt[0] },
+              // depois todas as paradas
+              ...uniq.map(c => ({ lat: c[1], lng: c[0] })),
+              // e voltamos à escola
+              { lat: schoolPt[1], lng: schoolPt[0] }
+            ];
+
+            rawPolyline = new google.maps.Polyline({
+              path: rawPath,
+              geodesic: true,
+              strokeOpacity: 0.7,
+              strokeWeight: 4,
+              map: mapRoute
+            });
+
+            routeBounds = new google.maps.LatLngBounds();
+            rawPath.forEach(p => routeBounds.extend(p));
+            mapRoute.fitBounds(routeBounds);
+
+            // marcadores custom no fallback
+            new google.maps.Marker({ position: rawPath[0], map: mapRoute, icon: garagemIcon });
+            uniq.forEach(c => {
+              new google.maps.Marker({
+                position: { lat: c[1], lng: c[0] },
+                map: mapRoute,
+                icon: pontoIcon
+              });
+            });
           }
         });
       }, 300);
