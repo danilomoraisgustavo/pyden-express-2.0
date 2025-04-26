@@ -486,6 +486,15 @@ CREATE TABLE IF NOT EXISTS reavaliacoes (
 );
 CREATE INDEX IF NOT EXISTS idx_reavaliacoes_aluno_id ON reavaliacoes(aluno_id);
 
+
+CREATE TABLE IF NOT EXISTS alunos_linhas (
+  aluno_id INT NOT NULL
+    REFERENCES alunos_ativos(id) ON DELETE CASCADE,
+  linha_id INT NOT NULL
+    REFERENCES linhas_rotas(id) ON DELETE CASCADE,
+  PRIMARY KEY(aluno_id, linha_id)
+);
+
 -- ==========================================
 -- CONEXÃO COM O BANCO DE DADOS VIA PSQL
 -- ==========================================

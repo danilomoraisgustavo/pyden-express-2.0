@@ -5008,6 +5008,148 @@ app.get("/api/pontos", async (req, res) => {
   }
 });
 
+// GET /api/itinerarios/:id/pontos-detalhes
+app.get('/api/itinerarios/:id/pontos-detalhes', async (req, res) => {
+  try {
+    const itRes = await pool.query(
+      'SELECT zoneamentos_ids FROM itinerarios WHERE id=$1',
+      [req.params.id]
+    );
+    if (!itRes.rowCount) return res.status(404).json([]);
+    const zoneIds = itRes.rows[0].zoneamentos_ids;
+    // reutiliza CTE de alunos por ponto
+    const q = `
+      WITH alunos_turno AS (
+        SELECT ap.ponto_id,
+          CASE
+            WHEN a.turma ILIKE '%MAT%' THEN 'manha'
+            WHEN a.turma ILIKE '%VESP%' THEN 'tarde'
+            WHEN a.turma ILIKE '%NOT%' THEN 'noite'
+            WHEN a.turma ILIKE '%INT%' THEN 'integral'
+            ELSE NULL END AS turno,
+          a.id AS aluno_id,
+          a.pessoa_nome AS aluno_nome
+        FROM alunos_ativos a
+        JOIN alunos_pontos ap ON ap.aluno_id = a.id
+        WHERE ap.ponto_id IN (
+          SELECT pz.ponto_id FROM pontos_zoneamentos pz
+           WHERE pz.zoneamento_id = ANY($1)
+        )
+      ), alunos_agg AS (
+        SELECT ponto_id,
+               COUNT(*) AS alunos_count,
+               COUNT(*) FILTER (WHERE turno='manha')    AS alunos_manha,
+               COUNT(*) FILTER (WHERE turno='tarde')    AS alunos_tarde,
+               COUNT(*) FILTER (WHERE turno='noite')    AS alunos_noite,
+               COUNT(*) FILTER (WHERE turno='integral') AS alunos_integral,
+               json_agg(json_build_object('id',aluno_id,'nome',aluno_nome,'turno',turno))
+                 AS alunos
+        FROM alunos_turno
+        GROUP BY ponto_id
+      )
+      SELECT
+        p.id, p.nome_ponto, p.latitude, p.longitude,
+        COALESCE(a.alunos_count,0)      AS alunos_count,
+        COALESCE(a.alunos_manha,0)      AS alunos_manha,
+        COALESCE(a.alunos_tarde,0)      AS alunos_tarde,
+        COALESCE(a.alunos_noite,0)      AS alunos_noite,
+        COALESCE(a.alunos_integral,0)   AS alunos_integral,
+        COALESCE(a.alunos, '[]')        AS alunos
+      FROM pontos p
+      JOIN pontos_zoneamentos pz ON pz.ponto_id=p.id
+      LEFT JOIN alunos_agg a ON a.ponto_id=p.id
+      WHERE pz.zoneamento_id = ANY($1)
+        AND p.status='ativo'
+      ORDER BY p.id;
+    `;
+    const { rows } = await pool.query(q, [zoneIds]);
+    res.json(rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+// POST /api/itinerarios/:id/linhas/generate
+app.post('/api/itinerarios/:id/linhas/generate', async (req, res) => {
+  try {
+    const itId = +req.params.id;
+    // 1) pega pontos/detalhes
+    const pontos = (await fetchItPontos(itId)).rows; // suposto helper
+    // 2) separa alunos especiais vs normais
+    const especiais = [], normais = [];
+    pontos.forEach(p => {
+      p.alunos.forEach(a => {
+        (a.deficiencia && a.deficiencia.length ? especiais : normais)
+          .push({ aluno: a, ponto: p });
+      });
+    });
+    // 3) cluster simples: agrupa por capacidade de 50 em 50
+    const all = normais; // aqui excluir especiais
+    const clusters = [], size = 50;
+    for (let i = 0; i < all.length; i += size) {
+      clusters.push(all.slice(i, i + size));
+    }
+    // 4) monta sugestões com letra + descrição + coords simples
+    const lines = clusters.map((grp, i) => {
+      const letra = String.fromCharCode(65 + i);
+      const pts = [...new Set(grp.map(x => x.ponto.id))];
+      const alunos = grp.map(x => x.aluno.id);
+      const desc = `Linhas que atendem ${pts.length} pontos`;
+      // geom simplificada: só conecta na ordem
+      const coords = grp.map(x => [x.ponto.longitude, x.ponto.latitude]);
+      const geom = { type: 'LineString', coordinates: coords };
+      return {
+        nome_linha: letra,
+        descricao: desc,
+        veiculo_tipo: grp.length > 42 ? 'onibus' : 'microonibus',
+        capacidade: grp.length,
+        alunos_ids: alunos,
+        paradas_ids: pts,
+        geom
+      };
+    });
+    res.json({ lines });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+// POST /api/itinerarios/:id/linhas — salva todas as linhas geradas
+app.post('/api/itinerarios/:id/linhas', async (req, res) => {
+  try {
+    const itId = +req.params.id;
+    const { linhas } = req.body;
+    if (!Array.isArray(linhas)) {
+      return res.status(400).json({ error: 'Payload inválido.' });
+    }
+    const ids = [];
+    for (const l of linhas) {
+      const ins = await pool.query(
+        `INSERT INTO linhas_rotas
+           (itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,geom,alunos_ids,paradas_ids)
+         VALUES ($1,$2,$3,$4,$5,ST_SetSRID(ST_GeomFromGeoJSON($6),4326),$7,$8)
+         RETURNING id`,
+        [itId, l.nome_linha, l.descricao, l.veiculo_tipo,
+          l.capacidade, JSON.stringify(l.geom),
+          l.alunos_ids, l.paradas_ids]
+      );
+      ids.push(ins.rows[0].id);
+      // opcional: registrar em tabela relacional
+      await pool.query(
+        `INSERT INTO alunos_linhas (aluno_id,linha_id)
+         SELECT unnest($1::int[]), $2`,
+        [l.alunos_ids, ins.rows[0].id]
+      );
+    }
+    res.json({ success: true, ids });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
 
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
