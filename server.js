@@ -5013,17 +5013,12 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   try {
     const { itinerario_id } = req.params;
     const query = `
-      SELECT
-        id,
-        nome_linha,
-        descricao,
-        veiculo_tipo,
-        capacidade,
-        alunos_ids,
-        paradas_ids
+      SELECT id, nome_linha, descricao,
+             veiculo_tipo, capacidade,
+             alunos_ids, paradas_ids
       FROM linhas_rotas
       WHERE itinerario_id = $1
-      ORDER BY nome_linha;
+      ORDER BY nome_linha
     `;
     const { rows } = await pool.query(query, [itinerario_id]);
     res.json(rows);

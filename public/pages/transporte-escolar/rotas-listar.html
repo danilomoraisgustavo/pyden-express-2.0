@@ -847,6 +847,11 @@
         </div>
         <div class="modal-body">
           <input type="hidden" id="linhasItinerarioId" />
+          <div class="mb-3 text-end">
+            <button id="btnGerarLinhas" class="btn btn-primary">
+              Gerar Linhas Inteligentes
+            </button>
+          </div>
           <table class="table table-striped" id="linhas-table">
             <thead>
               <tr>
@@ -1033,14 +1038,18 @@
       }, 300);
     }
 
-    // 3) Função front-end para abrir modal e carregar linhas
+    // 3) front-end: abrir modal e carregar linhas
     function openLinhasModal(enc) {
       const it = JSON.parse(decodeURIComponent(enc));
       const id = it.id;
       $('#linhasItinerarioId').val(id);
       $('#modalLinhasItinerario').modal('show');
+      loadLinhas(id);
+    }
 
-      fetch(`/api/itinerarios/${id}/linhas`)
+    // função que busca e popula a tabela de linhas
+    function loadLinhas(itinerarioId) {
+      fetch(`/api/itinerarios/${itinerarioId}/linhas`)
         .then(r => r.json())
         .then(linhas => {
           const tb = $('#linhas-table tbody').empty();
@@ -1061,6 +1070,22 @@
         })
         .catch(() => showNotification('danger', 'Erro ao carregar linhas'));
     }
+
+    // botão “Gerar Linhas Inteligentes”
+    document.getElementById('btnGerarLinhas').addEventListener('click', () => {
+      const id = $('#linhasItinerarioId').val();
+      fetch(`/api/itinerarios/${id}/linhas/gerar`, { method: 'POST' })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showNotification('success', 'Linhas geradas com sucesso');
+            loadLinhas(id);
+          } else {
+            showNotification('danger', res.error || 'Falha ao gerar linhas');
+          }
+        })
+        .catch(() => showNotification('danger', 'Erro de rede ao gerar linhas'));
+    });
 
 
     // Renderiza botões das escolas selecionadas
