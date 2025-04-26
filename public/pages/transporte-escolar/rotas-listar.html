@@ -837,70 +837,6 @@
   </div>
 
 
-  <!-- MODAL LINHAS -->
-  <div class="modal fade" id="modalLinhas" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Linhas do Itinerário</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="linhasItinerarioId" />
-
-          <!-- 1) Informações do Itinerário -->
-          <div class="mb-3">
-            <strong>Itinerário:</strong>
-            <span id="linhasItinerarioDesc"></span>
-          </div>
-
-          <!-- 2) Lista de Pontos com contagem de alunos -->
-          <h6>Pontos de Parada</h6>
-          <table class="table table-sm">
-            <thead>
-              <tr>
-                <th>Ponto</th>
-                <th>Total</th>
-                <th>Manhã</th>
-                <th>Tarde</th>
-                <th>Noite</th>
-                <th>Integral</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaPontosLinhas"></tbody>
-          </table>
-
-          <!-- 3) Botão Gerar Linhas -->
-          <div class="text-end mb-3">
-            <button id="btnGerarLinhas" class="btn btn-primary">
-              Gerar Linhas Automáticas
-            </button>
-          </div>
-
-          <!-- 4) Sugestões de Linhas geradas -->
-          <h6>Linhas Sugeridas</h6>
-          <table class="table table-bordered">
-            <thead>
-              <tr>
-                <th>Letra</th>
-                <th>Veículo</th>
-                <th>Capacidade</th>
-                <th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaLinhasSugestao"></tbody>
-          </table>
-
-          <!-- 5) Botão Salvar Linhas -->
-          <div class="text-end">
-            <button id="btnSalvarLinhas" class="btn btn-success">
-              Salvar Linhas
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
 
 
@@ -946,22 +882,19 @@
             <td>${zn}</td>
             <td>${es}</td>
             <td>
-            <!-- Editar -->
-            <button class="btn btn-link btn-secondary me-1"
-                    onclick="openEditModal('${row}')">
-              <i class="fa fa-edit"></i>
-            </button>
-          + <!-- Linhas -->
-          + <button class="btn btn-link btn-success me-1"
-          +         onclick="openLinhasModal('${row}')">
-          +   <i class="fa fa-project-diagram"></i>
-          + </button>
-            <!-- Deletar -->
-            <button class="btn btn-link btn-danger"
-                    onclick="deleteItinerario(${it.id})">
-              <i class="fa fa-trash"></i>
-            </button>
-          </td>
+              <!-- Editar -->
+              <button class="btn btn-link btn-secondary me-1"
+                      onclick="openEditModal('${row}')">
+                <i class="fa fa-edit"></i>
+              </button>
+              <!-- Visualizar -->
+              </button>
+              <!-- Deletar -->
+              <button class="btn btn-link btn-danger"
+                      onclick="deleteItinerario(${it.id})">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
           </tr>
         `);
           });
@@ -1159,90 +1092,6 @@
     $(document).ready(function () { $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`); })
   </script>
   <script>
-    let sugestoesLinhas = [];
-
-    // 1) Abre modal e carrega pontos/detalhes
-    function openLinhasModal(enc) {
-      const it = JSON.parse(decodeURIComponent(enc));
-      $('#modalLinhas').modal('show');
-      $('#linhasItinerarioId').val(it.id);
-      $('#linhasItinerarioDesc').text(it.descricao);
-
-      // limpa tabelas
-      $('#tabelaPontosLinhas').empty();
-      $('#tabelaLinhasSugestao').empty();
-      sugestoesLinhas = [];
-
-      // fetch pontos agregados
-      fetch(`/api/itinerarios/${it.id}/pontos-detalhes`)
-        .then(r => r.json())
-        .then(pontos => {
-          pontos.forEach(p => {
-            $('#tabelaPontosLinhas').append(`
-          <tr>
-            <td>${p.nome_ponto}</td>
-            <td>${p.alunos_count}</td>
-            <td>${p.alunos_manha}</td>
-            <td>${p.alunos_tarde}</td>
-            <td>${p.alunos_noite}</td>
-            <td>${p.alunos_integral}</td>
-          </tr>
-        `);
-          });
-        })
-        .catch(() => showNotification('danger', 'Erro ao carregar pontos'));
-
-      // habilita botões
-      $('#btnGerarLinhas').off().click(gerarLinhas);
-      $('#btnSalvarLinhas').off().click(salvarLinhas);
-    }
-
-    // 2) Gera linhas via API
-    function gerarLinhas() {
-      const id = $('#linhasItinerarioId').val();
-      showNotification('info', 'Gerando linhas...');
-      fetch(`/api/itinerarios/${id}/linhas/generate`, { method: 'POST' })
-        .then(r => r.json())
-        .then(resp => {
-          sugestoesLinhas = resp.lines;
-          const tb = $('#tabelaLinhasSugestao').empty();
-          sugestoesLinhas.forEach(l => {
-            tb.append(`
-          <tr>
-            <td>${l.nome_linha}</td>
-            <td>${l.veiculo_tipo}</td>
-            <td>${l.capacidade}</td>
-            <td>${l.descricao}</td>
-          </tr>
-        `);
-          });
-          showNotification('success', 'Linhas geradas');
-        })
-        .catch(() => showNotification('danger', 'Erro ao gerar linhas'));
-    }
-
-    // 3) Salva as linhas no banco
-    function salvarLinhas() {
-      const id = $('#linhasItinerarioId').val();
-      if (!sugestoesLinhas.length) {
-        return showNotification('warning', 'Gere as linhas antes de salvar');
-      }
-      fetch(`/api/itinerarios/${id}/linhas`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ linhas: sugestoesLinhas })
-      })
-        .then(r => r.json())
-        .then(d => {
-          if (d.success) {
-            showNotification('success', 'Linhas salvas');
-            $('#modalLinhas').modal('hide');
-          } else {
-            showNotification('danger', d.error || 'Erro ao salvar linhas');
-          }
-        })
-        .catch(() => showNotification('danger', 'Erro ao salvar linhas'));
-    }
     let mapCreate;
     let escolasData = [], escolasMarkers = {}, escolasSelecionadas = [];
     const defaultIconUrl = "../../assets/img/escola.png";
