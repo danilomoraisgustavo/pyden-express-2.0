@@ -888,8 +888,9 @@
           <table class="table table-hover" id="alunos-linha-table">
             <thead>
               <tr>
-                <th>Nome do Aluno</th>
-                <th>Ponto de Parada</th>
+                <th>Aluno</th>
+                <th>Escola</th>
+                <th>Ponto</th>
                 <th>Turno</th>
               </tr>
             </thead>
@@ -1486,7 +1487,8 @@
     function openAlunosLinha(linhaId, turno) {
       $('#alunosLinhaId').val(linhaId);
       $('#alunosLinhaTurno').val(turno);
-      $('#modalAlunosLinhaLabel').text(`Alunos (${turno.charAt(0).toUpperCase() + turno.slice(1)})`);
+      const label = turno.charAt(0).toUpperCase() + turno.slice(1);
+      $('#modalAlunosLinhaLabel').text(`Alunos (${label})`);
       $('#modalAlunosLinha').modal('show');
 
       fetch(`/api/linhas/${linhaId}/alunos?turno=${turno}`)
@@ -1497,6 +1499,7 @@
             tb.append(`
           <tr>
             <td>${a.nome}</td>
+            <td>${a.escola_nome}</td>
             <td>${a.ponto_nome}</td>
             <td>${a.turno}</td>
           </tr>
@@ -1505,6 +1508,7 @@
         })
         .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
     }
+
 
     let mapRoute, routeBounds;
 

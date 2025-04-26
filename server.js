@@ -5278,19 +5278,19 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
     const { linha_id } = req.params;
     const { turno } = req.query;  // 'manha', 'tarde', 'noite', 'integral'
 
-    // 1) Busca definição da linha
+    // busca ids de alunos e paradas da linha
     const lr = await pool.query(
       `SELECT alunos_ids, paradas_ids
          FROM linhas_rotas
         WHERE id = $1`,
       [linha_id]
     );
-    if (lr.rowCount === 0) {
+    if (!lr.rowCount) {
       return res.status(404).json({ error: 'Linha não encontrada.' });
     }
     const { alunos_ids, paradas_ids } = lr.rows[0];
 
-    // 2) Monta filtro de turno igual ao que usamos p/ gerar
+    // monta CASE para normalizar turno
     const turnoCase = `
       CASE
         WHEN a.turma ILIKE '%MAT%'  THEN 'manha'
@@ -5301,31 +5301,33 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
       END
     `;
 
-    // 3) Consulta alunos ativos, juntando ponto de parada e turno
-    const q = `
+    // consulta incluindo o nome da escola
+    const query = `
       SELECT
         a.id,
         a.pessoa_nome    AS nome,
         ${turnoCase}    AS turno,
+        e.nome           AS escola_nome,
         p.id             AS ponto_id,
         p.nome_ponto     AS ponto_nome
       FROM alunos_ativos a
+      JOIN escolas e       ON e.id = a.escola_id
       JOIN alunos_pontos ap ON ap.aluno_id = a.id
-      JOIN pontos p       ON p.id = ap.ponto_id
+      JOIN pontos p        ON p.id = ap.ponto_id
       WHERE a.id = ANY($1)
         AND ap.ponto_id = ANY($2)
         AND ${turnoCase} = $3
       ORDER BY a.pessoa_nome
     `;
     const vals = [alunos_ids, paradas_ids, turno];
-    const { rows } = await pool.query(q, vals);
+    const { rows } = await pool.query(query, vals);
+
     res.json(rows);
   } catch (err) {
     console.error('Erro ao listar alunos da linha:', err);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
-
 
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
