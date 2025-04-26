@@ -836,7 +836,34 @@
     </div>
   </div>
 
-
+  <!-- 2) Modal de Linhas do Itinerário -->
+  <div class="modal fade" id="modalLinhasItinerario" tabindex="-1" aria-labelledby="modalLinhasItinerarioLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalLinhasItinerarioLabel">Linhas do Itinerário</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="linhasItinerarioId" />
+          <table class="table table-striped" id="linhas-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Veículo</th>
+                <th>Capacidade</th>
+                <th># Alunos</th>
+                <th># Paradas</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
 
@@ -894,6 +921,10 @@
                       onclick="deleteItinerario(${it.id})">
                 <i class="fa fa-trash"></i>
               </button>
+              <button class="btn btn-link btn-info me-1"
+        onclick="openLinhasModal('${row}')">
+  <i class="fa fa-route"></i>
+</button>
             </td>
           </tr>
         `);

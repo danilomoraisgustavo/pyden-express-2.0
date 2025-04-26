@@ -5008,6 +5008,30 @@ app.get("/api/pontos", async (req, res) => {
   }
 });
 
+// 4) Backend GET /api/itinerarios/:itinerario_id/linhas — lista subrotas
+app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
+  try {
+    const { itinerario_id } = req.params;
+    const query = `
+      SELECT
+        id,
+        nome_linha,
+        descricao,
+        veiculo_tipo,
+        capacidade,
+        alunos_ids,
+        paradas_ids
+      FROM linhas_rotas
+      WHERE itinerario_id = $1
+      ORDER BY nome_linha;
+    `;
+    const { rows } = await pool.query(query, [itinerario_id]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro ao listar linhas:', err);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
 
 
 /* ------------------------------------------------------------------
