@@ -900,6 +900,20 @@
     </div>
   </div>
 
+  <!-- Modal para exibir rota no mapa -->
+  <div class="modal fade" id="modalRouteMap" tabindex="-1" aria-labelledby="modalRouteMapLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalRouteMapLabel">Visualizar Rota</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div id="mapRoute" style="width:100%;height:500px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
   <!-- JS CORE / PLUGINS -->
@@ -1416,34 +1430,20 @@
         .then(linhas => {
           const tb = $('#linhas-table tbody').empty();
           linhas.forEach(l => {
-            const qtdParadas = (l.paradas_ids || []).length;
+            const geo = JSON.stringify(l.geojson);
             tb.append(`
           <tr>
             <td>${l.nome_linha}</td>
             <td>${l.descricao}</td>
             <td>${l.veiculo_tipo}</td>
             <td>${l.capacidade}</td>
+            <!-- demais colunas... -->
             <td>
-              <a href="#" onclick="openAlunosLinha(${l.id},'manha')">
-                ${l.alunos_manha}
-              </a>
+              <button class="btn btn-sm btn-outline-primary btn-show-map"
+                      data-geo='${geo.replace(/'/g, "&#39;")}'>
+                <i class="fa fa-map-marked-alt"></i>
+              </button>
             </td>
-            <td>
-              <a href="#" onclick="openAlunosLinha(${l.id},'tarde')">
-                ${l.alunos_tarde}
-              </a>
-            </td>
-            <td>
-              <a href="#" onclick="openAlunosLinha(${l.id},'noite')">
-                ${l.alunos_noite}
-              </a>
-            </td>
-            <td>
-              <a href="#" onclick="openAlunosLinha(${l.id},'integral')">
-                ${l.alunos_integral}
-              </a>
-            </td>
-            <td>${qtdParadas}</td>
           </tr>
         `);
           });
@@ -1474,6 +1474,43 @@
         })
         .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
     }
+
+    let mapRoute;
+
+    $(document).on('click', '.btn-show-map', function () {
+      const geojson = JSON.parse($(this).attr('data-geo'));
+      $('#modalRouteMap').modal('show');
+
+      setTimeout(() => {
+        // inicializa o mapa na primeira vez
+        if (!mapRoute) {
+          mapRoute = new google.maps.Map(document.getElementById('mapRoute'), {
+            center: { lat: geojson.coordinates[0][1], lng: geojson.coordinates[0][0] },
+            zoom: 13
+          });
+        }
+        // limpa polylines existentes
+        if (directionsRenderer) {
+          directionsRenderer.setMap(null);
+          directionsRenderer = null;
+        }
+        // monta array de LatLng
+        const path = geojson.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+        // desenha Polyline
+        const routeLine = new google.maps.Polyline({
+          path,
+          geodesic: true,
+          strokeOpacity: 0.8,
+          strokeWeight: 4
+        });
+        routeLine.setMap(mapRoute);
+        // ajusta bounds
+        const bounds = new google.maps.LatLngBounds();
+        path.forEach(p => bounds.extend(p));
+        mapRoute.fitBounds(bounds);
+      }, 300);
+    });
+
 
   </script>
 </body>
