@@ -5093,12 +5093,13 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
 
     // 4) Pega coords de uma escola para início/fim das rotas
     const escRes = await client.query(
-      `SELECT ST_Y(geom) AS lat, ST_X(geom) AS lng
-         FROM public.escolas
-        WHERE id = ANY($1)
-        LIMIT 1`,
+      `SELECT latitude AS lat, longitude AS lng
+     FROM public.escolas
+    WHERE id = ANY($1)
+    LIMIT 1`,
       [escolasIds]
     );
+
     if (!escRes.rowCount) throw new Error('Escola não encontrada');
     const school = {
       lat: parseFloat(escRes.rows[0].lat),
