@@ -5066,91 +5066,143 @@ const fetch = require('node-fetch');
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   const client = await pool.connect();
   try {
-    const { itinerario_id } = req.params;
     await client.query('BEGIN');
+    const { itinerario_id } = req.params;
     await client.query('DELETE FROM linhas_rotas WHERE itinerario_id = $1', [itinerario_id]);
-    const itRes = await client.query('SELECT pontos_ids FROM itinerarios WHERE id = $1', [itinerario_id]);
+
+    const itRes = await client.query(
+      'SELECT pontos_ids FROM itinerarios WHERE id = $1',
+      [itinerario_id]
+    );
     if (!itRes.rowCount) throw new Error('Itinerário não encontrado');
     const pontosIds = itRes.rows[0].pontos_ids;
     if (!pontosIds.length) throw new Error('Itinerário sem pontos');
+
     const { rows: stuRows } = await client.query(
-      `SELECT ap.ponto_id, a.id AS aluno_id, a.latitude, a.longitude, a.deficiencia
+      `SELECT ap.ponto_id, a.id AS aluno_id, a.latitude, a.longitude, a.deficiencia, a.turma
          FROM alunos_ativos a
          JOIN alunos_pontos ap ON ap.aluno_id = a.id
         WHERE ap.ponto_id = ANY($1)`,
       [pontosIds]
     );
-    const normalStopsMap = {}, specialStudents = [];
+
+    const normalByTurno = { manha: {}, tarde: {}, noite: {}, integral: {} };
+    const specialByTurno = { manha: [], tarde: [], noite: [], integral: [] };
+
     stuRows.forEach(s => {
+      const t = /MAT/i.test(s.turma) ? 'manha'
+        : /VESP/i.test(s.turma) ? 'tarde'
+          : /NOT/i.test(s.turma) ? 'noite'
+            : /INT/i.test(s.turma) ? 'integral'
+              : 'manha';
       if (Array.isArray(s.deficiencia) && s.deficiencia.length) {
-        specialStudents.push({ aluno_id: s.aluno_id, ponto_id: s.ponto_id, lat: +s.latitude, lng: +s.longitude });
+        specialByTurno[t].push({
+          aluno_id: s.aluno_id,
+          ponto_id: s.ponto_id,
+          lat: +s.latitude,
+          lng: +s.longitude
+        });
       } else {
-        normalStopsMap[s.ponto_id] = (normalStopsMap[s.ponto_id] || []).concat(s.aluno_id);
+        normalByTurno[t][s.ponto_id] = (normalByTurno[t][s.ponto_id] || []).concat(s.aluno_id);
       }
     });
+
     const { rows: ptsRows } = await client.query(
-      `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng FROM pontos WHERE id = ANY($1)`,
+      `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
+         FROM pontos
+        WHERE id = ANY($1)`,
       [pontosIds]
     );
     const pontoMap = {};
     ptsRows.forEach(p => { pontoMap[p.id] = { lat: +p.lat, lng: +p.lng }; });
-    let normalStops = Object.entries(normalStopsMap)
-      .map(([pid, arr]) => ({ ponto_id: +pid, alunos_ids: arr.slice() }))
-      .filter(x => x.alunos_ids.length);
-    const hav = (φ1, λ1, φ2, λ2) => {
+
+    const haversine = (φ1, λ1, φ2, λ2) => {
       const r = Math.PI / 180, R = 6371,
         dφ = (φ2 - φ1) * r, dλ = (λ2 - λ1) * r,
         a = Math.sin(dφ / 2) ** 2 + Math.cos(φ1 * r) * Math.cos(φ2 * r) * Math.sin(dλ / 2) ** 2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
+
     const caps = [50, 42, 32, 16];
-    const vehicleType = c => c > 32 ? 'onibus' : c === 32 ? 'microonibus' : 'van';
-    let nc = 'A'.charCodeAt(0);
-    const ins = async (nm, ds, vt, cp, al, pt, ew) => {
+    const insertLine = async (nm, ds, vt, cp, al, pt, ew) => {
       await client.query(
         `INSERT INTO linhas_rotas(itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,alunos_ids,paradas_ids,geom)
          VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
         [itinerario_id, nm, ds, vt, cp, al, pt, ew]
       );
     };
-    while (normalStops.length) {
-      normalStops.sort((a, b) => b.alunos_ids.length - a.alunos_ids.length);
-      const s = normalStops.shift(), ls = [], la = [];
-      let cap = caps[0];
-      let t = Math.min(s.alunos_ids.length, cap);
-      la.push(...s.alunos_ids.splice(0, t)); cap -= t; ls.push(s.ponto_id);
-      if (s.alunos_ids.length) normalStops.unshift(s);
-      while (cap > 0 && normalStops.length) {
-        const last = pontoMap[ls[ls.length - 1]];
-        let bi = 0, bd = Infinity;
-        normalStops.forEach((x, i) => {
-          const c = pontoMap[x.ponto_id], d = hav(last.lat, last.lng, c.lat, c.lng);
-          if (d < bd) { bd = d; bi = i; }
-        });
-        const nx = normalStops.splice(bi, 1)[0];
-        t = Math.min(nx.alunos_ids.length, cap);
-        la.push(...nx.alunos_ids.splice(0, t)); cap -= t; ls.push(nx.ponto_id);
-        if (nx.alunos_ids.length) normalStops.splice(bi, 0, nx);
+
+    let nc = 'A'.charCodeAt(0);
+
+    const processTurno = async (normalMap, specialList, turno) => {
+      let normalStops = Object.entries(normalMap)
+        .map(([pid, arr]) => ({ ponto_id: +pid, alunos_ids: arr.slice() }))
+        .filter(x => x.alunos_ids.length);
+
+      while (normalStops.length) {
+        normalStops.sort((a, b) => b.alunos_ids.length - a.alunos_ids.length);
+        const s = normalStops.shift(), ls = [], la = [];
+        let capLeft = caps[0];
+        let take = Math.min(s.alunos_ids.length, capLeft);
+        la.push(...s.alunos_ids.splice(0, take));
+        capLeft -= take;
+        ls.push(s.ponto_id);
+        if (s.alunos_ids.length) normalStops.unshift(s);
+
+        while (capLeft > 0 && normalStops.length) {
+          const last = pontoMap[ls[ls.length - 1]];
+          let bi = 0, bd = Infinity;
+          normalStops.forEach((x, i) => {
+            const c = pontoMap[x.ponto_id];
+            const d = haversine(last.lat, last.lng, c.lat, c.lng);
+            if (d < bd) { bd = d; bi = i; }
+          });
+          const nx = normalStops.splice(bi, 1)[0];
+          take = Math.min(nx.alunos_ids.length, capLeft);
+          la.push(...nx.alunos_ids.splice(0, take));
+          capLeft -= take;
+          ls.push(nx.ponto_id);
+          if (nx.alunos_ids.length) normalStops.splice(bi, 0, nx);
+        }
+
+        const used = la.length;
+        const coord = ls.map(id => `${pontoMap[id].lng} ${pontoMap[id].lat}`).join(',');
+        const ewkt = `SRID=4326;LINESTRING(${coord})`;
+        const dist = ls.slice(1).reduce((sum, id, i, a) => {
+          const p1 = pontoMap[a[i - 1]], p2 = pontoMap[id];
+          return sum + haversine(p1.lat, p1.lng, p2.lat, p2.lng);
+        }, 0);
+        const vt = dist > 60 ? 'van' : dist > 30 ? 'microonibus' : 'onibus';
+        const cp = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16;
+        const nm = String.fromCharCode(nc++);
+        const ds = `Linha ${nm} (${turno})`;
+        await insertLine(nm, ds, vt, cp, la, ls, ewkt);
       }
-      const used = la.length;
-      const vtCap = caps.find(c => used <= c);
-      const coord = ls.map(id => `${pontoMap[id].lng} ${pontoMap[id].lat}`).join(',');
-      const ew = `SRID=4326;LINESTRING(${coord})`;
-      const nm = String.fromCharCode(nc++);
-      const ds = `Linha ${nm}`;
-      await ins(nm, ds, vehicleType(vtCap), vtCap, la, ls, ew);
-    }
-    let sp = specialStudents.slice();
-    while (sp.length) {
-      const grp = sp.splice(0, caps[0]);
-      const la = grp.map(x => x.aluno_id);
-      const ls = grp.map(x => x.ponto_id);
-      const cap = caps.find(c => la.length <= c);
-      const ew = `SRID=4326;LINESTRING(${grp.map(x => `${x.lng} ${x.lat}`).join(',')})`;
-      const nm = String.fromCharCode(nc++);
-      const ds = `Especial ${nm}`;
-      await ins(nm, ds, vehicleType(cap), cap, la, ls, ew);
-    }
+
+      let sp = specialList.slice();
+      while (sp.length) {
+        const grp = sp.splice(0, caps[0]);
+        const la = grp.map(x => x.aluno_id);
+        const ls = grp.map(x => x.ponto_id);
+        const coord = grp.map(x => `${x.lng} ${x.lat}`).join(',');
+        const ewkt = `SRID=4326;LINESTRING(${coord})`;
+        const dist = grp.slice(1).reduce((sum, x, i, a) => {
+          const p1 = a[i - 1], p2 = x;
+          return sum + haversine(p1.lat, p1.lng, p2.lat, p2.lng);
+        }, 0);
+        const vt = dist > 60 ? 'van' : dist > 30 ? 'microonibus' : 'onibus';
+        const cp = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16;
+        const nm = String.fromCharCode(nc++);
+        const ds = `Especial ${nm} (${turno})`;
+        await insertLine(nm, ds, vt, cp, la, ls, ewkt);
+      }
+    };
+
+    await processTurno(normalByTurno.manha, specialByTurno.manha, 'manha');
+    await processTurno(normalByTurno.tarde, specialByTurno.tarde, 'tarde');
+    await processTurno(normalByTurno.noite, specialByTurno.noite, 'noite');
+    await processTurno(normalByTurno.integral, specialByTurno.integral, 'integral');
+
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
