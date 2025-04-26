@@ -1077,30 +1077,6 @@
       loadLinhas(id);
     }
 
-    // função que busca e popula a tabela de linhas
-    function loadLinhas(itinerarioId) {
-      fetch(`/api/itinerarios/${itinerarioId}/linhas`)
-        .then(r => r.json())
-        .then(linhas => {
-          const tb = $('#linhas-table tbody').empty();
-          linhas.forEach(l => {
-            const qtdAlunos = (l.alunos_ids || []).length;
-            const qtdParadas = (l.paradas_ids || []).length;
-            tb.append(`
-          <tr>
-            <td>${l.nome_linha}</td>
-            <td>${l.descricao}</td>
-            <td>${l.veiculo_tipo}</td>
-            <td>${l.capacidade}</td>
-            <td>${qtdAlunos}</td>
-            <td>${qtdParadas}</td>
-          </tr>
-        `);
-          });
-        })
-        .catch(() => showNotification('danger', 'Erro ao carregar linhas'));
-    }
-
     // botão “Gerar Linhas Inteligentes”
     document.getElementById('btnGerarLinhas').addEventListener('click', () => {
       const id = $('#linhasItinerarioId').val();

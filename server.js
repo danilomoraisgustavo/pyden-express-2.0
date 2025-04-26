@@ -5009,16 +5009,47 @@ app.get("/api/pontos", async (req, res) => {
 });
 
 // 4) Backend GET /api/itinerarios/:itinerario_id/linhas — lista subrotas
+// Substitua a implementação atual (que retorna apenas alunos_ids e paradas_ids) por esta:
 app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   try {
     const { itinerario_id } = req.params;
     const query = `
-      SELECT id, nome_linha, descricao,
-             veiculo_tipo, capacidade,
-             alunos_ids, paradas_ids
-      FROM linhas_rotas
-      WHERE itinerario_id = $1
-      ORDER BY nome_linha
+      SELECT
+        lr.id,
+        lr.nome_linha,
+        lr.descricao,
+        lr.veiculo_tipo,
+        lr.capacidade,
+        lr.alunos_ids,
+        lr.paradas_ids,
+        -- Contagem por turno
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM alunos_ativos a 
+          WHERE a.id = ANY(lr.alunos_ids) 
+            AND a.turma ILIKE '%MAT%'
+        ), 0) AS alunos_manha,
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM alunos_ativos a 
+          WHERE a.id = ANY(lr.alunos_ids) 
+            AND a.turma ILIKE '%VESP%'
+        ), 0) AS alunos_tarde,
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM alunos_ativos a 
+          WHERE a.id = ANY(lr.alunos_ids) 
+            AND a.turma ILIKE '%NOT%'
+        ), 0) AS alunos_noite,
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM alunos_ativos a 
+          WHERE a.id = ANY(lr.alunos_ids) 
+            AND a.turma ILIKE '%INT%'
+        ), 0) AS alunos_integral
+      FROM linhas_rotas lr
+      WHERE lr.itinerario_id = $1
+      ORDER BY lr.nome_linha;
     `;
     const { rows } = await pool.query(query, [itinerario_id]);
     res.json(rows);
@@ -5027,6 +5058,7 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
+
 
 // No seu server.js, importe axios ou node-fetch caso queira usar a Directions API:
 const fetch = require('node-fetch');
