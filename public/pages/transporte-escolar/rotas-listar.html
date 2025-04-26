@@ -1512,21 +1512,20 @@
 
     let mapRoute, routeBounds;
 
-    // Quando o modal estiver totalmente visível, dispara resize
-    $('#modalRouteMap').on('shown.bs.modal', () => {
+    // dispara resize sempre que o modal abre
+    $('#modalRouteMap').on('shown.bs-modal', () => {
       if (mapRoute) {
         google.maps.event.trigger(mapRoute, 'resize');
         if (routeBounds) mapRoute.fitBounds(routeBounds);
       }
     });
 
-    // Botão “mostrar mapa”
     $(document).on('click', '.btn-show-map', function () {
       const geojson = JSON.parse($(this).attr('data-geo'));
       $('#modalRouteMap').modal('show');
 
       setTimeout(() => {
-        // 1) Inicializa mapa e Directions apenas uma vez
+        // 1) inicializa mapa e services uma vez
         if (!mapRoute) {
           mapRoute = new google.maps.Map(
             document.getElementById('mapRoute'),
@@ -1539,13 +1538,30 @@
           });
         }
 
-        // 2) Monta LatLng para origin, waypoints, destination
-        const path = geojson.coordinates.map(c => new google.maps.LatLng(c[1], c[0]));
-        const origin = path[0];
-        const destination = path[path.length - 1];
-        const waypoints = path.slice(1, -1).map(p => ({ location: p, stopover: true }));
+        // 2) separa school vs paradas
+        const coords = geojson.coordinates;        // [[lng,lat], [lng,lat], ...]
+        const schoolPt = coords[0];                  // o primeiro ponto do LINESTRING é a escola
+        const allParadas = coords.slice(1)             // remove o school inicial
+          .filter(c => c[0] !== schoolPt[0] || c[1] !== schoolPt[1]); // remove eventuais repetições da escola
 
-        // 3) Rota oficial do Google (mais rápida)
+        // torna únicos (evita duplicates)
+        const uniq = Array.from(new Set(allParadas.map(c => c.join(','))))
+          .map(s => s.split(',').map(Number));
+
+        if (uniq.length < 1) {
+          showNotification('warning', 'Não há paradas para traçar rota.');
+          return;
+        }
+
+        // 3) configura origem, destino e waypoints
+        const origin = { lat: uniq[0][1], lng: uniq[0][0] };
+        const destination = { lat: schoolPt[1], lng: schoolPt[0] };
+        const waypoints = uniq.slice(1).map(c => ({
+          location: { lat: c[1], lng: c[0] },
+          stopover: true
+        }));
+
+        // 4) faz a requisição Directions
         directionsService.route({
           origin,
           destination,
@@ -1555,14 +1571,12 @@
         }, (result, status) => {
           if (status === 'OK') {
             directionsRenderer.setDirections(result);
-            // ajusta bounds para caber tudo
+            // ajusta bounds
             routeBounds = new google.maps.LatLngBounds();
             result.routes[0].overview_path.forEach(p => routeBounds.extend(p));
             mapRoute.fitBounds(routeBounds);
 
-            // 4) coloca marcadores customizados
-            // garagem (início e fim)
-            // define ícones com tamanho fixo
+            // 5) desenha marcadores custom
             const garagemIcon = {
               url: '/assets/img/garagem.png',
               scaledSize: new google.maps.Size(32, 32)
@@ -1571,26 +1585,12 @@
               url: '/assets/img/bus-stop.png',
               scaledSize: new google.maps.Size(24, 24)
             };
-
-            // dentro do seu callback do DirectionsService:
-            new google.maps.Marker({
-              position: origin,
-              map: mapRoute,
-              icon: garagemIcon
-            });
-            new google.maps.Marker({
-              position: destination,
-              map: mapRoute,
-              icon: garagemIcon
-            });
+            // garagem na escola
+            new google.maps.Marker({ position: destination, map: mapRoute, icon: garagemIcon });
+            // pontos de parada
             waypoints.forEach(wp => {
-              new google.maps.Marker({
-                position: wp.location,
-                map: mapRoute,
-                icon: pontoIcon
-              });
+              new google.maps.Marker({ position: wp.location, map: mapRoute, icon: pontoIcon });
             });
-
           } else {
             showNotification('danger', 'Não foi possível traçar a rota: ' + status);
           }
