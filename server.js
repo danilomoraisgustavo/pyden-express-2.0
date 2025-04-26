@@ -5024,32 +5024,32 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
         lr.capacidade,
         lr.alunos_ids,
         lr.paradas_ids,
-        -- retorna o geom como objeto GeoJSON
-        ST_AsGeoJSON(lr.geom)::json AS geojson,
-        -- Contagem por turno
+        -- sanitiza NaN e converte em objeto JSON
+        REPLACE( ST_AsGeoJSON(lr.geom), 'NaN', 'null' )::json AS geojson,
+        -- contagem por turno
         COALESCE((
           SELECT COUNT(*) 
-          FROM alunos_ativos a 
-          WHERE a.id = ANY(lr.alunos_ids) 
-            AND a.turma ILIKE '%MAT%'
+            FROM alunos_ativos a 
+           WHERE a.id = ANY(lr.alunos_ids) 
+             AND a.turma ILIKE '%MAT%'
         ), 0) AS alunos_manha,
         COALESCE((
           SELECT COUNT(*) 
-          FROM alunos_ativos a 
-          WHERE a.id = ANY(lr.alunos_ids) 
-            AND a.turma ILIKE '%VESP%'
+            FROM alunos_ativos a 
+           WHERE a.id = ANY(lr.alunos_ids) 
+             AND a.turma ILIKE '%VESP%'
         ), 0) AS alunos_tarde,
         COALESCE((
           SELECT COUNT(*) 
-          FROM alunos_ativos a 
-          WHERE a.id = ANY(lr.alunos_ids) 
-            AND a.turma ILIKE '%NOT%'
+            FROM alunos_ativos a 
+           WHERE a.id = ANY(lr.alunos_ids) 
+             AND a.turma ILIKE '%NOT%'
         ), 0) AS alunos_noite,
         COALESCE((
           SELECT COUNT(*) 
-          FROM alunos_ativos a 
-          WHERE a.id = ANY(lr.alunos_ids) 
-            AND a.turma ILIKE '%INT%'
+            FROM alunos_ativos a 
+           WHERE a.id = ANY(lr.alunos_ids) 
+             AND a.turma ILIKE '%INT%'
         ), 0) AS alunos_integral
       FROM public.linhas_rotas lr
       WHERE lr.itinerario_id = $1
@@ -5062,6 +5062,7 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
+
 
 
 // POST /api/itinerarios/:itinerario_id/linhas/gerar
