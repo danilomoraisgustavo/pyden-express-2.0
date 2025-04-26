@@ -1423,8 +1423,7 @@
         client.release();
       }
     }
-    // substitui loadLinhas anterior
-    // Front-end: carrega e renderiza a tabela de linhas, incluindo botão de mapa
+    // rotas-listar.html (JS)
     function loadLinhas(itinerarioId) {
       fetch(`/api/itinerarios/${itinerarioId}/linhas`)
         .then(r => r.json())
@@ -1432,7 +1431,6 @@
           const tb = $('#linhas-table tbody').empty();
           linhas.forEach(l => {
             const qtdParadas = (l.paradas_ids || []).length;
-            const geo = JSON.stringify(l.geojson || {});
             tb.append(`
           <tr>
             <td>${l.nome_linha}</td>
@@ -1461,9 +1459,10 @@
             </td>
             <td>${qtdParadas}</td>
             <td>
-              <button class="btn btn-sm btn-outline-primary btn-show-map"
-                      data-geo='${geo.replace(/'/g, "&#39;")}'>
-                <i class="fa fa-map-marked-alt"></i>
+              <!-- botão para abrir o modal de mapa -->
+              <button class="btn btn-link btn-show-map"
+                      data-geo='${JSON.stringify(l.geojson)}'>
+                <i class="fa fa-map-marker-alt"></i>
               </button>
             </td>
           </tr>

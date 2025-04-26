@@ -5008,10 +5008,13 @@ app.get("/api/pontos", async (req, res) => {
   }
 });
 
-// 4) Backend GET /api/itinerarios/:itinerario_id/linhas — lista subrotas
+// server.js
 app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   try {
     const { itinerario_id } = req.params;
+    // força usar o schema público
+    await pool.query(`SET search_path TO public`);
+
     const query = `
       SELECT
         lr.id,
@@ -5021,61 +5024,44 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
         lr.capacidade,
         lr.alunos_ids,
         lr.paradas_ids,
-        ST_AsGeoJSON(lr.geom) AS geojson,
+        -- retorna o geom como objeto GeoJSON
+        ST_AsGeoJSON(lr.geom)::json AS geojson,
         -- Contagem por turno
         COALESCE((
           SELECT COUNT(*) 
-            FROM public.alunos_ativos a 
-           WHERE a.id = ANY(lr.alunos_ids) 
-             AND a.turma ILIKE '%MAT%'
+          FROM alunos_ativos a 
+          WHERE a.id = ANY(lr.alunos_ids) 
+            AND a.turma ILIKE '%MAT%'
         ), 0) AS alunos_manha,
         COALESCE((
           SELECT COUNT(*) 
-            FROM public.alunos_ativos a 
-           WHERE a.id = ANY(lr.alunos_ids) 
-             AND a.turma ILIKE '%VESP%'
+          FROM alunos_ativos a 
+          WHERE a.id = ANY(lr.alunos_ids) 
+            AND a.turma ILIKE '%VESP%'
         ), 0) AS alunos_tarde,
         COALESCE((
           SELECT COUNT(*) 
-            FROM public.alunos_ativos a 
-           WHERE a.id = ANY(lr.alunos_ids) 
-             AND a.turma ILIKE '%NOT%'
+          FROM alunos_ativos a 
+          WHERE a.id = ANY(lr.alunos_ids) 
+            AND a.turma ILIKE '%NOT%'
         ), 0) AS alunos_noite,
         COALESCE((
           SELECT COUNT(*) 
-            FROM public.alunos_ativos a 
-           WHERE a.id = ANY(lr.alunos_ids) 
-             AND a.turma ILIKE '%INT%'
+          FROM alunos_ativos a 
+          WHERE a.id = ANY(lr.alunos_ids) 
+            AND a.turma ILIKE '%INT%'
         ), 0) AS alunos_integral
       FROM public.linhas_rotas lr
-     WHERE lr.itinerario_id = $1
-     ORDER BY lr.nome_linha;
+      WHERE lr.itinerario_id = $1
+      ORDER BY lr.nome_linha;
     `;
     const { rows } = await pool.query(query, [itinerario_id]);
-
-    // converte geojson de string para objeto
-    const linhas = rows.map(r => ({
-      id: r.id,
-      nome_linha: r.nome_linha,
-      descricao: r.descricao,
-      veiculo_tipo: r.veiculo_tipo,
-      capacidade: r.capacidade,
-      alunos_ids: r.alunos_ids,
-      paradas_ids: r.paradas_ids,
-      geojson: JSON.parse(r.geojson),
-      alunos_manha: r.alunos_manha,
-      alunos_tarde: r.alunos_tarde,
-      alunos_noite: r.alunos_noite,
-      alunos_integral: r.alunos_integral
-    }));
-
-    res.json(linhas);
+    res.json(rows);
   } catch (err) {
     console.error('Erro ao listar linhas:', err);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
-
 
 
 // No seu server.js, importe axios ou node-fetch caso queira usar a Directions API:
