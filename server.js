@@ -5064,9 +5064,6 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
 });
 
 
-// No seu server.js, importe axios ou node-fetch caso queira usar a Directions API:
-const fetch = require('node-fetch');
-
 // POST /api/itinerarios/:itinerario_id/linhas/gerar
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   const client = await pool.connect();
