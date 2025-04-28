@@ -10421,7 +10421,9 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     await client.query("BEGIN");
 
     for (const a of alunos) {
-      const {
+
+      // --- destruturação ----------------------------------------------------
+      let {
         id_pessoa,
         id_matricula,
         ANO,
@@ -10441,6 +10443,12 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         data_nascimento
       } = a;
 
+      // --- normalizações ----------------------------------------------------
+      const cpfNorm =
+        typeof cpf === "string" && (cpf = cpf.trim()) && cpf.length
+          ? cpf
+          : null;                         // string vazia vira NULL
+
       const defArray =
         typeof deficiencia === "string" && deficiencia.trim()
           ? JSON.parse(deficiencia)
@@ -10448,9 +10456,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
             ? deficiencia
             : null;
 
-      /*------------------------------------------------------------
-        1) preenche id_pessoa pela matrícula
-      ------------------------------------------------------------*/
+      // 1) preenche id_pessoa pela matrícula -------------------------------
       const { rowCount: updMat } = await client.query(
         `UPDATE alunos_ativos
             SET id_pessoa = $1
@@ -10460,32 +10466,36 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       );
       if (updMat) continue;
 
-      /*------------------------------------------------------------
-        2) preenche id_pessoa pelo CPF
-      ------------------------------------------------------------*/
-      const { rowCount: updCpf } = await client.query(
-        `UPDATE alunos_ativos
-            SET id_pessoa = $1
-          WHERE cpf = $2
-            AND id_pessoa IS NULL`,
-        [id_pessoa, cpf]
-      );
-      if (updCpf) continue;
+      // 2) preenche id_pessoa pelo CPF (se houver CPF) ----------------------
+      if (cpfNorm) {
+        const { rowCount: updCpf } = await client.query(
+          `UPDATE alunos_ativos
+              SET id_pessoa = $1
+            WHERE cpf = $2
+              AND id_pessoa IS NULL`,
+          [id_pessoa, cpfNorm]
+        );
+        if (updCpf) continue;
+      }
 
-      /*------------------------------------------------------------
-        3) se esse id_pessoa já existe, pula o aluno
-      ------------------------------------------------------------*/
+      // 3) se id_pessoa já existe, pula ------------------------------------
       const { rowCount: existsPessoa } = await client.query(
-        `SELECT 1 FROM alunos_ativos
-          WHERE id_pessoa = $1
-          LIMIT 1`,
+        `SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1 LIMIT 1`,
         [id_pessoa]
       );
       if (existsPessoa) continue;
 
-      /*------------------------------------------------------------
-        4) aluno inédito → INSERT
-      ------------------------------------------------------------*/
+      // 4) existe CPF ou matrícula em outro aluno? --------------------------
+      const { rowCount: existsKey } = await client.query(
+        `SELECT 1 FROM alunos_ativos
+          WHERE id_matricula = $1
+             OR (cpf = $2 AND $2 IS NOT NULL)
+          LIMIT 1`,
+        [id_matricula, cpfNorm]
+      );
+      if (existsKey) continue;            // já cadastrado com id_pessoa ≠ NULL
+
+      // 5) registro inédito → INSERT ---------------------------------------
       await client.query(
         `
         INSERT INTO alunos_ativos (
@@ -10516,7 +10526,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           FORMATO_LETIVO,
           TURMA,
           pessoa_nome,
-          cpf,
+          cpfNorm,
           cep,
           bairro,
           numero_pessoa_endereco,
@@ -10532,6 +10542,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
 
     await client.query("COMMIT");
     res.json({ success: true, message: "Importação concluída com sucesso." });
+
   } catch (err) {
     await client.query("ROLLBACK");
     console.error(err);
