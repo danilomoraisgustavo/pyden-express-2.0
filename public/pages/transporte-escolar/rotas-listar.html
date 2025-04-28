@@ -1006,10 +1006,8 @@
         })
         .catch(() => showNotification("danger", "Erro ao carregar rotas."));
     }
-
     // chama no carregamento da página
     loadRotas();
-
     function deleteItinerario(id) {
       if (!confirm("Deseja realmente excluir este itinerário?")) return;
       fetch(`/api/itinerarios/${id}`, { method: "DELETE" })

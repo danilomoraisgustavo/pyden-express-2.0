@@ -5064,7 +5064,6 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
 });
 
 
-
 // POST /api/itinerarios/:itinerario_id/linhas/gerar
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   const client = await pool.connect();
