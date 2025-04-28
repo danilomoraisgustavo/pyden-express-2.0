@@ -10412,14 +10412,16 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 /*  ROTAS ::  Importar alunos activos                                 */
 /* ------------------------------------------------------------------ */
 app.post("/api/import-alunos-ativos", async (req, res) => {
+  const { alunos, escolaId } = req.body;
+  if (!Array.isArray(alunos) || !escolaId)
+    return res.status(400).json({ success: false, message: "Dados inválidos." });
+
+  const client = await pool.connect();
+
   try {
-    const { alunos, escolaId } = req.body;
-    if (!Array.isArray(alunos) || !escolaId) {
-      return res.json({ success: false, message: "Dados inválidos." });
-    }
+    await client.query("BEGIN");
 
     for (const a of alunos) {
-      /* ---------- destrutura / trata tipos ------------------------ */
       const {
         id_pessoa,
         id_matricula,
@@ -10435,13 +10437,11 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         filiacao_1,
         telefone_filiacao_1,
         filiacao_2,
-        telefone_filiacao_2,
         RESPONSAVEL,
         deficiencia,
         data_nascimento
       } = a;
 
-      /* transforma string → array (quando vier como texto JSON) */
       const defArray =
         typeof deficiencia === "string" && deficiencia.trim()
           ? JSON.parse(deficiencia)
@@ -10449,23 +10449,36 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
             ? deficiencia
             : null;
 
-      /* ------------------------------------------------------------ */
-      /*  1)  Atualiza id_pessoa se já existir a matrícula            */
-      /* ------------------------------------------------------------ */
-      await pool.query(
-        `
-        UPDATE alunos_ativos
-           SET id_pessoa = COALESCE(id_pessoa,$1)
-         WHERE id_matricula = $2
-           AND id_pessoa    IS NULL
-        `,
+      /*------------------------------------------------------------
+        1) Atualiza pela matrícula, se existir e id_pessoa estiver vazio
+      ------------------------------------------------------------*/
+      const { rowCount: updMat } = await client.query(
+        `UPDATE alunos_ativos
+            SET id_pessoa = $1
+          WHERE id_matricula = $2
+            AND id_pessoa IS NULL`,
         [id_pessoa || null, id_matricula || null]
       );
+      if (updMat) continue;      // já resolveu — próximo aluno
 
-      /* ------------------------------------------------------------ */
-      /*  2)  Faz INSERT; se conflitar no CPF, só preenche id_pessoa  */
-      /* ------------------------------------------------------------ */
-      await pool.query(
+      /*------------------------------------------------------------
+        2) (opcional) Atualiza pelo CPF, caso exista e id_pessoa esteja vazio
+      ------------------------------------------------------------*/
+      const { rowCount: updCpf } = await client.query(
+        `UPDATE alunos_ativos
+            SET id_pessoa = $1
+          WHERE cpf = $2
+            AND id_pessoa IS NULL`,
+        [id_pessoa || null, cpf || null]
+      );
+      if (updCpf) continue;      // resolveu — próximo aluno
+
+      /*------------------------------------------------------------
+        3) Não existe ainda → INSERE.
+           Se alguém inserir ao mesmo tempo e conflitar na matrícula,
+           só preenche id_pessoa (e somente se ainda estiver NULL).
+      ------------------------------------------------------------*/
+      await client.query(
         `
         INSERT INTO alunos_ativos (
           id_pessoa, id_matricula, escola_id, ano, modalidade,
@@ -10480,10 +10493,11 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           $13,$14,$15,$16,
           $17::text[],$18
         )
-        ON CONFLICT (cpf)                    --  ←  aqui só muda isto
+        ON CONFLICT ON CONSTRAINT alunos_ativos_id_matricula_uk
         DO UPDATE
            SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
                                     EXCLUDED.id_pessoa)
+         WHERE alunos_ativos.id_pessoa IS NULL; -- garante que não sobre-escreva
         `,
         [
           id_pessoa || null,
@@ -10508,10 +10522,14 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       );
     }
 
-    res.json({ success: true, message: "Alunos importados." });
-  } catch (e) {
-    console.error(e);
+    await client.query("COMMIT");
+    res.json({ success: true, message: "Importação concluída com sucesso." });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error(err);
     res.status(500).json({ success: false, message: "Erro interno." });
+  } finally {
+    client.release();
   }
 });
 
