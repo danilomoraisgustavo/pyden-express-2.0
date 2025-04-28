@@ -1173,9 +1173,15 @@
 
     /* ---------- busca / filtros ---------- */
     function buscarAlunosComFiltros() {
-      const escola = $("#filtroEscola").val(), bairro = $("#filtroBairro").val(), transporte = $("#filtroTransporte").val(),
-        def = $("#filtroDeficiencia").val(), idade = $("#filtroIdade").val(), cep = $("#filtroCep").val(), turno = $("#filtroTurno").val(),
+      const escola = $("#filtroEscola").val(),
+        bairro = $("#filtroBairro").val(),
+        transporte = $("#filtroTransporte").val(),
+        def = $("#filtroDeficiencia").val(),
+        idade = $("#filtroIdade").val(),
+        cep = $("#filtroCep").val(),
+        turno = $("#filtroTurno").val(),
         q = new URLSearchParams();
+
       if (escola) q.append("escola_id", escola);
       if (bairro) q.append("bairro", bairro);
       if (cep) q.append("cep", cep);
@@ -1183,20 +1189,38 @@
       if (def) q.append("deficiencia", def);
       if (idade) q.append("idade", idade);
       if (turno) q.append("turno", turno);
+
       showLoader();
-      fetch("/api/alunos-ativos?" + q.toString()).then(r => r.json()).then(d => {
-        alunosData = d; popularTabela(alunosData); popularFiltros(alunosData);
-      }).catch(() => showNotification("danger", "Erro ao carregar dados do banco.")).finally(hideLoader);
+      fetch("/api/alunos-ativos?" + q.toString())
+        .then(r => r.json())
+        .then(d => {
+          alunosData = d;
+          popularTabela(alunosData);
+          popularFiltros(alunosData);
+          toggleDownloadBtn();            // garante estado correto quando lista vazia
+        })
+        .catch(() => showNotification("danger", "Erro ao carregar dados do banco."))
+        .finally(hideLoader);
     }
 
     /* ---------- DataTable ---------- */
     function popularTabela(alunos) {
-      const tbody = $("#alunos-table tbody"); tbody.empty();
-      if (dataTable) { dataTable.clear().destroy(); }
-      if (!alunos.length) { dataTable = $("#alunos-table").DataTable({ pageLength: 10, language: dtLang }); return; }
-      alunos.forEach(it => {
-        const def = it.deficiencia && Array.isArray(it.deficiencia) ? JSON.stringify(it.deficiencia) : it.deficiencia || "";
-        tbody.append(`<tr data-id="${it.id}" data-obj='${JSON.stringify(it)}'>
+      const tbody = $("#alunos-table tbody");
+      tbody.empty();
+
+      // se já existia uma instância, destrói para recriar
+      if (dataTable) {
+        dataTable.clear().destroy();
+      }
+
+      // monta linhas quando houver dados
+      if (alunos.length) {
+        alunos.forEach(it => {
+          const def = it.deficiencia && Array.isArray(it.deficiencia)
+            ? JSON.stringify(it.deficiencia)
+            : it.deficiencia || "";
+          tbody.append(`
+        <tr data-id="${it.id}" data-obj='${JSON.stringify(it)}'>
           <td>${it.id_matricula || ""}</td><td>${it.id_pessoa || ""}</td><td>${it.escola_nome || ""}</td>
           <td>${it.ano || ""}</td><td>${it.modalidade || ""}</td><td>${it.formato_letivo || ""}</td><td>${it.turma || ""}</td>
           <td>${it.pessoa_nome || ""}</td><td>${it.cpf || ""}</td><td>${it.data_nascimento || ""}</td>
@@ -1207,25 +1231,43 @@
             <button class="btn btn-sm btn-warning btn-editar"   title="Editar"><i class="fa fa-edit"></i></button>
             <button class="btn btn-sm btn-info    btn-localizar" title="Localizar"><i class="fa fa-map-marker-alt"></i></button>
             <button class="btn btn-sm btn-danger  btn-excluir"   title="Excluir"><i class="fa fa-trash"></i></button>
-          </td></tr>`);
-      });
+          </td>
+        </tr>`);
+        });
+      }
+
+      // (re)instancia DataTable e sincroniza botão CSV
       dataTable = $("#alunos-table").DataTable({ pageLength: 10, language: dtLang });
+      dataTable.on('draw', toggleDownloadBtn);
+      toggleDownloadBtn();
     }
+
     const dtLang = {
-      decimal: ",", thousands: ".", info: "Mostrando _START_ até _END_ de _TOTAL_ registros", infoEmpty: "Mostrando 0 até 0 de 0 registros",
-      infoFiltered: "(filtrado de _MAX_ registros no total)", lengthMenu: "Mostrar _MENU_ registros", loadingRecords: "Carregando...", processing: "Processando...",
-      search: "Pesquisar:", zeroRecords: "Nenhum registro encontrado", paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
+      decimal: ",",
+      thousands: ".",
+      info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+      infoEmpty: "Mostrando 0 até 0 de 0 registros",
+      infoFiltered: "(filtrado de _MAX_ registros no total)",
+      lengthMenu: "Mostrar _MENU_ registros",
+      loadingRecords: "Carregando...",
+      processing: "Processando...",
+      search: "Pesquisar:",
+      zeroRecords: "Nenhum registro encontrado",
+      paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
       emptyTable: "Nenhum dado disponível na tabela"
     };
 
     function popularFiltros(alunos) {
-      const fB = $("#filtroBairro"), cur = fB.val(), set = new Set();
+      const fB = $("#filtroBairro"),
+        cur = fB.val(),
+        set = new Set();
+
       alunos.forEach(a => { if (a.bairro) set.add(a.bairro); });
+
       fB.empty().append('<option value="">Todos</option>');
       set.forEach(b => fB.append(`<option value="${b}">${b}</option>`));
       fB.val(cur);
     }
-
     /* ---------- edição / exclusão / localização individual ---------- */
     $(document).ready(() => {
       carregarEscolas();
@@ -1341,10 +1383,6 @@
       link.click();
       document.body.removeChild(link);
     });
-    toggleDownloadBtn();
-
-    // sempre que o usuário pesquisar/paginar/ordenar:
-    dataTable.on('draw', toggleDownloadBtn);
 
   </script>
 
