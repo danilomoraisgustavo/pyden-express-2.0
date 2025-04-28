@@ -1373,23 +1373,39 @@
         showNotification("info", "Nenhum aluno para exportar.");
         return;
       }
-      // converte o array 2-D devolvido pelo DataTables em um array de objetos
-      const cabecalhos = dataTable.settings()[0].aoColumns.map(c => c.sTitle);
-      const dadosObj = linhas.map(l => {
+
+      const dadosParaCSV = linhas.map(l => {
         const o = {};
-        cabecalhos.forEach((c, i) => o[c] = l[i]);
+        exportCols.forEach(c => (o[c.header] = l[c.index]));
         return o;
       });
 
-      const csv = jsonParaCSV(dadosObj);
+      const csv = jsonParaCSV(dadosParaCSV);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "alunos_listados.csv";
+      link.download = "alunos_filtrados.csv";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     });
+
+    // converte o array 2-D devolvido pelo DataTables em um array de objetos
+    const cabecalhos = dataTable.settings()[0].aoColumns.map(c => c.sTitle);
+    const dadosObj = linhas.map(l => {
+      const o = {};
+      cabecalhos.forEach((c, i) => o[c] = l[i]);
+      return o;
+    });
+
+    const csv = jsonParaCSV(dadosObj);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "alunos_listados.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
   </script>
 
