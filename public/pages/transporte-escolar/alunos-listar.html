@@ -831,6 +831,11 @@
             </div>
           </div>
         </div>
+        <!-- Botão de download CSV -->
+        <button id="btnDownloadAlunosCSV" class="btn btn-secondary mt-3" disabled>
+          Baixar CSV
+        </button>
+
       </div>
 
 
@@ -1304,6 +1309,43 @@
         $("#localizarAlunoLat").val(e.latLng.lat()); $("#localizarAlunoLng").val(e.latLng.lng());
       });
     }
+    /* ---------- download CSV da listagem ---------- */
+    function toggleDownloadBtn() {
+      // habilita se a DataTable possuir pelo menos 1 registro visível
+      const temDados = dataTable && dataTable.rows({ search: 'applied' }).any();
+      $("#btnDownloadAlunosCSV").prop("disabled", !temDados);
+    }
+
+    $("#btnDownloadAlunosCSV").on("click", () => {
+      // captura apenas as linhas que realmente estão aparecendo após a pesquisa/filtro
+      const linhas = dataTable.rows({ search: 'applied' }).data().toArray();
+      if (!linhas.length) {
+        showNotification("info", "Nenhum aluno para exportar.");
+        return;
+      }
+
+      // converte o array 2-D devolvido pelo DataTables em um array de objetos
+      const cabecalhos = dataTable.settings()[0].aoColumns.map(c => c.sTitle);
+      const dadosObj = linhas.map(l => {
+        const o = {};
+        cabecalhos.forEach((c, i) => o[c] = l[i]);
+        return o;
+      });
+
+      const csv = jsonParaCSV(dadosObj);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "alunos_listados.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+    toggleDownloadBtn();
+
+    // sempre que o usuário pesquisar/paginar/ordenar:
+    dataTable.on('draw', toggleDownloadBtn);
+
   </script>
 
 
