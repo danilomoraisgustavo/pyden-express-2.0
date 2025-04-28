@@ -1352,20 +1352,27 @@
       });
     }
     /* ---------- download CSV da listagem ---------- */
+    const exportCols = [
+      { header: "Nome Aluno", index: 7 },
+      { header: "Escola", index: 2 },
+      { header: "Telefone", index: 15 },
+      { header: "Deficiência", index: 18 },
+      { header: "Latitude", index: 19 },
+      { header: "Longitude", index: 20 },
+      { header: "Bairro", index: 12 }
+    ];
+
     function toggleDownloadBtn() {
-      // habilita se a DataTable possuir pelo menos 1 registro visível
-      const temDados = dataTable && dataTable.rows({ search: 'applied' }).any();
+      const temDados = dataTable && dataTable.rows({ search: "applied" }).any();
       $("#btnDownloadAlunosCSV").prop("disabled", !temDados);
     }
 
     $("#btnDownloadAlunosCSV").on("click", () => {
-      // captura apenas as linhas que realmente estão aparecendo após a pesquisa/filtro
-      const linhas = dataTable.rows({ search: 'applied' }).data().toArray();
+      const linhas = dataTable.rows({ search: "applied" }).data().toArray();
       if (!linhas.length) {
         showNotification("info", "Nenhum aluno para exportar.");
         return;
       }
-
       // converte o array 2-D devolvido pelo DataTables em um array de objetos
       const cabecalhos = dataTable.settings()[0].aoColumns.map(c => c.sTitle);
       const dadosObj = linhas.map(l => {
