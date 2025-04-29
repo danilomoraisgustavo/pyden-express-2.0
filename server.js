@@ -5065,33 +5065,25 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   }
 });
 
+// server.js  ── substituir toda a função por esta versão robusta
 async function gerarLinhasInteligentes(itinerario_id, pool) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    /* ---------- IDs dos fornecedores ---------- */
-    const [{ id: talismaId }] = (
-      await client.query(
-        `SELECT id FROM fornecedores WHERE LOWER(nome_fornecedor) LIKE '%talisma%' LIMIT 1`
-      )
-    ).rows;
-    const [{ id: locanId }] = (
-      await client.query(
-        `SELECT id FROM fornecedores WHERE LOWER(nome_fornecedor) LIKE '%locan%' LIMIT 1`
-      )
-    ).rows;
+    /* fornecedores */
+    const [{ id: talismaId }] =
+      (await client.query(`SELECT id FROM fornecedores WHERE LOWER(nome_fornecedor) LIKE '%talisma%' LIMIT 1`)).rows;
+    const [{ id: locanId }] =
+      (await client.query(`SELECT id FROM fornecedores WHERE LOWER(nome_fornecedor) LIKE '%locan%'   LIMIT 1`)).rows;
 
-    /* ---------- pontos do itinerário ---------- */
-    const itRes = await client.query(
-      'SELECT pontos_ids FROM itinerarios WHERE id = $1',
-      [itinerario_id]
-    );
-    if (!itRes.rowCount) throw new Error('Itinerário não encontrado');
-    const pontosIds = itRes.rows[0].pontos_ids;
+    /* pontos do itinerário */
+    const it = await client.query('SELECT pontos_ids FROM itinerarios WHERE id=$1', [itinerario_id]);
+    if (!it.rowCount) throw new Error('Itinerário não encontrado');
+    const pontosIds = it.rows[0].pontos_ids;
 
-    /* ---------- alunos agrupados por ponto ----- */
-    const { rows: stuRows } = await client.query(
+    /* alunos */
+    const { rows: stu } = await client.query(
       `SELECT ap.ponto_id, a.id AS aluno_id, a.deficiencia
          FROM alunos_ativos a
          JOIN alunos_pontos ap ON ap.aluno_id = a.id
@@ -5099,149 +5091,121 @@ async function gerarLinhasInteligentes(itinerario_id, pool) {
       [pontosIds]
     );
 
-    const normalStopsMap = {};
-    const specialStudents = [];
-    stuRows.forEach(s => {
-      if (Array.isArray(s.deficiencia) && s.deficiencia.length) {
-        specialStudents.push(s);
-      } else {
-        normalStopsMap[s.ponto_id] = (normalStopsMap[s.ponto_id] || []).concat(
-          s.aluno_id
-        );
-      }
+    const norm = {}, esp = [];
+    stu.forEach(s => {
+      if (Array.isArray(s.deficiencia) && s.deficiencia.length) esp.push(s);
+      else (norm[s.ponto_id] = (norm[s.ponto_id] || []).concat(s.aluno_id));
     });
 
-    /* ---------- coordenadas dos pontos --------- */
-    const { rows: ptsRows } = await client.query(
+    /* coordenadas dos pontos */
+    const { rows: pts } = await client.query(
       `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
-         FROM pontos
-        WHERE id = ANY($1)`,
+         FROM pontos WHERE id = ANY($1)`,
       [pontosIds]
     );
-    const pontoMap = {};
-    ptsRows.forEach(p => {
-      pontoMap[p.id] = { lat: +p.lat, lng: +p.lng };
-    });
+    const pMap = Object.fromEntries(pts.map(p => [p.id, { lat: +p.lat, lng: +p.lng }]));
 
     const hav = (φ1, λ1, φ2, λ2) => {
-      const r = Math.PI / 180,
-        R = 6371,
-        dφ = (φ2 - φ1) * r,
-        dλ = (λ2 - λ1) * r,
-        a =
-          Math.sin(dφ / 2) ** 2 +
-          Math.cos(φ1 * r) * Math.cos(φ2 * r) * Math.sin(dλ / 2) ** 2;
+      const r = Math.PI / 180, R = 6371,
+        dφ = (φ2 - φ1) * r, dλ = (λ2 - λ1) * r,
+        a = Math.sin(dφ / 2) ** 2 + Math.cos(φ1 * r) * Math.cos(φ2 * r) * Math.sin(dλ / 2) ** 2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
     let nc = 'A'.charCodeAt(0);
 
-    /* ---------- helper para inserir linha + fornecedor ---------- */
-    const ins = async (n, d, vt, c, al, pt, ewkt) => {
-      const {
-        rows: [{ id: rotaId }],
-      } = await client.query(
-        `INSERT INTO linhas_rotas (
-             itinerario_id,nome_linha,descricao,
-             veiculo_tipo,capacidade,
-             alunos_ids,paradas_ids,geom
-           ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-           RETURNING id`,
-        [itinerario_id, n, d, vt, c, al, pt, ewkt]
+    /* insere linha + vincula fornecedor */
+    const ins = async (nome, desc, vt, cap, alunos, paradas) => {
+      const coords = paradas.map(id => pMap[id]).filter(Boolean);
+      if (!coords.length) return;                                   // sem geometria possível
+
+      const xy = coords.map(c => `${c.lng} ${c.lat}`);
+      const ewkt =
+        coords.length > 1
+          ? `SRID=4326;LINESTRING(${xy.join(',')})`
+          : `SRID=4326;LINESTRING(${xy[0]},${xy[0]})`;             // duplica p/ evitar erro
+
+      const dist = coords.length > 1
+        ? coords.slice(1).reduce((s, c, i) => {
+          const p1 = coords[i], p2 = c;
+          return s + hav(p1.lat, p1.lng, p2.lat, p2.lng);
+        }, 0)
+        : 0;
+
+      vt = vt || (dist <= 30 ? 'onibus' : dist <= 60 ? 'microonibus' : 'van');
+      cap = cap || (vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16);
+
+      const { rows: [{ id: rotaId }] } = await client.query(
+        `INSERT INTO linhas_rotas
+           (itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,
+            alunos_ids,paradas_ids,geom)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+        [itinerario_id, nome, desc, vt, cap, alunos, paradas, ewkt]
       );
 
-      const fornecedorId =
-        vt === 'onibus' ? locanId : talismaId; // regra Locan × Talisma
+      const fornecedorId = vt === 'onibus' ? locanId : talismaId;
       if (fornecedorId)
         await client.query(
           `INSERT INTO fornecedores_rotas (fornecedor_id, rota_id)
-             VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+           VALUES ($1,$2) ON CONFLICT DO NOTHING`,
           [fornecedorId, rotaId]
         );
     };
 
-    /* ---------- monta paradas normais ---------- */
-    let normalStops = Object.entries(normalStopsMap)
-      .map(([pid, arr]) => ({ ponto_id: +pid, alunos_ids: arr.slice() }))
-      .filter(x => x.alunos_ids.length);
+    /* linhas normais */
+    let pendentes = Object.entries(norm)
+      .map(([pid, al]) => ({ pid: +pid, al }))
+      .filter(o => o.al.length);
 
-    while (normalStops.length) {
-      normalStops.sort((a, b) => b.alunos_ids.length - a.alunos_ids.length);
-      const s = normalStops.shift(),
-        ls = [],
-        la = [];
-      let cap = 50;
-      const t = Math.min(s.alunos_ids.length, cap);
-      la.push(...s.alunos_ids.splice(0, t));
-      cap -= t;
-      ls.push(s.ponto_id);
-      if (s.alunos_ids.length) normalStops.unshift(s);
+    while (pendentes.length) {
+      pendentes.sort((a, b) => b.al.length - a.al.length);
+      const grupo = pendentes.shift(), stops = [grupo.pid], alunos = [];
+      let cap = 50, take = Math.min(cap, grupo.al.length);
 
-      while (cap > 0 && normalStops.length) {
-        const last = pontoMap[ls[ls.length - 1]];
-        let bi = 0,
-          bd = 1 / 0;
-        normalStops.forEach((x, i) => {
-          const c = pontoMap[x.ponto_id],
-            d = hav(last.lat, last.lng, c.lat, c.lng);
-          if (d < bd) {
-            bd = d;
-            bi = i;
-          }
+      alunos.push(...grupo.al.splice(0, take));
+      cap -= take;
+      if (grupo.al.length) pendentes.unshift(grupo);
+
+      while (cap > 0 && pendentes.length) {
+        const base = pMap[stops[stops.length - 1]];
+        let idx = 0, menor = 9e9;
+        pendentes.forEach((o, i) => {
+          const d = hav(base.lat, base.lng, pMap[o.pid].lat, pMap[o.pid].lng);
+          if (d < menor) { menor = d; idx = i; }
         });
-        const nx = normalStops.splice(bi, 1)[0],
-          t2 = Math.min(nx.alunos_ids.length, cap);
-        la.push(...nx.alunos_ids.splice(0, t2));
-        cap -= t2;
-        ls.push(nx.ponto_id);
-        if (nx.alunos_ids.length) normalStops.splice(bi, 0, nx);
+        const prox = pendentes.splice(idx, 1)[0];
+        take = Math.min(cap, prox.al.length);
+        alunos.push(...prox.al.splice(0, take));
+        cap -= take;
+        stops.push(prox.pid);
+        if (prox.al.length) pendentes.splice(idx, 0, prox);
       }
 
-      const coord = ls
-        .map(id => pontoMap[id])
-        .map(c => `${c.lng} ${c.lat}`)
-        .join(','),
-        ew = `SRID=4326;LINESTRING(${coord})`,
-        dist = ls.slice(1).reduce((sum, id, i, a) => {
-          const p1 = pontoMap[a[i - 1]],
-            p2 = pontoMap[id];
-          return sum + hav(p1.lat, p1.lng, p2.lat, p2.lng);
-        }, 0),
-        vt = dist <= 30 ? 'onibus' : dist <= 60 ? 'microonibus' : 'van',
-        cp = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16,
-        nm = String.fromCharCode(nc++),
-        ds = `Linha ${nm}`;
-      await ins(nm, ds, vt, cp, la, ls, ew);
+      const nome = String.fromCharCode(nc++), desc = `Linha ${nome}`;
+      await ins(nome, desc, null, null, alunos, stops);
     }
 
-    /* ---------- alunos especiais (deficiência) ---------- */
-    let sp = specialStudents.slice();
-    while (sp.length) {
-      const grp = sp.splice(0, 50),
-        la = grp.map(x => x.aluno_id),
-        ls = grp.map(x => x.ponto_id),
-        coord = grp.map(x => `${pontoMap[x.ponto_id].lng} ${pontoMap[x.ponto_id].lat}`).join(','),
-        ew = `SRID=4326;LINESTRING(${coord})`,
-        dist = grp.slice(1).reduce((s, x, i, a) => {
-          const p1 = pontoMap[a[i - 1].ponto_id],
-            p2 = pontoMap[x.ponto_id];
-          return s + hav(p1.lat, p1.lng, p2.lat, p2.lng);
-        }, 0),
-        vt = dist <= 30 ? 'onibus' : dist <= 60 ? 'microonibus' : 'van',
-        cp = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16,
-        nm = String.fromCharCode(nc++),
-        ds = `Especial ${nm}`;
-      await ins(nm, ds, vt, cp, la, ls, ew);
+    /* alunos especiais */
+    let espCop = esp.slice();
+    while (espCop.length) {
+      const lote = espCop.splice(0, 50),
+        alunos = lote.map(o => o.aluno_id),
+        paradas = lote.map(o => o.ponto_id),
+        nome = String.fromCharCode(nc++),
+        desc = `Especial ${nome}`;
+      await ins(nome, desc, null, null, alunos, paradas);
     }
 
     await client.query('COMMIT');
   } catch (e) {
     await client.query('ROLLBACK');
+    console.error('gerarLinhasInteligentes error:', e);
     throw e;
   } finally {
     client.release();
   }
 }
+
 
 // server.js  ── rota POST /api/itinerarios/:id/linhas/gerar  (substitua tudo)
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
