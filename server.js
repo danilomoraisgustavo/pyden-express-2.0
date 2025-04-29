@@ -5136,25 +5136,49 @@ async function gerarLinhasInteligentes(itinerario_id, pool) {
 
     let next = 'A'.charCodeAt(0);
 
-    const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt) => {
+    /* ---------- helper seguro p/ inserir linha + fornecedor ---------- */
+    const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids) => {
+      /* 1) filtra coordenadas válidas (lat/lng numéricos) */
+      const coords = paradas_ids
+        .map(id => pMap[id])
+        .filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+
+      /* precisa de pelo menos 2 pontos p/ LINESTRING */
+      if (coords.length < 2) return;       // não grava linha inválida
+
+      /* 2) monta EWKT */
+      const ewkt = `SRID=4326;LINESTRING(${coords
+        .map(c => `${c.lng} ${c.lat}`)
+        .join(',')})`;
+
+      /* 3) se vt/cap não vieram, define pelo nº de paradas */
+      if (!vt || !cap) {
+        vt = coords.length > 20 ? 'onibus'
+          : coords.length > 10 ? 'microonibus' : 'van';
+        cap = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16;
+      }
+
+      /* 4) grava linha */
       const { rows: [{ id: rotaId }] } = await client.query(
         `INSERT INTO linhas_rotas (
-            itinerario_id, nome_linha, descricao, veiculo_tipo, capacidade,
-            alunos_ids,  paradas_ids, geom)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         RETURNING id`,
+         itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,
+         alunos_ids,paradas_ids,geom)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+     RETURNING id`,
         [itinerario_id, nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt]
       );
 
+      /* 5) vincula fornecedor */
       const fornecedorId = vt === 'onibus' ? locanId : talismaId;
       if (fornecedorId) {
         await client.query(
           `INSERT INTO fornecedores_rotas (fornecedor_id, rota_id)
-           VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+       VALUES ($1,$2) ON CONFLICT DO NOTHING`,
           [fornecedorId, rotaId]
         );
       }
     };
+
 
     /* —— rotas normais —— */
     let stops = Object.entries(norm)
