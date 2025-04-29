@@ -5136,29 +5136,27 @@ async function gerarLinhasInteligentes(itinerario_id, pool) {
 
     let next = 'A'.charCodeAt(0);
 
-    /* ---------- helper seguro p/ inserir linha + fornecedor ---------- */
+    /* ===== substituir TODO o helper insertLine (dentro de gerarLinhasInteligentes) ===== */
     const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids) => {
-      /* 1) filtra coordenadas válidas (lat/lng numéricos) */
+      /* usa o mapa já existente */
       const coords = paradas_ids
-        .map(id => pMap[id])
+        .map(id => pontoMap[id])
         .filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng));
 
-      /* precisa de pelo menos 2 pontos p/ LINESTRING */
-      if (coords.length < 2) return;       // não grava linha inválida
+      if (coords.length < 2) return;      // ignora linha sem 2-pontos
 
-      /* 2) monta EWKT */
       const ewkt = `SRID=4326;LINESTRING(${coords
         .map(c => `${c.lng} ${c.lat}`)
         .join(',')})`;
 
-      /* 3) se vt/cap não vieram, define pelo nº de paradas */
+      /* define veículo/capacidade se não informado */
       if (!vt || !cap) {
         vt = coords.length > 20 ? 'onibus'
           : coords.length > 10 ? 'microonibus' : 'van';
         cap = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16;
       }
 
-      /* 4) grava linha */
+      /* grava linha e obtém id */
       const { rows: [{ id: rotaId }] } = await client.query(
         `INSERT INTO linhas_rotas (
          itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,
@@ -5168,7 +5166,7 @@ async function gerarLinhasInteligentes(itinerario_id, pool) {
         [itinerario_id, nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt]
       );
 
-      /* 5) vincula fornecedor */
+      /* vincula fornecedor ← locanId / talismaId já declarados acima */
       const fornecedorId = vt === 'onibus' ? locanId : talismaId;
       if (fornecedorId) {
         await client.query(
@@ -5178,7 +5176,6 @@ async function gerarLinhasInteligentes(itinerario_id, pool) {
         );
       }
     };
-
 
     /* —— rotas normais —— */
     let stops = Object.entries(norm)
