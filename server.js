@@ -2919,8 +2919,6 @@ app.put('/api/itinerarios/:id', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
-// server.js  ───── função completa (substitua a antiga)
-
 
 // GET /api/itinerarios/:id/pontos-ativos
 app.get('/api/itinerarios/:id/pontos-ativos', async (req, res) => {
@@ -5065,191 +5063,9 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   }
 });
 
-// server.js  ── substituir toda a função por esta versão robusta
-async function gerarLinhasInteligentes(itinerario_id, pool) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    /* —— fornecedores —— */
-    const [{ id: talismaId }] =
-      (await client.query(`SELECT id FROM fornecedores
-                           WHERE lower(nome_fornecedor) LIKE '%talisma%'
-                           LIMIT 1`)).rows;
-    const [{ id: locanId }] =
-      (await client.query(`SELECT id FROM fornecedores
-                           WHERE lower(nome_fornecedor) LIKE '%locan%'
-                           LIMIT 1`)).rows;
-
-    /* —— limpa linhas/fornecedores antigos —— */
-    await client.query(
-      `DELETE FROM fornecedores_rotas
-        WHERE rota_id IN (SELECT id FROM linhas_rotas WHERE itinerario_id = $1)`,
-      [itinerario_id]
-    );
-    await client.query(
-      `DELETE FROM linhas_rotas WHERE itinerario_id = $1`,
-      [itinerario_id]
-    );
-
-    /* —— dados do itinerário —— */
-    const it = await client.query(
-      `SELECT pontos_ids FROM itinerarios WHERE id = $1`,
-      [itinerario_id]
-    );
-    if (!it.rowCount) throw new Error('Itinerário não encontrado');
-    const pontosIds = it.rows[0].pontos_ids;
-
-    const pts = await client.query(
-      `SELECT id, ST_Y(geom)::float AS lat, ST_X(geom)::float AS lng
-         FROM pontos WHERE id = ANY($1)`,
-      [pontosIds]
-    );
-    const pontoMap = Object.fromEntries(
-      pts.rows.map(p => [p.id, { lat: p.lat, lng: p.lng }])
-    );
-
-    const alunos = await client.query(
-      `SELECT ap.ponto_id, a.id   AS aluno_id,
-              a.deficiencia
-         FROM alunos_ativos a
-         JOIN alunos_pontos ap ON ap.aluno_id = a.id
-        WHERE ap.ponto_id = ANY($1)`,
-      [pontosIds]
-    );
-
-    const norm = {}, esp = [];
-    alunos.rows.forEach(r => {
-      if (Array.isArray(r.deficiencia) && r.deficiencia.length)
-        esp.push(r);
-      else
-        (norm[r.ponto_id] ||= []).push(r.aluno_id);
-    });
-
-    const hav = (φ1, λ1, φ2, λ2) => {
-      const R = 6371, rad = Math.PI / 180,
-        dφ = (φ2 - φ1) * rad, dλ = (λ2 - λ1) * rad,
-        a = Math.sin(dφ / 2) ** 2 +
-          Math.cos(φ1 * rad) * Math.cos(φ2 * rad) * Math.sin(dλ / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    };
-
-    let next = 'A'.charCodeAt(0);
-
-    /* ===== substituir TODO o helper insertLine (dentro de gerarLinhasInteligentes) ===== */
-    const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids) => {
-      /* usa o mapa já existente */
-      const coords = paradas_ids
-        .map(id => pontoMap[id])
-        .filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng));
-
-      if (coords.length < 2) return;      // ignora linha sem 2-pontos
-
-      const ewkt = `SRID=4326;LINESTRING(${coords
-        .map(c => `${c.lng} ${c.lat}`)
-        .join(',')})`;
-
-      /* define veículo/capacidade se não informado */
-      if (!vt || !cap) {
-        vt = coords.length > 20 ? 'onibus'
-          : coords.length > 10 ? 'microonibus' : 'van';
-        cap = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16;
-      }
-
-      /* grava linha e obtém id */
-      const { rows: [{ id: rotaId }] } = await client.query(
-        `INSERT INTO linhas_rotas (
-         itinerario_id,nome_linha,descricao,veiculo_tipo,capacidade,
-         alunos_ids,paradas_ids,geom)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-     RETURNING id`,
-        [itinerario_id, nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt]
-      );
-
-      /* vincula fornecedor ← locanId / talismaId já declarados acima */
-      const fornecedorId = vt === 'onibus' ? locanId : talismaId;
-      if (fornecedorId) {
-        await client.query(
-          `INSERT INTO fornecedores_rotas (fornecedor_id, rota_id)
-       VALUES ($1,$2) ON CONFLICT DO NOTHING`,
-          [fornecedorId, rotaId]
-        );
-      }
-    };
-
-    /* —— rotas normais —— */
-    let stops = Object.entries(norm)
-      .map(([pid, a]) => ({ pid: +pid, alunos: [...a] }))
-      .filter(s => s.alunos.length);
-
-    while (stops.length) {
-      stops.sort((a, b) => b.alunos.length - a.alunos.length);
-      const cur = stops.shift();
-      const paradas = [cur.pid], alunos_ids = [];
-      let cap = 50, last = pontoMap[cur.pid];
-
-      while (cap && (cur.alunos.length || stops.length)) {
-        while (cap && cur.alunos.length) alunos_ids.push(cur.alunos.pop()), cap--;
-        if (!cap) break;
-        let idx = 0, best = 1e9;
-        stops.forEach((s, i) => {
-          const p = pontoMap[s.pid];
-          const d = hav(last.lat, last.lng, p.lat, p.lng);
-          if (d < best) best = d, idx = i;
-        });
-        const nxt = stops[idx];
-        paradas.push(nxt.pid);
-        last = pontoMap[nxt.pid];
-        while (cap && nxt.alunos.length) alunos_ids.push(nxt.alunos.pop()), cap--;
-        if (!nxt.alunos.length) stops.splice(idx, 1);
-      }
-
-      const vt = paradas.length > 20 ? 'onibus'
-        : paradas.length > 10 ? 'microonibus' : 'van';
-      const capacidade = vt === 'onibus' ? 50 : vt === 'microonibus' ? 32 : 16;
-      const nome = String.fromCharCode(next++);
-      const ewkt = `SRID=4326;LINESTRING(${paradas.map(id =>
-        `${pontoMap[id].lng} ${pontoMap[id].lat}`).join(',')})`;
-
-      await insertLine(nome, `Linha ${nome}`, vt, capacidade, alunos_ids, paradas, ewkt);
-    }
-
-    /* —— rotas especiais —— */
-    while (esp.length) {
-      const bloco = esp.splice(0, 50);
-      const alunos_ids = bloco.map(r => r.aluno_id);
-      const paradas_ids = bloco.map(r => r.ponto_id);
-      const ewkt = `SRID=4326;LINESTRING(${bloco.map(r =>
-        `${pontoMap[r.ponto_id].lng} ${pontoMap[r.ponto_id].lat}`).join(',')})`;
-      const vt = 'van', cap = 16;
-      const nome = String.fromCharCode(next++);
-
-      await insertLine(nome, `Especial ${nome}`, vt, cap, alunos_ids, paradas_ids, ewkt);
-    }
-
-    await client.query('COMMIT');
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
-  }
-}
-
-app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
-  try {
-    await gerarLinhasInteligentes(req.params.itinerario_id, pool);
-    res.json({ success: true });
-  } catch (e) {
-    console.error('gerarLinhasInteligentes error:', e);
-    res.status(500).json({ success: false, message: e.message });
-  }
-});
-
-
 
 // POST /api/itinerarios/:itinerario_id/linhas/gerar
-/* app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
+app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   const client = await pool.connect();
   try {
     const { itinerario_id } = req.params;
@@ -5449,7 +5265,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     client.release();
   }
 });
- */
+
 // GET /api/linhas/:linha_id/alunos — lista alunos associados a uma subrota, filtrados por turno
 app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
   try {
