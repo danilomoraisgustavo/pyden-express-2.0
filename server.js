@@ -9979,20 +9979,22 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 
 
 /* ------------------------------------------------------------------ */
-/*  ROTAS ::  Importar alunos activos                                 */
+/*  ROTAS ::  Importar alunos ativos                                   */
 /* ------------------------------------------------------------------ */
 app.post("/api/import-alunos-ativos", async (req, res) => {
   const { alunos, escolaId } = req.body;
-  if (!Array.isArray(alunos) || !escolaId)
-    return res.status(400).json({ success: false, message: "Dados inválidos." });
+  if (!Array.isArray(alunos) || !escolaId) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Dados inválidos." });
+  }
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     for (const a of alunos) {
-
-      /* ---------------- Desestruturação dos campos ----------------- */
+      /* ---------- destruturação ------------------------------------- */
       let {
         id_pessoa,
         id_matricula,
@@ -10010,14 +10012,14 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         filiacao_2,
         RESPONSAVEL,
         deficiencia,
-        data_nascimento
+        data_nascimento,
       } = a;
 
-      /* ---------------- Normalizações ------------------------------ */
+      /* ---------- normalizações ------------------------------------- */
       const cpfNorm =
         typeof cpf === "string" && (cpf = cpf.trim()) && cpf.length
           ? cpf
-          : null;                         // string vazia → NULL
+          : null; // string vazia → NULL
 
       const defArray =
         typeof deficiencia === "string" && deficiencia.trim()
@@ -10026,7 +10028,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
             ? deficiencia
             : null;
 
-      /* 1) Se já existe a matrícula e id_pessoa está NULL → preenche */
+      /* ---------- 1. tenta preencher id_pessoa pela matrícula -------- */
       const { rowCount: updMat } = await client.query(
         `UPDATE alunos_ativos
             SET id_pessoa = $1
@@ -10036,7 +10038,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       );
       if (updMat) continue;
 
-      /* 2) Se já existe o CPF e id_pessoa está NULL → preenche */
+      /* ---------- 2. tenta preencher id_pessoa pelo CPF -------------- */
       if (cpfNorm) {
         const { rowCount: updCpf } = await client.query(
           `UPDATE alunos_ativos
@@ -10048,24 +10050,25 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         if (updCpf) continue;
       }
 
-      /* 3) Se id_pessoa já existe em qualquer outro registro → pula  */
-      const { rowCount: existsPessoa } = await client.query(
+      /* ---------- 3. se já existe id_pessoa, ignora ------------------ */
+      const { rowCount: dupPessoa } = await client.query(
         `SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1 LIMIT 1`,
         [id_pessoa]
       );
-      if (existsPessoa) continue;
+      if (dupPessoa) continue;
 
-      /* 4) Se já existe matrícula ou CPF em outro aluno → pula       */
-      const { rowCount: existsKey } = await client.query(
-        `SELECT 1 FROM alunos_ativos
+      /* ---------- 4. se matrícula/CPF já existem, ignora ------------- */
+      const { rowCount: dupKey } = await client.query(
+        `SELECT 1
+           FROM alunos_ativos
           WHERE id_matricula = $1
              OR (cpf = $2 AND $2 IS NOT NULL)
           LIMIT 1`,
         [id_matricula, cpfNorm]
       );
-      if (existsKey) continue;
+      if (dupKey) continue;
 
-      /* 5) Registro inédito → INSERT --------------------------------*/
+      /* ---------- 5. registro inédito → INSERT with dual handling ---- */
       await client.query(
         `
         INSERT INTO alunos_ativos (
@@ -10081,9 +10084,15 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           $13,$14,$15,$16,
           $17::text[],$18
         )
-        /* ← NOVO: se id_pessoa já existe, apenas ignora                */
-        ON CONFLICT ON CONSTRAINT uq_alunos_ativos_id_pessoa
-        DO NOTHING;
+
+        /* ❶ Se já existe o mesmo id_pessoa → ignora.                     */
+        ON CONFLICT ON CONSTRAINT uq_alunos_ativos_id_pessoa DO NOTHING
+
+        /* ❷ Se o conflito for na matrícula, aplica a regra de “fill-id”. */
+        ON CONFLICT ON CONSTRAINT alunos_ativos_id_matricula_uk DO UPDATE
+           SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
+                                    EXCLUDED.id_pessoa)
+         WHERE alunos_ativos.id_pessoa IS NULL;
         `,
         [
           id_pessoa,
@@ -10103,17 +10112,19 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           filiacao_2,
           RESPONSAVEL,
           defArray,
-          data_nascimento
+          data_nascimento,
         ]
       );
     }
 
     await client.query("COMMIT");
-    res.json({ success: true, message: "Importação concluída com sucesso." });
-
+    res.json({
+      success: true,
+      message: "Importação concluída com sucesso.",
+    });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error(err);
+    console.error("Erro na importação:", err);
     res.status(500).json({ success: false, message: "Erro interno." });
   } finally {
     client.release();
