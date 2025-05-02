@@ -10084,11 +10084,6 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           $13,$14,$15,$16,
           $17::text[],$18
         )
-
-        /* ❶ Se já existe o mesmo id_pessoa → ignora.                     */
-        ON CONFLICT ON CONSTRAINT uq_alunos_ativos_id_pessoa DO NOTHING
-
-        /* ❷ Se o conflito for na matrícula, aplica a regra de “fill-id”. */
         ON CONFLICT ON CONSTRAINT alunos_ativos_id_matricula_uk DO UPDATE
            SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
                                     EXCLUDED.id_pessoa)
