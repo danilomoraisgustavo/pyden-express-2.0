@@ -765,6 +765,47 @@
     </div>
   </div>
 
+  <!-- MODAL NOVA ROTA ESPECIAL -->
+  <div class="modal fade" id="modalNovaRotaEspecial" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Cadastrar Rota <strong>Especial</strong></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- 1) Mapa filtrado apenas com escolas que têm alunos com deficiência -->
+          <div class="mb-3">
+            <label class="form-label">Mapa de Escolas (Alunos Especiais)</label>
+            <div id="map-modal-create-especial" style="height:400px;width:100%;"></div>
+          </div>
+
+          <!-- 2) Escolas selecionadas -->
+          <div class="mb-3">
+            <label class="form-label">Escolas Selecionadas</label>
+            <div id="listaEscolasSelecionadasEsp" style="min-height:50px;border:1px solid #ccc;padding:8px;"></div>
+          </div>
+
+          <!-- 3) Zoneamentos dos pontos com alunos especiais -->
+          <div class="mb-3">
+            <label class="form-label">Zoneamentos</label>
+            <div id="listaZoneamentosEsp" style="min-height:100px;border:1px solid #ccc;padding:8px;overflow-y:auto;">
+            </div>
+          </div>
+
+          <!-- 4) Salvar -->
+          <div class="text-end">
+            <button id="btnSalvarItinerarioEspecial" class="btn btn-success">
+              Salvar Itinerário Especial
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   <!-- MODAL NOVA ROTA -->
   <div class="modal fade" id="modalNovaRota" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -1501,9 +1542,50 @@
           });
         });
     }
-    function toggleEsp(id) {/* igual ao normal, usando selEsp[] */ }
-    function renderSelEsp() {/* idem */ }
-    function updateZonasEsp() {/* idem, lendo escolasEsp */ }
+    function toggleEsp(id) {
+      const i = selEsp.indexOf(id);
+      if (i === -1) {
+        selEsp.push(id);
+        markersEsp[id].setIcon('../../assets/img/escola-selecionada.png');
+      } else {
+        selEsp.splice(i, 1);
+        markersEsp[id].setIcon('../../assets/img/escola.png');
+      }
+      renderSelEsp();
+      updateZonasEsp();
+    }
+
+    function renderSelEsp() {
+      const c = document.getElementById('listaEscolasSelecionadasEsp');
+      c.innerHTML = '';
+      selEsp.forEach(id => {
+        const e = escolasEsp.find(x => x.id === id);
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn btn-sm btn-outline-primary me-1 mb-1';
+        b.textContent = e.nome;
+        b.onclick = () => toggleEsp(id);
+        c.appendChild(b);
+      });
+    }
+
+    function updateZonasEsp() {
+      const zset = {};
+      selEsp.forEach(id => {
+        const esc = escolasEsp.find(e => e.id === id);
+        (esc.zoneamentos || []).forEach(z => zset[z.id] = z.nome);
+      });
+      const cont = document.getElementById('listaZoneamentosEsp');
+      cont.innerHTML = '';
+      Object.entries(zset).forEach(([id, nome]) => {
+        cont.insertAdjacentHTML(
+          'beforeend',
+          `<div><input type="checkbox" id="esp_z_${id}" value="${id}">
+         <label for="esp_z_${id}">${nome}</label></div>`
+        );
+      });
+    }
+
 
     document
       .getElementById('btnSalvarItinerarioEspecial')
@@ -1531,6 +1613,7 @@
     document
       .getElementById('modalNovaRotaEspecial')
       .addEventListener('shown.bs.modal', initMapCreateEsp);
+
     document.getElementById('btnGerarLinhasEsp').onclick = () => {
       const id = $('#linhasItinerarioId').val();
       fetch(`/api/itinerarios/${id}/linhas/gerar-especial`, { method: 'POST' })
