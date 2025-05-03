@@ -1477,6 +1477,74 @@
         });
       }, 300);
     });
+    /* ---------- ROTA ESPECIAL ---------- */
+    let mapCreateEsp;
+    let escolasEsp = [], selEsp = [], markersEsp = {};
+
+    function initMapCreateEsp() {
+      mapCreateEsp = new google.maps.Map(
+        document.getElementById('map-modal-create-especial'),
+        { center: { lat: -6.53, lng: -49.85 }, zoom: 13 }
+      );
+      fetch('/api/escolas/especiais')
+        .then(r => r.json())
+        .then(data => {
+          escolasEsp = data;
+          data.forEach(e => {
+            const m = new google.maps.Marker({
+              position: { lat: +e.latitude, lng: +e.longitude },
+              map: mapCreateEsp,
+              icon: '../../assets/img/escola.png'
+            });
+            m.addListener('click', () => toggleEsp(e.id));
+            markersEsp[e.id] = m;
+          });
+        });
+    }
+    function toggleEsp(id) {/* igual ao normal, usando selEsp[] */ }
+    function renderSelEsp() {/* idem */ }
+    function updateZonasEsp() {/* idem, lendo escolasEsp */ }
+
+    document
+      .getElementById('btnSalvarItinerarioEspecial')
+      .addEventListener('click', async () => {
+        const zonas = Array.from(
+          document.querySelectorAll('#listaZoneamentosEsp input:checked')
+        ).map(cb => +cb.value);
+        const payload = { escolas_ids: selEsp, zoneamentos_ids: zonas };
+        const resp = await fetch('/api/itinerarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        if (resp.id) {
+          showNotification('success', `Itinerário especial #${resp.id} criado`);
+          $('#modalNovaRotaEspecial').modal('hide');
+          loadRotas();
+        } else {
+          showNotification('danger', 'Falha ao criar itinerário');
+        }
+      });
+
+    /* abre mapa quando o modal especial mostrar */
+    document
+      .getElementById('modalNovaRotaEspecial')
+      .addEventListener('shown.bs.modal', initMapCreateEsp);
+    document.getElementById('btnGerarLinhasEsp').onclick = () => {
+      const id = $('#linhasItinerarioId').val();
+      fetch(`/api/itinerarios/${id}/linhas/gerar-especial`, { method: 'POST' })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            showNotification('success', 'Linhas especiais geradas');
+            loadLinhas(id);
+          } else {
+            showNotification('danger', res.error || 'Falha');
+          }
+        })
+        .catch(() => showNotification('danger', 'Erro de rede'));
+    };
 
   </script>
 </body>
