@@ -1576,16 +1576,26 @@
         const esc = escolasEsp.find(e => e.id === id);
         (esc.zoneamentos || []).forEach(z => zset[z.id] = z.nome);
       });
+
       const cont = document.getElementById('listaZoneamentosEsp');
       cont.innerHTML = '';
+
+      if (Object.keys(zset).length === 0) {
+        cont.innerHTML = '<em>Nenhum zoneamento com alunos especiais.</em>';
+        return;
+      }
+
       Object.entries(zset).forEach(([id, nome]) => {
         cont.insertAdjacentHTML(
           'beforeend',
-          `<div><input type="checkbox" id="esp_z_${id}" value="${id}">
-         <label for="esp_z_${id}">${nome}</label></div>`
+          `<div class="form-check">
+         <input class="form-check-input" type="checkbox" value="${id}" id="esp_z_${id}">
+         <label class="form-check-label" for="esp_z_${id}">${nome}</label>
+       </div>`
         );
       });
     }
+
 
 
     document
