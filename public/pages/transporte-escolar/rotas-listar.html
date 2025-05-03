@@ -895,6 +895,10 @@
             <button id="btnGerarLinhas" class="btn btn-primary">
               Gerar Linhas Inteligentes
             </button>
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalLinhasEspecial" data-it-id=""
+              <!-- será preenchido via JS -->
+              id="btnOpenEsp">Linhas Especiais</button>
+
           </div>
           <table class="table table-striped" id="linhas-table">
             <thead>
@@ -916,6 +920,34 @@
       </div>
     </div>
   </div>
+
+  <div class="modal fade" id="modalLinhasEspecial" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Linhas <strong>Especiais</strong> do Itinerário</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <button class="btn btn-success mb-2" id="btnGerarLinhasEspModal">
+            Gerar / Atualizar Linhas Especiais
+          </button>
+
+          <table class="table table-striped" id="tblLinhasEsp">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th># Alunos</th>
+                <th>Capacidade</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- Modal de Alunos por Linha e Turno -->
   <div class="modal fade" id="modalAlunosLinha" tabindex="-1" aria-labelledby="modalAlunosLinhaLabel"
@@ -1595,8 +1627,41 @@
         );
       });
     }
+    /* abre modal especial com id do itinerário preenchido */
+    $('#btnOpenEsp').on('click', function () {
+      const itId = $('#linhasItinerarioId').val();     // vindo do modal principal
+      $('#modalLinhasEspecial').data('it-id', itId);
+      carregarLinhasEsp(itId);
+    });
 
+    /* gerar / atualizar */
+    $('#btnGerarLinhasEspModal').on('click', function () {
+      const itId = $('#modalLinhasEspecial').data('it-id');
+      fetch(`/api/itinerarios/${itId}/linhas/gerar-especial`, { method: 'POST' })
+        .then(r => r.json()).then(res => {
+          if (res.success) {
+            showNotification('success', 'Linhas especiais geradas');
+            carregarLinhasEsp(itId);
+          } else {
+            showNotification('danger', res.error || 'Falha');
+          }
+        }).catch(() => showNotification('danger', 'Erro de rede'));
+    });
 
+    function carregarLinhasEsp(itId) {
+      fetch(`/api/itinerarios/${itId}/linhas`)
+        .then(r => r.json())
+        .then(d => {
+          const tbody = $('#tblLinhasEsp tbody').empty();
+          d.filter(l => /^Especial\s/i.test(l.nome_linha)).forEach(l => {
+            tbody.append(`<tr>
+          <td>${l.nome_linha}</td>
+          <td>${l.alunos_ids.length}</td>
+          <td>${l.capacidade}</td>
+        </tr>`);
+          });
+        });
+    }
 
     document
       .getElementById('btnSalvarItinerarioEspecial')
