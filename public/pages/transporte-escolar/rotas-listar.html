@@ -1523,9 +1523,10 @@
     let escolasEsp = [], selEsp = [], markersEsp = {};
 
     function initMapCreateEsp() {
+      if (mapCreateEsp) return;                     // evita reinicializar
       mapCreateEsp = new google.maps.Map(
         document.getElementById('map-modal-create-especial'),
-        { center: { lat: -6.53, lng: -49.85 }, zoom: 13 }
+        { center: { lat: -5.35, lng: -48.4 }, zoom: 12 }
       );
       fetch('/api/escolas/especiais')
         .then(r => r.json())

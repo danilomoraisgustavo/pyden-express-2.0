@@ -5103,30 +5103,31 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar-especial', async (req, re
 });
 
 // GET /api/escolas/especiais — escolas que têm ≥1 aluno com deficiência
+// GET /api/escolas/especiais — escolas que possuem alunos com deficiência
 app.get('/api/escolas/especiais', async (req, res) => {
-  const sql = `
-    SELECT e.id, e.nome, e.latitude, e.longitude,
-           COALESCE(
-             ( SELECT json_agg(z) FROM (
-                 SELECT z.id, z.nome
-                 FROM public.zoneamentos z
-                 JOIN public.pontos p   ON p.zoneamento_id = z.id
-                 JOIN public.alunos_pontos ap ON ap.ponto_id = p.id
-                 JOIN public.alunos_ativos a  ON a.id = ap.aluno_id
-                 WHERE a.escola_id = e.id
-                   AND COALESCE(array_length(a.deficiencia,1),0) > 0
-                 GROUP BY z.id
-               ) z ),
-           '[]') AS zoneamentos
-      FROM public.escolas e
-     WHERE EXISTS (
-           SELECT 1 FROM public.alunos_ativos a
-           WHERE a.escola_id = e.id
-             AND COALESCE(array_length(a.deficiencia,1),0) > 0);
-  `;
-  const { rows } = await pool.query(sql);
-  res.json(rows);
+  try {
+    const sql = `
+      SELECT e.id,
+             e.nome,
+             e.latitude,
+             e.longitude
+        FROM public.escolas e
+       WHERE EXISTS (
+              SELECT 1
+                FROM public.alunos_ativos a
+               WHERE a.escola_id = e.id
+                 AND COALESCE(array_length(a.deficiencia,1),0) > 0
+            )
+       ORDER BY e.nome;
+    `;
+    const { rows } = await pool.query(sql);
+    res.json(rows);
+  } catch (err) {
+    console.error('Erro /api/escolas/especiais:', err);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
 });
+
 
 // POST /api/itinerarios/:itinerario_id/linhas/gerar
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
