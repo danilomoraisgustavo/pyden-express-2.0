@@ -5250,16 +5250,16 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   }
 });
 
-// GET /api/linhas/:linha_id/alunos — lista alunos associados a uma subrota, filtrados por turno
+// GET /api/linhas/:linha_id/alunos — lista alunos da sub-rota por turno
 app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
   try {
     const { linha_id } = req.params;
-    const { turno } = req.query;  // 'manha', 'tarde', 'noite', 'integral'
+    const { turno } = req.query;      // 'manha' | 'tarde' | 'noite' | 'integral'
 
-    // busca ids de alunos e paradas da linha
+    /* 1) Ids de alunos e paradas já gravados na linha ---------------- */
     const lr = await pool.query(
       `SELECT alunos_ids, paradas_ids
-         FROM linhas_rotas
+         FROM public.linhas_rotas
         WHERE id = $1`,
       [linha_id]
     );
@@ -5268,7 +5268,7 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
     }
     const { alunos_ids, paradas_ids } = lr.rows[0];
 
-    // monta CASE para normalizar turno
+    /* 2) CASE para padronizar o turno -------------------------------- */
     const turnoCase = `
       CASE
         WHEN a.turma ILIKE '%MAT%'  THEN 'manha'
@@ -5277,28 +5277,29 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
         WHEN a.turma ILIKE '%INT%'  THEN 'integral'
         ELSE NULL
       END
-        `;
+    `;
 
-    // consulta incluindo o nome da escola
-    const query = `
+    /* 3) Consulta principal ----------------------------------------- */
+    const sql = `
       SELECT
         a.id,
-      a.pessoa_nome    AS nome,
-      ${turnoCase}    AS turno,
-      e.nome           AS escola_nome,
-      p.id             AS ponto_id,
-      p.nome_ponto     AS ponto_nome
-      FROM alunos_ativos a
-      JOIN escolas e       ON e.id = a.escola_id
-      JOIN alunos_pontos ap ON ap.aluno_id = a.id
-      JOIN pontos p        ON p.id = ap.ponto_id
-      WHERE a.id = ANY($1)
+        a.pessoa_nome                 AS nome,
+        ${turnoCase}                 AS turno,
+        e.nome                        AS escola_nome,
+        p.id                          AS ponto_id,
+        p.nome_ponto                  AS ponto_nome,
+        /* flag “tem_deficiencia”: TRUE se houver 1-N itens no array */
+        COALESCE(array_length(a.deficiencia,1),0) > 0 AS tem_deficiencia
+      FROM public.alunos_ativos a
+      JOIN public.escolas        e  ON e.id  = a.escola_id
+      JOIN public.alunos_pontos  ap ON ap.aluno_id = a.id
+      JOIN public.pontos         p  ON p.id = ap.ponto_id
+      WHERE a.id        = ANY($1)
         AND ap.ponto_id = ANY($2)
         AND ${turnoCase} = $3
-      ORDER BY a.pessoa_nome
-      `;
-    const vals = [alunos_ids, paradas_ids, turno];
-    const { rows } = await pool.query(query, vals);
+      ORDER BY a.pessoa_nome;
+    `;
+    const { rows } = await pool.query(sql, [alunos_ids, paradas_ids, turno]);
 
     res.json(rows);
   } catch (err) {

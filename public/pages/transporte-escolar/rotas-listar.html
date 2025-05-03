@@ -892,6 +892,7 @@
                 <th>Escola</th>
                 <th>Ponto</th>
                 <th>Turno</th>
+                <th>Deficiência?</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -1371,16 +1372,19 @@
           const tb = $('#alunos-linha-table tbody').empty();
           alunos.forEach(a => {
             tb.append(`
-          <tr>
-            <td>${a.nome}</td>
-            <td>${a.escola_nome}</td>
-            <td>${a.ponto_nome}</td>
-            <td>${a.turno}</td>
-          </tr>
-        `);
+        <tr>
+          <td>${a.nome}</td>
+          <td>${a.escola_nome}</td>
+          <td>${a.ponto_nome}</td>
+          <td>${a.turno}</td>
+          <td>${a.tem_deficiencia ? 'Sim' : 'Não'}</td>
+        </tr>
+      `);
           });
+          toggleCsvBtn();                 // habilita/desabilita o botão CSV
         })
         .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
+
     }
     let mapRoute, routeBounds, rawPolyline;
 
