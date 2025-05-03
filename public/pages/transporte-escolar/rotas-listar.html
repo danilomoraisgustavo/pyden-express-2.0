@@ -946,39 +946,38 @@
   </div>
 
   <!-- MODAL NOVA ROTA ESPECIAL -->
-  <div class="modal fade" id="modalNovaRotaEspecial" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" id="modalLinhasEsp" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Cadastrar Rota Especial</h5>
+          <h5 class="modal-title">
+            Linhas Inteligentes – Itinerário Especial
+            <span id="itEspIdSpan" class="text-muted"></span>
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body">
-          <!-- 1) Mapa para selecionar escolas -->
-          <div class="mb-3">
-            <label class="form-label">Mapa de Escolas</label>
-            <div id="map-modal-create-especial" style="height:400px;width:100%;"></div>
-          </div>
-
-          <!-- 2) Escolas selecionadas -->
-          <div class="mb-3">
-            <label class="form-label">Escolas Selecionadas</label>
-            <div id="listaEscolasSelecionadasEspecial" style="min-height:50px;border:1px solid #ccc;padding:8px;"></div>
-          </div>
-
-          <!-- 3) Bairros dos alunos especiais -->
-          <div class="mb-3">
-            <label class="form-label">Bairros dos Alunos</label>
-            <div id="listaBairrosEspecial" style="min-height:100px;border:1px solid #ccc;padding:8px;overflow-y:auto;">
-            </div>
-          </div>
-
-          <!-- 4) Salvar -->
-          <div class="text-end">
-            <button id="btnSalvarItinerarioEspecial" class="btn btn-success">
-              Salvar Itinerário Especial
+          <!-- Botão Gerar -->
+          <div class="mb-3 text-end">
+            <button id="btnGerarLinhasEsp" class="btn btn-success">
+              <i class="fa fa-magic"></i> Gerar Linhas Especiais
             </button>
+          </div>
+
+          <!-- Tabela -->
+          <div class="table-responsive">
+            <table id="linhas-especiais-table" class="display table table-striped table-hover w-100">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Descrição</th>
+                  <th>Qtd. Alunos</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
