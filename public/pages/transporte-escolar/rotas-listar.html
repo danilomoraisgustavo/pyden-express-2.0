@@ -689,7 +689,13 @@
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaRota">
                       <i class="fa fa-plus"></i> Nova Rota
                     </button>
+
+                    <!-- NOVO -->
+                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNovaRotaEspecial">
+                      <i class="fa fa-wheelchair"></i> Nova Rota Especial
+                    </button>
                   </div>
+
 
                   <div class="table-responsive">
                     <table id="rotas-table" class="display table table-striped table-hover">
@@ -715,6 +721,27 @@
                     </table>
                   </div>
                 </div>
+                <div class="card mt-4">
+                  <div class="card-header">
+                    <h4 class="card-title mb-0">Rotas Especiais Cadastradas</h4>
+                  </div>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table id="rotas-especiais-table" class="display table table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Escola</th>
+                            <th>Bairros</th>
+                            <th>Descrição</th>
+                            <th>Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="card-footer text-right">
                   <div class="dropdown dropdown-download">
                     <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -798,6 +825,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- MODAL EDITAR ROTA -->
   <div class="modal fade" id="modalEditarRota" tabindex="-1" aria-labelledby="modalEditarRotaLabel" aria-hidden="true">
@@ -916,6 +944,47 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL NOVA ROTA ESPECIAL -->
+  <div class="modal fade" id="modalNovaRotaEspecial" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Cadastrar Rota Especial</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- 1) Mapa de Escolas -->
+          <div class="mb-3">
+            <label class="form-label">Mapa de Escolas</label>
+            <div id="map-modal-create-especial" style="height:400px;width:100%;"></div>
+          </div>
+
+          <!-- 2) Lista de escolas selecionadas -->
+          <div class="mb-3">
+            <label class="form-label">Escolas Selecionadas</label>
+            <div id="listaEscolasSelecionadasEspecial" style="min-height:50px;border:1px solid #ccc;padding:8px;"></div>
+          </div>
+
+          <!-- 3) Bairros atendidos -->
+          <div class="mb-3">
+            <label class="form-label">Bairros (origem dos alunos)</label>
+            <div id="listaBairrosEspecial" style="min-height:100px;border:1px solid #ccc;padding:8px;overflow-y:auto;">
+            </div>
+          </div>
+
+          <!-- 4) Botão salvar -->
+          <div class="text-end">
+            <button id="btnSalvarItinerarioEspecial" class="btn btn-success">
+              Salvar Itinerário Especial
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
 
   <!-- JS CORE / PLUGINS -->
@@ -1474,6 +1543,136 @@
         });
       }, 300);
     });
+
+  </script>
+  <script>
+    /* === ROTAS ESPECIAIS === */
+    let mapCreateEspecial;
+    let escolasEspData = [], escolasEspMarkers = {};
+    let escolasEspSelecionadas = [];           // [{ id: 3, bairros: ['Centro','Jardim América'] }, …]
+
+    function initMapCreateEspecial() {
+      mapCreateEspecial = new google.maps.Map(
+        document.getElementById("map-modal-create-especial"),
+        { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13 }
+      );
+
+      fetch('/api/escolas')
+        .then(r => r.json())
+        .then(data => {
+          escolasEspData = data;
+          data.forEach(e => {
+            const mk = new google.maps.Marker({
+              position: { lat: e.latitude, lng: e.longitude },
+              map: mapCreateEspecial,
+              icon: "././assets/img/escola.png"
+            });
+            mk.addListener('click', () => toggleEscolaEspecial(e.id));
+            escolasEspMarkers[e.id] = mk;
+          });
+        });
+    }
+
+    function toggleEscolaEspecial(id) {
+      const idx = escolasEspSelecionadas.findIndex(o => o.id === id);
+
+      if (idx === -1) {
+        // 1) Busca apenas alunos da escola com DEFICIÊNCIA preenchida
+        fetch(`/api/escolas/${id}/alunos-especiais`)
+          .then(r => r.json())
+          .then(alunos => {
+            const bairros = [...new Set(alunos.map(a => a.bairro).filter(Boolean))];
+            escolasEspSelecionadas.push({ id, bairros });
+            renderEscolasEsp();
+          });
+      } else {
+        escolasEspSelecionadas.splice(idx, 1);
+        renderEscolasEsp();
+      }
+    }
+
+    function renderEscolasEsp() {
+      // escolas
+      const divEsc = document.getElementById('listaEscolasSelecionadasEspecial');
+      divEsc.innerHTML = escolasEspSelecionadas.map(o =>
+        `<span class="badge bg-primary me-1">${o.id}</span>`).join('');
+
+      // bairros
+      const divB = document.getElementById('listaBairrosEspecial');
+      divB.innerHTML = '';
+      escolasEspSelecionadas.forEach(o => {
+        o.bairros.forEach(b => {
+          const chk = `<div><input type="checkbox" checked disabled> ${b}</div>`;
+          divB.insertAdjacentHTML('beforeend', chk);
+        });
+      });
+    }
+
+    /* Salvar itinerário especial */
+    document.getElementById('btnSalvarItinerarioEspecial')
+      .addEventListener('click', async () => {
+        const payload = {
+          escolas: escolasEspSelecionadas.map(o => o.id),
+          bairros_por_escola: escolasEspSelecionadas
+        };
+
+        try {
+          const r = await fetch('/api/itinerarios-especiais', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).then(r => r.json());
+
+          if (r.id) {
+            $('#modalNovaRotaEspecial').modal('hide');
+            showNotification('success', `Itinerário Especial #${r.id} criado.`);
+            loadRotasEspeciais();
+          } else {
+            showNotification('danger', r.error || 'Erro ao criar itinerário especial');
+          }
+        } catch { showNotification('danger', 'Falha de rede.'); }
+      });
+
+    /* Carregar tabela */
+    function loadRotasEspeciais() {
+      fetch('/api/itinerarios-especiais')
+        .then(r => r.json())
+        .then(data => {
+          const tb = $('#rotas-especiais-table tbody').empty();
+          data.forEach(it => {
+            tb.append(`
+          <tr>
+            <td>${it.escola}</td>
+            <td>${it.bairros.join(', ')}</td>
+            <td>${it.descricao}</td>
+            <td>
+              <button class="btn btn-link btn-secondary" onclick="editarItEsp(${it.id})">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button class="btn btn-link btn-danger" onclick="apagarItEsp(${it.id})">
+                <i class="fa fa-trash"></i>
+              </button>
+              <button class="btn btn-link btn-info" onclick="openLinhasEsp(${it.id})">
+                <i class="fa fa-route"></i>
+              </button>
+            </td>
+          </tr>`);
+          });
+
+          if ($.fn.DataTable.isDataTable('#rotas-especiais-table'))
+            $('#rotas-especiais-table').DataTable().destroy();
+
+          $('#rotas-especiais-table').DataTable({
+            pageLength: 10,
+            language: { search: 'Pesquisar:' }
+          });
+        });
+    }
+
+    /* Inicializações */
+    document.getElementById('modalNovaRotaEspecial')
+      .addEventListener('shown.bs.modal', initMapCreateEspecial);
+    $(document).ready(loadRotasEspeciais);
 
   </script>
 </body>

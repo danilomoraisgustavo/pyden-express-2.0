@@ -5309,6 +5309,102 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
   }
 });
 
+// LISTAR alunos com necessidades especiais de uma determinada escola
+app.get("/api/escolas/:id/alunos-especiais", async (req, res) => {
+  const { id } = req.params;       // id da escola
+
+  try {
+    const { rows } = await pool.query(
+      `
+      SELECT
+        id,
+        pessoa_nome      AS nome,
+        bairro,
+        latitude,
+        longitude,
+        deficiencia
+      FROM alunos_ativos
+      WHERE escola_id = $1
+        AND COALESCE(array_length(deficiencia,1),0) > 0   -- só quem tem deficiência
+      ORDER BY pessoa_nome
+      `,
+      [id]
+    );
+
+    return res.json(rows);         // [] se não houver alunos especiais
+  } catch (err) {
+    console.error("GET /api/escolas/:id/alunos-especiais:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor.",
+    });
+  }
+});
+
+app.post("/api/itinerarios-especiais", async (req, res) => {
+  const { bairros_por_escola } = req.body;
+
+  if (
+    !Array.isArray(bairros_por_escola) ||
+    bairros_por_escola.length === 0
+  ) {
+    return res
+      .status(400)
+      .json({ error: "Nenhuma escola enviada no payload." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const idsCriados = [];
+
+    for (const item of bairros_por_escola) {
+      const escolaId = +item.id || null;
+      const bairros = Array.isArray(item.bairros) ? item.bairros : [];
+
+      if (!escolaId || !bairros.length) continue; // segurança
+
+      /* 1) Nome da escola para montar a descrição */
+      const esc = await client.query(
+        "SELECT nome FROM escolas WHERE id = $1 LIMIT 1",
+        [escolaId]
+      );
+      if (!esc.rowCount) continue;                // escola inválida?
+
+      const descricao = `${esc.rows[0].nome} - ${bairros.join(", ")}`;
+
+      /* 2) INSERT propriamente dito */
+      const ins = await client.query(
+        `INSERT INTO itinerarios_especiais
+           (escola_id, bairros, descricao)
+         VALUES ($1, $2, $3)
+         RETURNING id`,
+        [escolaId, bairros, descricao]
+      );
+      idsCriados.push(ins.rows[0].id);
+    }
+
+    await client.query("COMMIT");
+
+    if (!idsCriados.length)
+      return res
+        .status(422)
+        .json({ error: "Nenhum itinerário pôde ser criado." });
+
+    /* Mantém compatibilidade com o front-end, devolvendo
+       o primeiro ID, mas envia todos em 'ids' caso necessário. */
+    res.json({ id: idsCriados[0], ids: idsCriados });
+  } catch (e) {
+    await client.query("ROLLBACK");
+    console.error("POST /api/itinerarios-especiais:", e);
+    res.status(500).json({ error: "Erro interno do servidor." });
+  } finally {
+    client.release();
+  }
+});
+
+
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
 ------------------------------------------------------------------ */
