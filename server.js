@@ -5073,14 +5073,13 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     await client.query('BEGIN');
     await client.query('SET search_path TO public');
 
-    // 2) Limpa quaisquer linhas antigas
+    /* 2) Limpa linhas antigas */
     await client.query(
-      `DELETE FROM public.linhas_rotas
-         WHERE itinerario_id = $1`,
+      `DELETE FROM public.linhas_rotas WHERE itinerario_id = $1`,
       [itinerario_id]
     );
 
-    // 3) Busca pontos e escolas do itinerário
+    /* 3) Pontos + escolas do itinerário */
     const itRes = await client.query(
       `SELECT pontos_ids, escolas_ids
          FROM public.itinerarios
@@ -5090,9 +5089,9 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     if (!itRes.rowCount) throw new Error('Itinerário não encontrado');
     const pontosIds = itRes.rows[0].pontos_ids;
     const escolasIds = itRes.rows[0].escolas_ids;
-    if (pontosIds.length === 0) throw new Error('Itinerário sem pontos');
+    if (!pontosIds.length) throw new Error('Itinerário sem pontos');
 
-    // 4) Coords de uma escola (origem/destino)
+    /* 4) Usa a 1ª escola como origem/destino */
     const escRes = await client.query(
       `SELECT latitude AS lat, longitude AS lng
          FROM public.escolas
@@ -5102,48 +5101,46 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     );
     if (!escRes.rowCount) throw new Error('Escola não encontrada');
     const school = {
-      lat: parseFloat(escRes.rows[0].lat),
-      lng: parseFloat(escRes.rows[0].lng)
+      lat: +escRes.rows[0].lat,
+      lng: +escRes.rows[0].lng
     };
 
-    // 5) Carrega alunos + seus pontos + turnos + deficiências
-    //    ---> ADICIONADO filtro por escola
+    /* 5) Alunos vinculados (SOMENTE sem deficiência) */
     const { rows: alunos } = await client.query(
       `SELECT ap.ponto_id,
               a.id         AS aluno_id,
               a.latitude,
               a.longitude,
-              a.deficiencia,
               a.turma
          FROM public.alunos_ativos a
          JOIN public.alunos_pontos ap ON ap.aluno_id = a.id
-        WHERE ap.ponto_id   = ANY($1)
-          AND a.escola_id   = ANY($2)      -- <--- filtro por escolas do itinerário
-          AND a.latitude   IS NOT NULL
-          AND a.longitude  IS NOT NULL`,
+        WHERE ap.ponto_id = ANY($1)
+          AND a.escola_id = ANY($2)
+          AND a.latitude  IS NOT NULL
+          AND a.longitude IS NOT NULL
+          AND COALESCE(array_length(a.deficiencia,1),0)=0`,
       [pontosIds, escolasIds]
     );
 
-    // 6) Agrupa por ponto e turno
+    /* 6) Agrupa alunos por ponto e turno */
     const stopsMap = {};
     alunos.forEach(a => {
-      const pid = a.ponto_id;
-      if (!stopsMap[pid]) {
-        stopsMap[pid] = {
-          lat: parseFloat(a.latitude),
-          lng: parseFloat(a.longitude),
+      if (!stopsMap[a.ponto_id]) {
+        stopsMap[a.ponto_id] = {
+          lat: +a.latitude,
+          lng: +a.longitude,
           alunos: { manha: [], tarde: [], noite: [], integral: [] }
         };
       }
-      const turno = /MAT/i.test(a.turma) ? 'manha'
-        : /VESP/i.test(a.turma) ? 'tarde'
-          : /NOT/i.test(a.turma) ? 'noite'
-            : /INT/i.test(a.turma) ? 'integral'
-              : 'manha';
-      stopsMap[pid].alunos[turno].push(a.aluno_id);
+      const turno =
+        /MAT/i.test(a.turma) ? 'manha' :
+          /VESP/i.test(a.turma) ? 'tarde' :
+            /NOT/i.test(a.turma) ? 'noite' :
+              /INT/i.test(a.turma) ? 'integral' : 'manha';
+      stopsMap[a.ponto_id].alunos[turno].push(a.aluno_id);
     });
 
-    // 7) Garante coords de todos os pontos do itinerário
+    /* 7) Garante pontos sem alunos */
     const { rows: pts } = await client.query(
       `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
          FROM public.pontos
@@ -5153,49 +5150,44 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     pts.forEach(p => {
       if (!stopsMap[p.id]) {
         stopsMap[p.id] = {
-          lat: parseFloat(p.lat),
-          lng: parseFloat(p.lng),
+          lat: +p.lat,
+          lng: +p.lng,
           alunos: { manha: [], tarde: [], noite: [], integral: [] }
         };
       }
     });
 
-    // 8) Monta array de stops
+    /* 8) Vetor de stops com pelo menos 1 aluno */
     let stops = Object.entries(stopsMap).map(([pid, v]) => ({
       ponto_id: +pid, lat: v.lat, lng: v.lng, alunos: v.alunos
-    }));
-    // Filtra só os pontos que têm pelo menos 1 aluno em algum turno
-    stops = stops.filter(s => {
-      const total = Object.values(s.alunos)
-        .reduce((sum, arr) => sum + arr.length, 0);
-      return total > 0;
+    })).filter(s => {
+      return Object.values(s.alunos).some(arr => arr.length);
     });
 
-    // 9) Utilitário de distância Haversine
-    const hav = (φ1, λ1, φ2, λ2) => {
+    /* 9) util haversine */
+    const hav = (lat1, lng1, lat2, lng2) => {
       const r = Math.PI / 180, R = 6371;
-      const dφ = (φ2 - φ1) * r, dλ = (λ2 - λ1) * r;
+      const dφ = (lat2 - lat1) * r, dλ = (lng2 - lng1) * r;
       const a = Math.sin(dφ / 2) ** 2 +
-        Math.cos(φ1 * r) * Math.cos(φ2 * r) * Math.sin(dλ / 2) ** 2;
+        Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dλ / 2) ** 2;
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
     const MAX_POR_TURNO = 50;
 
-    // 10) Função de inserção
+    /* 10) insert */
     const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt) => {
       await client.query(
         `INSERT INTO public.linhas_rotas
            (itinerario_id,nome_linha,descricao,
             veiculo_tipo,capacidade,
             alunos_ids,paradas_ids,geom)
-         VALUES($1,$2,$3,$4,$5,$6,$7, ST_GeomFromEWKT($8))`,
+         VALUES($1,$2,$3,$4,$5,$6,$7,ST_GeomFromEWKT($8))`,
         [itinerario_id, nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt]
       );
     };
 
+    /* 11) clusterização */
     let nextChar = 'A'.charCodeAt(0);
-
-    // 11) Clusteriza e gera cada linha
     while (stops.length) {
       stops.sort((a, b) => {
         const sa = Object.values(a.alunos).reduce((s, u) => s + u.length, 0);
@@ -5209,17 +5201,16 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       let added;
       do {
         added = false;
-        let bestIdx = -1, bestDist = Infinity;
+        let best = -1, dist = Infinity;
         for (let i = 0; i < stops.length; i++) {
-          const s = stops[i];
-          const last = cluster[cluster.length - 1];
+          const s = stops[i], last = cluster[cluster.length - 1];
           const d = hav(last.lat, last.lng, s.lat, s.lng);
           const ok = Object.entries(s.alunos)
             .every(([t, arr]) => counts[t] + arr.length <= MAX_POR_TURNO);
-          if (ok && d < bestDist) { bestDist = d; bestIdx = i; }
+          if (ok && d < dist) { dist = d; best = i; }
         }
-        if (bestIdx >= 0) {
-          const nxt = stops.splice(bestIdx, 1)[0];
+        if (best >= 0) {
+          const nxt = stops.splice(best, 1)[0];
           cluster.push(nxt);
           Object.entries(nxt.alunos).forEach(([t, arr]) => counts[t] += arr.length);
           added = true;
@@ -5227,12 +5218,9 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       } while (added);
 
       const paradas_ids = cluster.map(s => s.ponto_id);
-      const alunos_ids = Array.from(new Set(cluster.flatMap(s => [
-        ...s.alunos.manha,
-        ...s.alunos.tarde,
-        ...s.alunos.noite,
-        ...s.alunos.integral
-      ])));
+      const alunos_ids = [...new Set(cluster.flatMap(s => [
+        ...s.alunos.manha, ...s.alunos.tarde,
+        ...s.alunos.noite, ...s.alunos.integral]))];
 
       const routePts = [];
       for (let v = 0; v < 3; v++) {
@@ -5241,18 +5229,14 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       }
       routePts.push([school.lng, school.lat]);
       const ewkt = 'SRID=4326;LINESTRING(' +
-        routePts.map(c => c.join(' ')).join(',') +
-        ')';
+        routePts.map(c => c.join(' ')).join(',') + ')';
 
-      const maxTur = Math.max(
-        counts.manha, counts.tarde, counts.noite, counts.integral
-      );
+      const maxTur = Math.max(counts.manha, counts.tarde, counts.noite, counts.integral);
       const vt = maxTur <= 33 ? 'microonibus' : maxTur <= 50 ? 'onibus' : 'van';
       const cap = vt === 'onibus' ? 50 : vt === 'microonibus' ? 33 : 16;
 
       const nome = String.fromCharCode(nextChar++);
-      const desc = `Linha ${nome}`;
-      await insertLine(nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt);
+      await insertLine(nome, `Linha ${nome}`, vt, cap, alunos_ids, paradas_ids, ewkt);
     }
 
     await client.query('COMMIT');
@@ -5293,17 +5277,17 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
         WHEN a.turma ILIKE '%INT%'  THEN 'integral'
         ELSE NULL
       END
-    `;
+        `;
 
     // consulta incluindo o nome da escola
     const query = `
       SELECT
         a.id,
-        a.pessoa_nome    AS nome,
-        ${turnoCase}    AS turno,
-        e.nome           AS escola_nome,
-        p.id             AS ponto_id,
-        p.nome_ponto     AS ponto_nome
+      a.pessoa_nome    AS nome,
+      ${turnoCase}    AS turno,
+      e.nome           AS escola_nome,
+      p.id             AS ponto_id,
+      p.nome_ponto     AS ponto_nome
       FROM alunos_ativos a
       JOIN escolas e       ON e.id = a.escola_id
       JOIN alunos_pontos ap ON ap.aluno_id = a.id
@@ -5312,7 +5296,7 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
         AND ap.ponto_id = ANY($2)
         AND ${turnoCase} = $3
       ORDER BY a.pessoa_nome
-    `;
+      `;
     const vals = [alunos_ids, paradas_ids, turno];
     const { rows } = await pool.query(query, vals);
 
@@ -5339,12 +5323,12 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
     const userId = req.session?.userId || null;
 
     const ins = `
-      INSERT INTO pontos (
+      INSERT INTO pontos(
         nome_ponto, latitude, longitude, area,
         logradouro, numero, complemento, ponto_referencia,
         bairro, cep, status                              /* ❷ */
-      ) VALUES (
-        'TEMP',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10            /* ❸ */
+      ) VALUES(
+        'TEMP', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10            /* ❸ */
       ) RETURNING id`;
     const vals = [
       latitudePonto ? +latitudePonto : null,
@@ -5368,17 +5352,17 @@ app.post("/api/pontos/cadastrar", async (req, res) => {
 
     /* zoneamentos */
     if (zoneamentosPonto.length) {
-      const insZ = `INSERT INTO pontos_zoneamentos (ponto_id,zoneamento_id)
-                    VALUES ($1,$2)`;
+      const insZ = `INSERT INTO pontos_zoneamentos(ponto_id, zoneamento_id)
+                    VALUES($1, $2)`;
       for (const zid of zoneamentosPonto)
         await pool.query(insZ, [pontoId, zid]);
     }
 
     /* notificação */
     await pool.query(`
-      INSERT INTO notificacoes (user_id,acao,tabela,registro_id,mensagem)
-      VALUES ($1,'CREATE','pontos',$2,$3)`,
-      [userId, pontoId, `Ponto criado. ID=${pontoId}`]);
+      INSERT INTO notificacoes(user_id, acao, tabela, registro_id, mensagem)
+      VALUES($1, 'CREATE', 'pontos', $2, $3)`,
+      [userId, pontoId, `Ponto criado.ID = ${pontoId}`]);
 
     res.json({ success: true, message: "Ponto cadastrado!" });
   } catch (e) {
@@ -5408,13 +5392,13 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
       } = p;
 
       const ins = `
-        INSERT INTO pontos (
-          nome_ponto, latitude, longitude, area,
-          logradouro, numero, complemento, ponto_referencia,
-          bairro, cep, status
-        ) VALUES (
-          'TEMP',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10
-        ) RETURNING id`;
+        INSERT INTO pontos(
+        nome_ponto, latitude, longitude, area,
+        logradouro, numero, complemento, ponto_referencia,
+        bairro, cep, status
+      ) VALUES(
+        'TEMP', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+      ) RETURNING id`;
       const vals = [
         latitude != null ? +latitude : null,
         longitude != null ? +longitude : null,
@@ -5431,28 +5415,28 @@ app.post("/api/pontos/cadastrar-multiplos", async (req, res) => {
       /* zona detectada */
       if (zona && zona !== "N/A") {
         let { rows: zRows } = await client.query(
-          `SELECT id FROM zoneamentos WHERE nome=$1 LIMIT 1`, [zona]);
+          `SELECT id FROM zoneamentos WHERE nome = $1 LIMIT 1`, [zona]);
         let zid = zRows[0]?.id;
         if (!zid) {
           ({ rows: zRows } = await client.query(
-            `INSERT INTO zoneamentos (nome) VALUES ($1) RETURNING id`, [zona]));
+            `INSERT INTO zoneamentos(nome) VALUES($1) RETURNING id`, [zona]));
           zid = zRows[0].id;
         }
-        await client.query(`INSERT INTO pontos_zoneamentos (ponto_id,zoneamento_id)
-                            VALUES ($1,$2)`, [pontoId, zid]);
+        await client.query(`INSERT INTO pontos_zoneamentos(ponto_id, zoneamento_id)
+                            VALUES($1, $2)`, [pontoId, zid]);
       }
 
       /* zona(s) escolhidas pelo usuário */
       if (zoneamentos?.length) {
         for (const zid of zoneamentos)
-          await client.query(`INSERT INTO pontos_zoneamentos (ponto_id,zoneamento_id)
-                              VALUES ($1,$2)`, [pontoId, zid]);
+          await client.query(`INSERT INTO pontos_zoneamentos(ponto_id, zoneamento_id)
+                              VALUES($1, $2)`, [pontoId, zid]);
       }
 
       await client.query(`
-        INSERT INTO notificacoes (user_id,acao,tabela,registro_id,mensagem)
-        VALUES ($1,'CREATE','pontos',$2,$3)`,
-        [userId, pontoId, `Ponto criado (multi). ID=${pontoId}`]);
+        INSERT INTO notificacoes(user_id, acao, tabela, registro_id, mensagem)
+        VALUES($1, 'CREATE', 'pontos', $2, $3)`,
+        [userId, pontoId, `Ponto criado(multi).ID = ${pontoId}`]);
     }
     await client.query("COMMIT");
     res.json({ success: true, message: "Pontos cadastrados!" });
@@ -5481,9 +5465,9 @@ app.put("/api/pontos/atualizar/:id", async (req, res) => {
 
     const up = `
       UPDATE pontos SET
-        latitude=$1, longitude=$2, area=$3, logradouro=$4, numero=$5,
-        complemento=$6, ponto_referencia=$7, bairro=$8, cep=$9, status=$10
-      WHERE id=$11 RETURNING nome_ponto`;
+        latitude = $1, longitude = $2, area = $3, logradouro = $4, numero = $5,
+      complemento = $6, ponto_referencia = $7, bairro = $8, cep = $9, status = $10
+      WHERE id = $11 RETURNING nome_ponto`;
     const vals = [
       latitudePontoEdit ? +latitudePontoEdit : null,
       longitudePontoEdit ? +longitudePontoEdit : null,
@@ -5496,15 +5480,15 @@ app.put("/api/pontos/atualizar/:id", async (req, res) => {
 
     await pool.query("DELETE FROM pontos_zoneamentos WHERE ponto_id=$1", [id]);
     if (zoneamentos.length) {
-      const ins = `INSERT INTO pontos_zoneamentos (ponto_id,zoneamento_id)
-                   VALUES ($1,$2)`;
+      const ins = `INSERT INTO pontos_zoneamentos(ponto_id, zoneamento_id)
+                   VALUES($1, $2)`;
       for (const zid of zoneamentos)
         await pool.query(ins, [id, zid]);
     }
 
     await pool.query(`
-      INSERT INTO notificacoes (user_id,acao,tabela,registro_id,mensagem)
-      VALUES ($1,'UPDATE','pontos',$2,$3)`,
+      INSERT INTO notificacoes(user_id, acao, tabela, registro_id, mensagem)
+      VALUES($1, 'UPDATE', 'pontos', $2, $3)`,
       [userId, id, `Ponto ${rows[0].nome_ponto} atualizado.`]);
 
     res.json({ success: true, message: "Atualizado!" });
@@ -5527,8 +5511,8 @@ app.delete("/api/pontos/:id", async (req, res) => {
     if (!rc) return res.status(404).json({ success: false, message: "Não encontrado." });
 
     await pool.query(`
-      INSERT INTO notificacoes (user_id,acao,tabela,registro_id,mensagem)
-      VALUES ($1,'DELETE','pontos',$2,$3)`,
+      INSERT INTO notificacoes(user_id, acao, tabela, registro_id, mensagem)
+      VALUES($1, 'DELETE', 'pontos', $2, $3)`,
       [userId, id, `Ponto ${id} removido.`]);
     res.json({ success: true, message: "Ponto excluído!" });
   } catch (e) {
@@ -5551,17 +5535,17 @@ app.get("/api/notificacoes", async (req, res) => {
     // ou notificações cujo user_id é NULL (notificações gerais).
     const query = `
             SELECT id,
-                   acao,
-                   tabela,
-                   registro_id,
-                   mensagem,
-                   datahora,
-                   is_read
+      acao,
+      tabela,
+      registro_id,
+      mensagem,
+      datahora,
+      is_read
             FROM notificacoes
             WHERE user_id = $1 OR user_id IS NULL
             ORDER BY datahora DESC
             LIMIT 10
-        `;
+      `;
     const { rows } = await pool.query(query, [userId]);
 
     // Formata o "tempo" relativo (ex.: "Há 15 minutos")
@@ -5622,8 +5606,8 @@ app.patch("/api/notificacoes/marcar-lido", async (req, res) => {
         UPDATE notificacoes
         SET is_read = TRUE
         WHERE id = ANY($1)
-          AND (user_id = $2 OR user_id IS NULL)
-      `;
+          AND(user_id = $2 OR user_id IS NULL)
+        `;
     await pool.query(updateQuery, [notificacaoIds, userId]);
 
     return res.json({
@@ -5662,13 +5646,13 @@ app.get("/api/estatisticas-transporte", async (req, res) => {
 
     const query = `
             SELECT
-                EXTRACT(MONTH FROM created_at)::int AS mes,
-                area_zona,
-                COUNT(*) AS total
+                EXTRACT(MONTH FROM created_at):: int AS mes,
+      area_zona,
+      COUNT(*) AS total
             FROM linhas_rotas
             GROUP BY 1, area_zona
             ORDER BY 1;
-        `;
+    `;
     const { rows } = await pool.query(query);
 
     rows.forEach((item) => {
@@ -5714,11 +5698,11 @@ app.post("/api/admin/relate-user-fornecedor", async (req, res) => {
     const { userId, fornecedorId } = req.body;
     // Exemplo de upsert: se já existe vínculo para userId, atualiza; se não, insere
     const upsertQuery = `
-      INSERT INTO usuario_fornecedor (usuario_id, fornecedor_id)
-      VALUES ($1, $2)
-      ON CONFLICT (usuario_id)
+      INSERT INTO usuario_fornecedor(usuario_id, fornecedor_id)
+    VALUES($1, $2)
+      ON CONFLICT(usuario_id)
       DO UPDATE SET fornecedor_id = EXCLUDED.fornecedor_id
-      RETURNING *;
+    RETURNING *;
     `;
     const result = await pool.query(upsertQuery, [userId, fornecedorId]);
     return res.status(200).json({ success: true, data: result.rows[0] });
@@ -5730,22 +5714,22 @@ app.post("/api/admin/relate-user-fornecedor", async (req, res) => {
 app.get("/api/fornecedores", async (req, res) => {
   try {
     const query = `
-            SELECT
-                id,
-                nome_fornecedor,
-                tipo_contrato,
-                cnpj,
-                contato,
-                latitude,
-                longitude,
-                logradouro,
-                numero,
-                complemento,
-                bairro,
-                cep
+    SELECT
+    id,
+      nome_fornecedor,
+      tipo_contrato,
+      cnpj,
+      contato,
+      latitude,
+      longitude,
+      logradouro,
+      numero,
+      complemento,
+      bairro,
+      cep
             FROM fornecedores
             ORDER BY id;
-        `;
+    `;
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (error) {
@@ -5773,17 +5757,17 @@ app.post("/api/motoristas/atribuir-rota", async (req, res) => {
     const userId = req.session?.userId || null;
 
     const insertQuery = `
-            INSERT INTO motoristas_rotas (motorista_id, rota_id)
-            VALUES ($1, $2)
+            INSERT INTO motoristas_rotas(motorista_id, rota_id)
+    VALUES($1, $2)
             RETURNING id;
-        `;
+    `;
     const result = await pool.query(insertQuery, [motorista_id, rota_id]);
     if (result.rowCount > 0) {
       // Notificação de "atribuição" (opcionalmente pode ser "CREATE" ou "UPDATE")
-      const mensagem = `Rota ${rota_id} atribuída ao motorista ${motorista_id}`;
+      const mensagem = `Rota ${rota_id} atribuída ao motorista ${motorista_id} `;
       await pool.query(
-        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-                 VALUES ($1, 'CREATE', 'motoristas_rotas', $2, $3)`,
+        `INSERT INTO notificacoes(user_id, acao, tabela, registro_id, mensagem)
+    VALUES($1, 'CREATE', 'motoristas_rotas', $2, $3)`,
         [userId, result.rows[0].id, mensagem]
       );
       return res.json({
@@ -5823,10 +5807,10 @@ app.post("/api/monitores/atribuir-rota", async (req, res) => {
     );
 
     // Notificação
-    const mensagem = `Rota ${rota_id} atribuída ao monitor ${monitor_id}`;
+    const mensagem = `Rota ${rota_id} atribuída ao monitor ${monitor_id} `;
     await pool.query(
-      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
-             VALUES ($1, 'CREATE', 'monitores_rotas', $2, $3)`,
+      `INSERT INTO notificacoes(user_id, acao, tabela, registro_id, mensagem)
+    VALUES($1, 'CREATE', 'monitores_rotas', $2, $3)`,
       [userId, rota_id, mensagem] // ou ID do insert, se quisesse
     );
 
@@ -5856,7 +5840,7 @@ app.get("/api/motoristas/rota", async (req, res) => {
             FROM motoristas_rotas
             WHERE motorista_id = $1
             LIMIT 1;
-        `;
+    `;
     const rotaIdResult = await pool.query(rotaIdQuery, [motoristaId]);
     if (rotaIdResult.rows.length === 0) {
       return res.json({
@@ -5868,15 +5852,15 @@ app.get("/api/motoristas/rota", async (req, res) => {
     const rotaId = rotaIdResult.rows[0].rota_id;
 
     const rotaDadosQuery = `
-            SELECT
-                partida_lat,
-                partida_lng,
-                chegada_lat,
-                chegada_lng
+    SELECT
+    partida_lat,
+      partida_lng,
+      chegada_lat,
+      chegada_lng
             FROM linhas_rotas
             WHERE id = $1
             LIMIT 1;
-        `;
+    `;
     const rotaDadosRes = await pool.query(rotaDadosQuery, [rotaId]);
     if (rotaDadosRes.rows.length === 0) {
       return res.json({
@@ -5893,7 +5877,7 @@ app.get("/api/motoristas/rota", async (req, res) => {
             JOIN pontos p ON p.id = rp.ponto_id
             WHERE rp.rota_id = $1
             ORDER BY rp.id;
-        `;
+    `;
     const pontosRes = await pool.query(pontosQuery, [rotaId]);
     const pontosParada = pontosRes.rows.map((row) => ({
       lat: row.latitude ? parseFloat(row.latitude) : 0,
@@ -5906,7 +5890,7 @@ app.get("/api/motoristas/rota", async (req, res) => {
             JOIN escolas e ON e.id = re.escola_id
             WHERE re.rota_id = $1
             ORDER BY re.id;
-        `;
+    `;
     const escolasRes = await pool.query(escolasQuery, [rotaId]);
     const escolasPontos = escolasRes.rows.map((row) => ({
       lat: row.latitude ? parseFloat(row.latitude) : 0,
@@ -5951,37 +5935,37 @@ app.get("/api/dashboard", async (req, res) => {
     const alunosAtivos = await pool.query(`
       SELECT COUNT(*)::int AS count
       FROM alunos_ativos
-      WHERE LOWER(transporte_escolar_poder_publico) IN ('municipal','estadual')
-    `);
+      WHERE LOWER(transporte_escolar_poder_publico) IN('municipal', 'estadual')
+      `);
     const rotasAtivas = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM linhas_rotas
-    `);
+      `);
     const zoneamentosCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM zoneamentos
-    `);
+      `);
     const motoristasCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM motoristas
-    `);
+      `);
     const monitoresCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM monitores
-    `);
+      `);
     const fornecedoresCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM fornecedores
-    `);
+      `);
     const pontosCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM pontos
-    `);
+      `);
     // NOVO: Contar escolas
     const escolasCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM escolas
-    `);
+      `);
 
     res.json({
       alunos_ativos: alunosAtivos.rows[0]?.count || 0,
@@ -6007,22 +5991,22 @@ app.get("/api/dashboard", async (req, res) => {
 // DOWNLOAD DE ROTAS (KML, KMZ, GPX)
 // ====================================================================================
 function geojsonToKml(geojson) {
-  let kml = `<?xml version="1.0" encoding="UTF-8"?>
-    <kml xmlns="http://www.opengis.net/kml/2.2">
-    <Document>`;
+  let kml = `<? xml version = "1.0" encoding = "UTF-8" ?>
+      <kml xmlns="http://www.opengis.net/kml/2.2">
+        <Document>`;
 
   geojson.features.forEach((f, idx) => {
     const coords = f.geometry.coordinates
       .map((c) => c[0] + "," + c[1])
       .join(" ");
     kml += `
-      <Placemark>
-        <name>Rota ${f.properties.identificador || idx}</name>
-        <description>${f.properties.descricao || ""}</description>
-        <LineString>
-          <coordinates>${coords}</coordinates>
-        </LineString>
-      </Placemark>`;
+          <Placemark>
+            <name>Rota ${f.properties.identificador || idx}</name>
+            <description>${f.properties.descricao || ""}</description>
+            <LineString>
+              <coordinates>${coords}</coordinates>
+            </LineString>
+          </Placemark>`;
   });
   kml += "\n</Document>\n</kml>";
   return kml;
