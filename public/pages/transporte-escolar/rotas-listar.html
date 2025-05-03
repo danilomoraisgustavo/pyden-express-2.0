@@ -985,6 +985,47 @@
     </div>
   </div>
 
+  <!-- MODAL LINHAS INTELIGENTES - ESPECIAIS -->
+  <div class="modal fade" id="modalLinhasItinerarioEsp" tabindex="-1" aria-labelledby="modalLinhasItinerarioEspLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalLinhasItinerarioEspLabel">
+            Linhas do Itinerário Especial
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="linhasEspItinerarioId" />
+
+          <div class="mb-3 text-end">
+            <button id="btnGerarLinhasEsp" class="btn btn-warning">
+              Gerar Linhas Inteligentes Especiais
+            </button>
+          </div>
+
+          <table class="table table-striped" id="linhas-especiais-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Veículo</th>
+                <th>Capacidade</th>
+                <th>Manhã</th>
+                <th>Tarde</th>
+                <th>Noite</th>
+                <th>Integral</th>
+                <th># Paradas</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
   <!-- JS CORE / PLUGINS -->
