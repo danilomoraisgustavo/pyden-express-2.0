@@ -5063,44 +5063,168 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   }
 });
 
-// POST /api/itinerarios/:itinerario_id/linhas/gerar-especial
-// Gera linhas contendo SOMENTE alunos que possuem deficiência
+/* ------------------------------------------------------------------ */
+/*  Gera LINHAS ESPECIAIS – atendem SOMENTE alunos com deficiência     */
+/*  Cada rota: escola ➜ casa₁ ➜ casa₂ … ➜ escola                      */
+/* ------------------------------------------------------------------ */
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar-especial', async (req, res) => {
   const client = await pool.connect();
   try {
     const { itinerario_id } = req.params;
 
-    // reaproveita 99 % do algoritmo original ─ só trocamos a cláusula-aluno
-    const gerarLinhas = `
-      /* 1) limpa linhas antigas dessa rota especial */
-      DELETE FROM public.linhas_rotas WHERE itinerario_id = $1;
-
-      /* 2-a) carrega as variáveis que já existiam …   */
-      WITH dados AS (
-        SELECT
-          it.pontos_ids,
-          it.escolas_ids,
-          (SELECT json_agg(e) FROM public.escolas e WHERE e.id = ANY(it.escolas_ids)) AS escolas
-        FROM public.itinerarios it
-        WHERE it.id = $1
-      )
-      /* 2-b) exatamente o mesmo corpo, MAS:                         */
-      /*      …AND COALESCE(array_length(a.deficiencia,1),0) > 0      */
-    `;
-
     await client.query('BEGIN');
     await client.query('SET search_path TO public');
-    await client.query(gerarLinhas, [itinerario_id]);   // ← corpo omitido para brevidade
+
+    /* 1) remove linhas antigas (especiais) desse itinerário ---------- */
+    await client.query(
+      `DELETE FROM public.linhas_rotas WHERE itinerario_id = $1`,
+      [itinerario_id]
+    );
+
+    /* 2) escolas ligadas ao itinerário ------------------------------- */
+    const itRes = await client.query(
+      `SELECT escolas_ids FROM public.itinerarios WHERE id = $1`,
+      [itinerario_id]
+    );
+    if (!itRes.rowCount) throw new Error('Itinerário não encontrado');
+    const escolasIds = itRes.rows[0].escolas_ids;
+
+    /* 3) pega a 1ª escola como origem/destino ----------------------- */
+    const escRes = await client.query(
+      `SELECT id, nome, latitude, longitude
+         FROM public.escolas
+        WHERE id = ANY($1)
+        LIMIT 1`,
+      [escolasIds]
+    );
+    if (!escRes.rowCount) throw new Error('Escola não encontrada');
+    const escola = escRes.rows[0];
+    const schoolLat = +escola.latitude;
+    const schoolLng = +escola.longitude;
+
+    /* 4) alunos COM deficiência, vinculados à(s) escola(s) ----------- */
+    const alRes = await client.query(
+      `SELECT id,
+              pessoa_nome,
+              latitude,
+              longitude,
+              turma
+         FROM public.alunos_ativos
+        WHERE escola_id = ANY($1)
+          AND COALESCE(array_length(deficiencia,1),0) > 0
+          AND latitude  IS NOT NULL
+          AND longitude IS NOT NULL`,
+      [escolasIds]
+    );
+    if (!alRes.rowCount) {
+      await client.query('COMMIT');
+      return res.json({ success: true, message: 'Nenhum aluno especial.' });
+    }
+
+    /* 5) agrupa alunos por turno (mesmo critério MAT/VESP/NOT/INT) --- */
+    const alunos = alRes.rows.map(a => ({
+      id: a.id,
+      nome: a.pessoa_nome,
+      lat: +a.latitude,
+      lng: +a.longitude,
+      turno: /MAT/i.test(a.turma) ? 'manha'
+        : /VESP/i.test(a.turma) ? 'tarde'
+          : /NOT/i.test(a.turma) ? 'noite'
+            : /INT/i.test(a.turma) ? 'integral'
+              : 'manha'
+    }));
+
+    /* 6) util – Haversine ------------------------------------------- */
+    const hav = (lat1, lng1, lat2, lng2) => {
+      const d2r = Math.PI / 180, R = 6371;
+      const dφ = (lat2 - lat1) * d2r, dλ = (lng2 - lng1) * d2r;
+      const a = Math.sin(dφ / 2) ** 2 +
+        Math.cos(lat1 * d2r) * Math.cos(lat2 * d2r) * Math.sin(dλ / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    const MAX_POR_ROTA = 12;   // sugerido para van adaptada
+
+    /* 7) função DB insert ------------------------------------------- */
+    const insertLine = async (nome, alunos_ids, ewkt) => {
+      await client.query(
+        `INSERT INTO public.linhas_rotas
+           (itinerario_id, nome_linha, descricao,
+            veiculo_tipo, capacidade,
+            alunos_ids, paradas_ids, geom)
+         VALUES($1,$2,$3,$4,$5,$6,$7,ST_GeomFromEWKT($8))`,
+        [
+          itinerario_id,
+          nome,
+          `Linha ${nome}`,
+          'van_adaptada',
+          MAX_POR_ROTA,
+          alunos_ids,
+          null,          // não usamos pontos de parada
+          ewkt
+        ]
+      );
+    };
+
+    /* 8) clusterização simples (greedy) ----------------------------- */
+    const alunosPend = [...alunos];
+    let nextChar = 'A'.charCodeAt(0);
+
+    while (alunosPend.length) {
+      // seed = aluno mais distante da escola (espalha melhor os grupos)
+      alunosPend.sort((a, b) =>
+        hav(b.lat, b.lng, schoolLat, schoolLng) -
+        hav(a.lat, a.lng, schoolLat, schoolLng)
+      );
+      const cluster = [alunosPend.shift()];
+
+      // completa cluster até limite
+      let added;
+      do {
+        added = false;
+        let bestIdx = -1, bestDist = Infinity;
+        for (let i = 0; i < alunosPend.length; i++) {
+          const cand = alunosPend[i];
+          // distância ao último inserido no cluster
+          const d = hav(cluster[cluster.length - 1].lat,
+            cluster[cluster.length - 1].lng,
+            cand.lat, cand.lng);
+          if (cluster.length < MAX_POR_ROTA && d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        }
+        if (bestIdx >= 0) {
+          cluster.push(alunosPend.splice(bestIdx, 1)[0]);
+          added = true;
+        }
+      } while (added);
+
+      /* 9) monta a polyline escola → casas… → escola ---------------- */
+      const pts = [];
+      pts.push([schoolLng, schoolLat]);           // saída escola
+      cluster.forEach(c => pts.push([c.lng, c.lat]));
+      pts.push([schoolLng, schoolLat]);           // retorno escola
+      const ewkt = 'SRID=4326;LINESTRING(' +
+        pts.map(p => p.join(' ')).join(',') + ')';
+
+      const alunosIds = cluster.map(c => c.id);
+      const nomeLinha = `Especial ${String.fromCharCode(nextChar++)}`;
+
+      await insertLine(nomeLinha, alunosIds, ewkt);
+    }
+
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('Gerar linhas especiais:', err);
+    console.error('Geração de linhas especiais:', err);
     res.status(500).json({ error: 'Falha ao gerar linhas especiais.' });
   } finally {
     client.release();
   }
 });
+
 
 // GET /api/escolas/especiais — escolas que têm ≥1 aluno com deficiência
 app.get('/api/escolas/especiais', async (req, res) => {
