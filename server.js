@@ -5103,22 +5103,34 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar-especial', async (req, re
 });
 
 // GET /api/escolas/especiais — escolas que têm ≥1 aluno com deficiência
-// GET /api/escolas/especiais — escolas que possuem alunos com deficiência
 app.get('/api/escolas/especiais', async (req, res) => {
   try {
     const sql = `
-      SELECT e.id,
-             e.nome,
-             e.latitude,
-             e.longitude
-        FROM public.escolas e
-       WHERE EXISTS (
-              SELECT 1
-                FROM public.alunos_ativos a
-               WHERE a.escola_id = e.id
-                 AND COALESCE(array_length(a.deficiencia,1),0) > 0
-            )
-       ORDER BY e.nome;
+      SELECT
+        e.id,
+        e.nome,
+        e.latitude,
+        e.longitude,
+        COALESCE((
+          SELECT json_agg(zsub)
+          FROM (
+            SELECT DISTINCT z.id, z.nome
+              FROM public.zoneamentos z
+              JOIN public.pontos_zoneamentos pz ON pz.zoneamento_id = z.id
+              JOIN public.alunos_pontos      ap ON ap.ponto_id       = pz.ponto_id
+              JOIN public.alunos_ativos       a ON a.id             = ap.aluno_id
+             WHERE a.escola_id = e.id
+               AND COALESCE(array_length(a.deficiencia,1),0) > 0
+          ) zsub
+        ), '[]') AS zoneamentos
+      FROM public.escolas e
+      WHERE EXISTS (
+        SELECT 1
+          FROM public.alunos_ativos a
+         WHERE a.escola_id = e.id
+           AND COALESCE(array_length(a.deficiencia,1),0) > 0
+      )
+      ORDER BY e.nome;
     `;
     const { rows } = await pool.query(sql);
     res.json(rows);
