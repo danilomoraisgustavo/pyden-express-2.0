@@ -1714,6 +1714,98 @@
     document.getElementById('modalNovaRotaEspecial')
       .addEventListener('shown.bs.modal', initMapCreateEspecial);
     $(document).ready(loadRotasEspeciais);
+    /* =========================================================
+     *  LINHAS ESPECIAIS
+     * ========================================================= */
+    let itEspAtual = null;     // guarda o itinerário especial aberto
+
+    function openLinhasEsp(itinerarioId) {
+      itEspAtual = itinerarioId;
+      document.getElementById('itEspIdSpan').textContent = `#${itinerarioId}`;
+      loadLinhasEsp();                       // carrega a tabela
+      $('#modalLinhasEsp').modal('show');    // abre o modal
+    }
+
+    async function loadLinhasEsp() {
+      if (!itEspAtual) return;
+
+      const resp = await fetch(
+        `/api/itinerarios-especiais/${itEspAtual}/linhas`
+      ).then(r => r.json());
+
+      const tbody = $('#linhas-especiais-table tbody').empty();
+      resp.forEach(l => {
+        tbody.append(`
+      <tr>
+        <td>${l.id}</td>
+        <td>${l.descricao}</td>
+        <td class="text-center">${l.qtd_alunos}</td>
+        <td>
+          <button class="btn btn-link btn-danger"
+                  onclick="apagarLinhaEsp(${l.id})">
+            <i class="fa fa-trash"></i>
+          </button>
+        </td>
+      </tr>`);
+      });
+
+      // (re)inicia DataTable
+      if ($.fn.DataTable.isDataTable('#linhas-especiais-table'))
+        $('#linhas-especiais-table').DataTable().destroy();
+
+      $('#linhas-especiais-table').DataTable({
+        pageLength: 10,
+        language: { search: 'Pesquisar:' }
+      });
+    }
+
+    /* Gerar Linhas Especiais */
+    document.getElementById('btnGerarLinhasEsp')
+      .addEventListener('click', async () => {
+        if (!itEspAtual) return;
+
+        const ok = confirm(
+          "Gerar/atualizar linhas para este itinerário especial?"
+        );
+        if (!ok) return;
+
+        try {
+          const r = await fetch(
+            `/api/itinerarios-especiais/${itEspAtual}/linhas/gerar`,
+            { method: 'POST' }
+          ).then(r => r.json());
+
+          if (r.success) {
+            showNotification('success', r.message || 'Linhas geradas.');
+            loadLinhasEsp();
+            loadRotasEspeciais();             // atualiza tabela principal
+          } else {
+            showNotification('danger', r.error || 'Falha na geração.');
+          }
+        } catch {
+          showNotification('danger', 'Erro de rede.');
+        }
+      });
+
+    /* Excluir uma linha especial */
+    async function apagarLinhaEsp(id) {
+      if (!confirm('Excluir esta linha?')) return;
+
+      try {
+        const r = await fetch(
+          `/api/linhas-especiais/${id}`, { method: 'DELETE' }
+        ).then(r => r.json());
+
+        if (r.success) {
+          showNotification('success', 'Linha excluída.');
+          loadLinhasEsp();
+        } else {
+          showNotification('danger', r.error || 'Erro ao excluir.');
+        }
+      } catch {
+        showNotification('danger', 'Erro de rede.');
+      }
+    }
 
   </script>
 </body>
