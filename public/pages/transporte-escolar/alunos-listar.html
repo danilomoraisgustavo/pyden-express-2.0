@@ -1369,10 +1369,7 @@
 
     $("#btnDownloadAlunosCSV").on("click", () => {
       const linhas = dataTable.rows({ search: "applied" }).data().toArray();
-      if (!linhas.length) {
-        showNotification("info", "Nenhum aluno para exportar.");
-        return;
-      }
+      if (!linhas.length) { showNotification("info", "Nenhum aluno para exportar."); return; }
 
       const dadosParaCSV = linhas.map(l => {
         const o = {};
