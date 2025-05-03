@@ -686,10 +686,17 @@
                 </div>
                 <div class="card-body">
                   <div class="mb-2 text-end">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaRota">
+                    <button class="btn btn-primary me-2" id="btnNovaRota" data-bs-toggle="modal"
+                      data-bs-target="#modalNovaRota">
                       <i class="fa fa-plus"></i> Nova Rota
                     </button>
+
+                    <button class="btn btn-warning" id="btnNovaRotaEspecial" data-bs-toggle="modal"
+                      data-bs-target="#modalNovaRota">
+                      <i class="fa fa-plus"></i> Nova Rota <strong>Especial</strong>
+                    </button>
                   </div>
+
 
                   <div class="table-responsive">
                     <table id="rotas-table" class="display table table-striped table-hover">
