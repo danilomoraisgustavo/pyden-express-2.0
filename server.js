@@ -9981,6 +9981,9 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 /* ------------------------------------------------------------------ */
 /*  ROTAS ::  Importar alunos ativos                                   */
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/*  ROTAS :: Importar alunos ativos                                   */
+/* ------------------------------------------------------------------ */
 app.post("/api/import-alunos-ativos", async (req, res) => {
   const { alunos, escolaId } = req.body;
   if (!Array.isArray(alunos) || !escolaId) {
@@ -10028,47 +10031,55 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
             ? deficiencia
             : null;
 
-      /* ---------- 1. tenta preencher id_pessoa pela matrícula -------- */
-      const { rowCount: updMat } = await client.query(
+      /* ---------- 1. preenche id_pessoa pela matrícula --------------- */
+      const { rowCount: fillByMat } = await client.query(
         `UPDATE alunos_ativos
             SET id_pessoa = $1
           WHERE id_matricula = $2
-            AND id_pessoa IS NULL`,
+            AND id_pessoa IS NULL
+            AND NOT EXISTS (
+                  SELECT 1 FROM alunos_ativos
+                   WHERE id_pessoa = $1
+            );`,
         [id_pessoa, id_matricula]
       );
-      if (updMat) continue;
+      if (fillByMat) continue;
 
-      /* ---------- 2. tenta preencher id_pessoa pelo CPF -------------- */
+      /* ---------- 2. preenche id_pessoa pelo CPF --------------------- */
       if (cpfNorm) {
-        const { rowCount: updCpf } = await client.query(
+        const { rowCount: fillByCpf } = await client.query(
           `UPDATE alunos_ativos
               SET id_pessoa = $1
             WHERE cpf = $2
-              AND id_pessoa IS NULL`,
+              AND id_pessoa IS NULL
+              AND NOT EXISTS (
+                    SELECT 1 FROM alunos_ativos
+                     WHERE id_pessoa = $1
+              );`,
           [id_pessoa, cpfNorm]
         );
-        if (updCpf) continue;
+        if (fillByCpf) continue;
       }
 
-      /* ---------- 3. se já existe id_pessoa, ignora ------------------ */
+      /* ---------- 3. id_pessoa já existe? então ignora --------------- */
       const { rowCount: dupPessoa } = await client.query(
-        `SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1 LIMIT 1`,
+        `SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1 LIMIT 1;`,
         [id_pessoa]
       );
       if (dupPessoa) continue;
 
-      /* ---------- 4. se matrícula/CPF já existem, ignora ------------- */
+      /* ---------- 4. matrícula ou CPF já existem? ignora ------------- */
       const { rowCount: dupKey } = await client.query(
         `SELECT 1
            FROM alunos_ativos
           WHERE id_matricula = $1
              OR (cpf = $2 AND $2 IS NOT NULL)
-          LIMIT 1`,
+          LIMIT 1;`,
         [id_matricula, cpfNorm]
       );
       if (dupKey) continue;
 
-      /* ---------- 5. registro inédito → INSERT with dual handling ---- */
+      /* ---------- 5. registro inédito → INSERT/UPSERT por matrícula -- */
       await client.query(
         `
         INSERT INTO alunos_ativos (
@@ -10120,11 +10131,14 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Erro na importação:", err);
-    res.status(500).json({ success: false, message: "Erro interno." });
+    res
+      .status(500)
+      .json({ success: false, message: "Erro interno na importação." });
   } finally {
     client.release();
   }
 });
+
 
 
 
