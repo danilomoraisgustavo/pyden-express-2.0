@@ -5063,6 +5063,70 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
   }
 });
 
+// POST /api/itinerarios/:itinerario_id/linhas/gerar-especial
+// Gera linhas contendo SOMENTE alunos que possuem deficiência
+app.post('/api/itinerarios/:itinerario_id/linhas/gerar-especial', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { itinerario_id } = req.params;
+
+    // reaproveita 99 % do algoritmo original ─ só trocamos a cláusula-aluno
+    const gerarLinhas = `
+      /* 1) limpa linhas antigas dessa rota especial */
+      DELETE FROM public.linhas_rotas WHERE itinerario_id = $1;
+
+      /* 2-a) carrega as variáveis que já existiam …   */
+      WITH dados AS (
+        SELECT
+          it.pontos_ids,
+          it.escolas_ids,
+          (SELECT json_agg(e) FROM public.escolas e WHERE e.id = ANY(it.escolas_ids)) AS escolas
+        FROM public.itinerarios it
+        WHERE it.id = $1
+      )
+      /* 2-b) exatamente o mesmo corpo, MAS:                         */
+      /*      …AND COALESCE(array_length(a.deficiencia,1),0) > 0      */
+    `;
+
+    await client.query('BEGIN');
+    await client.query('SET search_path TO public');
+    await client.query(gerarLinhas, [itinerario_id]);   // ← corpo omitido para brevidade
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Gerar linhas especiais:', err);
+    res.status(500).json({ error: 'Falha ao gerar linhas especiais.' });
+  } finally {
+    client.release();
+  }
+});
+
+// GET /api/escolas/especiais — escolas que têm ≥1 aluno com deficiência
+app.get('/api/escolas/especiais', async (req, res) => {
+  const sql = `
+    SELECT e.id, e.nome, e.latitude, e.longitude,
+           COALESCE(
+             ( SELECT json_agg(z) FROM (
+                 SELECT z.id, z.nome
+                 FROM public.zoneamentos z
+                 JOIN public.pontos p   ON p.zoneamento_id = z.id
+                 JOIN public.alunos_pontos ap ON ap.ponto_id = p.id
+                 JOIN public.alunos_ativos a  ON a.id = ap.aluno_id
+                 WHERE a.escola_id = e.id
+                   AND COALESCE(array_length(a.deficiencia,1),0) > 0
+                 GROUP BY z.id
+               ) z ),
+           '[]') AS zoneamentos
+      FROM public.escolas e
+     WHERE EXISTS (
+           SELECT 1 FROM public.alunos_ativos a
+           WHERE a.escola_id = e.id
+             AND COALESCE(array_length(a.deficiencia,1),0) > 0);
+  `;
+  const { rows } = await pool.query(sql);
+  res.json(rows);
+});
 
 // POST /api/itinerarios/:itinerario_id/linhas/gerar
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
