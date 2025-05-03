@@ -5404,6 +5404,27 @@ app.post("/api/itinerarios-especiais", async (req, res) => {
   }
 });
 
+// -------------------------------------------------------------------
+// LISTAR todos os itinerários especiais
+// -------------------------------------------------------------------
+app.get("/api/itinerarios-especiais", async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT  ie.id,
+              e.nome            AS escola,
+              ie.bairros,
+              ie.descricao
+        FROM  itinerarios_especiais  ie
+        JOIN  escolas               e  ON e.id = ie.escola_id
+       ORDER BY ie.id DESC;
+    `);
+
+    return res.json(rows);   // → [{ id, escola, bairros, descricao }, …]
+  } catch (err) {
+    console.error("GET /api/itinerarios-especiais:", err);
+    return res.status(500).json({ error: "Erro interno do servidor." });
+  }
+});
 
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
