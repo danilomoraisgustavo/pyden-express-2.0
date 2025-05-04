@@ -1537,8 +1537,8 @@
         const destination = { lat: school[1], lng: school[0] };
         const waypoints = stops.map(s => ({ location: s, stopover: true }));
 
-        const garagemIcon = { url: '/assets/img/garagem.png', scaledSize: new google.maps.Size(32, 32) };
-        const pontoIcon = { url: '/assets/img/bus-stop.png', scaledSize: new google.maps.Size(24, 24) };
+        const garagemIcon = { url: '../../assets/img/garagem.png', scaledSize: new google.maps.Size(32, 32) };
+        const pontoIcon = { url: '../../assets/img/bus-stop.png', scaledSize: new google.maps.Size(24, 24) };
 
         directionsService.route({
           origin,
