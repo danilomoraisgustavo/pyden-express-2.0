@@ -5310,36 +5310,31 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
 });
 
 // LISTAR alunos com necessidades especiais de uma determinada escola
-app.get("/api/escolas/:id/alunos-especiais", async (req, res) => {
-  const { id } = req.params;       // id da escola
-
+app.get('/api/escolas/:id/alunos-especiais', async (req, res) => {
   try {
+    const { id } = req.params;
     const { rows } = await pool.query(
-      `
-      SELECT
-        id,
-        pessoa_nome      AS nome,
-        bairro,
-        latitude,
-        longitude,
-        deficiencia
-      FROM alunos_ativos
-      WHERE escola_id = $1
-        AND COALESCE(array_length(deficiencia,1),0) > 0   -- só quem tem deficiência
-      ORDER BY pessoa_nome
-      `,
+      `SELECT id,
+              pessoa_nome   AS nome,
+              bairro,
+              latitude,
+              longitude,
+              deficiencia
+         FROM alunos_ativos
+        WHERE escola_id = $1
+          AND deficiencia IS NOT NULL
+          AND array_length(deficiencia,1) > 0
+          AND bairro IS NOT NULL
+          AND trim(bairro) <> ''`,
       [id]
     );
-
-    return res.json(rows);         // [] se não houver alunos especiais
+    return res.json(rows);
   } catch (err) {
-    console.error("GET /api/escolas/:id/alunos-especiais:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor.",
-    });
+    console.error('GET alunos-especiais:', err);
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
+
 
 app.post("/api/itinerarios-especiais", async (req, res) => {
   const { bairros_por_escola } = req.body;
