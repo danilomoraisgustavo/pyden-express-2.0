@@ -5427,7 +5427,7 @@ app.get("/api/itinerarios-especiais", async (req, res) => {
  * ============================================================== */
 /* ==============================================================
  *  GET /api/itinerarios-especiais/:id/linhas
- *  devolve linhas + contagem por turno + geojson
+ *  (contagem por turno + geojson)
  * ============================================================== */
 app.get('/api/itinerarios-especiais/:id/linhas', async (req, res) => {
   const { id } = req.params;
@@ -5436,15 +5436,17 @@ app.get('/api/itinerarios-especiais/:id/linhas', async (req, res) => {
            le.descricao,
            le.qtd_alunos,
            le.geojson,
-           COALESCE(SUM(CASE WHEN lower(a.turno) LIKE '%mat%'      THEN 1 END),0) AS alunos_manha,
-           COALESCE(SUM(CASE WHEN lower(a.turno) LIKE '%vesp%'     OR lower(a.turno) LIKE '%tarde%'   THEN 1 END),0) AS alunos_tarde,
-           COALESCE(SUM(CASE WHEN lower(a.turno) LIKE '%noit%'     THEN 1 END),0) AS alunos_noite,
-           COALESCE(SUM(CASE WHEN lower(a.turno) LIKE '%integral%' THEN 1 END),0) AS alunos_integral
+           -- contagens por turno (extraídas de 'turma')
+           SUM(CASE WHEN lower(a.turma) ~ '(mat|manh)'           THEN 1 END) AS alunos_manha,
+           SUM(CASE WHEN lower(a.turma) ~ '(vesp|tarde)'         THEN 1 END) AS alunos_tarde,
+           SUM(CASE WHEN lower(a.turma) ~ '(not|noit)'           THEN 1 END) AS alunos_noite,
+           SUM(CASE WHEN lower(a.turma) ~ '(int|integral)'       THEN 1 END) AS alunos_integral
       FROM linhas_especiais le
- LEFT JOIN  UNNEST(le.alunos_ids) AS al_id(id)      ON true
- LEFT JOIN  alunos_ativos          a               ON a.id = al_id.id
+ LEFT JOIN UNNEST(le.alunos_ids) AS aid(id) ON true
+ LEFT JOIN alunos_ativos a ON a.id = aid.id
      WHERE le.itinerario_id = $1
-  GROUP BY le.id`;
+  GROUP BY le.id
+  ORDER BY le.id`;
   try {
     const { rows } = await pool.query(sql, [id]);
     res.json(rows);
@@ -5454,25 +5456,41 @@ app.get('/api/itinerarios-especiais/:id/linhas', async (req, res) => {
   }
 });
 
-/* GET /api/linhas-especiais/:id/alunos?turno=manha|tarde|noite|integral */
+
+/* ==============================================================
+ *  GET /api/linhas-especiais/:id/alunos?turno=manha|tarde|noite|integral
+ * ============================================================== */
 app.get('/api/linhas-especiais/:id/alunos', async (req, res) => {
   const { id } = req.params;
   const turnoPar = (req.query.turno || '').toLowerCase();
-  const filtro = {
-    manha: "lower(a.turno) LIKE '%mat%'",
-    tarde: "lower(a.turno) LIKE '%vesp%' OR lower(a.turno) LIKE '%tarde%'",
-    noite: "lower(a.turno) LIKE '%noit%'",
-    integral: "lower(a.turno) LIKE '%integral%'"
-  }[turnoPar] || 'true';
+
+  const filtros = {
+    manha: "(lower(a.turma) ~ '(mat|manh)')",
+    tarde: "(lower(a.turma) ~ '(vesp|tarde)')",
+    noite: "(lower(a.turma) ~ '(not|noit)')",
+    integral: "(lower(a.turma) ~ '(int|integral)')"
+  };
+  const whereTurno = filtros[turnoPar] || 'true';
 
   const sql = `
-    SELECT a.id, a.pessoa_nome AS nome, a.bairro, a.turno,
-           e.nome AS escola_nome
+    SELECT a.id,
+           a.pessoa_nome                  AS nome,
+           a.bairro,
+           a.turma,
+           CASE
+             WHEN lower(a.turma) ~ '(mat|manh)'     THEN 'Manhã'
+             WHEN lower(a.turma) ~ '(vesp|tarde)'   THEN 'Tarde'
+             WHEN lower(a.turma) ~ '(not|noit)'     THEN 'Noite'
+             WHEN lower(a.turma) ~ '(int|integral)' THEN 'Integral'
+             ELSE ''
+           END                                     AS turno_simples,
+           e.nome                                   AS escola_nome
       FROM linhas_especiais le
-      JOIN UNNEST(le.alunos_ids) AS al_id(id) ON true
-      JOIN alunos_ativos a ON a.id = al_id.id
-      JOIN escolas       e ON e.id = a.escola_id
-     WHERE le.id = $1 AND ${filtro}
+      JOIN UNNEST(le.alunos_ids) AS aid(id)    ON true
+      JOIN alunos_ativos        a              ON a.id = aid.id
+      JOIN escolas              e              ON e.id = a.escola_id
+     WHERE le.id = $1
+       AND ${whereTurno}
      ORDER BY a.pessoa_nome`;
   try {
     const { rows } = await pool.query(sql, [id]);
@@ -5482,6 +5500,7 @@ app.get('/api/linhas-especiais/:id/alunos', async (req, res) => {
     res.status(500).json({ error: 'Erro interno.' });
   }
 });
+
 
 /* ==============================================================
  *  POST /api/itinerarios-especiais/:id/linhas/gerar
