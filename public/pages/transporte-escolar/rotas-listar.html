@@ -1821,6 +1821,88 @@
         showNotification('danger', 'Erro de rede.');
       }
     }
+    document.addEventListener('DOMContentLoaded', () => {
+
+      /* ---------- Listagens iniciais ---------- */
+      loadRotas();
+      loadRotasEspeciais();
+
+      /* ---------- Modais – mapa de criação ---------- */
+      const modalNovaRota = document.getElementById('modalNovaRota');
+      if (modalNovaRota) {
+        modalNovaRota.addEventListener('shown.bs.modal', initMapCreate);
+      }
+
+      const modalNovaRotaEsp = document.getElementById('modalNovaRotaEspecial');
+      if (modalNovaRotaEsp) {
+        /* Só adiciona se o modal realmente existir */
+        modalNovaRotaEsp.addEventListener('shown.bs.modal', initMapCreateEspecial);
+      }
+
+      /* ---------- Botões: gerar linhas ---------- */
+      const btnGerarLinhas = document.getElementById('btnGerarLinhas');
+      if (btnGerarLinhas) {
+        btnGerarLinhas.addEventListener('click', () => {
+          const id = $('#linhasItinerarioId').val();
+          fetch(`/api/itinerarios/${id}/linhas/gerar`, { method: 'POST' })
+            .then(r => r.json())
+            .then(res => {
+              if (res.success) { showNotification('success', 'Linhas geradas'); loadLinhas(id); }
+              else { showNotification('danger', res.error || 'Falha'); }
+            })
+            .catch(() => showNotification('danger', 'Erro de rede'));
+        });
+      }
+
+      /* ---------- Botão: salvar itinerário especial ---------- */
+      const btnSalvarItEsp = document.getElementById('btnSalvarItinerarioEspecial');
+      if (btnSalvarItEsp) {
+        btnSalvarItEsp.addEventListener('click', async () => {
+          const payload = {
+            escolas: escolasEspSelecionadas.map(o => o.id),
+            bairros_por_escola: escolasEspSelecionadas
+          };
+          try {
+            const r = await fetch('/api/itinerarios-especiais', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).then(r => r.json());
+            if (r.id) {
+              $('#modalNovaRotaEspecial').modal('hide');
+              showNotification('success', `Itinerário Especial #${r.id} criado`);
+              loadRotasEspeciais();
+            } else {
+              showNotification('danger', r.error || 'Erro ao criar');
+            }
+          } catch { showNotification('danger', 'Falha de rede'); }
+        });
+      }
+
+      /* ---------- Botão: gerar linhas especiais ---------- */
+      const btnGerarLinhasEsp = document.getElementById('btnGerarLinhasEsp');
+      if (btnGerarLinhasEsp) {
+        btnGerarLinhasEsp.addEventListener('click', async () => {
+          if (!itEspAtual) return;
+          if (!confirm('Gerar/atualizar linhas para este itinerário especial?')) return;
+          try {
+            const r = await fetch(
+              `/api/itinerarios-especiais/${itEspAtual}/linhas/gerar`,
+              { method: 'POST' }
+            ).then(r => r.json());
+            if (r.success) {
+              showNotification('success', r.message || 'Linhas geradas');
+              loadLinhasEsp(); loadRotasEspeciais();
+            } else {
+              showNotification('danger', r.error || 'Falha');
+            }
+          } catch { showNotification('danger', 'Erro de rede'); }
+        });
+      }
+
+      /* ---------- Outras ligações que dependem do DOM ---------- */
+      $('#modalAlunosRota').on('shown.bs.modal', carregarCapacidadeEAlunos);
+
+    });
   </script>
 
 </body>
