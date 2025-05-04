@@ -5426,6 +5426,92 @@ app.get("/api/itinerarios-especiais", async (req, res) => {
   }
 });
 
+
+/* ==============================================================
+ *  LINHAS DE ITINERARIOS ESPECIAIS
+ * ============================================================== */
+
+/* GET /api/itinerarios-especiais/:id/linhas
+ * Lista todas as linhas de um itinerario especial
+ */
+app.get('/api/itinerarios-especiais/:id/linhas', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query(
+      `SELECT id,
+              descricao,
+              qtd_alunos
+         FROM linhas_especiais
+        WHERE itinerario_id = $1
+        ORDER BY id`, [id]
+    );
+    return res.json(rows);
+  } catch (err) {
+    console.error('GET linhas_especiais:', err);
+    return res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+});
+
+/* POST /api/itinerarios-especiais/:id/linhas/gerar
+ * Gera ou regenera linhas para o itinerario especial
+ */
+app.post('/api/itinerarios-especiais/:id/linhas/gerar', async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { id } = req.params;
+
+    await client.query('BEGIN');
+
+    /* Remove linhas antigas */
+    await client.query(
+      'DELETE FROM linhas_especiais WHERE itinerario_id = $1',
+      [id]
+    );
+
+    /* Exemplo simples de geração */
+    const it = await client.query(
+      `SELECT bairros
+         FROM itinerarios_especiais
+        WHERE id = $1`, [id]
+    );
+    if (!it.rowCount) throw new Error('Itinerario especial nao encontrado');
+
+    const bairros = it.rows[0].bairros;
+    for (const bairro of bairros) {
+      await client.query(
+        `INSERT INTO linhas_especiais
+           (itinerario_id, descricao, qtd_alunos)
+         VALUES ($1, $2, 0)`,
+        [id, `Linha – bairro ${bairro}`]
+      );
+    }
+
+    await client.query('COMMIT');
+    return res.json({ success: true, message: 'Linhas especiais geradas.' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('POST gerar linhas especiais:', err);
+    return res.status(500).json({ error: 'Erro ao gerar linhas.' });
+  } finally {
+    client.release();
+  }
+});
+
+/* DELETE /api/linhas-especiais/:id
+ * Exclui uma linha especial
+ */
+app.delete('/api/linhas-especiais/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM linhas_especiais WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DELETE linha_especial:', err);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+
 /* ------------------------------------------------------------------
    CADASTRAR 1 PONTO
 ------------------------------------------------------------------ */
