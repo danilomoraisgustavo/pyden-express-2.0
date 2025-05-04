@@ -5471,14 +5471,23 @@ app.post('/api/itinerarios-especiais/:id/linhas/gerar', async (req, res) => {
     await client.query('BEGIN');
 
     /* 1) Coord. da escola do itinerário */
+    /* 1) Coordenadas da escola ligada ao itinerário especial */
     const escola = await client.query(
-      `SELECT e.id, e.nome, ST_Y(e.geom)::float  AS lat,
-                             ST_X(e.geom)::float  AS lon
-         FROM itinerarios_especiais it
-         JOIN escolas          e  ON e.id = it.escola_id
-        WHERE it.id = $1`, [itId]);
-    if (!escola.rowCount) throw new Error('Itinerário inexistente.');
+      `SELECT e.id,
+          e.nome,
+          e.latitude  ::float AS lat,
+          e.longitude ::float AS lon
+     FROM itinerarios_especiais it
+     JOIN escolas            e ON e.id = it.escola_id
+    WHERE it.id = $1`, [itId]);
+
+    if (!escola.rowCount)
+      throw new Error('Itinerário ou escola inexistente.');
+
     const ESC = escola.rows[0];
+    if (ESC.lat === null || ESC.lon === null)
+      throw new Error('Escola sem latitude/longitude cadastrada.');
+
 
     /* 2) Alunos especiais ativos dessa escola */
     const alunos = (await client.query(`
