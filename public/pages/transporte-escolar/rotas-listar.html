@@ -1866,29 +1866,66 @@
 
     async function loadLinhasEsp() {
       if (!itEspAtual) return;
-      const resp = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas`).then(r => r.json());
+      const resp = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas`)
+        .then(r => r.json());
+
       const tbody = $('#linhas-especiais-table tbody').empty();
       resp.forEach(l => {
         tbody.append(`
-          <tr>
-            <td>${l.id}</td>
-            <td>${l.descricao}</td>
-            <td class="text-center">${l.qtd_alunos}</td>
-            <td>
-              <button class="btn btn-link btn-danger" onclick="apagarLinhaEsp(${l.id})">
-                <i class="fa fa-trash"></i>
-              </button>
-            </td>
-          </tr>`);
+      <tr>
+        <td>${l.id}</td>
+        <td>${l.descricao}</td>
+        <td class="text-center">
+          <a href="#" onclick="openAlunosLinhaEsp(${l.id},'manha')">${l.alunos_manha}</a> /
+          <a href="#" onclick="openAlunosLinhaEsp(${l.id},'tarde')">${l.alunos_tarde}</a> /
+          <a href="#" onclick="openAlunosLinhaEsp(${l.id},'noite')">${l.alunos_noite}</a> /
+          <a href="#" onclick="openAlunosLinhaEsp(${l.id},'integral')">${l.alunos_integral}</a>
+        </td>
+        <td>
+          <button class="btn btn-link btn-info btn-show-map"
+                  data-geo='${JSON.stringify(l.geojson)}'>
+            <i class="fa fa-map-marker-alt"></i>
+          </button>
+          <button class="btn btn-link btn-danger"
+                  onclick="apagarLinhaEsp(${l.id})">
+            <i class="fa fa-trash"></i>
+          </button>
+        </td>
+      </tr>`);
       });
-      // (re)inicia DataTable
-      if ($.fn.DataTable.isDataTable('#linhas-especiais-table')) {
+
+      if ($.fn.DataTable.isDataTable('#linhas-especiais-table'))
         $('#linhas-especiais-table').DataTable().destroy();
-      }
+
       $('#linhas-especiais-table').DataTable({
         pageLength: 10,
         language: { search: 'Pesquisar:' }
       });
+    }
+
+    function openAlunosLinhaEsp(linhaId, turno) {
+      $('#alunosLinhaId').val(linhaId);
+      $('#alunosLinhaTurno').val(turno);
+      const lbl = turno.charAt(0).toUpperCase() + turno.slice(1);
+      $('#modalAlunosLinhaLabel').text(`Alunos (${lbl})`);
+      $('#modalAlunosLinha').modal('show');
+
+      fetch(`/api/linhas-especiais/${linhaId}/alunos?turno=${turno}`)
+        .then(r => r.json())
+        .then(alunos => {
+          const tb = $('#alunos-linha-table tbody').empty();
+          alunos.forEach(a => {
+            tb.append(`<tr>
+          <td>${a.nome}</td>
+          <td>${a.escola_nome}</td>
+          <td>${a.bairro}</td>
+          <td>${a.turno}</td>
+          <td>Sim</td>
+        </tr>`);
+          });
+          toggleCsvBtn && toggleCsvBtn();     // reusa função existente
+        })
+        .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
     }
 
     /* Gerar Linhas Especiais */

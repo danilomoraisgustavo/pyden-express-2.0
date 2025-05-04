@@ -5425,25 +5425,61 @@ app.get("/api/itinerarios-especiais", async (req, res) => {
 /* ==============================================================
  *  LINHAS DE ITINERARIOS ESPECIAIS
  * ============================================================== */
-
-/* GET /api/itinerarios-especiais/:id/linhas
- * Lista todas as linhas de um itinerario especial
- */
+/* ==============================================================
+ *  GET /api/itinerarios-especiais/:id/linhas
+ *  devolve linhas + contagem por turno + geojson
+ * ============================================================== */
 app.get('/api/itinerarios-especiais/:id/linhas', async (req, res) => {
+  const { id } = req.params;
+  const sql = `
+    SELECT le.id,
+           le.descricao,
+           le.qtd_alunos,
+           le.geojson,
+           COALESCE(SUM(CASE WHEN lower(a.turno) LIKE '%mat%'      THEN 1 END),0) AS alunos_manha,
+           COALESCE(SUM(CASE WHEN lower(a.turno) LIKE '%vesp%'     OR lower(a.turno) LIKE '%tarde%'   THEN 1 END),0) AS alunos_tarde,
+           COALESCE(SUM(CASE WHEN lower(a.turno) LIKE '%noit%'     THEN 1 END),0) AS alunos_noite,
+           COALESCE(SUM(CASE WHEN lower(a.turno) LIKE '%integral%' THEN 1 END),0) AS alunos_integral
+      FROM linhas_especiais le
+ LEFT JOIN  UNNEST(le.alunos_ids) AS al_id(id)      ON true
+ LEFT JOIN  alunos_ativos          a               ON a.id = al_id.id
+     WHERE le.itinerario_id = $1
+  GROUP BY le.id`;
   try {
-    const { id } = req.params;
-    const { rows } = await pool.query(
-      `SELECT id,
-              descricao,
-              qtd_alunos
-         FROM linhas_especiais
-        WHERE itinerario_id = $1
-        ORDER BY id`, [id]
-    );
-    return res.json(rows);
-  } catch (err) {
-    console.error('GET linhas_especiais:', err);
-    return res.status(500).json({ error: 'Erro interno do servidor.' });
+    const { rows } = await pool.query(sql, [id]);
+    res.json(rows);
+  } catch (e) {
+    console.error('GET linhas especiais:', e);
+    res.status(500).json({ error: 'Erro interno.' });
+  }
+});
+
+/* GET /api/linhas-especiais/:id/alunos?turno=manha|tarde|noite|integral */
+app.get('/api/linhas-especiais/:id/alunos', async (req, res) => {
+  const { id } = req.params;
+  const turnoPar = (req.query.turno || '').toLowerCase();
+  const filtro = {
+    manha: "lower(a.turno) LIKE '%mat%'",
+    tarde: "lower(a.turno) LIKE '%vesp%' OR lower(a.turno) LIKE '%tarde%'",
+    noite: "lower(a.turno) LIKE '%noit%'",
+    integral: "lower(a.turno) LIKE '%integral%'"
+  }[turnoPar] || 'true';
+
+  const sql = `
+    SELECT a.id, a.pessoa_nome AS nome, a.bairro, a.turno,
+           e.nome AS escola_nome
+      FROM linhas_especiais le
+      JOIN UNNEST(le.alunos_ids) AS al_id(id) ON true
+      JOIN alunos_ativos a ON a.id = al_id.id
+      JOIN escolas       e ON e.id = a.escola_id
+     WHERE le.id = $1 AND ${filtro}
+     ORDER BY a.pessoa_nome`;
+  try {
+    const { rows } = await pool.query(sql, [id]);
+    res.json(rows);
+  } catch (e) {
+    console.error('GET alunos linha especial:', e);
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
