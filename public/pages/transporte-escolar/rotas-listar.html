@@ -1074,6 +1074,39 @@
   <script src="../../assets/js/setting-demo2.js"></script>
   <script src="../../assets/js/usuario.js"></script>
 
+  <!-- Empilhamento automático de modais (todos os tipos) -->
+  <script>
+    /*  Bootstrap 5 + jQuery  ────────────────────────────────────────────
+        ▸ Qualquer modal aberto dentro de outro será exibido por cima,
+          com backdrop alinhado e sem perder o bloqueio de rolagem.
+    -------------------------------------------------------------------*/
+    $(document).on('show.bs.modal', '.modal', function () {
+      const $modal = $(this);
+      const idx = $('.modal:visible').length;   // 0, 1, 2…
+      const z = 1050 + idx * 10;              // 1050, 1060, 1070…
+
+      $modal.css('z-index', z);
+
+      /* O Bootstrap injeta o backdrop DEPOIS de disparar show.bs.modal.
+         Aguarde um tick para ajustar o z-index do backdrop recém-criado. */
+      setTimeout(() => {
+        $('.modal-backdrop:not(.modal-stack)')
+          .first()                 // backdrop relativo ao modal atual
+          .css('z-index', z - 1)   // sempre logo abaixo do modal
+          .addClass('modal-stack');
+      }, 0);
+    });
+
+    /*  Quando um dos modais é fechado, pode haver outro por baixo.
+        Se houver, recoloque a classe .modal-open no <body>
+        para que o scroll da página continue bloqueado. */
+    $(document).on('hidden.bs.modal', '.modal', function () {
+      if ($('.modal:visible').length) {
+        $('body').addClass('modal-open');
+      }
+    });
+  </script>
+
   <script>
     const iconStartEndUrl = "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
     const iconEscolaUrl = "../../assets/img/escola.png"
