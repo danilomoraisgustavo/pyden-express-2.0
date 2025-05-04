@@ -5450,47 +5450,116 @@ app.get('/api/itinerarios-especiais/:id/linhas', async (req, res) => {
 /* POST /api/itinerarios-especiais/:id/linhas/gerar
  * Gera ou regenera linhas para o itinerario especial
  */
+/* ==============================================================
+ *  GERAÇÃO DE LINHAS ESPECIAIS — rota única
+ * ============================================================== */
 app.post('/api/itinerarios-especiais/:id/linhas/gerar', async (req, res) => {
   const client = await pool.connect();
-  try {
-    const { id } = req.params;
+  const itId = req.params.id;
+  const MAX = 42;                      // capacidade por linha
 
+  /* haversine rápido (~metros) */
+  const dist = (a, b) => {
+    const R = 6371000, toRad = t => t * Math.PI / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lon - a.lon);
+    const la1 = toRad(a.lat), la2 = toRad(b.lat);
+    const h = Math.sin(dLat / 2) ** 2 +
+      Math.cos(la1) * Math.cos(la2) *
+      Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+
+  try {
     await client.query('BEGIN');
 
-    /* Remove linhas antigas */
-    await client.query(
-      'DELETE FROM linhas_especiais WHERE itinerario_id = $1',
-      [id]
-    );
+    /* 1) pontos com alunos especiais desse itinerário */
+    const pontos = (await client.query(`
+        SELECT  p.id   AS ponto_id,
+                COUNT(*) AS qtd_alunos,
+                ST_Y(p.geom)::float AS lat,
+                ST_X(p.geom)::float AS lon
+          FROM  itinerarios_especiais       it
+          JOIN  alunos_ativos               a  ON a.escola_id = it.escola_id
+          JOIN  pontos                      p  ON p.id = a.ponto_id
+         WHERE  it.id = $1
+           AND  a.deficiencia IS NOT NULL
+           AND  array_length(a.deficiencia,1) > 0
+           AND  a.bairro IS NOT NULL
+           AND  trim(a.bairro) <> ''
+         GROUP  BY p.id, p.geom`, [itId])).rows;
 
-    /* Exemplo simples de geração */
-    const it = await client.query(
-      `SELECT bairros
-         FROM itinerarios_especiais
-        WHERE id = $1`, [id]
-    );
-    if (!it.rowCount) throw new Error('Itinerario especial nao encontrado');
+    if (!pontos.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Sem alunos especiais elegíveis.' });
+    }
 
-    const bairros = it.rows[0].bairros;
-    for (const bairro of bairros) {
-      await client.query(
-        `INSERT INTO linhas_especiais
-           (itinerario_id, descricao, qtd_alunos)
-         VALUES ($1, $2, 0)`,
-        [id, `Linha – bairro ${bairro}`]
-      );
+    /* 2) algoritmo greedy-nearest para agrupar até 42 alunos */
+    let resto = pontos.map(p => ({ ...p }));   // cópia mutável
+    const linhas = [];
+
+    while (resto.length) {
+      resto.sort((a, b) => b.qtd_alunos - a.qtd_alunos); // ponto mais cheio
+      const linha = [];
+      let carga = 0;
+
+      // 2.1 coloca a semente
+      const seed = resto.shift();
+      linha.push(seed);
+      carga += seed.qtd_alunos;
+
+      // 2.2 completa p/ 42 procurando vizinhos mais próximos
+      while (carga < MAX && resto.length) {
+        let bestIdx = -1, bestDist = Infinity;
+        resto.forEach((p, i) => {
+          linha.forEach(l => {
+            const d = dist(p, l);
+            if (d < bestDist) { bestDist = d; bestIdx = i; }
+          });
+        });
+        const cand = resto[bestIdx];
+        const dispon = MAX - carga;
+
+        if (cand.qtd_alunos <= dispon) {
+          carga += cand.qtd_alunos;
+          linha.push(cand);
+          resto.splice(bestIdx, 1);
+        } else {
+          // “corta” excedente e mantém ponto no resto
+          linha.push({ ...cand, qtd_alunos: dispon });
+          cand.qtd_alunos -= dispon;
+          carga = MAX;
+        }
+      }
+      linhas.push(linha);
+    }
+
+    /* 3) limpa antigas e grava novas */
+    await client.query('DELETE FROM linhas_especiais WHERE itinerario_id = $1', [itId]);
+
+    for (let i = 0; i < linhas.length; i++) {
+      const pts = linhas[i].map(p => p.ponto_id);           // array de ids
+      const total = linhas[i].reduce((s, p) => s + p.qtd_alunos, 0);
+
+      await client.query(`
+        INSERT INTO linhas_especiais
+               (itinerario_id, descricao, pontos_ids, qtd_alunos)
+        VALUES ($1, $2, $3, $4)`,
+        [itId, `Linha ${i + 1}`, pts, total]);
     }
 
     await client.query('COMMIT');
-    return res.json({ success: true, message: 'Linhas especiais geradas.' });
+    res.json({ success: true, message: `${linhas.length} linha(s) geradas.` });
+
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('POST gerar linhas especiais:', err);
-    return res.status(500).json({ error: 'Erro ao gerar linhas.' });
+    console.error('GERAR LINHAS ESP:', err);
+    res.status(500).json({ error: 'Falha ao gerar linhas.' });
   } finally {
     client.release();
   }
 });
+
 
 /* DELETE /api/linhas-especiais/:id
  * Exclui uma linha especial
