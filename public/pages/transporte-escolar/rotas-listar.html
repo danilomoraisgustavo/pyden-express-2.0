@@ -770,8 +770,7 @@
           <nav class="pull-left">
             <ul class="nav">
               <li class="nav-item"><a class="nav-link" target="_blank" href="https://pydenexpress.com/">PyDen
-                  Express</a>
-              </li>
+                  Express</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Ajuda</a></li>
               <li class="nav-item"><a class="nav-link" href="#">Termos de Uso</a></li>
             </ul>
@@ -1076,7 +1075,26 @@
     let isPlacingEditStart = false, editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = []
     let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", directionsService = null, directionsRenderer = null, alunosRouteData = []
     let currentRouteDistanceKm = 0
-    function showNotification(t, m) { const i = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" }; $.notify({ icon: i[t] || "fa fa-bell", message: m }, { type: t, placement: { from: "top", align: "right" }, offset: 20, spacing: 10, z_index: 1031, delay: 3000, timer: 1000, animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" } }) }
+
+    function showNotification(t, m) {
+      const i = {
+        success: "fa fa-check-circle",
+        danger: "fa fa-exclamation-circle",
+        warning: "fa fa-exclamation-triangle",
+        info: "fa fa-info-circle"
+      };
+      $.notify({ icon: i[t] || "fa fa-bell", message: m }, {
+        type: t,
+        placement: { from: "top", align: "right" },
+        offset: 20,
+        spacing: 10,
+        z_index: 1031,
+        delay: 3000,
+        timer: 1000,
+        animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" }
+      })
+    }
+
     function loadRotas() {
       fetch("/api/itinerarios")
         .then(r => r.json())
@@ -1094,21 +1112,17 @@
             <td>${es}</td>
             <td>
               <!-- Editar -->
-              <button class="btn btn-link btn-secondary me-1"
-                      onclick="openEditModal('${row}')">
+              <button class="btn btn-link btn-secondary me-1" onclick="openEditModal('${row}')">
                 <i class="fa fa-edit"></i>
               </button>
               <!-- Visualizar -->
-              </button>
               <!-- Deletar -->
-              <button class="btn btn-link btn-danger"
-                      onclick="deleteItinerario(${it.id})">
+              <button class="btn btn-link btn-danger" onclick="deleteItinerario(${it.id})">
                 <i class="fa fa-trash"></i>
               </button>
-              <button class="btn btn-link btn-info me-1"
-        onclick="openLinhasModal('${row}')">
-  <i class="fa fa-route"></i>
-</button>
+              <button class="btn btn-link btn-info me-1" onclick="openLinhasModal('${row}')">
+                <i class="fa fa-route"></i>
+              </button>
             </td>
           </tr>`);
           });
@@ -1141,6 +1155,7 @@
     }
     // chama no carregamento da página
     loadRotas();
+
     function deleteItinerario(id) {
       if (!confirm("Deseja realmente excluir este itinerário?")) return;
       fetch(`/api/itinerarios/${id}`, { method: "DELETE" })
@@ -1156,8 +1171,43 @@
         .catch(() => showNotification("danger", "Erro interno."));
     }
 
-    function turnoNormalizado(s) { const l = (s || "").toLowerCase(); if (l.includes("vesp") || l.includes("tarde")) return "tarde"; if (l.includes("mat") || l.includes("manh")) return "manha"; if (l.includes("not") || l.includes("noit")) return "noite"; if (l.includes("int") || l.includes("integral")) return "integral"; return "" }
-    function populateAlunos(alunos) { alunosRouteData = alunos; alunoMarkers.forEach(m => m.setMap(null)); alunoMarkers = []; const c = { manha: 0, tarde: 0, noite: 0, integral: 0 }; alunos.forEach(a => { const t = turnoNormalizado(a.turno); if (c[t] !== undefined) c[t]++; const mk = new google.maps.Marker({ position: { lat: +a.latitude, lng: +a.longitude }, map: modalMapView, icon: { url: iconAlunoUrl, scaledSize: new google.maps.Size(24, 24) }, title: a.nome }); alunoMarkers.push(mk) }); $("#contador-manha").text(c.manha); $("#contador-tarde").text(c.tarde); $("#contador-noite").text(c.noite); $("#contador-integral").text(c.integral); const tb = $("#tabela-alunos-rota tbody").empty(); alunos.forEach(a => { const n = turnoNormalizado(a.turno); const label = n === "manha" ? "Manhã" : n === "tarde" ? "Tarde" : n === "noite" ? "Noite" : n === "integral" ? "Integral" : a.turno; tb.append(`<tr><td>${a.nome}</td><td>${a.escola_nome}</td><td>${a.latitude}</td><td>${a.longitude}</td><td>${a.ponto_id}</td><td>${a.ponto_latitude}</td><td>${a.ponto_longitude}</td><td>${label}</td></tr>`) }); renderVehicleSuggestions(c) }
+    function turnoNormalizado(s) {
+      const l = (s || "").toLowerCase();
+      if (l.includes("vesp") || l.includes("tarde")) return "tarde";
+      if (l.includes("mat") || l.includes("manh")) return "manha";
+      if (l.includes("not") || l.includes("noit")) return "noite";
+      if (l.includes("int") || l.includes("integral")) return "integral";
+      return "";
+    }
+
+    function populateAlunos(alunos) {
+      alunosRouteData = alunos;
+      alunoMarkers.forEach(m => m.setMap(null));
+      alunoMarkers = [];
+      const c = { manha: 0, tarde: 0, noite: 0, integral: 0 };
+      alunos.forEach(a => {
+        const t = turnoNormalizado(a.turno);
+        if (c[t] !== undefined) c[t]++;
+        const mk = new google.maps.Marker({
+          position: { lat: +a.latitude, lng: +a.longitude },
+          map: modalMapView,
+          icon: { url: iconAlunoUrl, scaledSize: new google.maps.Size(24, 24) },
+          title: a.nome
+        });
+        alunoMarkers.push(mk)
+      });
+      $("#contador-manha").text(c.manha);
+      $("#contador-tarde").text(c.tarde);
+      $("#contador-noite").text(c.noite);
+      $("#contador-integral").text(c.integral);
+      const tb = $("#tabela-alunos-rota tbody").empty();
+      alunos.forEach(a => {
+        const n = turnoNormalizado(a.turno);
+        const label = n === "manha" ? "Manhã" : n === "tarde" ? "Tarde" : n === "noite" ? "Noite" : n === "integral" ? "Integral" : a.turno;
+        tb.append(`<tr><td>${a.nome}</td><td>${a.escola_nome}</td><td>${a.latitude}</td><td>${a.longitude}</td><td>${a.ponto_id}</td><td>${a.ponto_latitude}</td><td>${a.ponto_longitude}</td><td>${label}</td></tr>`)
+      });
+      renderVehicleSuggestions(c)
+    }
 
     // Abre o modal de edição, recebe o objeto roteiro serializado
     function openEditModal(enc) {
@@ -1239,8 +1289,7 @@
         .catch(() => showNotification('danger', 'Erro de rede ao gerar linhas'));
     });
 
-
-    // Renderiza botões das escolas selecionadas
+    // Renderiza botões das escolas selecionadas (Edição)
     function renderEditEscolasSelecionadas() {
       const cont = document.getElementById('editListaEscolasSelecionadas');
       cont.innerHTML = '';
@@ -1252,16 +1301,14 @@
         btn.textContent = esc.nome;
         btn.onclick = () => {
           // simula clique no mapa
-          editEscolasMarkers[id].dispatchEvent(new google.maps.event.addDomListener(
-            window, 'click', () => { }
-          ));
-          toggle; // realmente usa o listener acima
+          editEscolasMarkers[id].dispatchEvent(new google.maps.event.addDomListener(window, 'click', () => { }));
+          toggle; // realmente usa o listener acima (manter lógica original)
         };
         cont.appendChild(btn);
       });
     }
 
-    // Monta e renderiza checkboxes de zoneamentos
+    // Monta e renderiza checkboxes de zoneamentos (Edição)
     function renderEditZoneamentos() {
       const zonas = {};
       editEscolasSelecionadas.forEach(id => {
@@ -1290,6 +1337,7 @@
         escolas_ids: editEscolasSelecionadas,
         zoneamentos_ids
       };
+      // Obtem o ID do itinerário em edição (armazenado anteriormente)
       const id = JSON.parse(decodeURIComponent(openEditModal.arguments[0])).id;
 
       try {
@@ -1314,13 +1362,65 @@
   </script>
   <script>
     let alunosModal = null, capacidadeTotal = 0, capacidadeUsada = 0, rotasAlunosTable = null, rotaModalId = null, alunosDisponiveis = []
-    $(document).on("click", ".btn-alunos", function () { rotaModalId = $(this).data("id"); $("#modalAlunosRota").modal("show") })
-    $("#modalAlunosRota").on("shown.bs.modal", function () { carregarCapacidadeEAlunos() })
-    function carregarCapacidadeEAlunos() { $.getJSON(`/api/rotas/${rotaModalId}/capacidade`, cap => { capacidadeTotal = cap.total; capacidadeUsada = cap.usados; $("#capTotal").text(capacidadeTotal); $("#capUsada").text(capacidadeUsada); $("#capLivre").text(capacidadeTotal - capacidadeUsada) }); $.getJSON(`/api/rotas/${rotaModalId}/alunos-elegiveis`, data => { alunosDisponiveis = data; popularTabelaAlunos() }) }
-    function popularTabelaAlunos() { const tbody = $("#tblAlunosDisp tbody").empty(); alunosDisponiveis.forEach(a => { tbody.append(`<tr><td><input type="checkbox" class="ck-aluno" value="${a.id}"></td><td>${a.id}</td><td>${a.nome}</td><td>${a.turma}</td></tr>`) }); if (rotasAlunosTable) rotasAlunosTable.destroy(); rotasAlunosTable = $("#tblAlunosDisp").DataTable({ pageLength: 10, language: { search: "Pesquisar:" } }) }
-    $(document).on("change", ".ck-aluno", function () { const sel = $(".ck-aluno:checked").length; $("#selCount").text(sel); $("#btnVincularAlunos").prop("disabled", capacidadeTotal - capacidadeUsada < sel) })
-    $("#btnVincularAlunos").click(function () { const ids = $(".ck-aluno:checked").map((_, c) => +c.value).get(); if (!ids.length) return; $.ajax({ url: `/api/rotas/${rotaModalId}/alunos`, method: "POST", contentType: "application/json", data: JSON.stringify({ alunos: ids }) }).done(() => { $("#modalAlunosRota").modal("hide"); showNotification("success", "Alunos vinculados!"); loadRotas() }).fail(x => { showNotification("danger", x.responseJSON && x.responseJSON.message ? x.responseJSON.message : "Erro") }) })
-    $(document).ready(function () { $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`); })
+    $(document).on("click", ".btn-alunos", function () {
+      rotaModalId = $(this).data("id");
+      $("#modalAlunosRota").modal("show")
+    })
+    $("#modalAlunosRota").on("shown.bs.modal", function () {
+      carregarCapacidadeEAlunos()
+    })
+    function carregarCapacidadeEAlunos() {
+      $.getJSON(`/api/rotas/${rotaModalId}/capacidade`, cap => {
+        capacidadeTotal = cap.total;
+        capacidadeUsada = cap.usados;
+        $("#capTotal").text(capacidadeTotal);
+        $("#capUsada").text(capacidadeUsada);
+        $("#capLivre").text(capacidadeTotal - capacidadeUsada)
+      });
+      $.getJSON(`/api/rotas/${rotaModalId}/alunos-elegiveis`, data => {
+        alunosDisponiveis = data;
+        popularTabelaAlunos()
+      })
+    }
+
+    function popularTabelaAlunos() {
+      const tbody = $("#tblAlunosDisp tbody").empty();
+      alunosDisponiveis.forEach(a => {
+        tbody.append(`<tr><td><input type="checkbox" class="ck-aluno" value="${a.id}"></td><td>${a.id}</td><td>${a.nome}</td><td>${a.turma}</td></tr>`)
+      });
+      if (rotasAlunosTable) rotasAlunosTable.destroy();
+      rotasAlunosTable = $("#tblAlunosDisp").DataTable({
+        pageLength: 10,
+        language: { search: "Pesquisar:" }
+      })
+    }
+
+    $(document).on("change", ".ck-aluno", function () {
+      const sel = $(".ck-aluno:checked").length;
+      $("#selCount").text(sel);
+      $("#btnVincularAlunos").prop("disabled", capacidadeTotal - capacidadeUsada < sel)
+    })
+
+    $("#btnVincularAlunos").click(function () {
+      const ids = $(".ck-aluno:checked").map((_, c) => +c.value).get();
+      if (!ids.length) return;
+      $.ajax({
+        url: `/api/rotas/${rotaModalId}/alunos`,
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ alunos: ids })
+      }).done(() => {
+        $("#modalAlunosRota").modal("hide");
+        showNotification("success", "Alunos vinculados!");
+        loadRotas()
+      }).fail(x => {
+        showNotification("danger", x.responseJSON && x.responseJSON.message ? x.responseJSON.message : "Erro")
+      })
+    })
+
+    $(document).ready(function () {
+      $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`);
+    })
   </script>
   <script>
     let mapCreate;
@@ -1428,7 +1528,7 @@
       }
     };
 
-    // Função de exclusão usando showNotification
+    // Função de exclusão usando showNotification (sobrescrevendo possível duplicata)
     function deleteItinerario(id) {
       if (!confirm("Deseja realmente excluir este itinerário?")) return;
       fetch(`/api/itinerarios/${id}`, { method: "DELETE" })
@@ -1467,8 +1567,7 @@
             <td><a href="#" onclick="openAlunosLinha(${l.id},'integral')">${l.alunos_integral}</a></td>
             <td>${qtdParadas}</td>
             <td>
-              <button class="btn btn-link btn-show-map"
-                      data-geo='${JSON.stringify(l.geojson)}'>
+              <button class="btn btn-link btn-show-map" data-geo='${JSON.stringify(l.geojson)}'>
                 <i class="fa fa-map-marker-alt"></i>
               </button>
             </td>
@@ -1478,14 +1577,13 @@
         .catch(() => showNotification('danger', 'Erro ao carregar linhas'));
     }
 
-
-    // ex.: listener para abrir o modal de mapa (supondo que já exista o código que desenha a rota)
+    // listener para abrir o modal de mapa
     $(document).on('click', '.btn-show-map', function () {
       const geojson = JSON.parse($(this).attr('data-geo'));
       $('#modalRouteMap').modal('show');
       setTimeout(() => {
-        // inicializar ou limpar o mapa e desenhar a linha usando geojson.coordinates...
-        // (conforme código exemplo anterior)
+        // inicializa ou limpa o mapa e desenha a linha usando geojson.coordinates
+        // (lógica implementada abaixo)
       }, 300);
     });
 
@@ -1511,11 +1609,11 @@
           <td>${a.tem_deficiencia ? 'Sim' : 'Não'}</td>
         </tr>`);
           });
-          toggleCsvBtn();                 // habilita/desabilita o botão CSV
+          toggleCsvBtn(); // habilita/desabilita o botão CSV (definido em outro escopo)
         })
         .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
-
     }
+
     let mapRoute, routeBounds, rawPolyline;
 
     $('#modalRouteMap').on('shown.bs.modal', () => {
@@ -1604,7 +1702,6 @@
         });
       }, 300);
     });
-
   </script>
   <script>
     /* === ROTAS ESPECIAIS === */
@@ -1626,7 +1723,7 @@
             const mk = new google.maps.Marker({
               position: { lat: +e.latitude, lng: +e.longitude },
               map: mapCreateEspecial,
-              icon: "../../assets/img/escola.png"
+              icon: defaultIconUrl
             });
             mk.addListener('click', () => toggleEscolaEspecial(e.id));
             escolasEspMarkers[e.id] = mk;
@@ -1638,6 +1735,7 @@
       const idx = escolasEspSelecionadas.findIndex(o => o.id === id);
 
       if (idx === -1) {
+        escolasEspMarkers[id].setIcon(selectedIconUrl);
         // 1) Busca apenas alunos da escola com DEFICIÊNCIA preenchida
         fetch(`/api/escolas/${id}/alunos-especiais`)
           .then(r => r.json())
@@ -1647,6 +1745,7 @@
             renderEscolasEsp();
           });
       } else {
+        escolasEspMarkers[id].setIcon(defaultIconUrl);
         escolasEspSelecionadas.splice(idx, 1);
         renderEscolasEsp();
       }
@@ -1655,15 +1754,17 @@
     function renderEscolasEsp() {
       // escolas
       const divEsc = document.getElementById('listaEscolasSelecionadasEspecial');
-      divEsc.innerHTML = escolasEspSelecionadas.map(o =>
-        `<span class="badge bg-primary me-1">${o.id}</span>`).join('');
+      divEsc.innerHTML = escolasEspSelecionadas.map(o => {
+        const esc = escolasEspData.find(e => e.id === o.id);
+        return `<span class="badge bg-primary me-1">${esc ? esc.nome : o.id}</span>`;
+      }).join('');
 
       // bairros
       const divB = document.getElementById('listaBairrosEspecial');
       divB.innerHTML = '';
       escolasEspSelecionadas.forEach(o => {
         o.bairros.forEach(b => {
-          const chk = `<div><input type="checkbox" checked disabled> ${b}</div>`;
+          const chk = `<div><input type="checkbox" data-esc="${o.id}" data-bairro="${b}" checked> ${b}</div>`;
           divB.insertAdjacentHTML('beforeend', chk);
         });
       });
@@ -1730,10 +1831,27 @@
         });
     }
 
-    /* Inicializações */
-    document.getElementById('modalNovaRotaEspecial')
-      .addEventListener('shown.bs.modal', initMapCreateEspecial);
+    /* Inicializações de rotas especiais */
+    document.getElementById('modalNovaRotaEspecial').addEventListener('shown.bs.modal', initMapCreateEspecial);
     $(document).ready(loadRotasEspeciais);
+
+    // Atualizar lista de bairros conforme marcações
+    document.getElementById('listaBairrosEspecial').addEventListener('change', e => {
+      if (e.target.matches('input[type="checkbox"]')) {
+        const escId = parseInt(e.target.getAttribute('data-esc'));
+        const bairro = e.target.getAttribute('data-bairro');
+        const sel = escolasEspSelecionadas.find(o => o.id === escId);
+        if (sel) {
+          if (e.target.checked) {
+            if (!sel.bairros.includes(bairro)) sel.bairros.push(bairro);
+          } else {
+            const idxB = sel.bairros.indexOf(bairro);
+            if (idxB > -1) sel.bairros.splice(idxB, 1);
+          }
+        }
+      }
+    });
+
     /* =========================================================
      *  LINHAS ESPECIAIS
      * ========================================================= */
@@ -1748,31 +1866,25 @@
 
     async function loadLinhasEsp() {
       if (!itEspAtual) return;
-
-      const resp = await fetch(
-        `/api/itinerarios-especiais/${itEspAtual}/linhas`
-      ).then(r => r.json());
-
+      const resp = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas`).then(r => r.json());
       const tbody = $('#linhas-especiais-table tbody').empty();
       resp.forEach(l => {
         tbody.append(`
-      <tr>
-        <td>${l.id}</td>
-        <td>${l.descricao}</td>
-        <td class="text-center">${l.qtd_alunos}</td>
-        <td>
-          <button class="btn btn-link btn-danger"
-                  onclick="apagarLinhaEsp(${l.id})">
-            <i class="fa fa-trash"></i>
-          </button>
-        </td>
-      </tr>`);
+          <tr>
+            <td>${l.id}</td>
+            <td>${l.descricao}</td>
+            <td class="text-center">${l.qtd_alunos}</td>
+            <td>
+              <button class="btn btn-link btn-danger" onclick="apagarLinhaEsp(${l.id})">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
+          </tr>`);
       });
-
       // (re)inicia DataTable
-      if ($.fn.DataTable.isDataTable('#linhas-especiais-table'))
+      if ($.fn.DataTable.isDataTable('#linhas-especiais-table')) {
         $('#linhas-especiais-table').DataTable().destroy();
-
+      }
       $('#linhas-especiais-table').DataTable({
         pageLength: 10,
         language: { search: 'Pesquisar:' }
@@ -1783,18 +1895,10 @@
     document.getElementById('btnGerarLinhasEsp')
       .addEventListener('click', async () => {
         if (!itEspAtual) return;
-
-        const ok = confirm(
-          "Gerar/atualizar linhas para este itinerário especial?"
-        );
+        const ok = confirm("Gerar/atualizar linhas para este itinerário especial?");
         if (!ok) return;
-
         try {
-          const r = await fetch(
-            `/api/itinerarios-especiais/${itEspAtual}/linhas/gerar`,
-            { method: 'POST' }
-          ).then(r => r.json());
-
+          const r = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas/gerar`, { method: 'POST' }).then(r => r.json());
           if (r.success) {
             showNotification('success', r.message || 'Linhas geradas.');
             loadLinhasEsp();
@@ -1810,12 +1914,8 @@
     /* Excluir uma linha especial */
     async function apagarLinhaEsp(id) {
       if (!confirm('Excluir esta linha?')) return;
-
       try {
-        const r = await fetch(
-          `/api/linhas-especiais/${id}`, { method: 'DELETE' }
-        ).then(r => r.json());
-
+        const r = await fetch(`/api/linhas-especiais/${id}`, { method: 'DELETE' }).then(r => r.json());
         if (r.success) {
           showNotification('success', 'Linha excluída.');
           loadLinhasEsp();
