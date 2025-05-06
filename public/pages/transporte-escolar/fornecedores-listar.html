@@ -274,13 +274,19 @@
 
             <!-- Fornecedores Administrativos -->
             <li class="nav-item">
-              <a href="../../pages/transporte-administrativo/fornecedores-listar.html">
+              <a data-bs-toggle="collapse" href="#adminFornecedores" aria-expanded="false">
                 <i class="fas fa-truck-loading"></i>
-                <p>Fornecedores Administrativos</p>
+                <p>Fornecedores</p><span class="caret"></span>
               </a>
-            </li>
+              <div class="collapse" id="adminFornecedores">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/fornecedores-listar.html"><span
+                        class="sub-item">Listar
+                        Fornecedores</span></a></li>
+                </ul>
+              </div>
 
-            <!-- Agenda -->
+              <!-- Agenda -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
                 <i class="far fa-calendar-alt"></i>
