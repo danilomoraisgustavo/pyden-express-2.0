@@ -2509,6 +2509,123 @@ app.delete("/api/fornecedores/:id", async (req, res) => {
 });
 
 // ====================================================================================
+// FORNECEDORES ADMINISTRATIVOS
+// ====================================================================================
+
+/**
+ * GET /api/fornecedores_administrativos
+ * Lista todos os fornecedores administrativos.
+ */
+app.get("/api/fornecedores_administrativos", async (req, res) => {
+  try {
+    const query = `
+      SELECT id, nome_fornecedor, tipo_contrato, cnpj,
+             contato, latitude, longitude,
+             logradouro, numero, complemento, bairro, cep
+        FROM fornecedores_administrativos
+        ORDER BY id;
+    `;
+    const { rows } = await pool.query(query);
+    return res.json(rows);
+  } catch (err) {
+    console.error("Erro ao listar fornecedores_administrativos:", err);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+  }
+});
+
+
+/**
+ * POST /api/fornecedores_administrativos/cadastrar
+ * Cadastra um novo fornecedor administrativo.
+ */
+app.post("/api/fornecedores_administrativos/cadastrar", async (req, res) => {
+  try {
+    const {
+      nome_fornecedor, tipo_contrato, cnpj, contato,
+      latitude, longitude, logradouro, numero,
+      complemento, bairro, cep
+    } = req.body;
+
+    if (!nome_fornecedor || !tipo_contrato || !cnpj || !contato) {
+      return res.status(400).json({ success: false, message: "Campos obrigatórios não fornecidos." });
+    }
+
+    const userId = req.session?.userId || null;
+
+    const insert = `
+      INSERT INTO fornecedores_administrativos
+        (nome_fornecedor, tipo_contrato, cnpj, contato,
+         latitude, longitude, logradouro, numero,
+         complemento, bairro, cep)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      RETURNING id;
+    `;
+    const values = [
+      nome_fornecedor, tipo_contrato, cnpj, contato,
+      latitude ? parseFloat(latitude) : null,
+      longitude ? parseFloat(longitude) : null,
+      logradouro || null, numero || null, complemento || null,
+      bairro || null, cep || null
+    ];
+    const result = await pool.query(insert, values);
+
+    // notificação (opcional, igual às demais rotas)
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+       VALUES ($1,'CREATE','fornecedores_administrativos',$2,$3)`,
+      [userId, result.rows[0].id, `Fornecedor administrativo criado: ${nome_fornecedor}`]
+    );
+
+    return res.json({ success: true, message: "Fornecedor administrativo cadastrado com sucesso!" });
+  } catch (err) {
+    console.error("Erro ao cadastrar fornecedor_administrativo:", err);
+    if (err.code === "23505") { // violação de chave única (CNPJ)
+      return res.status(400).json({ success: false, message: "CNPJ já existente." });
+    }
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+  }
+});
+
+
+/**
+ * DELETE /api/fornecedores_administrativos/:id
+ * Remove um fornecedor administrativo.
+ */
+app.delete("/api/fornecedores_administrativos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.session?.userId || null;
+
+    // pega nome p/ log
+    const busca = await pool.query(
+      "SELECT nome_fornecedor FROM fornecedores_administrativos WHERE id = $1",
+      [id]
+    );
+    if (busca.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Fornecedor não encontrado." });
+    }
+    const nome = busca.rows[0].nome_fornecedor;
+
+    const del = await pool.query("DELETE FROM fornecedores_administrativos WHERE id = $1", [id]);
+    if (del.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Fornecedor não encontrado." });
+    }
+
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+       VALUES ($1,'DELETE','fornecedores_administrativos',$2,$3)`,
+      [userId, id, `Fornecedor administrativo excluído: ${nome}`]
+    );
+
+    return res.json({ success: true, message: "Fornecedor administrativo excluído com sucesso!" });
+  } catch (err) {
+    console.error("Erro ao excluir fornecedor_administrativo:", err);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+  }
+});
+
+
+// ====================================================================================
 // FROTA
 // ====================================================================================
 // ENDPOINT GET /api/frota (ajustado para "cor_veiculo" e sem latitude/longitude)

@@ -89,6 +89,31 @@ CREATE TABLE IF NOT EXISTS fornecedores (
   cep             VARCHAR(20)
 );
 
+-- 01-criar-tabela-fornecedores_administrativos.sql
+CREATE TABLE IF NOT EXISTS fornecedores_administrativos (
+    id               SERIAL PRIMARY KEY,
+    nome_fornecedor  VARCHAR(255) NOT NULL,
+    tipo_contrato    VARCHAR(255) NOT NULL,
+    cnpj             VARCHAR(20)  NOT NULL UNIQUE,
+    contato          VARCHAR(120) NOT NULL,
+
+    latitude   NUMERIC,
+    longitude  NUMERIC,
+    logradouro VARCHAR(255),
+    numero     VARCHAR(20),
+    complemento VARCHAR(255),
+    bairro      VARCHAR(255),
+    cep         VARCHAR(10),
+
+    created_at  TIMESTAMP DEFAULT NOW(),
+    updated_at  TIMESTAMP DEFAULT NOW()
+);
+
+-- Boa prática: índice para buscas rápidas por nome
+CREATE INDEX IF NOT EXISTS idx_fornadm_nome
+          ON fornecedores_administrativos (nome_fornecedor);
+
+
 CREATE TABLE IF NOT EXISTS frota (
   id               SERIAL PRIMARY KEY,
   nome_veiculo     VARCHAR(255) NOT NULL,
