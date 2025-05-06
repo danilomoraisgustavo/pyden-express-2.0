@@ -52,6 +52,13 @@
     .select2-container {
       width: 100% !important;
     }
+
+    #mapCadastrarFornecedor {
+      height: 400px;
+      /* mesma altura usada nos outros modais do sistema */
+      width: 100%;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 
@@ -1008,6 +1015,14 @@
     }
 
     function initMapCadastrarFornecedor() {
+      mapCadastrarFornecedor = new google.maps.Map(
+        document.getElementById('mapCadastrarFornecedor'),
+        {
+          center: { lat: -6.530066, lng: -49.851630 },
+          zoom: 13,
+          mapTypeId: 'satellite'
+        }
+      );
       geocoderCadastrarFornecedor = new google.maps.Geocoder();
       mapCadastrarFornecedor = new google.maps.Map(document.getElementById('mapCadastrarFornecedor'), {
         center: { lat: -6.530066, lng: -49.851630 },
