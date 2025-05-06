@@ -100,11 +100,12 @@
 
 <body>
   <div class="wrapper">
+    <!-- SIDEBAR -->
     <div class="sidebar" data-background-color="dark">
       <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
           <a href="../../pages/transporte-escolar/dashboard-escolar.html" class="logo">
-            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20">
+            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
           </a>
           <div class="nav-toggle">
             <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
@@ -113,19 +114,26 @@
           <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
         </div>
       </div>
+
       <div class="sidebar-wrapper scrollbar scrollbar-inner">
         <div class="sidebar-content">
           <ul class="nav nav-secondary">
+            <!-- =========================================================
+           =                  TRANSPORTE ESCOLAR                   =
+           =======================================================-->
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Transporte Escolar</h4>
             </li>
+
             <li class="nav-item">
               <a href="../../pages/transporte-escolar/dashboard-escolar.html">
                 <i class="fas fa-tachometer-alt"></i>
                 <p>Dashboard Escolar</p>
               </a>
             </li>
+
+            <!-- Alunos -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
                 <i class="fas fa-user-graduate"></i>
@@ -140,6 +148,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Motoristas -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teMotoristas" aria-expanded="false">
                 <i class="fas fa-id-card"></i>
@@ -154,6 +164,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Monitores -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teMonitores" aria-expanded="false">
                 <i class="fas fa-user-check"></i>
@@ -166,6 +178,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Veículos -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teVeiculos" aria-expanded="false">
                 <i class="fas fa-bus"></i>
@@ -182,6 +196,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Rotas -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teRotas" aria-expanded="false">
                 <i class="fas fa-route"></i>
@@ -196,6 +212,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Zoneamento -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teZoneamento" aria-expanded="false">
                 <i class="fas fa-school"></i>
@@ -210,6 +228,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Escolas -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teEscolas" aria-expanded="false">
                 <i class="fas fa-school"></i>
@@ -222,6 +242,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Fornecedores Escolares -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#teFornecedores" aria-expanded="false">
                 <i class="fas fa-truck-loading"></i>
@@ -229,24 +251,28 @@
               </a>
               <div class="collapse" id="teFornecedores">
                 <ul class="nav nav-collapse">
-                  <li>
-                    <a href="../../pages/transporte-escolar/fornecedores-listar.html">
-                      <span class="sub-item">Listar Fornecedores</span>
-                    </a>
-                  </li>
+                  <li><a href="../../pages/transporte-escolar/fornecedores-listar.html"><span class="sub-item">Listar
+                        Fornecedores</span></a></li>
                 </ul>
               </div>
             </li>
+
+            <!-- =========================================================
+           =               TRANSPORTE ADMINISTRATIVO               =
+           =======================================================-->
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Transporte Administrativo</h4>
             </li>
+
             <li class="nav-item">
               <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
                 <i class="fas fa-tachometer-alt"></i>
                 <p>Dashboard Administrativo</p>
               </a>
             </li>
+
+            <!-- Motoristas ADM -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
                 <i class="fas fa-id-card"></i>
@@ -263,6 +289,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Frota ADM -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="false">
                 <i class="fas fa-warehouse"></i>
@@ -279,6 +307,22 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Fornecedores Administrativos -->
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#adminFornecedores" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Fornecedores</p><span class="caret"></span>
+              </a>
+              <div class="collapse" id="adminFornecedores">
+                <ul class="nav nav-collapse">
+                  <li><a href="../../pages/transporte-administrativo/fornecedores-listar.html"><span
+                        class="sub-item">Listar
+                        Fornecedores</span></a></li>
+                </ul>
+              </div>
+
+              <!-- Agenda -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
                 <i class="far fa-calendar-alt"></i>
@@ -295,6 +339,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Logística Interna -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taLogistica" aria-expanded="false">
                 <i class="fas fa-truck-loading"></i>
@@ -311,10 +357,16 @@
                 </ul>
               </div>
             </li>
+
+            <!-- =========================================================
+           =                       FINANCEIRO                      =
+           =======================================================-->
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Financeiro</h4>
             </li>
+
+            <!-- Relatórios Financeiros -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#finRelatorios" aria-expanded="false">
                 <i class="far fa-chart-bar"></i>
@@ -331,6 +383,8 @@
                 </ul>
               </div>
             </li>
+
+            <!-- Outros Relatórios -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#finOutrosRelatorios" aria-expanded="false">
                 <i class="fas fa-chart-line"></i>
@@ -351,6 +405,7 @@
         </div>
       </div>
     </div>
+    <!-- END SIDEBAR -->
     <div class="main-panel">
       <div class="main-header" style="top:0;">
         <div class="main-header-logo">
