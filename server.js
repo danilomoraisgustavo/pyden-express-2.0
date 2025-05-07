@@ -10422,15 +10422,40 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 /* ------------------------------------------------------------------ */
 /*  ROTAS ::  Importar alunos ativos                                   */
 /* ------------------------------------------------------------------ */
-/* ------------------------------------------------------------------ */
-/*  ROTAS :: Importar alunos ativos                                   */
-/* ------------------------------------------------------------------ */
+/* ---------- no topo de server.js (uma vez apenas) ------------------- */
+const moment = require("moment");
+
+/* ---------- utilitário de datas ------------------------------------- */
+function normalizeDate(value) {
+  if (value === undefined || value === null) return null;
+
+  // número serial do Excel (dias desde 1899-12-30)
+  if (typeof value === "number") {
+    const excelEpoch = new Date(Math.round((value - 25569) * 86400 * 1000));
+    return moment(excelEpoch).format("YYYY-MM-DD");
+  }
+
+  // string → tenta vários formatos; string vazia → NULL
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (!s) return null;
+
+    const m = moment(s, ["DD/MM/YYYY", "YYYY-MM-DD", "MM/DD/YYYY"], true);
+    return m.isValid() ? m.format("YYYY-MM-DD") : null;
+  }
+
+  // qualquer outro tipo → NULL
+  return null;
+}
+
+/* ---------- rota ----------------------------------------------------- */
 app.post("/api/import-alunos-ativos", async (req, res) => {
   const { alunos, escolaId } = req.body;
   if (!Array.isArray(alunos) || !escolaId) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Dados inválidos." });
+    return res.status(400).json({
+      success: false,
+      message: "Dados inválidos."
+    });
   }
 
   const client = await pool.connect();
@@ -10456,21 +10481,29 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         filiacao_2,
         RESPONSAVEL,
         deficiencia,
-        data_nascimento,
+        data_nascimento
       } = a;
 
       /* ---------- normalizações ------------------------------------- */
       const cpfNorm =
         typeof cpf === "string" && (cpf = cpf.trim()) && cpf.length
           ? cpf
-          : null; // string vazia → NULL
+          : null;
 
-      const defArray =
-        typeof deficiencia === "string" && deficiencia.trim()
-          ? JSON.parse(deficiencia)
-          : Array.isArray(deficiencia)
-            ? deficiencia
-            : null;
+      // converte string/array/JSON em array de texto ou NULL
+      let defArray = null;
+      if (typeof deficiencia === "string" && deficiencia.trim()) {
+        try {
+          defArray = JSON.parse(deficiencia);
+        } catch {
+          defArray = [deficiencia.trim()];
+        }
+      } else if (Array.isArray(deficiencia)) {
+        defArray = deficiencia;
+      }
+
+      // data_nascimento pronta para o INSERT
+      data_nascimento = normalizeDate(data_nascimento);
 
       /* ---------- 1. preenche id_pessoa pela matrícula --------------- */
       const { rowCount: fillByMat } = await client.query(
@@ -10520,27 +10553,26 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
       );
       if (dupKey) continue;
 
-      /* ---------- 5. registro inédito → INSERT/UPSERT por matrícula -- */
+      /* ---------- 5. registro inédito → INSERT/UPSERT --------------- */
       await client.query(
-        `
-        INSERT INTO alunos_ativos (
-          id_pessoa, id_matricula, escola_id, ano, modalidade,
-          formato_letivo, turma, pessoa_nome, cpf,
-          cep, bairro, numero_pessoa_endereco,
-          filiacao_1, numero_telefone, filiacao_2, responsavel,
-          deficiencia, data_nascimento
-        ) VALUES (
-          $1,$2,$3,$4,$5,
-          $6,$7,$8,$9,
-          $10,$11,$12,
-          $13,$14,$15,$16,
-          $17::text[],$18
-        )
-        ON CONFLICT ON CONSTRAINT alunos_ativos_id_matricula_uk DO UPDATE
+        `INSERT INTO alunos_ativos (
+           id_pessoa, id_matricula, escola_id, ano, modalidade,
+           formato_letivo, turma, pessoa_nome, cpf,
+           cep, bairro, numero_pessoa_endereco,
+           filiacao_1, numero_telefone, filiacao_2, responsavel,
+           deficiencia, data_nascimento
+         ) VALUES (
+           $1,$2,$3,$4,$5,
+           $6,$7,$8,$9,
+           $10,$11,$12,
+           $13,$14,$15,$16,
+           $17::text[],$18
+         )
+         ON CONFLICT ON CONSTRAINT alunos_ativos_id_matricula_uk
+         DO UPDATE
            SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
                                     EXCLUDED.id_pessoa)
-         WHERE alunos_ativos.id_pessoa IS NULL;
-        `,
+         WHERE alunos_ativos.id_pessoa IS NULL;`,
         [
           id_pessoa,
           id_matricula,
@@ -10559,7 +10591,7 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
           filiacao_2,
           RESPONSAVEL,
           defArray,
-          data_nascimento,
+          data_nascimento
         ]
       );
     }
@@ -10567,20 +10599,19 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
     await client.query("COMMIT");
     res.json({
       success: true,
-      message: "Importação concluída com sucesso.",
+      message: "Importação concluída com sucesso."
     });
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Erro na importação:", err);
-    res
-      .status(500)
-      .json({ success: false, message: "Erro interno na importação." });
+    res.status(500).json({
+      success: false,
+      message: "Erro interno na importação."
+    });
   } finally {
     client.release();
   }
 });
-
-
 
 
 app.get("/api/alunos-ativos", async (req, res) => {

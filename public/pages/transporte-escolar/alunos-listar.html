@@ -987,14 +987,25 @@
 
     /* ---------- importação XLSX ---------- */
     function handleFileImport(e) {
-      const f = e.target.files[0]; if (!f) return;
+      const f = e.target.files[0];
+      if (!f) return;
+
       const r = new FileReader();
       r.onload = ev => {
         const wb = XLSX.read(ev.target.result, { type: "binary" });
-        dadosXLSX = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        dadosXLSX = XLSX.utils.sheet_to_json(
+          wb.Sheets[wb.SheetNames[0]],
+          { defval: null }        // células vazias → null
+        ).map(linha => {
+          // garante que campos de data vazios fiquem nulos
+          if (linha.data_nascimento === "" || linha.data_nascimento === undefined)
+            linha.data_nascimento = null;
+          return linha;
+        });
       };
       r.readAsBinaryString(f);
     }
+
     function enviarImportacao() {
       const escolaId = document.getElementById("escolaSelect").value;
       if (!escolaId) { showNotification("danger", "Selecione uma escola antes de importar."); return; }
