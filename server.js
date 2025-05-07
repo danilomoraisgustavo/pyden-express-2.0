@@ -10422,8 +10422,6 @@ app.post("/api/solicitacoes-transporte", async (req, res) => {
 /* ------------------------------------------------------------------ */
 /*  ROTAS ::  Importar alunos ativos                                   */
 /* ------------------------------------------------------------------ */
-/* ---------- no topo de server.js (uma vez apenas) ------------------- */
-const moment = require("moment");
 
 /* ---------- utilitário de datas ------------------------------------- */
 function normalizeDate(value) {
