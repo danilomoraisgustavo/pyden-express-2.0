@@ -653,6 +653,7 @@
                           <th>Nome do Motorista</th>
                           <th>CPF</th>
                           <th>Fornecedor</th>
+                          <th>CNH</th> <!-- nova coluna -->
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -662,11 +663,10 @@
                           <th>Nome do Motorista</th>
                           <th>CPF</th>
                           <th>Fornecedor</th>
+                          <th>CNH</th> <!-- nova coluna -->
                           <th>Ações</th>
                         </tr>
                       </tfoot>
-                      <tbody>
-                      </tbody>
                     </table>
                   </div>
                 </div>
@@ -873,24 +873,34 @@
       const tableBody = $('#motoristas-table tbody');
       tableBody.empty();
       motoristas.forEach(m => {
+        const nomeArquivo = m.cnh_pdf ? m.cnh_pdf.split('/').pop() : '';
+        // monta o link (se não houver CNH, exibe vazio)
+        const linkCnh = m.cnh_pdf
+          ? `<a href="${m.cnh_pdf}" download target="_blank">${nomeArquivo}</a>`
+          : '';
         const row = `
           <tr>
             <td>${m.id}</td>
             <td>${m.nome_motorista}</td>
             <td>${m.cpf}</td>
             <td>${m.nome_fornecedor || ''}</td>
-            <td>
-              <div class="form-button-action">
-                <button type="button" class="btn btn-link btn-info btn-lg" onclick="openEditMotorista(${m.id})" data-bs-toggle="tooltip" title="Editar Motorista">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button type="button" class="btn btn-link btn-danger btn-lg" onclick="deleteMotorista(${m.id})" data-bs-toggle="tooltip" title="Excluir Motorista">
-                  <i class="fa fa-trash-alt"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
+            <td>${linkCnh}</td>            <!-- nova célula -->
+        <td>
+          <div class="form-button-action">
+            <button type="button" class="btn btn-link btn-info btn-lg"
+                    onclick="openEditMotorista(${m.id})"
+                    data-bs-toggle="tooltip" title="Editar Motorista">
+              <i class="fa fa-edit"></i>
+            </button>
+            <button type="button" class="btn btn-link btn-danger btn-lg"
+                    onclick="deleteMotorista(${m.id})"
+                    data-bs-toggle="tooltip" title="Excluir Motorista">
+              <i class="fa fa-trash-alt"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
         tableBody.append(row);
       });
       if ($.fn.DataTable.isDataTable('#motoristas-table')) {
