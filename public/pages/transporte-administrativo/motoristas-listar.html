@@ -874,29 +874,36 @@
           showNotification('danger', 'Não foi possível carregar os motoristas administrativos.');
         });
     }
+
     function populateTable() {
       const tableBody = $('#motoristas-table tbody');
       tableBody.empty();
+
       motoristas.forEach(m => {
-        const nomeArquivo = m.cnh_pdf ? m.cnh_pdf.split('/').pop() : '';
+        // texto fixo “CNH” no link
         const linkCnh = m.cnh_pdf
-          ? `<a href="${m.cnh_pdf}" download target="_blank">${nomeArquivo}</a>`
+          ? `<a href="${m.cnh_pdf}" download target="_blank">CNH</a>`
           : '';
+
         const row = `
       <tr>
         <td>${m.id}</td>
         <td>${m.nome_motorista}</td>
         <td>${m.cpf}</td>
         <td>${m.nome_fornecedor || ''}</td>
-        <td>${linkCnh}</td>                <!-- 5ª célula -->
+        <td>${linkCnh}</td>
         <td>
-          <button class="btn btn-link btn-info" onclick="openEditMotorista(${m.id})">
+          <button class="btn btn-link btn-info btn-lg"
+                  onclick="openEditMotorista(${m.id})"
+                  title="Editar">
             <i class="fa fa-edit"></i>
           </button>
-          <button class="btn btn-link btn-danger" onclick="deleteMotorista(${m.id})">
+          <button class="btn btn-link btn-danger btn-lg"
+                  onclick="deleteMotorista(${m.id})"
+                  title="Excluir">
             <i class="fa fa-trash-alt"></i>
           </button>
-        </td>                              <!-- 6ª célula -->
+        </td>
       </tr>
     `;
         tableBody.append(row);
