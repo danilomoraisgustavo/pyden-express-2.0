@@ -511,6 +511,25 @@ CREATE TABLE IF NOT EXISTS reavaliacoes (
 );
 CREATE INDEX IF NOT EXISTS idx_reavaliacoes_aluno_id ON reavaliacoes(aluno_id);
 
+CREATE TABLE motoristas_administrativos (
+    id SERIAL PRIMARY KEY,
+    nome_motorista VARCHAR(100) NOT NULL,
+    cpf VARCHAR(14) NOT NULL,
+    rg VARCHAR(20),
+    data_nascimento DATE,
+    telefone VARCHAR(20),
+    email VARCHAR(100),
+    fornecedor_id INTEGER NOT NULL,
+    endereco VARCHAR(100),
+    cidade VARCHAR(50),
+    estado VARCHAR(50),
+    cep VARCHAR(10),
+    numero_cnh VARCHAR(20) NOT NULL,
+    categoria_cnh VARCHAR(2) NOT NULL,
+    validade_cnh DATE NOT NULL,
+    cnh_pdf VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_fornecedor_admin FOREIGN KEY (fornecedor_id) REFERENCES fornecedores_administrativos(id)
+);
 
 
 -- ==========================================

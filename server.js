@@ -4340,6 +4340,325 @@ app.post("/api/fornecedor/frota/cadastrar", uploadFrota.fields([
     return res.status(500).json({ success: false, message: "Erro interno ao cadastrar veículo." });
   }
 });
+
+// =============================================================================
+// MOTORISTAS ADMINISTRATIVOS
+// =============================================================================
+
+// [GET] Listar todos os motoristas administrativos
+app.get("/api/motoristas_administrativos", async (req, res) => {
+  try {
+    const query = `
+      SELECT m.id,
+             m.nome_motorista,
+             m.cpf,
+             m.rg,
+             m.data_nascimento,
+             m.telefone,
+             m.email,
+             m.endereco,
+             m.cidade,
+             m.estado,
+             m.cep,
+             m.numero_cnh,
+             m.categoria_cnh,
+             m.validade_cnh,
+             m.fornecedor_id,
+             m.cnh_pdf,
+             f.nome_fornecedor
+      FROM motoristas_administrativos m
+      LEFT JOIN fornecedores_administrativos f ON f.id = m.fornecedor_id
+      ORDER BY m.id;
+    `;
+    const result = await pool.query(query);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Erro ao listar motoristas administrativos:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno do servidor."
+    });
+  }
+});
+
+// [POST] Cadastrar novo motorista administrativo (com upload de CNH PDF)
+app.post(
+  "/api/motoristas_administrativos",
+  uploadFrota.single("cnh_pdf"),  // utiliza multer para receber o arquivo PDF da CNH
+  async (req, res) => {
+    try {
+      const {
+        nome_motorista,
+        cpf,
+        rg,
+        data_nascimento,
+        telefone,
+        email,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        numero_cnh,
+        categoria_cnh,
+        validade_cnh,
+        fornecedor_id
+      } = req.body;
+
+      // Verificação de campos obrigatórios
+      if (
+        !nome_motorista ||
+        !cpf ||
+        !numero_cnh ||
+        !categoria_cnh ||
+        !validade_cnh ||
+        !fornecedor_id
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Campos obrigatórios não fornecidos."
+        });
+      }
+
+      // Caminho do arquivo da CNH
+      let cnhPdfPath = null;
+      if (req.file && req.file.filename) {
+        cnhPdfPath = "uploads/" + req.file.filename;
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "CNH (PDF) é obrigatória."
+        });
+      }
+
+      // Inserção do novo motorista no banco
+      const insertQuery = `
+        INSERT INTO motoristas_administrativos (
+          nome_motorista, cpf, rg, data_nascimento, telefone, email,
+          endereco, cidade, estado, cep,
+          numero_cnh, categoria_cnh, validade_cnh,
+          fornecedor_id, cnh_pdf
+        ) VALUES ($1, $2, $3, $4, $5, $6,
+                  $7, $8, $9, $10,
+                  $11, $12, $13,
+                  $14, $15)
+        RETURNING id;
+      `;
+      const values = [
+        nome_motorista,
+        cpf,
+        rg || null,
+        data_nascimento || null,
+        telefone || null,
+        email || null,
+        endereco || null,
+        cidade || null,
+        estado || null,
+        cep || null,
+        numero_cnh,
+        categoria_cnh,
+        validade_cnh,
+        parseInt(fornecedor_id, 10),
+        cnhPdfPath
+      ];
+      const result = await pool.query(insertQuery, values);
+
+      if (result.rows.length === 0) {
+        return res.status(500).json({
+          success: false,
+          message: "Erro ao cadastrar motorista."
+        });
+      }
+      const novoMotoristaId = result.rows[0].id;
+
+      // Registro de notificação (opcional)
+      const userId = req.session?.userId || null;
+      const mensagem = `Motorista administrativo cadastrado: ${nome_motorista}`;
+      await pool.query(
+        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+         VALUES ($1, 'CREATE', 'motoristas_administrativos', $2, $3)`,
+        [userId, novoMotoristaId, mensagem]
+      );
+
+      return res.json({
+        success: true,
+        message: "Motorista cadastrado com sucesso!"
+      });
+    } catch (error) {
+      console.error("Erro ao cadastrar motorista administrativo:", error);
+      if (error.code === "23505") {
+        // Violação de chave única (por exemplo, CPF duplicado)
+        return res.status(400).json({
+          success: false,
+          message: "CPF já cadastrado para outro motorista."
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor."
+      });
+    }
+  }
+);
+
+// [PUT] Atualizar dados de um motorista administrativo existente
+app.put(
+  "/api/motoristas_administrativos/:id",
+  uploadFrota.single("cnh_pdf"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        nome_motorista,
+        cpf,
+        rg,
+        data_nascimento,
+        telefone,
+        email,
+        endereco,
+        cidade,
+        estado,
+        cep,
+        numero_cnh,
+        categoria_cnh,
+        validade_cnh,
+        fornecedor_id
+      } = req.body;
+
+      if (
+        !nome_motorista ||
+        !cpf ||
+        !numero_cnh ||
+        !categoria_cnh ||
+        !validade_cnh ||
+        !fornecedor_id
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Campos obrigatórios não fornecidos."
+        });
+      }
+
+      // Obter caminho atual da CNH no banco (caso não seja enviada nova)
+      let cnhPdfPath = null;
+      if (req.file && req.file.filename) {
+        // Se um novo arquivo PDF da CNH foi enviado, atualiza o caminho
+        cnhPdfPath = "uploads/" + req.file.filename;
+      } else {
+        // Mantém o caminho antigo se não foi enviada uma nova CNH
+        const resOld = await pool.query(
+          "SELECT cnh_pdf FROM motoristas_administrativos WHERE id = $1",
+          [id]
+        );
+        if (resOld.rows.length > 0) {
+          cnhPdfPath = resOld.rows[0].cnh_pdf;
+        }
+      }
+
+      const updateQuery = `
+        UPDATE motoristas_administrativos
+        SET 
+          nome_motorista = $1,
+          cpf = $2,
+          rg = $3,
+          data_nascimento = $4,
+          telefone = $5,
+          email = $6,
+          endereco = $7,
+          cidade = $8,
+          estado = $9,
+          cep = $10,
+          numero_cnh = $11,
+          categoria_cnh = $12,
+          validade_cnh = $13,
+          fornecedor_id = $14,
+          cnh_pdf = $15
+        WHERE id = $16
+        RETURNING id;
+      `;
+      const values = [
+        nome_motorista,
+        cpf,
+        rg || null,
+        data_nascimento || null,
+        telefone || null,
+        email || null,
+        endereco || null,
+        cidade || null,
+        estado || null,
+        cep || null,
+        numero_cnh,
+        categoria_cnh,
+        validade_cnh,
+        parseInt(fornecedor_id, 10),
+        cnhPdfPath,
+        parseInt(id, 10)
+      ];
+      const result = await pool.query(updateQuery, values);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Motorista não encontrado."
+        });
+      }
+
+      // Registro de notificação (opcional)
+      const userId = req.session?.userId || null;
+      const mensagem = `Motorista administrativo atualizado: ${nome_motorista}`;
+      await pool.query(
+        `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+         VALUES ($1, 'UPDATE', 'motoristas_administrativos', $2, $3)`,
+        [userId, id, mensagem]
+      );
+
+      return res.json({ success: true, message: "Motorista atualizado com sucesso!" });
+    } catch (error) {
+      console.error("Erro ao atualizar motorista administrativo:", error);
+      if (error.code === "23505") {
+        return res.status(400).json({
+          success: false,
+          message: "CPF já cadastrado para outro motorista."
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor."
+      });
+    }
+  }
+);
+
+// [DELETE] Excluir um motorista administrativo
+app.delete("/api/motoristas_administrativos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM motoristas_administrativos WHERE id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Motorista não encontrado."
+      });
+    }
+
+    // Registro de notificação (opcional)
+    const userId = req.session?.userId || null;
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+       VALUES ($1, 'DELETE', 'motoristas_administrativos', $2, $3)`,
+      [userId, id, `Motorista administrativo excluído: ID ${id}`]
+    );
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Erro ao excluir motorista administrativo:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erro interno ao excluir motorista."
+    });
+  }
+});
+
+
 // Retorna dados de um veículo (for modal edit)
 app.get("/api/fornecedor/frota/:id", async (req, res) => {
   try {
