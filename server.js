@@ -163,7 +163,8 @@ async function isAuthenticated(req, res, next) {
 }
 
 // ARQUIVOS ESTÁTICOS
-
+// em server.js, antes de todas as rotas:
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/assets", express.static(path.join(__dirname, "public", "assets")));
 app.use(
   "/pages",
