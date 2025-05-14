@@ -833,7 +833,7 @@
       });
     }
     function loadFornecedores() {
-      fetch('/api/fornecedores')
+      fetch('/api/fornecedores_administrativos')
         .then(res => {
           if (!res.ok) throw new Error('Erro ao carregar fornecedores');
           return res.json();
