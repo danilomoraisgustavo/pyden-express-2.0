@@ -653,21 +653,23 @@
                           <th>Nome do Motorista</th>
                           <th>CPF</th>
                           <th>Fornecedor</th>
-                          <th>CNH</th> <!-- nova coluna -->
+                          <th>CNH</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
+                      <tbody></tbody>
                       <tfoot>
                         <tr>
                           <th>ID</th>
                           <th>Nome do Motorista</th>
                           <th>CPF</th>
                           <th>Fornecedor</th>
-                          <th>CNH</th> <!-- nova coluna -->
+                          <th>CNH</th>
                           <th>Ações</th>
                         </tr>
                       </tfoot>
                     </table>
+
                   </div>
                 </div>
               </div>
@@ -885,7 +887,7 @@
         <td>${m.id}</td>
         <td>${m.nome_motorista}</td>
         <td>${m.cpf}</td>
-        <td>${m.fornecedor_nome || ''}</td>
+        <td>${m.nome_fornecedor || ''}</td>
         <td>${linkCnh}</td>                <!-- 5ª célula -->
         <td>
           <button class="btn btn-link btn-info" onclick="openEditMotorista(${m.id})">
