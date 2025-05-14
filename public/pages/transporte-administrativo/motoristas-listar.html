@@ -855,18 +855,21 @@
         });
     }
     function loadMotoristas() {
+      console.log('→ Chamando API de motoristas…');
       fetch('/api/motoristas_administrativos')
         .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar motoristas');
+          console.log('← Recebeu resposta da API', res.status);
+          if (!res.ok) throw new Error('Status ' + res.status);
           return res.json();
         })
         .then(data => {
+          console.log('← Conteúdo JSON:', data);
           motoristas = data;
           populateTable();
         })
         .catch(err => {
-          console.error(err);
-          showNotification('danger', 'Não foi possível carregar os motoristas.');
+          console.error('Erro ao carregar motoristas administrativos:', err);
+          showNotification('danger', 'Não foi possível carregar os motoristas administrativos.');
         });
     }
     function populateTable() {
