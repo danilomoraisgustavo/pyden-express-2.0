@@ -882,7 +882,7 @@
       motoristas.forEach(m => {
         // texto fixo “CNH” no link
         const linkCnh = m.cnh_pdf
-          ? `<a href="${m.cnh_pdf}" download target="_blank">CNH</a>`
+          ? `<a href="/${m.cnh_pdf}" download target="_blank">CNH</a>`
           : '';
 
         const row = `
