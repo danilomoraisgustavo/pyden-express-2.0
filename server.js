@@ -4423,7 +4423,7 @@ app.post(
       // Caminho do arquivo da CNH
       let cnhPdfPath = null;
       if (req.file && req.file.filename) {
-        cnhPdfPath = "uploads/" + req.file.filename;
+        cnhPdfPath = "/uploads/" + req.file.filename;
       } else {
         return res.status(400).json({
           success: false,
