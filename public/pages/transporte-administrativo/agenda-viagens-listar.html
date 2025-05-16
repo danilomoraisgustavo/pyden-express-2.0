@@ -722,478 +722,556 @@
   <script src="../../assets/js/pydenadmin.min.js"></script>
   <script src="../../assets/js/setting-demo2.js"></script>
   <!-- Script da página Agenda de Viagens -->
-  <script>
-    // Variáveis globais e mapas
-    let viagens = [];
-    let motoristas = [];
-    let mapNovaViagem, directionsServiceNova, directionsRendererNova;
-    let mapEditarViagem, directionsServiceEditar, directionsRendererEditar;
-    let mapVisualizarViagem, directionsServiceVisualizar, directionsRendererVisualizar;
-    let currentViagemVisualizar = null;
-    let calendar, calendarInitialized = false;
+<!-- Script da página Agenda de Viagens -->
+<script>
+// Variáveis globais e mapas
+let viagens = [];
+let motoristas = [];
+let mapNovaViagem, directionsServiceNova, directionsRendererNova;
+let mapEditarViagem, directionsServiceEditar, directionsRendererEditar;
+let mapVisualizarViagem, directionsServiceVisualizar, directionsRendererVisualizar;
+let currentViagemVisualizar = null;
+let calendar, calendarInitialized = false;
 
-    // Funções de inicialização de mapas Google para cada modal
-    function initMapNovaViagem() {
-      mapNovaViagem = new google.maps.Map(document.getElementById('mapNovaViagem'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13
-      });
-      directionsServiceNova = new google.maps.DirectionsService();
-      directionsRendererNova = new google.maps.DirectionsRenderer();
-      directionsRendererNova.setMap(mapNovaViagem);
-    }
-    function initMapEditarViagem() {
-      mapEditarViagem = new google.maps.Map(document.getElementById('mapEditarViagem'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13
-      });
-      directionsServiceEditar = new google.maps.DirectionsService();
-      directionsRendererEditar = new google.maps.DirectionsRenderer();
-      directionsRendererEditar.setMap(mapEditarViagem);
-    }
-    function initMapVisualizarViagem() {
-      mapVisualizarViagem = new google.maps.Map(document.getElementById('mapVisualizarViagem'), {
-        center: { lat: -6.530066, lng: -49.851630 },
-        zoom: 13
-      });
-      directionsServiceVisualizar = new google.maps.DirectionsService();
-      directionsRendererVisualizar = new google.maps.DirectionsRenderer();
-      directionsRendererVisualizar.setMap(mapVisualizarViagem);
-    }
+// Variáveis para marcação no mapa
+let geocoder;
+let markerOrigemNova, markerDestinoNova;
+let markersIntermedNova = [];
+let markingOrigin = false, markingDestination = false, markingIntermediary = false;
 
-    // Funções para traçar rota no mapa usando Google Directions API
-    function calculateRouteNova() {
-      const origin = document.getElementById('origemNova').value;
-      const destination = document.getElementById('destinoNova').value;
-      if (!origin || !destination) {
-        console.warn('Origem e destino precisam ser preenchidos para traçar a rota.');
-        return;
+// Funções de inicialização de mapas Google para cada modal
+function initMapNovaViagem() {
+  mapNovaViagem = new google.maps.Map(document.getElementById('mapNovaViagem'), {
+    center: { lat: -6.530066, lng: -49.851630 },
+    zoom: 13
+  });
+  directionsServiceNova = new google.maps.DirectionsService();
+  directionsRendererNova = new google.maps.DirectionsRenderer({ suppressMarkers: true });
+  directionsRendererNova.setMap(mapNovaViagem);
+  // Inicializa geocoder e eventos de clique no mapa para marcações
+  if (!geocoder) geocoder = new google.maps.Geocoder();
+  mapNovaViagem.addListener('click', function(event) {
+    const latLng = event.latLng;
+    if (markingOrigin) {
+      // Marcação de origem
+      if (markerOrigemNova) {
+        markerOrigemNova.setMap(null);
       }
-      // Coleta waypoints dos campos de pontos intermediários (não vazios)
-      const waypoints = [];
-      document.querySelectorAll('#modalNovaViagem .ponto-intermediario').forEach(input => {
-        if (input.value) {
-          waypoints.push({ location: input.value, stopover: true });
-        }
-      });
-      directionsServiceNova.route({
-        origin: origin,
-        destination: destination,
-        waypoints: waypoints,
-        travelMode: 'DRIVING'
-      }, (response, status) => {
-        if (status === 'OK') {
-          directionsRendererNova.setDirections(response);
-        } else {
-          console.error('Erro ao traçar rota (Nova): ' + status);
-        }
-      });
-    }
-    function calculateRouteEditar() {
-      const origin = document.getElementById('origemEditar').value;
-      const destination = document.getElementById('destinoEditar').value;
-      if (!origin || !destination) return;
-      const waypoints = [];
-      document.querySelectorAll('#modalEditarViagem .ponto-intermediario').forEach(input => {
-        if (input.value) {
-          waypoints.push({ location: input.value, stopover: true });
-        }
-      });
-      directionsServiceEditar.route({
-        origin: origin,
-        destination: destination,
-        waypoints: waypoints,
-        travelMode: 'DRIVING'
-      }, (response, status) => {
-        if (status === 'OK') {
-          directionsRendererEditar.setDirections(response);
-        } else {
-          console.error('Erro ao traçar rota (Editar): ' + status);
-        }
-      });
-    }
-    function calculateRouteVisualizar() {
-      if (!currentViagemVisualizar) return;
-      const origin = currentViagemVisualizar.origem;
-      const destination = currentViagemVisualizar.destino;
-      const waypoints = (currentViagemVisualizar.pontos_intermediarios || []).map(pt => ({ location: pt, stopover: true }));
-      directionsServiceVisualizar.route({
-        origin: origin,
-        destination: destination,
-        waypoints: waypoints,
-        travelMode: 'DRIVING'
-      }, (response, status) => {
-        if (status === 'OK') {
-          directionsRendererVisualizar.setDirections(response);
-        } else {
-          console.error('Erro ao traçar rota (Visualizar): ' + status);
-        }
-      });
-    }
-
-    // Formatação de data/hora para exibição (dd/mm/yyyy HH:MM)
-    function formatDatetime(datetimeStr) {
-      if (!datetimeStr) return '';
-      const options = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-      return new Date(datetimeStr).toLocaleString('pt-BR', options);
-    }
-
-    // Carrega lista de motoristas para popular os selects
-    function loadMotoristas() {
-      fetch('/api/motoristas_administrativos')
-        .then(res => res.json())
-        .then(data => {
-          motoristas = data;
-          document.querySelectorAll('.motorista-select').forEach(select => {
-            select.innerHTML = '<option value="">Selecione o motorista</option>';
-            motoristas.forEach(m => {
-              const option = document.createElement('option');
-              option.value = m.id;
-              option.textContent = m.nome;
-              select.appendChild(option);
-            });
-          });
-        })
-        .catch(err => console.error('Erro ao carregar motoristas:', err));
-    }
-
-    // Carrega lista de viagens da API e popula tabela
-    function loadViagens() {
-      fetch('/api/viagens')
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar viagens');
-          return res.json();
-        })
-        .then(data => {
-          viagens = data;
-          populateTable();
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Não foi possível carregar as viagens agendadas.');
-        });
-    }
-
-    // Preenche a tabela de viagens e inicializa DataTable
-    function populateTable() {
-      const tableBody = $('#viagens-table tbody');
-      tableBody.empty();
-      viagens.forEach(v => {
-        const saida = formatDatetime(v.data_saida);
-        const status = v.status || 'Agendada';
-        const row = `
-          <tr>
-            <td>${v.motorista_nome || '(Indefinido)'}</td>
-            <td>${saida}</td>
-            <td>${v.origem}</td>
-            <td>${v.destino}</td>
-            <td>${v.tipo}</td>
-            <td>${status}</td>
-            <td>
-              <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-link btn-primary" onclick="openEditarViagemModal(${v.id})" data-bs-toggle="tooltip" title="Editar Viagem">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <button type="button" class="btn btn-link btn-info" onclick="openVisualizarViagemModal(${v.id})" data-bs-toggle="tooltip" title="Visualizar Viagem">
-                  <i class="fa fa-eye"></i>
-                </button>
-                <button type="button" class="btn btn-link btn-danger" onclick="excluirViagem(${v.id})" data-bs-toggle="tooltip" title="Excluir Viagem">
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-        tableBody.append(row);
-      });
-      // Re-inicializa DataTable com idioma PT-BR
-      if ($.fn.DataTable.isDataTable('#viagens-table')) {
-        $('#viagens-table').DataTable().clear().destroy();
-      }
-      $('#viagens-table').DataTable({
-        pageLength: 10,
-        language: {
-          decimal: ",",
-          thousands: ".",
-          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-          infoEmpty: "Mostrando 0 até 0 de 0 registros",
-          infoFiltered: "(filtrado de _MAX_ registros no total)",
-          lengthMenu: "Mostrar _MENU_ registros",
-          loadingRecords: "Carregando...",
-          processing: "Processando...",
-          search: "Pesquisar:",
-          zeroRecords: "Nenhum registro encontrado",
-          paginate: {
-            first: "Primeiro",
-            last: "Último",
-            next: "Próximo",
-            previous: "Anterior"
-          },
-          emptyTable: "Nenhum dado disponível na tabela"
-        }
-      });
-    }
-
-    // Abre o modal de edição preenchendo campos com os dados da viagem selecionada
-    function openEditarViagemModal(id) {
-      const viagem = viagens.find(v => v.id === id);
-      if (!viagem) return;
-      // Preenche campos do formulário de edição
-      document.getElementById('editarViagemId').value = viagem.id;
-      document.getElementById('motoristaEditar').value = viagem.motorista_id || '';
-      document.getElementById('dataSaidaEditar').value = viagem.data_saida ? viagem.data_saida.substring(0,16) : '';
-      document.getElementById('dataRetornoEditar').value = viagem.data_retorno ? viagem.data_retorno.substring(0,16) : '';
-      document.getElementById('origemEditar').value = viagem.origem || '';
-      document.getElementById('destinoEditar').value = viagem.destino || '';
-      document.getElementById('tipoEditar').value = viagem.tipo || '';
-      document.getElementById('obsEditar').value = viagem.observacoes || '';
-      // Pontos intermediários - limpa e adiciona campos conforme a lista
-      const container = document.getElementById('pontosIntermedContainerEditar');
-      container.innerHTML = '';
-      (viagem.pontos_intermediarios || []).forEach(pt => {
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.name = 'ponto_intermediario';
-        inp.className = 'form-control ponto-intermediario mb-2';
-        inp.placeholder = 'Ponto intermediário (opcional)';
-        inp.value = pt;
-        container.appendChild(inp);
-      });
-      // Sempre pelo menos um campo (vazio se não havia pontos)
-      if (container.children.length === 0) {
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.name = 'ponto_intermediario';
-        inp.className = 'form-control ponto-intermediario mb-2';
-        inp.placeholder = 'Ponto intermediário (opcional)';
-        container.appendChild(inp);
-      }
-      // Checkbox retorna à origem e campo retorno habilitado/desabilitado
-      const cbRetorna = document.getElementById('retornaEditar');
-      const inputRetorno = document.getElementById('dataRetornoEditar');
-      cbRetorna.checked = !!viagem.retorna_origem;
-      if (viagem.retorna_origem) {
-        inputRetorno.removeAttribute('disabled');
-        inputRetorno.required = true;
-      } else {
-        inputRetorno.setAttribute('disabled', 'disabled');
-        inputRetorno.required = false;
-      }
-      // Exibe modal de edição
-      $('#modalEditarViagem').modal('show');
-    }
-
-    // Abre o modal de visualização preenchendo os detalhes da viagem
-    function openVisualizarViagemModal(id) {
-      const viagem = viagens.find(v => v.id === id);
-      if (!viagem) return;
-      currentViagemVisualizar = viagem;
-      // Preenche textos dos detalhes
-      document.getElementById('viewMotorista').textContent = viagem.motorista_nome || '';
-      document.getElementById('viewDataSaida').textContent = formatDatetime(viagem.data_saida);
-      document.getElementById('viewDataRetorno').textContent = viagem.data_retorno ? formatDatetime(viagem.data_retorno) : '—';
-      document.getElementById('viewOrigem').textContent = viagem.origem;
-      document.getElementById('viewDestino').textContent = viagem.destino;
-      const pts = viagem.pontos_intermediarios && viagem.pontos_intermediarios.length ? viagem.pontos_intermediarios.join(', ') : 'Nenhum';
-      document.getElementById('viewPontos').textContent = pts;
-      document.getElementById('viewTipo').textContent = viagem.tipo;
-      document.getElementById('viewRetorna').textContent = viagem.retorna_origem ? 'Sim' : 'Não';
-      document.getElementById('viewObs').textContent = viagem.observacoes || 'Nenhuma';
-      // Exibe modal de visualização
-      $('#modalVisualizarViagem').modal('show');
-    }
-
-    // Função para excluir viagem (solicita confirmação)
-    function excluirViagem(id) {
-      if (!confirm('Tem certeza que deseja excluir esta viagem?')) return;
-      fetch(`/api/viagens/${id}`, { method: 'DELETE' })
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao excluir viagem');
-          return res.json();
-        })
-        .then(result => {
-          if (result.success) {
-            alert('Viagem excluída com sucesso.');
-            loadViagens();
-          } else {
-            alert('Não foi possível excluir a viagem.');
+      markerOrigemNova = new google.maps.Marker({ position: latLng, map: mapNovaViagem, icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' });
+      markingOrigin = false;
+      geocoder.geocode({ location: latLng }, function(results, status) {
+        if (status === 'OK' && results[0]) {
+          document.getElementById('origemLabel').value = results[0].formatted_address;
+          document.getElementById('origemLat').value = latLng.lat();
+          document.getElementById('origemLng').value = latLng.lng();
+          if (document.getElementById('destinoLabel').value) {
+            calculateRouteNova();
           }
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Erro ao excluir a viagem.');
-        });
+        } else {
+          console.error('Geocoding da origem falhou: ' + status);
+        }
+      });
+    } else if (markingDestination) {
+      // Marcação de destino
+      if (markerDestinoNova) {
+        markerDestinoNova.setMap(null);
+      }
+      markerDestinoNova = new google.maps.Marker({ position: latLng, map: mapNovaViagem, icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png' });
+      markingDestination = false;
+      geocoder.geocode({ location: latLng }, function(results, status) {
+        if (status === 'OK' && results[0]) {
+          document.getElementById('destinoLabel').value = results[0].formatted_address;
+          document.getElementById('destinoLat').value = latLng.lat();
+          document.getElementById('destinoLng').value = latLng.lng();
+          if (document.getElementById('origemLabel').value) {
+            calculateRouteNova();
+          }
+        } else {
+          console.error('Geocoding do destino falhou: ' + status);
+        }
+      });
+    } else if (markingIntermediary) {
+      // Marcação de ponto intermediário
+      const marker = new google.maps.Marker({ position: latLng, map: mapNovaViagem, icon: 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png' });
+      markersIntermedNova.push(marker);
+      geocoder.geocode({ location: latLng }, function(results, status) {
+        if (status === 'OK' && results[0]) {
+          // Cria campo de ponto intermediário com o endereço
+          let container = document.getElementById('pontosIntermedContainerNova');
+          if (!container) {
+            // Se o container não existe, cria e insere antes do mapa
+            const form = document.getElementById('nova-viagem-form');
+            const interDiv = document.createElement('div');
+            interDiv.className = 'mb-3';
+            const interLabel = document.createElement('label');
+            interLabel.className = 'form-label';
+            interLabel.textContent = 'Pontos Intermediários:';
+            interDiv.appendChild(interLabel);
+            container = document.createElement('div');
+            container.id = 'pontosIntermedContainerNova';
+            interDiv.appendChild(container);
+            form.insertBefore(interDiv, document.getElementById('mapNovaViagem'));
+          }
+          const inp = document.createElement('input');
+          inp.type = 'text';
+          inp.name = 'ponto_intermediario';
+          inp.className = 'form-control ponto-intermediario mb-2';
+          inp.placeholder = 'Ponto intermediário (opcional)';
+          inp.value = results[0].formatted_address;
+          container.appendChild(inp);
+          if (document.getElementById('origemLabel').value && document.getElementById('destinoLabel').value) {
+            calculateRouteNova();
+          }
+        } else {
+          console.error('Geocoding do ponto intermediário falhou: ' + status);
+        }
+      });
     }
+  });
+}
+function initMapEditarViagem() {
+  mapEditarViagem = new google.maps.Map(document.getElementById('mapEditarViagem'), {
+    center: { lat: -6.530066, lng: -49.851630 },
+    zoom: 13
+  });
+  directionsServiceEditar = new google.maps.DirectionsService();
+  directionsRendererEditar = new google.maps.DirectionsRenderer();
+  directionsRendererEditar.setMap(mapEditarViagem);
+}
+function initMapVisualizarViagem() {
+  mapVisualizarViagem = new google.maps.Map(document.getElementById('mapVisualizarViagem'), {
+    center: { lat: -6.530066, lng: -49.851630 },
+    zoom: 13
+  });
+  directionsServiceVisualizar = new google.maps.DirectionsService();
+  directionsRendererVisualizar = new google.maps.DirectionsRenderer();
+  directionsRendererVisualizar.setMap(mapVisualizarViagem);
+}
 
-    // Document ready: inicializa eventos e carrega dados iniciais
-    document.addEventListener('DOMContentLoaded', function () {
-      loadMotoristas();
-      loadViagens();
-      // Evento de adicionar novo campo de ponto intermediário (Nova Viagem)
-      document.getElementById('addPontoNovaBtn').addEventListener('click', function () {
-        const container = document.getElementById('pontosIntermedContainerNova');
-        const newInput = document.createElement('input');
-        newInput.type = 'text';
-        newInput.name = 'ponto_intermediario';
-        newInput.className = 'form-control ponto-intermediario mb-2';
-        newInput.placeholder = 'Ponto intermediário (opcional)';
-        container.appendChild(newInput);
+// Funções para traçar rota no mapa usando Google Directions API
+function calculateRouteNova() {
+  const origin = document.getElementById('origemLabel').value;
+  const destination = document.getElementById('destinoLabel').value;
+  if (!origin || !destination) {
+    console.warn('Origem e destino precisam ser preenchidos para traçar a rota.');
+    return;
+  }
+  // Coleta waypoints dos campos de pontos intermediários (não vazios)
+  const waypoints = [];
+  document.querySelectorAll('#modalNovaViagem .ponto-intermediario').forEach(input => {
+    if (input.value) {
+      waypoints.push({ location: input.value, stopover: true });
+    }
+  });
+  directionsServiceNova.route({
+    origin: origin,
+    destination: destination,
+    waypoints: waypoints,
+    travelMode: 'DRIVING'
+  }, (response, status) => {
+    if (status === 'OK') {
+      directionsRendererNova.setDirections(response);
+      // Adiciona marcadores manualmente se não foram marcados no mapa
+      if (!markerOrigemNova) {
+        const startLoc = response.routes[0].legs[0].start_location;
+        markerOrigemNova = new google.maps.Marker({ position: startLoc, map: mapNovaViagem, icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' });
+        document.getElementById('origemLat').value = startLoc.lat();
+        document.getElementById('origemLng').value = startLoc.lng();
+      }
+      if (!markerDestinoNova) {
+        const lastLeg = response.routes[0].legs[response.routes[0].legs.length - 1];
+        const endLoc = lastLeg.end_location;
+        markerDestinoNova = new google.maps.Marker({ position: endLoc, map: mapNovaViagem, icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png' });
+        document.getElementById('destinoLat').value = endLoc.lat();
+        document.getElementById('destinoLng').value = endLoc.lng();
+      }
+    } else {
+      console.error('Erro ao traçar rota (Nova): ' + status);
+    }
+  });
+}
+function calculateRouteEditar() {
+  const origin = document.getElementById('origemEditar').value;
+  const destination = document.getElementById('destinoEditar').value;
+  if (!origin || !destination) return;
+  const waypoints = [];
+  document.querySelectorAll('#modalEditarViagem .ponto-intermediario').forEach(input => {
+    if (input.value) {
+      waypoints.push({ location: input.value, stopover: true });
+    }
+  });
+  directionsServiceEditar.route({
+    origin: origin,
+    destination: destination,
+    waypoints: waypoints,
+    travelMode: 'DRIVING'
+  }, (response, status) => {
+    if (status === 'OK') {
+      directionsRendererEditar.setDirections(response);
+    } else {
+      console.error('Erro ao traçar rota (Editar): ' + status);
+    }
+  });
+}
+function calculateRouteVisualizar() {
+  if (!currentViagemVisualizar) return;
+  const origin = currentViagemVisualizar.origem;
+  const destination = currentViagemVisualizar.destino;
+  const waypoints = (currentViagemVisualizar.pontos_intermediarios || []).map(pt => ({ location: pt, stopover: true }));
+  directionsServiceVisualizar.route({
+    origin: origin,
+    destination: destination,
+    waypoints: waypoints,
+    travelMode: 'DRIVING'
+  }, (response, status) => {
+    if (status === 'OK') {
+      directionsRendererVisualizar.setDirections(response);
+    } else {
+      console.error('Erro ao traçar rota (Visualizar): ' + status);
+    }
+  });
+}
+
+// Formatação de data/hora para exibição (dd/mm/yyyy HH:MM)
+function formatDatetime(datetimeStr) {
+  if (!datetimeStr) return '';
+  const options = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+  return new Date(datetimeStr).toLocaleString('pt-BR', options);
+}
+
+// Carrega lista de motoristas para popular os selects
+function loadMotoristas() {
+  fetch('/api/motoristas_administrativos')
+    .then(res => res.json())
+    .then(data => {
+      motoristas = data;
+      document.querySelectorAll('.motorista-select').forEach(select => {
+        select.innerHTML = '<option value="">Selecione o motorista</option>';
+        motoristas.forEach(m => {
+          const option = document.createElement('option');
+          option.value = m.id;
+          option.textContent = m.nome;
+          select.appendChild(option);
+        });
       });
-      // Evento de adicionar novo campo de ponto intermediário (Editar Viagem)
-      document.getElementById('addPontoEditarBtn').addEventListener('click', function () {
-        const container = document.getElementById('pontosIntermedContainerEditar');
-        const newInput = document.createElement('input');
-        newInput.type = 'text';
-        newInput.name = 'ponto_intermediario';
-        newInput.className = 'form-control ponto-intermediario mb-2';
-        newInput.placeholder = 'Ponto intermediário (opcional)';
-        container.appendChild(newInput);
-      });
-      // Toggle do campo de retorno em Nova Viagem (habilita/desabilita conforme checkbox)
-      document.getElementById('retornaNova').addEventListener('change', function () {
-        const retornoInput = document.getElementById('dataRetornoNova');
-        if (this.checked) {
-          retornoInput.removeAttribute('disabled');
-          retornoInput.required = true;
-        } else {
-          retornoInput.value = '';
-          retornoInput.setAttribute('disabled', 'disabled');
-          retornoInput.required = false;
-        }
-      });
-      // Toggle do campo de retorno em Editar Viagem (similar, mas controlado também em openEditar)
-      document.getElementById('retornaEditar').addEventListener('change', function () {
-        const retornoInput = document.getElementById('dataRetornoEditar');
-        if (this.checked) {
-          retornoInput.removeAttribute('disabled');
-          retornoInput.required = true;
-        } else {
-          retornoInput.value = '';
-          retornoInput.setAttribute('disabled', 'disabled');
-          retornoInput.required = false;
-        }
-      });
-      // Submit do formulário Nova Viagem
-      $('#nova-viagem-form').on('submit', function (e) {
-        e.preventDefault();
-        // Prepara JSON dos pontos intermediários para enviar
-        const intermediarios = Array.from(document.querySelectorAll('#modalNovaViagem .ponto-intermediario'))
-          .map(input => input.value).filter(v => v);
-        document.getElementById('pontosIntermediariosNova').value = JSON.stringify(intermediarios);
-        const formData = $(this).serialize();
-        fetch('/api/viagens', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData
-        })
-          .then(res => res.json())
-          .then(result => {
-            if (result.id) {
-              $('#modalNovaViagem').modal('hide');
-              loadViagens();
-              alert('Viagem agendada com sucesso!');
-            } else {
-              alert('Erro ao agendar viagem: ' + (result.message || ''));
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            alert('Erro ao agendar a viagem. Tente novamente.');
-          });
-      });
-      // Submit do formulário Editar Viagem
-      $('#editar-viagem-form').on('submit', function (e) {
-        e.preventDefault();
-        const id = document.getElementById('editarViagemId').value;
-        const intermediarios = Array.from(document.querySelectorAll('#modalEditarViagem .ponto-intermediario'))
-          .map(input => input.value).filter(v => v);
-        document.getElementById('pontosIntermediariosEditar').value = JSON.stringify(intermediarios);
-        const formData = $(this).serialize();
-        fetch(`/api/viagens/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData
-        })
-          .then(res => res.json())
-          .then(result => {
-            if (result.id) {
-              $('#modalEditarViagem').modal('hide');
-              loadViagens();
-              alert('Viagem atualizada com sucesso!');
-            } else {
-              alert('Erro ao atualizar viagem: ' + (result.message || ''));
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            alert('Erro ao salvar alterações da viagem.');
-          });
-      });
-      // Inicializa FullCalendar ao abrir modal de calendário
-      $('#modalCalendario').on('shown.bs.modal', function () {
-        if (!calendarInitialized) {
-          const calendarEl = document.getElementById('calendar');
-          calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'pt-br',
-            headerToolbar: { left: 'title', right: 'prev,next today' },
-            events: function (fetchInfo, successCallback, failureCallback) {
-              const start = fetchInfo.startStr;
-              const end = fetchInfo.endStr;
-              fetch(`/api/viagens?data_inicio=${start}&data_fim=${end}`)
-                .then(res => res.json())
-                .then(data => {
-                  const events = data.map(v => ({
-                    id: v.id,
-                    title: (v.motorista_nome ? v.motorista_nome : 'Viagem') + ' (' + v.tipo + ')',
-                    start: v.data_saida,
-                    end: v.data_retorno ? v.data_retorno : undefined
-                  }));
-                  successCallback(events);
-                })
-                .catch(err => {
-                  console.error('Erro ao carregar eventos do calendário:', err);
-                  failureCallback(err);
-                });
-            },
-            dateClick: function (info) {
-              // Poderíamos filtrar/mostrar viagens do dia clicado se desejado
-            },
-            eventClick: function (info) {
-              // Ao clicar em um evento, abre modal de visualização da viagem correspondente
-              const viagemId = info.event.id;
-              openVisualizarViagemModal(parseInt(viagemId));
-            }
-          });
-          calendar.render();
-          calendarInitialized = true;
-        }
-      });
-      // Ao abrir modais, inicializa mapas e rotas conforme necessário
-      $('#modalNovaViagem').on('shown.bs.modal', function () {
-        initMapNovaViagem();
-      }).on('hidden.bs.modal', function () {
-        document.getElementById('nova-viagem-form').reset();
-        directionsRendererNova && directionsRendererNova.set('directions', null);
-      });
-      $('#modalEditarViagem').on('shown.bs.modal', function () {
-        initMapEditarViagem();
-        calculateRouteEditar(); // traça rota inicial com dados atuais
-      }).on('hidden.bs.modal', function () {
-        document.getElementById('editar-viagem-form').reset();
-        directionsRendererEditar && directionsRendererEditar.set('directions', null);
-      });
-      $('#modalVisualizarViagem').on('shown.bs.modal', function () {
-        initMapVisualizarViagem();
-        calculateRouteVisualizar();
-      }).on('hidden.bs.modal', function () {
-        currentViagemVisualizar = null;
-        directionsRendererVisualizar && directionsRendererVisualizar.set('directions', null);
-      });
-      // Botões "Traçar Rota" nos modais de Nova e Editar
-      document.getElementById('calcRouteNovaBtn').addEventListener('click', calculateRouteNova);
-      document.getElementById('calcRouteEditarBtn').addEventListener('click', calculateRouteEditar);
+    })
+    .catch(err => console.error('Erro ao carregar motoristas:', err));
+}
+
+// Carrega lista de viagens da API e popula tabela
+function loadViagens() {
+  fetch('/api/viagens')
+    .then(res => {
+      if (!res.ok) throw new Error('Erro ao carregar viagens');
+      return res.json();
+    })
+    .then(data => {
+      viagens = data;
+      populateTable();
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Não foi possível carregar as viagens agendadas.');
     });
-  </script>
+}
+
+// Preenche a tabela de viagens e inicializa DataTable
+function populateTable() {
+  const tableBody = $('#viagens-table tbody');
+  tableBody.empty();
+  viagens.forEach(v => {
+    const saida = formatDatetime(v.data_saida);
+    const status = v.status || 'Agendada';
+    const row = `
+      <tr>
+        <td>${v.motorista_nome || '(Indefinido)'}</td>
+        <td>${saida}</td>
+        <td>${v.origem}</td>
+        <td>${v.destino}</td>
+        <td>${v.tipo}</td>
+        <td>${status}</td>
+        <td>
+          <div class="btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-link btn-primary" onclick="openEditarViagemModal(${v.id})" data-bs-toggle="tooltip" title="Editar Viagem">
+              <i class="fa fa-edit"></i>
+            </button>
+            <button type="button" class="btn btn-link btn-info" onclick="openVisualizarViagemModal(${v.id})" data-bs-toggle="tooltip" title="Visualizar Viagem">
+              <i class="fa fa-eye"></i>
+            </button>
+            <button type="button" class="btn btn-link btn-danger" onclick="excluirViagem(${v.id})" data-bs-toggle="tooltip" title="Excluir Viagem">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+    tableBody.append(row);
+  });
+  // Re-inicializa DataTable com idioma PT-BR
+  if ($.fn.DataTable.isDataTable('#viagens-table')) {
+    $('#viagens-table').DataTable().clear().destroy();
+  }
+  $('#viagens-table').DataTable({
+    pageLength: 10,
+    language: {
+      decimal: ",",
+      thousands: ".",
+      info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+      infoEmpty: "Mostrando 0 até 0 de 0 registros",
+      infoFiltered: "(filtrado de _MAX_ registros no total)",
+      lengthMenu: "Mostrar _MENU_ registros",
+      loadingRecords: "Carregando...",
+      processing: "Processando...",
+      search: "Pesquisar:",
+      zeroRecords: "Nenhum registro encontrado",
+      paginate: {
+        first: "Primeiro",
+        last: "Último",
+        next: "Próximo",
+        previous: "Anterior"
+      },
+      emptyTable: "Nenhum dado disponível na tabela"
+    }
+  });
+}
+
+// Abre o modal de edição preenchendo campos com os dados da viagem selecionada
+function openEditarViagemModal(id) {
+  const viagem = viagens.find(v => v.id === id);
+  if (!viagem) return;
+  // Preenche campos do formulário de edição
+  document.getElementById('editarViagemId').value = viagem.id;
+  document.getElementById('motoristaEditar').value = viagem.motorista_id || '';
+  document.getElementById('dataSaidaEditar').value = viagem.data_saida ? viagem.data_saida.substring(0,16) : '';
+  document.getElementById('dataRetornoEditar').value = viagem.data_retorno ? viagem.data_retorno.substring(0,16) : '';
+  document.getElementById('origemEditar').value = viagem.origem || '';
+  document.getElementById('destinoEditar').value = viagem.destino || '';
+  document.getElementById('tipoEditar').value = viagem.tipo || '';
+  document.getElementById('obsEditar').value = viagem.observacoes || '';
+  // Pontos intermediários - limpa e adiciona campos conforme a lista
+  const container = document.getElementById('pontosIntermedContainerEditar');
+  container.innerHTML = '';
+  (viagem.pontos_intermediarios || []).forEach(pt => {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.name = 'ponto_intermediario';
+    inp.className = 'form-control ponto-intermediario mb-2';
+    inp.placeholder = 'Ponto intermediário (opcional)';
+    inp.value = pt;
+    container.appendChild(inp);
+  });
+  // Sempre pelo menos um campo (vazio se não havia pontos)
+  if (container.children.length === 0) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.name = 'ponto_intermediario';
+    inp.className = 'form-control ponto-intermediario mb-2';
+    inp.placeholder = 'Ponto intermediário (opcional)';
+    container.appendChild(inp);
+  }
+  // Checkbox retorna à origem e campo retorno habilitado/desabilitado
+  const cbRetorna = document.getElementById('retornaEditar');
+  const inputRetorno = document.getElementById('dataRetornoEditar');
+  cbRetorna.checked = !!viagem.retorna_origem;
+  if (viagem.retorna_origem) {
+    inputRetorno.removeAttribute('disabled');
+    inputRetorno.required = true;
+  } else {
+    inputRetorno.setAttribute('disabled', 'disabled');
+    inputRetorno.required = false;
+  }
+  // Exibe modal de edição
+  $('#modalEditarViagem').modal('show');
+}
+
+// Abre o modal de visualização preenchendo os detalhes da viagem
+function openVisualizarViagemModal(id) {
+  const viagem = viagens.find(v => v.id === id);
+  if (!viagem) return;
+  currentViagemVisualizar = viagem;
+  // Preenche textos dos detalhes
+  document.getElementById('viewMotorista').textContent = viagem.motorista_nome || '';
+  document.getElementById('viewDataSaida').textContent = formatDatetime(viagem.data_saida);
+  document.getElementById('viewDataRetorno').textContent = viagem.data_retorno ? formatDatetime(viagem.data_retorno) : '—';
+  document.getElementById('viewOrigem').textContent = viagem.origem;
+  document.getElementById('viewDestino').textContent = viagem.destino;
+  const pts = viagem.pontos_intermediarios && viagem.pontos_intermediarios.length ? viagem.pontos_intermediarios.join(', ') : 'Nenhum';
+  document.getElementById('viewPontos').textContent = pts;
+  document.getElementById('viewTipo').textContent = viagem.tipo;
+  document.getElementById('viewRetorna').textContent = viagem.retorna_origem ? 'Sim' : 'Não';
+  document.getElementById('viewObs').textContent = viagem.observacoes || 'Nenhuma';
+  // Exibe modal de visualização
+  $('#modalVisualizarViagem').modal('show');
+}
+
+// Função para excluir viagem (solicita confirmação)
+function excluirViagem(id) {
+  if (!confirm('Tem certeza que deseja excluir esta viagem?')) return;
+  fetch(`/api/viagens/${id}`, { method: 'DELETE' })
+    .then(res => {
+      if (!res.ok) throw new Error('Erro ao excluir viagem');
+      return res.json();
+    })
+    .then(result => {
+      if (result.success) {
+        alert('Viagem excluída com sucesso.');
+        loadViagens();
+      } else {
+        alert('Não foi possível excluir a viagem.');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Erro ao excluir a viagem.');
+    });
+}
+
+// Document ready: inicializa eventos e carrega dados iniciais
+document.addEventListener('DOMContentLoaded', function () {
+  loadMotoristas();
+  loadViagens();
+  // Evento de adicionar novo campo de ponto intermediário (Editar Viagem)
+  document.getElementById('addPontoEditarBtn').addEventListener('click', function () {
+    const container = document.getElementById('pontosIntermedContainerEditar');
+    const newInput = document.createElement('input');
+    newInput.type = 'text';
+    newInput.name = 'ponto_intermediario';
+    newInput.className = 'form-control ponto-intermediario mb-2';
+    newInput.placeholder = 'Ponto intermediário (opcional)';
+    container.appendChild(newInput);
+  });
+  // Toggle do campo de retorno em Editar Viagem (similar, mas controlado também em openEditar)
+  document.getElementById('retornaEditar').addEventListener('change', function () {
+    const retornoInput = document.getElementById('dataRetornoEditar');
+    if (this.checked) {
+      retornoInput.removeAttribute('disabled');
+      retornoInput.required = true;
+    } else {
+      retornoInput.value = '';
+      retornoInput.setAttribute('disabled', 'disabled');
+      retornoInput.required = false;
+    }
+  });
+  // Submit do formulário Nova Viagem
+  $('#nova-viagem-form').on('submit', function (e) {
+    e.preventDefault();
+    // Prepara JSON dos pontos intermediários para enviar
+    const intermediarios = Array.from(document.querySelectorAll('#modalNovaViagem .ponto-intermediario'))
+      .map(input => input.value).filter(v => v);
+    document.getElementById('pontosIntermediariosNova').value = JSON.stringify(intermediarios);
+    const formData = $(this).serialize();
+    fetch('/api/viagens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.id) {
+          $('#modalNovaViagem').modal('hide');
+          loadViagens();
+          alert('Viagem agendada com sucesso!');
+        } else {
+          alert('Erro ao agendar viagem: ' + (result.message || ''));
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Erro ao agendar a viagem. Tente novamente.');
+      });
+  });
+  // Submit do formulário Editar Viagem
+  $('#editar-viagem-form').on('submit', function (e) {
+    e.preventDefault();
+    const id = document.getElementById('editarViagemId').value;
+    const intermediarios = Array.from(document.querySelectorAll('#modalEditarViagem .ponto-intermediario'))
+      .map(input => input.value).filter(v => v);
+    document.getElementById('pontosIntermediariosEditar').value = JSON.stringify(intermediarios);
+    const formData = $(this).serialize();
+    fetch(`/api/viagens/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.id) {
+          $('#modalEditarViagem').modal('hide');
+          loadViagens();
+          alert('Viagem atualizada com sucesso!');
+        } else {
+          alert('Erro ao atualizar viagem: ' + (result.message || ''));
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Erro ao salvar alterações da viagem.');
+      });
+  });
+  // Inicializa FullCalendar ao abrir modal de calendário
+  $('#modalCalendario').on('shown.bs.modal', function () {
+    if (!calendarInitialized) {
+      const calendarEl = document.getElementById('calendar');
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'pt-br',
+        headerToolbar: { left: 'title', right: 'prev,next today' },
+        events: function (fetchInfo, successCallback, failureCallback) {
+          const start = fetchInfo.startStr;
+          const end = fetchInfo.endStr;
+          fetch(`/api/viagens?data_inicio=${start}&data_fim=${end}`)
+            .then(res => res.json())
+            .then(data => {
+              const events = data.map(v => ({
+                id: v.id,
+                title: (v.motorista_nome ? v.motorista_nome : 'Viagem') + ' (' + v.tipo + ')',
+                start: v.data_saida,
+                end: v.data_retorno ? v.data_retorno : undefined
+              }));
+              successCallback(events);
+            })
+            .catch(err => {
+              console.error('Erro ao carregar eventos do calendário:', err);
+              failureCallback(err);
+            });
+        },
+        dateClick: function (info) {
+          // Poderíamos filtrar/mostrar viagens do dia clicado se desejado
+        },
+        eventClick: function (info) {
+          // Ao clicar em um evento, abre modal de visualização da viagem correspondente
+          const viagemId = info.event.id;
+          openVisualizarViagemModal(parseInt(viagemId));
+        }
+      });
+      calendar.render();
+      calendarInitialized = true;
+    }
+  });
+  // Ao abrir modais, inicializa mapas e rotas conforme necessário
+  $('#modalNovaViagem').on('shown.bs.modal', function () {
+    initMapNovaViagem();
+  }).on('hidden.bs.modal', function () {
+    document.getElementById('nova-viagem-form').reset();
+    directionsRendererNova && directionsRendererNova.set('directions', null);
+  });
+  $('#modalEditarViagem').on('shown.bs.modal', function () {
+    initMapEditarViagem();
+    calculateRouteEditar(); // traça rota inicial com dados atuais
+  }).on('hidden.bs.modal', function () {
+    document.getElementById('editar-viagem-form').reset();
+    directionsRendererEditar && directionsRendererEditar.set('directions', null);
+  });
+  $('#modalVisualizarViagem').on('shown.bs.modal', function () {
+    initMapVisualizarViagem();
+    calculateRouteVisualizar();
+  }).on('hidden.bs.modal', function () {
+    currentViagemVisualizar = null;
+    directionsRendererVisualizar && directionsRendererVisualizar.set('directions', null);
+  });
+  // Botões "Traçar Rota" nos modais de Editar
+  document.getElementById('calcRouteEditarBtn').addEventListener('click', calculateRouteEditar);
+});
+</script>
 </body>
 </html>
