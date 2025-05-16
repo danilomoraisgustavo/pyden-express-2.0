@@ -11812,7 +11812,240 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
   }
 });
 
+// =============================================================================
+// FROTA ADMINISTRATIVA
+// =============================================================================
 
+// [GET] Listar todos os veículos administrativos
+app.get("/api/frota_administrativa", async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        v.id,
+        v.placa,
+        v.tipo_veiculo,
+        v.capacidade,
+        v.ano,
+        v.cor_veiculo,
+        v.marca,
+        v.data_aquisicao,
+        v.adaptado,
+        v.elevador,
+        v.ar_condicionado,
+        v.gps,
+        v.cinto_seguranca,
+        v.fornecedor_id,
+        v.documento,
+        f.nome_fornecedor AS fornecedor_nome
+      FROM frota_administrativa v
+      LEFT JOIN fornecedores_administrativos f ON f.id = v.fornecedor_id
+      ORDER BY v.id;
+    `;
+    const result = await pool.query(query);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Erro ao listar frota_administrativa:", error);
+    return res.status(500).json({ success: false, message: "Erro interno ao listar veículos." });
+  }
+});
+
+// [POST] Cadastrar novo veículo administrativo (com upload de documento opcional)
+app.post("/api/frota_administrativa/cadastrar", uploadFrota.single("documento"), async (req, res) => {
+  try {
+    const {
+      placa,
+      tipo_veiculo,
+      capacidade,
+      cor_veiculo,
+      ano,
+      marca,
+      data_aquisicao,
+      adaptado,
+      elevador,
+      ar_condicionado,
+      gps,
+      cinto_seguranca,
+      fornecedor_id
+    } = req.body;
+
+    // Verificar campos obrigatórios
+    if (!placa || !tipo_veiculo || !capacidade || !fornecedor_id) {
+      return res.status(400).json({ success: false, message: "Campos obrigatórios não fornecidos." });
+    }
+
+    // Preparar caminho do documento (se enviado)
+    let docPath = null;
+    if (req.file && req.file.filename) {
+      docPath = "/uploads/" + req.file.filename;
+    }
+
+    // Converter tipos de dados
+    const capacidadeNum = parseInt(capacidade, 10) || 0;
+    const anoNum = ano ? parseInt(ano, 10) : null;
+    const adapt = adaptado === "Sim";
+    const elev = elevador === "Sim";
+    const arCond = ar_condicionado === "Sim";
+    const gpsBool = gps === "Sim";
+    const cintoBool = cinto_seguranca === "Sim";
+    const dataAquisicaoVal = (data_aquisicao && data_aquisicao !== "") ? data_aquisicao : null;
+
+    // Inserir novo veículo no banco
+    const insertQuery = `
+      INSERT INTO frota_administrativa (
+        placa, tipo_veiculo, capacidade, cor_veiculo,
+        ano, marca, data_aquisicao,
+        adaptado, elevador, ar_condicionado, gps, cinto_seguranca,
+        fornecedor_id, documento
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6, $7,
+        $8, $9, $10, $11, $12,
+        $13, $14
+      )
+      RETURNING id;
+    `;
+    const values = [
+      placa,
+      tipo_veiculo,
+      capacidadeNum,
+      cor_veiculo || null,
+      anoNum,
+      marca || null,
+      dataAquisicaoVal,
+      adapt,
+      elev,
+      arCond,
+      gpsBool,
+      cintoBool,
+      parseInt(fornecedor_id, 10),
+      docPath
+    ];
+    const result = await pool.query(insertQuery, values);
+    if (result.rows.length === 0) {
+      return res.status(500).json({ success: false, message: "Erro ao cadastrar veículo." });
+    }
+    return res.json({ success: true, message: "Veículo cadastrado com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao cadastrar veículo administrativo:", error);
+    return res.status(500).json({ success: false, message: "Erro interno ao cadastrar veículo." });
+  }
+});
+
+// [GET] Buscar veículo administrativo por ID
+app.get("/api/frota_administrativa/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = `SELECT * FROM frota_administrativa WHERE id = $1 LIMIT 1;`;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Veículo não encontrado." });
+    }
+    return res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Erro ao buscar veículo administrativo:", error);
+    return res.status(500).json({ success: false, message: "Erro interno ao buscar veículo." });
+  }
+});
+
+// [PUT] Editar veículo administrativo existente
+app.put("/api/frota_administrativa/:id", uploadFrota.single("documento"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      placa,
+      tipo_veiculo,
+      capacidade,
+      cor_veiculo,
+      ano,
+      marca
+      // fornecedor_id not expected in edit form, adaptado etc. omitted (não editáveis aqui)
+    } = req.body;
+
+    // Verificar se veículo existe
+    const check = await pool.query(`SELECT id FROM frota_administrativa WHERE id = $1 LIMIT 1`, [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Veículo não encontrado." });
+    }
+
+    // Preparar caminho do novo documento (se enviado)
+    let docPath = null;
+    if (req.file && req.file.filename) {
+      docPath = "/uploads/" + req.file.filename;
+    }
+
+    // Converter campos
+    const anoNum = (ano != null && ano !== "") ? parseInt(ano, 10) : null;
+    const capacidadeNum = capacidade != null ? parseInt(capacidade, 10) : null;
+
+    // Montar campos para atualizar dinamicamente
+    const updateFields = [];
+    const values = [];
+    let idx = 1;
+    if (placa != null) {
+      updateFields.push(`placa = $${idx++}`);
+      values.push(placa);
+    }
+    if (tipo_veiculo != null) {
+      updateFields.push(`tipo_veiculo = $${idx++}`);
+      values.push(tipo_veiculo);
+    }
+    if (capacidadeNum != null) {
+      updateFields.push(`capacidade = $${idx++}`);
+      values.push(capacidadeNum);
+    }
+    if (cor_veiculo != null) {
+      updateFields.push(`cor_veiculo = $${idx++}`);
+      values.push(cor_veiculo);
+    }
+    if (anoNum != null) {
+      updateFields.push(`ano = $${idx++}`);
+      values.push(anoNum);
+    }
+    if (marca != null) {
+      updateFields.push(`marca = $${idx++}`);
+      values.push(marca);
+    }
+    if (docPath) {
+      updateFields.push(`documento = $${idx++}`);
+      values.push(docPath);
+    }
+
+    if (updateFields.length === 0) {
+      return res.json({ success: true, message: "Nada para atualizar." });
+    }
+
+    const updateQuery = `
+      UPDATE frota_administrativa
+      SET ${updateFields.join(", ")}
+      WHERE id = $${idx}
+      RETURNING id;
+    `;
+    values.push(id);
+    const result = await pool.query(updateQuery, values);
+    if (result.rows.length === 0) {
+      return res.status(500).json({ success: false, message: "Erro ao atualizar veículo." });
+    }
+    return res.json({ success: true, message: "Veículo atualizado com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao editar veículo administrativo:", error);
+    return res.status(500).json({ success: false, message: "Erro interno ao atualizar veículo." });
+  }
+});
+
+// [DELETE] Excluir veículo administrativo
+app.delete("/api/frota_administrativa/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM frota_administrativa WHERE id = $1 RETURNING id", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Veículo não encontrado." });
+    }
+    return res.json({ success: true, message: "Veículo excluído com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao excluir veículo administrativo:", error);
+    return res.status(500).json({ success: false, message: "Erro interno ao excluir veículo." });
+  }
+});
 
 
 // LISTEN (FINAL)
