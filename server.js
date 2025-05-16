@@ -11747,9 +11747,12 @@ app.post('/api/admin-motoristas/login', async (req, res) => {
 });
 
 // Rota protegida de exemplo: detalhes do perfil do motorista administrativo logado
+
 app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
   try {
     const id = req.user.id;
+
+    // 1) Busca dados do motorista
     const motoristaQ = `
       SELECT 
         m.id,
@@ -11776,29 +11779,39 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
     }
     const motorista = motoRes.rows[0];
 
-    const carroQ = `
-      SELECT 
-        c.modelo,
-        c.placa,
-        c.documento_url
-      FROM carros c
-      JOIN motorista_carro mc ON mc.carro_id = c.id
-      WHERE mc.motorista_id = $1
-      LIMIT 1
-    `;
-    const carroRes = await pool.query(carroQ, [id]);
-    const carro = carroRes.rows[0] || null;
+    // 2) Tenta buscar veículo associado (se existir a tabela e o vínculo)
+    let carro = null;
+    try {
+      const carroQ = `
+        SELECT 
+          c.modelo,
+          c.placa,
+          c.documento_url
+        FROM carros c
+        JOIN motorista_carro mc ON mc.carro_id = c.id
+        WHERE mc.motorista_id = $1
+        LIMIT 1
+      `;
+      const carroRes = await pool.query(carroQ, [id]);
+      if (carroRes.rows.length > 0) {
+        carro = carroRes.rows[0];
+      }
+    } catch (err) {
+      // Se não existir a tabela carros ou a relação, ignoramos e mantemos carro = null
+      if (err.code !== '42P01') throw err;
+    }
 
     return res.json({
       success: true,
       motorista,
-      carro
+      carro // será null se não houver veículo ou tabela
     });
   } catch (error) {
     console.error('Erro ao obter perfil:', error);
     return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
   }
 });
+
 
 
 
