@@ -946,21 +946,21 @@
     }
     
     // Carrega lista de viagens da API e popula tabela
-    function loadViagens() {
-      fetch('/api/viagens')
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao carregar viagens');
-          return res.json();
-        })
-        .then(data => {
-          viagens = data;
-          populateTable();
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Não foi possível carregar as viagens agendadas.');
-        });
-    }
+      function loadViagens() {
+        fetch('/api/viagens')
+          .then(res => {
+            if (!res.ok) throw new Error('Erro ao carregar viagens');
+            return res.json();
+          })
+          .then(data => {
+            viagens = data;
+            populateTable();
+          })
+          .catch(err => {
+            console.error(err);
+            notify('danger', 'Não foi possível carregar as viagens agendadas.');
+          });
+      }
     
     // Preenche a tabela de viagens e inicializa DataTable
     function populateTable() {
@@ -1092,26 +1092,23 @@
     }
     
     // Função para excluir viagem (solicita confirmação)
-    function excluirViagem(id) {
-      if (!confirm('Tem certeza que deseja excluir esta viagem?')) return;
-      fetch(`/api/viagens/${id}`, { method: 'DELETE' })
-        .then(res => {
-          if (!res.ok) throw new Error('Erro ao excluir viagem');
-          return res.json();
-        })
-        .then(result => {
-          if (result.success) {
-            alert('Viagem excluída com sucesso.');
-            loadViagens();
-          } else {
-            alert('Não foi possível excluir a viagem.');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Erro ao excluir a viagem.');
-        });
-    }
+      function excluirViagem(id) {
+        if (!confirm('Tem certeza que deseja excluir esta viagem?')) return;
+        fetch(`/api/viagens/${id}`, { method: 'DELETE' })
+          .then(res => res.json())
+          .then(result => {
+            if (result.success) {
+              notify('success', 'Viagem excluída com sucesso.');
+              loadViagens();
+            } else {
+              notify('danger', result.message || 'Não foi possível excluir a viagem.');
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            notify('danger', 'Erro ao excluir a viagem.');
+          });
+      }
     
     // Document ready: inicializa eventos e carrega dados iniciais
     document.addEventListener('DOMContentLoaded', function () {
@@ -1155,10 +1152,12 @@
       // Submit do formulário Nova Viagem
       $('#nova-viagem-form').on('submit', function (e) {
         e.preventDefault();
-        // Prepara JSON dos pontos intermediários para enviar
-        const intermediarios = Array.from(document.querySelectorAll('#modalNovaViagem .ponto-intermediario'))
-          .map(input => input.value).filter(v => v);
+        // prepara os pontos intermediários
+        const intermediarios = Array.from(
+          document.querySelectorAll('#modalNovaViagem .ponto-intermediario')
+        ).map(input => input.value).filter(v => v);
         document.getElementById('pontosIntermediariosNova').value = JSON.stringify(intermediarios);
+
         const formData = $(this).serialize();
         fetch('/api/viagens', {
           method: 'POST',
@@ -1170,23 +1169,25 @@
             if (result.id) {
               $('#modalNovaViagem').modal('hide');
               loadViagens();
-              alert('Viagem agendada com sucesso!');
+              notify('success', 'Viagem agendada com sucesso!');
             } else {
-              alert('Erro ao agendar viagem: ' + (result.message || ''));
+              notify('danger', 'Erro ao agendar viagem: ' + (result.message || ''));
             }
           })
           .catch(err => {
             console.error(err);
-            alert('Erro ao agendar a viagem. Tente novamente.');
+            notify('danger', 'Erro ao agendar a viagem. Tente novamente.');
           });
       });
       // Submit do formulário Editar Viagem
       $('#editar-viagem-form').on('submit', function (e) {
         e.preventDefault();
         const id = document.getElementById('editarViagemId').value;
-        const intermediarios = Array.from(document.querySelectorAll('#modalEditarViagem .ponto-intermediario'))
-          .map(input => input.value).filter(v => v);
+        const intermediarios = Array.from(
+          document.querySelectorAll('#modalEditarViagem .ponto-intermediario')
+        ).map(input => input.value).filter(v => v);
         document.getElementById('pontosIntermediariosEditar').value = JSON.stringify(intermediarios);
+
         const formData = $(this).serialize();
         fetch(`/api/viagens/${id}`, {
           method: 'PUT',
@@ -1198,14 +1199,14 @@
             if (result.id) {
               $('#modalEditarViagem').modal('hide');
               loadViagens();
-              alert('Viagem atualizada com sucesso!');
+              notify('success', 'Viagem atualizada com sucesso!');
             } else {
-              alert('Erro ao atualizar viagem: ' + (result.message || ''));
+              notify('danger', 'Erro ao atualizar viagem: ' + (result.message || ''));
             }
           })
           .catch(err => {
             console.error(err);
-            alert('Erro ao salvar alterações da viagem.');
+            notify('danger', 'Erro ao salvar alterações da viagem.');
           });
       });
       // Inicializa FullCalendar ao abrir modal de calendário

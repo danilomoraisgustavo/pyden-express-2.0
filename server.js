@@ -12383,6 +12383,70 @@ app.delete('/api/viagens/:id', async (req, res) => {
   }
 });
 
+// [GET] viagens do motorista logado
+app.get('/api/admin-motoristas/viagens', verificarTokenJWT, async (req, res) => {
+  try {
+    const motoristaId = req.user.id;
+    const query = `
+      SELECT 
+        v.id,
+        v.tipo,
+        to_char(v.data_saida, 'YYYY-MM-DD"T"HH24:MI:SS')   AS data_saida,
+        to_char(v.data_retorno, 'YYYY-MM-DD"T"HH24:MI:SS') AS data_retorno,
+        v.origem_descricao    AS "origem.descricao",
+        v.origem_lat          AS "origem.latitude",
+        v.origem_lng          AS "origem.longitude",
+        v.destino_descricao   AS "destino.descricao",
+        v.destino_lat         AS "destino.latitude",
+        v.destino_lng         AS "destino.longitude",
+        v.pontos_intermediarios,  -- deve ser um JSONB array [{descricao,latitude,longitude},…]
+        v.observacoes,
+        v.status
+      FROM viagens v
+      WHERE v.motorista_id = $1
+      ORDER BY v.data_saida DESC;
+    `;
+    const { rows } = await pool.query(query, [motoristaId]);
+    return res.json(rows);
+  } catch (err) {
+    console.error('Erro ao listar viagens do motorista:', err);
+    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+  }
+});
+
+// [GET] detalhes de uma viagem (para visualizar no mapa, se precisar)
+app.get('/api/admin-motoristas/viagens/:id', verificarTokenJWT, async (req, res) => {
+  try {
+    const motoristaId = req.user.id;
+    const { id } = req.params;
+    const infoQ = `
+      SELECT 
+        v.id,
+        v.tipo,
+        to_char(v.data_saida, 'YYYY-MM-DD"T"HH24:MI:SS')   AS data_saida,
+        to_char(v.data_retorno, 'YYYY-MM-DD"T"HH24:MI:SS') AS data_retorno,
+        v.origem_descricao    AS "origem.descricao",
+        v.origem_lat          AS "origem.latitude",
+        v.origem_lng          AS "origem.longitude",
+        v.destino_descricao   AS "destino.descricao",
+        v.destino_lat         AS "destino.latitude",
+        v.destino_lng         AS "destino.longitude",
+        v.pontos_intermediarios,
+        v.observacoes,
+        v.status
+      FROM viagens v
+      WHERE v.id = $1 AND v.motorista_id = $2
+      LIMIT 1;
+    `;
+    const { rows } = await pool.query(infoQ, [id, motoristaId]);
+    if (!rows.length) return res.status(404).json({ success: false, message: 'Viagem não encontrada.' });
+    return res.json({ success: true, data: rows[0] });
+  } catch (err) {
+    console.error('Erro ao buscar viagem:', err);
+    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+  }
+});
+
 
 // LISTEN (FINAL)
 
