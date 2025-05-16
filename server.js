@@ -11749,21 +11749,54 @@ app.post('/api/admin-motoristas/login', async (req, res) => {
 // Rota protegida de exemplo: detalhes do perfil do motorista administrativo logado
 app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
   try {
-    const usuario = req.user;  // obtido do token decodificado
-    // Podemos usar o id do token para consultar dados atualizados do banco, se necessário
-    const result = await pool.query(
-      'SELECT id, nome_motorista, email, cpf FROM motoristas_administrativos WHERE id = $1',
-      [usuario.id]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Usuário não encontrado" });
+    const id = req.user.id;
+    const motoristaQ = `
+      SELECT 
+        m.id,
+        m.nome_motorista,
+        m.cpf,
+        m.rg,
+        to_char(m.data_nascimento, 'YYYY-MM-DD') AS data_nascimento,
+        m.telefone,
+        m.email,
+        m.endereco,
+        m.cidade,
+        m.estado,
+        m.cep,
+        m.numero_cnh,
+        to_char(m.validade_cnh, 'YYYY-MM-DD')   AS validade_cnh,
+        m.cnh_pdf
+      FROM motoristas_administrativos m
+      WHERE m.id = $1
+      LIMIT 1
+    `;
+    const motoRes = await pool.query(motoristaQ, [id]);
+    if (motoRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Motorista não encontrado' });
     }
-    const dadosMotorista = result.rows[0];
-    // Retorna dados (poderia incluir mais informações relacionadas ao dashboard)
-    return res.json({ success: true, motorista: dadosMotorista });
+    const motorista = motoRes.rows[0];
+
+    const carroQ = `
+      SELECT 
+        c.modelo,
+        c.placa,
+        c.documento_url
+      FROM carros c
+      JOIN motorista_carro mc ON mc.carro_id = c.id
+      WHERE mc.motorista_id = $1
+      LIMIT 1
+    `;
+    const carroRes = await pool.query(carroQ, [id]);
+    const carro = carroRes.rows[0] || null;
+
+    return res.json({
+      success: true,
+      motorista,
+      carro
+    });
   } catch (error) {
-    console.error("Erro ao obter perfil:", error);
-    return res.status(500).json({ success: false, message: "Erro interno do servidor" });
+    console.error('Erro ao obter perfil:', error);
+    return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
   }
 });
 
