@@ -11613,163 +11613,136 @@ function verificarTokenJWT(req, res, next) {
 // Rota: Verificar se CPF existe e se tem senha definida
 app.post('/api/admin-motoristas/verificar-cpf', async (req, res) => {
   try {
-    const { cpf } = req.body;
+    const cpfRaw = req.body.cpf || '';
+    const cpf = cpfRaw.replace(/\D/g, '');
     if (!cpf) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "CPF é obrigatório" 
-      });
+      return res.status(400).json({ success: false, message: "CPF é obrigatório" });
     }
 
-    // Consulta se existe motorista_administrativo com esse CPF
-    const query = 'SELECT id, senha FROM motoristas_administrativos WHERE cpf = $1 LIMIT 1';
+    const query = `
+      SELECT id, senha
+      FROM motoristas_administrativos
+      WHERE regexp_replace(cpf, '[^0-9]', '', 'g') = $1
+      LIMIT 1
+    `;
     const result = await pool.query(query, [cpf]);
 
     if (result.rows.length === 0) {
-      // CPF não cadastrado no sistema
-      return res.status(404).json({ 
-        success: false, 
-        message: "Motorista não encontrado" 
-      });
+      return res.status(404).json({ success: false, message: "Motorista não encontrado" });
     }
 
-    const motorista = result.rows[0];
-    if (!motorista.senha) {
-      // CPF válido, porém senha ainda não cadastrada (primeiro acesso)
-      return res.status(200).json({ 
-        success: true, 
-        firstAccess: true,            // sinaliza necessidade de definir senha
-        message: "Senha não cadastrada (primeiro acesso)" 
+    const { senha } = result.rows[0];
+    if (!senha) {
+      return res.status(200).json({
+        success: true,
+        firstAccess: true,
+        message: "Senha não cadastrada (primeiro acesso)"
       });
     } else {
-      // CPF válido e senha já definida
-      return res.status(200).json({ 
-        success: true, 
-        firstAccess: false,           // já possui senha, deve fazer login
-        message: "Senha já cadastrada" 
+      return res.status(200).json({
+        success: true,
+        firstAccess: false,
+        message: "Senha já cadastrada"
       });
     }
   } catch (error) {
     console.error("Erro ao verificar CPF:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Erro interno do servidor" 
-    });
+    return res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
 });
 
-// Rota: Primeiro acesso (definir senha)
 app.post('/api/admin-motoristas/primeiro-acesso', async (req, res) => {
   try {
-    const { cpf, senha } = req.body;
+    const cpfRaw = req.body.cpf || '';
+    const cpf = cpfRaw.replace(/\D/g, '');
+    const { senha } = req.body;
     if (!cpf || !senha) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "CPF e senha são obrigatórios" 
-      });
+      return res.status(400).json({ success: false, message: "CPF e senha são obrigatórios" });
     }
 
-    // Verifica se o motorista existe
-    const query = 'SELECT id FROM motoristas_administrativos WHERE cpf = $1 LIMIT 1';
-    const result = await pool.query(query, [cpf]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Motorista não encontrado" 
-      });
+    const check = `
+      SELECT id
+      FROM motoristas_administrativos
+      WHERE regexp_replace(cpf, '[^0-9]', '', 'g') = $1
+      LIMIT 1
+    `;
+    const chk = await pool.query(check, [cpf]);
+    if (chk.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Motorista não encontrado" });
     }
 
-    // Gera hash da nova senha usando bcrypt
-    const saltRounds = 10;  // número de rounds de salt (pode ser 10 a 12 normalmente)
-    const hashedPassword = await bcrypt.hash(senha, saltRounds);
-    // Atualiza a senha (cadastra primeira senha)
-    await pool.query(
-      'UPDATE motoristas_administrativos SET senha = $1, email = email WHERE cpf = $2', 
-      [hashedPassword, cpf]
-    );
+    const hashed = await bcrypt.hash(senha, 10);
+    const update = `
+      UPDATE motoristas_administrativos
+         SET senha = $1
+       WHERE regexp_replace(cpf, '[^0-9]', '', 'g') = $2
+    `;
+    await pool.query(update, [hashed, cpf]);
 
-    return res.status(200).json({ 
-      success: true, 
-      message: "Senha cadastrada com sucesso. Faça login para continuar." 
+    return res.status(200).json({
+      success: true,
+      message: "Senha cadastrada com sucesso. Faça login para continuar."
     });
   } catch (error) {
     console.error("Erro no primeiro acesso:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Erro interno do servidor" 
-    });
+    return res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
 });
 
-// Rota: Login do motorista administrativo
 app.post('/api/admin-motoristas/login', async (req, res) => {
   try {
-    const { cpf, senha } = req.body;
+    const cpfRaw = req.body.cpf || '';
+    const cpf = cpfRaw.replace(/\D/g, '');
+    const { senha } = req.body;
     if (!cpf || !senha) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "CPF e senha são obrigatórios" 
-      });
+      return res.status(400).json({ success: false, message: "CPF e senha são obrigatórios" });
     }
 
-    // Busca o motorista pelo CPF
-    const query = 'SELECT id, nome_motorista, email, senha FROM motoristas_administrativos WHERE cpf = $1 LIMIT 1';
+    const query = `
+      SELECT id, nome_motorista, email, senha
+      FROM motoristas_administrativos
+      WHERE regexp_replace(cpf, '[^0-9]', '', 'g') = $1
+      LIMIT 1
+    `;
     const result = await pool.query(query, [cpf]);
     if (result.rows.length === 0) {
-      // Nenhum motorista com esse CPF
-      return res.status(404).json({ 
-        success: false, 
-        message: "CPF não cadastrado" 
-      });
+      return res.status(404).json({ success: false, message: "CPF não cadastrado" });
     }
+
     const motorista = result.rows[0];
-
     if (!motorista.senha) {
-      // Senha não definida (usuário não fez primeiro acesso)
-      return res.status(403).json({ 
-        success: false, 
+      return res.status(403).json({
+        success: false,
         firstAccess: true,
-        message: "Senha não definida. Cadastre a senha no primeiro acesso." 
+        message: "Senha não definida. Cadastre a senha no primeiro acesso."
       });
     }
 
-    // Compara a senha fornecida com o hash armazenado
     const match = await bcrypt.compare(senha, motorista.senha);
     if (!match) {
-      // Senha incorreta
-      return res.status(401).json({ 
-        success: false, 
-        message: "Senha incorreta" 
-      });
+      return res.status(401).json({ success: false, message: "Senha incorreta" });
     }
 
-    // Credenciais válidas - gerar token JWT
-    const payload = { 
-      id: motorista.id, 
-      nome: motorista.nome_motorista, 
-      email: motorista.email 
-      // (coloque no payload apenas dados necessários)
+    const payload = {
+      id: motorista.id,
+      nome: motorista.nome_motorista,
+      email: motorista.email
     };
-    const secretKey = process.env.JWT_SECRET || 'chave-secreta';  // use chave forte em prod
-    const token = jwt.sign(payload, secretKey, { expiresIn: '8h' });  // token válido por 8 horas, por exemplo
+    const token = jwt.sign(payload, process.env.JWT_SECRET || 'chave-secreta', { expiresIn: '8h' });
 
     return res.status(200).json({
       success: true,
       message: "Login realizado com sucesso",
-      token: token,
+      token,
       motorista: {
         id: motorista.id,
         nome: motorista.nome_motorista,
         email: motorista.email
-        // (não incluímos informações sensíveis como senha)
       }
     });
   } catch (error) {
     console.error("Erro no login:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Erro interno do servidor" 
-    });
+    return res.status(500).json({ success: false, message: "Erro interno do servidor" });
   }
 });
 
