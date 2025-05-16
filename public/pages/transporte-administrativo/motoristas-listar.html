@@ -898,70 +898,76 @@
         });
     }
 
-    function populateTable() {
-      const tableBody = $('#motoristas-table tbody');
-      tableBody.empty();
-    motoristas.forEach(m => {
-      const linkCnh = m.cnh_pdf
-        ? `<a href="/${m.cnh_pdf}" download target="_blank">CNH</a>`
-        : "";
+function populateTable() {
+  const tableBody = $('#motoristas-table tbody');
+  tableBody.empty();
 
-      // mostra placa do veículo se já houver associação
-      const veículo = m.carro_placa
-        ? `<span>${m.carro_placa}</span>`
-        : "";
+  motoristas.forEach(m => {
+    const linkCnh = m.cnh_pdf
+      ? `<a href="${m.cnh_pdf.startsWith('/') ? m.cnh_pdf : '/' + m.cnh_pdf}" download target="_blank">CNH</a>`
+      : '';
+    const veiculo = m.carro_placa
+      ? `<span>${m.carro_placa}</span>`
+      : '';
 
-      tableBody.append(`
-        <tr>
-          <td>${m.id}</td>
-          <td>${m.nome_motorista}</td>
-          <td>${m.cpf}</td>
-          <td>${m.nome_fornecedor || ""}</td>
-          <td>${linkCnh}</td>
-          <td class="text-center">${veículo}</td>
-          <td>
-            <button class="btn btn-link btn-info btn-sm"
-                    title="Associar Veículo"
-                    onclick="openAssociateModal(${m.id})">
-              <i class="fa fa-car"></i>
-            </button>
-            <button class="btn btn-link btn-warning btn-sm"
-                    title="Editar"
-                    onclick="openEditMotorista(${m.id})">
-              <i class="fa fa-edit"></i>
-            </button>
-            <button class="btn btn-link btn-danger btn-sm"
-                    title="Excluir"
-                    onclick="deleteMotorista(${m.id})">
-              <i class="fa fa-trash-alt"></i>
-            </button>
-          </td>
-        </tr>
-      `);
-        tableBody.append(row);
-      });
+    const row = `
+      <tr>
+        <td>${m.id}</td>
+        <td>${m.nome_motorista}</td>
+        <td>${m.cpf}</td>
+        <td>${m.nome_fornecedor || ''}</td>
+        <td class="text-center">${linkCnh}</td>
+        <td class="text-center">${veiculo}</td>
+        <td>
+          <button class="btn btn-link btn-info btn-sm"
+                  title="Associar Veículo"
+                  onclick="openAssociateModal(${m.id})">
+            <i class="fa fa-car"></i>
+          </button>
+          <button class="btn btn-link btn-warning btn-sm"
+                  title="Editar"
+                  onclick="openEditMotorista(${m.id})">
+            <i class="fa fa-edit"></i>
+          </button>
+          <button class="btn btn-link btn-danger btn-sm"
+                  title="Excluir"
+                  onclick="deleteMotorista(${m.id})">
+            <i class="fa fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+    tableBody.append(row);
+  });
 
-      if ($.fn.DataTable.isDataTable('#motoristas-table')) {
-        $('#motoristas-table').DataTable().clear().destroy();
+  if ($.fn.DataTable.isDataTable('#motoristas-table')) {
+    $('#motoristas-table').DataTable().clear().destroy();
+  }
+
+  $('#motoristas-table').DataTable({
+    pageLength: 10,
+    language: {
+      decimal: ",",
+      thousands: ".",
+      info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+      infoEmpty: "Mostrando 0 até 0 de 0 registros",
+      infoFiltered: "(filtrado de _MAX_ registros no total)",
+      lengthMenu: "Mostrar _MENU_ registros",
+      loadingRecords: "Carregando...",
+      processing: "Processando...",
+      search: "Pesquisar:",
+      zeroRecords: "Nenhum registro encontrado",
+      emptyTable: "Nenhum dado disponível na tabela",
+      paginate: {
+        first: "Primeiro",
+        last: "Último",
+        next: "Próximo",
+        previous: "Anterior"
       }
-      $('#motoristas-table').DataTable({
-        pageLength: 10,
-        language: {
-          decimal: ",",
-          thousands: ".",
-          info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
-          infoEmpty: "Mostrando 0 até 0 de 0 registros",
-          infoFiltered: "(filtrado de _MAX_ registros no total)",
-          lengthMenu: "Mostrar _MENU_ registros",
-          loadingRecords: "Carregando...",
-          processing: "Processando...",
-          search: "Pesquisar:",
-          zeroRecords: "Nenhum registro encontrado",
-          paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
-          emptyTable: "Nenhum dado disponível na tabela"
-        }
-      });
     }
+  });
+}
+
     function deleteMotorista(id) {
       fetch('/api/motoristas_administrativos/' + id, { method: 'DELETE' })
         .then(res => res.json())
@@ -1020,7 +1026,7 @@
       // Exibir o modal
       $('#modalCadastroMotorista').modal('show');
     }
-    
+
     // abre modal e carrega só veículos do mesmo fornecedor
     function openAssociateModal(motoristaId) {
       const m = motoristas.find(x => x.id === motoristaId);
