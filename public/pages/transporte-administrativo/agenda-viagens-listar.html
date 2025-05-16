@@ -487,79 +487,98 @@
           </div> <!-- page-inner -->
         </div> <!-- container -->
         <!-- Modal Nova Viagem -->
-        <div class="modal fade" id="modalNovaViagem" tabindex="-1" aria-labelledby="modalNovaViagemLabel" aria-hidden="true">
+        <div class="modal fade" id="modalNovaViagem" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="modalNovaViagemLabel">Nova Viagem</h5>
+                <h5 class="modal-title fw-bold">Agendar Nova Viagem</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
               </div>
               <div class="modal-body">
                 <form id="nova-viagem-form">
-                  <div class="mb-3">
-                    <label for="motoristaNova" class="form-label">Motorista:</label>
-                    <select id="motoristaNova" name="motorista_id" class="form-control motorista-select" required>
-                      <option value="">Selecione o motorista</option>
-                      <!-- Opções carregadas dinamicamente -->
-                    </select>
+                  <!-- Motorista e Tipo -->
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label required">Motorista</label>
+                      <select id="motoristaNova" name="motorista_id" class="form-select motorista-select" required>
+                        <option value="">Selecione o motorista</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label required">Tipo de Viagem</label>
+                      <select id="tipoNova" name="tipo" class="form-select" required>
+                        <option value="">Selecione</option>
+                        <option value="Pessoas">Pessoas</option>
+                        <option value="Materiais">Materiais</option>
+                        <option value="Ambos">Ambos</option>
+                      </select>
+                    </div>
                   </div>
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                      <label for="dataSaidaNova" class="form-label">Data/Hora de saída:</label>
+
+                  <!-- Datas -->
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label required">Data/Hora de Saída</label>
                       <input type="datetime-local" id="dataSaidaNova" name="data_saida" class="form-control" required>
                     </div>
-                    <div class="col-md-6 mb-3">
-                      <label for="dataRetornoNova" class="form-label">Data/Hora de retorno:</label>
-                      <input type="datetime-local" id="dataRetornoNova" name="data_retorno" class="form-control" disabled>
+                    <div class="col-md-6">
+                      <label class="form-label">Data/Hora Retorno Previsto</label>
+                      <input type="datetime-local" id="dataRetornoNova" name="data_retorno" class="form-control">
                     </div>
-                  </div>
-                  <div class="mb-3">
-                    <label for="origemNova" class="form-label">Origem:</label>
-                    <input type="text" id="origemNova" name="origem" class="form-control" required>
-                  </div>
-                  <div class="mb-3">
-                    <label for="destinoNova" class="form-label">Destino:</label>
-                    <input type="text" id="destinoNova" name="destino" class="form-control" required>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Pontos Intermediários:</label>
-                    <div id="pontosIntermedContainerNova">
-                      <input type="text" name="ponto_intermediario" class="form-control ponto-intermediario mb-2" placeholder="Ponto intermediário (opcional)">
-                    </div>
-                    <button type="button" id="addPontoNovaBtn" class="btn btn-sm btn-outline-primary">Adicionar Ponto</button>
-                  </div>
-                  <div class="mb-3">
-                    <label for="tipoNova" class="form-label">Tipo de viagem:</label>
-                    <select id="tipoNova" name="tipo" class="form-control" required>
-                      <option value="">Selecione</option>
-                      <option value="Pessoas">Pessoas</option>
-                      <option value="Materiais">Materiais</option>
-                      <option value="Ambos">Ambos</option>
-                    </select>
                   </div>
                   <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="retornaNova" name="retorna_origem">
-                    <label class="form-check-label" for="retornaNova">
-                      Motorista retorna à origem
+                    <input class="form-check-input" type="checkbox" id="vaiEsperarNova" name="vai_esperar">
+                    <label class="form-check-label" for="vaiEsperarNova">
+                      Motorista vai esperar?
                     </label>
                   </div>
-                  <div class="mb-3">
-                    <label for="obsNova" class="form-label">Observações:</label>
-                    <textarea id="obsNova" name="observacoes" class="form-control" rows="3"></textarea>
+
+                  <!-- Labels de Origem/Destino -->
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label class="form-label required">Nome do Ponto de Partida</label>
+                      <input type="text" id="origemLabel" name="origem" class="form-control" placeholder="Ex: SEMED" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label required">Nome do Ponto de Chegada</label>
+                      <input type="text" id="destinoLabel" name="destino" class="form-control" placeholder="Ex: Escola A" required>
+                    </div>
                   </div>
-                  <!-- Campo oculto para pontos intermediários (JSON) -->
-                  <input type="hidden" name="pontos_intermediarios" id="pontosIntermediariosNova">
-                  <button type="button" id="calcRouteNovaBtn" class="btn btn-info mb-3">Traçar Rota</button>
-                  <div id="mapNovaViagem"></div>
-                  <div class="text-end">
+
+                  <!-- Botões de Marcação no Mapa -->
+                  <div class="mb-3">
+                    <button type="button" id="btnAddOrigem" class="btn btn-outline-success me-2">
+                      <i class="fa fa-map-marker-alt"></i> Marcar Origem
+                    </button>
+                    <button type="button" id="btnAddIntermediario" class="btn btn-outline-warning me-2">
+                      <i class="fa fa-map-marker-alt"></i> Marcar Ponto
+                    </button>
+                    <button type="button" id="btnAddDestino" class="btn btn-outline-danger">
+                      <i class="fa fa-map-marker-alt"></i> Marcar Destino
+                    </button>
+                  </div>
+
+                  <!-- Mapa -->
+                  <div id="mapNovaViagem" style="height:400px;"></div>
+
+                  <!-- Ocultos para enviar as coordenadas -->
+                  <input type="hidden" id="origemLat" name="origem_lat">
+                  <input type="hidden" id="origemLng" name="origem_lng">
+                  <input type="hidden" id="destinoLat" name="destino_lat">
+                  <input type="hidden" id="destinoLng" name="destino_lng">
+                  <input type="hidden" id="pontosIntermediariosNova" name="pontos_intermediarios">
+
+                  <!-- Botões de Ação -->
+                  <div class="text-end mt-3">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Viagem</button>
                   </div>
                 </form>
               </div>
             </div>
           </div>
         </div>
+
         <!-- Modal Editar Viagem -->
         <div class="modal fade" id="modalEditarViagem" tabindex="-1" aria-labelledby="modalEditarViagemLabel" aria-hidden="true">
           <div class="modal-dialog modal-xl modal-dialog-scrollable">
