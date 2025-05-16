@@ -714,37 +714,38 @@
     /* ========= LISTAGEM ================================================= */
     let tbl = null;
     function loadFrota() {
-      fetch("/api/frota_administrativa")
-        .then(r => r.json())
-        .then(lista => {
-          const tb = $("#tblFrota tbody").empty();
-          lista.forEach(v => {
-            const btnPdf = v.documento
-              ? `<button class="btn btn-link btn-sm" onclick="baixarCRLVe('${v.documento}')">CRLV-e</button>`
-              : '';
-            tb.append(`<tr>
-              <td>${v.id}</td>
-              <td>${v.placa}</td>
-              <td>${v.tipo_veiculo}</td>
-              <td>${v.capacidade}</td>
-              <td>${v.fornecedor_nome || ''}</td>
-              <td>${v.ano || ''}</td>
-              <td class="text-center">${btnPdf}</td>
-              <td>
-                <button class="btn btn-link btn-warning btn-sm" title="Editar" onclick="openEdit(${v.id})">✎</button>
-                <button class="btn btn-link btn-danger btn-sm" title="Excluir" onclick="delVeic(${v.id})">🗑</button>
-              </td>
-            </tr>`);
-          });
-          if (tbl) tbl.destroy();
-          tbl = $("#tblFrota").DataTable({
-            language: {
-              url: "//cdn.datatables.net/plug-ins/1.13.5/i18n/pt-BR.json"
-            }
-          });
-        })
-        .catch(() => notify("danger", "Erro ao listar frota"));
-    }
+        fetch("/api/frota_administrativa")
+          .then(r => r.json())
+          .then(lista => {
+            const tb = $("#tblFrota tbody").empty();
+            lista.forEach(v => {
+              // gera o link CRLV-e se existir documento
+              const linkCRLV = v.documento
+                ? `<a href="${v.documento.startsWith('http') ? v.documento : _serverBase + v.documento}" target="_blank">CRLV-e</a>`
+                : '';
+              tb.append(`<tr>
+                <td>${v.id}</td>
+                <td>${v.placa}</td>
+                <td>${v.tipo_veiculo}</td>
+                <td>${v.capacidade}</td>
+                <td>${v.fornecedor_nome || ''}</td>
+                <td>${v.ano || ''}</td>
+                <td class="text-center">${linkCRLV}</td>
+                <td>
+                  <button class="btn btn-link btn-warning btn-sm" title="Editar" onclick="openEdit(${v.id})"><i class="fa fa-edit"></i></button>
+                  <button class="btn btn-link btn-danger btn-sm" title="Excluir" onclick="delVeic(${v.id})"><i class="fa fa-trash"></i></button>
+                </td>
+              </tr>`);
+            });
+            if (tbl) tbl.destroy();
+            tbl = $("#tblFrota").DataTable({
+              language: {
+                url: "//cdn.datatables.net/plug-ins/1.13.5/i18n/pt-BR.json"
+              }
+            });
+          })
+          .catch(() => notify("danger", "Erro ao listar frota"));
+      }
 
     /* ========= CADASTRO ================================================= */
     function loadFornecedores() {
