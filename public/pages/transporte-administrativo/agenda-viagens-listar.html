@@ -950,7 +950,7 @@ function loadMotoristas() {
         motoristas.forEach(m => {
           const option = document.createElement('option');
           option.value = m.id;
-          option.textContent = m.nome;
+          option.textContent = m.nome_motorista;
           select.appendChild(option);
         });
       });
