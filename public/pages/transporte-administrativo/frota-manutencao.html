@@ -199,146 +199,14 @@
       </div>
     </div>
     <!-- TOPBAR -->
-      <div class="main-header" style="top: 0;">
-        <div class="main-header-logo">
-          <div class="logo-header" data-background-color="dark">
-            <a href="../../pages/transporte-administrativo/dashboard-administrativo.html" class="logo">
-              <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
-                height="20" />
-            </a>
-            <div class="nav-toggle">
-              <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
-              <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
-            </div>
-            <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
-          </div>
-        </div>
-        <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+    <div class="main-panel">
+      <div class="content">
+        <nav class="navbar navbar-header navbar-expand-lg" data-background-color="blue2">
+          <!-- (conteúdo do topo: search, notifications, user dropdown) -->
           <div class="container-fluid">
-            <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
-            <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-              <!-- Ícone Mensagens -->
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fa fa-envelope"></i>
-                </a>
-                <ul class="dropdown-menu messages-notif-box animated fadeIn" aria-labelledby="messageDropdown">
-                  <li>
-                    <div class="dropdown-title d-flex justify-content-between align-items-center">
-                      Mensagens
-                      <a href="#" class="small">Marcar todas como lidas</a>
-                    </div>
-                  </li>
-                  <li>
-                    <div class="message-notif-scroll scrollbar-outer">
-                      <div class="notif-center">
-                        <!-- Exemplo de mensagem -->
-                        <a href="#">
-                          <div class="notif-img">
-                            <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
-                          </div>
-                          <div class="notif-content">
-                            <span class="subject">Jimmy Denis</span>
-                            <span class="block">Como você está?</span>
-                            <span class="time">Há 5 minutos</span>
-                          </div>
-                        </a>
-                        <!-- ... -->
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <a class="see-all" href="javascript:void(0);">
-                      Ver todas as mensagens
-                      <i class="fa fa-angle-right"></i>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              <!-- Ícone Notificações -->
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown"
-                  aria-haspopup="true" aria-expanded="false">
-                  <i class="fa fa-bell"></i>
-                  <span class="notification" id="notifCount">0</span>
-                </a>
-                <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
-                  <li>
-                    <div class="dropdown-title" id="notifTitle">
-                      Você não tem novas notificações
-                    </div>
-                  </li>
-                  <li>
-                    <div class="notif-scroll scrollbar-outer">
-                      <div class="notif-center" id="notifList">
-                        <!-- Conteúdo gerado dinamicamente -->
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
-                      Ver todas as notificações
-                      <i class="fa fa-angle-right"></i>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              <!-- Ícone Ações Rápidas -->
-              <li class="nav-item topbar-icon dropdown hidden-caret">
-                <a class="nav-link dropdown-toggle" href="#" id="quickActionsDropdown" role="button"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <i class="fas fa-layer-group"></i>
-                </a>
-                <div class="dropdown-menu quick-actions animated fadeIn">
-                  <div class="quick-actions-header">
-                    <span class="title mb-1">Ações Rápidas</span>
-                    <span class="subtitle op-7">Atalhos</span>
-                  </div>
-                  <div class="quick-actions-scroll scrollbar-outer">
-                    <div class="quick-actions-items">
-                      <div class="row m-0">
-                        <!-- Exemplos de atalhos -->
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-primary rounded-circle">
-                              <i class="fas fa-school"></i>
-                            </div>
-                            <span class="text">Cad. Escola</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/monitores-cadastrar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-success rounded-circle">
-                              <i class="fas fa-user-check"></i>
-                            </div>
-                            <span class="text">Cad. Monitor</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/rotas-listar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-warning rounded-circle">
-                              <i class="fas fa-route"></i>
-                            </div>
-                            <span class="text">Listar Rotas</span>
-                          </div>
-                        </a>
-                        <a class="col-6 col-md-4 p-0" href="/pages/transporte-administrativo/frota-listar.html">
-                          <div class="quick-actions-item">
-                            <div class="avatar-item bg-info rounded-circle">
-                              <i class="fas fa-warehouse"></i>
-                            </div>
-                            <span class="text">Listar Frota</span>
-                          </div>
-                        </a>
-                        <!-- ... -->
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-              <!-- Dropdown Usuário -->
-              <li class="nav-item topbar-user dropdown hidden-caret">
+            <ul class="navbar-nav topbar-nav align-items-center ms-auto">
+              <!-- ... outros itens de topo ... -->
+              <li class="nav-item dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
                     <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
@@ -358,8 +226,7 @@
                         <div class="u-text">
                           <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
                           <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
-                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver
-                            Perfil</a>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
                         </div>
                       </div>
                     </li>
@@ -379,6 +246,82 @@
           </div>
         </nav>
       </div>
+      <!-- MAIN CONTENT -->
+      <div class="container">
+        <div class="page-inner">
+          <div class="page-header">
+            <h3 class="fw-bold mb-3">Frota Administrativa</h3>
+            <ul class="breadcrumbs mb-3">
+              <li class="nav-home"><a href="../../"><i class="icon-home"></i></a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Frota Administrativa</a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Manutenção</a></li>
+            </ul>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span class="card-title">Checklists Semanais</span>
+                </div>
+                <div class="card-body">
+                  <!-- Filtros -->
+                  <div class="row mb-3">
+                    <div class="col-md-3">
+                      <label for="filterStart" class="form-label">Início</label>
+                      <input type="date" id="filterStart" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                      <label for="filterEnd" class="form-label">Fim</label>
+                      <input type="date" id="filterEnd" class="form-control" />
+                    </div>
+                    <div class="col-md-2">
+                      <label for="filterDriver" class="form-label">Motorista</label>
+                      <select id="filterDriver" class="form-select"></select>
+                    </div>
+                    <div class="col-md-2">
+                      <label for="filterVehicle" class="form-label">Veículo</label>
+                      <select id="filterVehicle" class="form-select"></select>
+                    </div>
+                    <div class="col-md-2">
+                      <label for="filterSupplier" class="form-label">Fornecedor</label>
+                      <select id="filterSupplier" class="form-select"></select>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <div class="col-md-12 text-end">
+                      <button class="btn btn-secondary" id="filterBtn"><i class="fa fa-search"></i> Filtrar</button>
+                    </div>
+                  </div>
+                  <!-- Tabela de Checklists -->
+                  <div class="table-responsive">
+                    <table id="checklists-table" class="display table table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Motorista</th>
+                          <th>Placa</th>
+                          <th>Tipo</th>
+                          <th>Data</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> <!-- page-inner -->
+      </div> <!-- container -->
+      <!-- FOOTER -->
+      <footer class="footer">
+        <div class="container-fluid d-flex justify-content-between">
+          <div class="copyright"><a href="http://www.pyden.tech">PyDen Technologies</a>® 2025 ©</div>
+        </div>
+      </footer>
+    </div> <!-- main-panel / wrapper main content -->
   </div> <!-- wrapper -->
   <!-- Modal Visualizar Checklist -->
   <div class="modal fade" id="modalViewChecklist" tabindex="-1">
