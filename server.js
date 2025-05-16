@@ -11769,6 +11769,7 @@ app.post('/api/admin-motoristas/login', async (req, res) => {
 
 // Rota protegida de exemplo: detalhes do perfil do motorista administrativo logado
 
+// [GET] Perfil do motorista administrativo com dados do veículo
 app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
   try {
     const id = req.user.id;
@@ -11780,7 +11781,7 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
         m.nome_motorista,
         m.cpf,
         m.rg,
-        to_char(m.data_nascimento, 'YYYY-MM-DD') AS data_nascimento,
+        to_char(m.data_nascimento, 'YYYY-MM-DD')       AS data_nascimento,
         m.telefone,
         m.email,
         m.endereco,
@@ -11788,8 +11789,9 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
         m.estado,
         m.cep,
         m.numero_cnh,
-        to_char(m.validade_cnh, 'YYYY-MM-DD')   AS validade_cnh,
-        m.cnh_pdf
+        to_char(m.validade_cnh, 'YYYY-MM-DD')          AS validade_cnh,
+        m.cnh_pdf,
+        m.carro_id
       FROM motoristas_administrativos m
       WHERE m.id = $1
       LIMIT 1
@@ -11800,38 +11802,36 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
     }
     const motorista = motoRes.rows[0];
 
-    // 2) Tenta buscar veículo associado (se existir a tabela e o vínculo)
+    // 2) Busca veículo associado (usando carro_id)
     let carro = null;
-    try {
+    if (motorista.carro_id) {
       const carroQ = `
-        SELECT 
-          c.modelo,
-          c.placa,
-          c.documento_url
-        FROM carros c
-        JOIN motorista_carro mc ON mc.carro_id = c.id
-        WHERE mc.motorista_id = $1
+        SELECT
+          f.id,
+          f.modelo,
+          f.placa,
+          f.documento       AS documento_url
+        FROM frota_administrativa f
+        WHERE f.id = $1
         LIMIT 1
       `;
-      const carroRes = await pool.query(carroQ, [id]);
+      const carroRes = await pool.query(carroQ, [motorista.carro_id]);
       if (carroRes.rows.length > 0) {
         carro = carroRes.rows[0];
       }
-    } catch (err) {
-      // Se não existir a tabela carros ou a relação, ignoramos e mantemos carro = null
-      if (err.code !== '42P01') throw err;
     }
 
     return res.json({
       success: true,
       motorista,
-      carro // será null se não houver veículo ou tabela
+      carro  // null se não houver veículo
     });
   } catch (error) {
     console.error('Erro ao obter perfil:', error);
     return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
   }
 });
+
 
 // =============================================================================
 // FROTA ADMINISTRATIVA
