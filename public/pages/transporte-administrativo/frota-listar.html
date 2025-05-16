@@ -515,175 +515,175 @@
     </div>
   </div>
 
-  <!-- ===== MODAL CADASTRAR ============================================== -->
-  <div class="modal fade" id="modalNovoVeiculo" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title fw-bold">Cadastrar Veículo</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <form id="formVeiculo" enctype="multipart/form-data">
-            <!-- campos do formulário -->
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label class="form-label required">Placa</label>
-                <input name="placa" class="form-control" required/>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label required">Tipo</label>
-                <select name="tipo_veiculo" class="form-select" required>
-                  <option value="">Selecione</option>
-                  <option>Hatch</option>
-                  <option>Sedã</option>
-                  <option>Pick-Up</option>
-                  <option>Caminhonete</option>
-                  <option>Caminhão</option>
-                  <option>Van</option>
-                  <option>Microônibus</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label required">Capacidade</label>
-                <input type="number" name="capacidade" class="form-control" required/>
-              </div>
+<!-- ===== MODAL CADASTRAR ============================================== -->
+<div class="modal fade" id="modalNovoVeiculo" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Cadastrar Veículo</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formVeiculo" enctype="multipart/form-data">
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label class="form-label required">Placa</label>
+              <input name="placa" class="form-control" required/>
             </div>
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label class="form-label">Cor</label>
-                <input name="cor_veiculo" class="form-control"/>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Ano</label>
-                <input type="number" name="ano" class="form-control"/>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Marca</label>
-                <input name="marca" class="form-control"/>
-              </div>
+            <div class="col-md-4">
+              <label class="form-label required">Tipo</label>
+              <select name="tipo_veiculo" class="form-select" required>
+                <option value="">Selecione</option>
+                <option>Hatch</option>
+                <option>Sedã</option>
+                <option>Pick-Up</option>
+                <option>Caminhonete</option>
+                <option>Caminhão</option>
+                <option>Van</option>
+                <option>Microônibus</option>
+              </select>
             </div>
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label class="form-label">Fornecedor</label>
-                <select id="selFornecedor" name="fornecedor_id" class="form-select" required></select>
-              </div>
-               <div class="col-md-6">
-                <label class="form-label">Documento</label>
-                <input type="file" name="documento" class="form-control" accept=".pdf,image/*" required/>
-              </div>
+            <div class="col-md-4">
+              <label class="form-label required">Capacidade</label>
+              <input type="number" name="capacidade" class="form-control" required/>
             </div>
-            <!-- acessórios -->
-            <div class="row mb-3">
-              <div class="col-md-2 form-check">
-                <input class="form-check-input" type="checkbox" name="rastreador" value="Sim" />
-                <label class="form-check-label">Rastreador</label>
-              </div>
-              <div class="col-md-3 form-check">
-                <input class="form-check-input" type="checkbox" name="ar_condicionado" value="Sim" />
-                <label class="form-check-label">Ar Condicionado</label>
-              </div>
-              <div class="col-md-3 form-check">
-                <input class="form-check-input" type="checkbox" name="freios_abs" value="Sim" />
-                <label class="form-check-label">Freios ABS</label>
-              </div>
-              <div class="col-md-2 form-check">
-                <input class="form-check-input" type="checkbox" name="airbags" value="Sim" />
-                <label class="form-check-label">Airbags</label>
-              </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Cor</label>
+              <input name="cor_veiculo" class="form-control"/>
             </div>
-              <div class="row mb-3">
-              
-              <div class="col-md-3 form-check">
-                <input class="form-check-input" type="checkbox" name="trava_eletrica" value="Sim" />
-                <label class="form-check-label">Trava Elétrica</label>
-              </div>
-              <div class="col-md-3 form-check">
-                <input class="form-check-input" type="checkbox" name="alarme" value="Sim" />
-                <label class="form-check-label">Alarme</label>
-              </div>
-              <div class="col-md-3 form-check">
-                <input class="form-check-input" type="checkbox" name="vidros_eletricos" value="Sim" />
-                <label class="form-check-label">Vidros Elétricos</label>
-              </div>
-              <div class="col-md-3 form-check">
-                <input class="form-check-input" type="checkbox" name="tomada_12v" value="Sim" />
-                <label class="form-check-label">Tomada 12V</label>
-              </div>
+            <div class="col-md-4">
+              <label class="form-label">Ano</label>
+              <input type="number" name="ano" class="form-control"/>
             </div>
-            <div class="mt-3 text-end">
-              <button class="btn btn-success">Salvar</button>
+            <div class="col-md-4">
+              <label class="form-label">Marca</label>
+              <input name="marca" class="form-control"/>
             </div>
-          </form>
-        </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label required">Fornecedor</label>
+              <select id="selFornecedor" name="fornecedor_id" class="form-select" required></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label required">Documento</label>
+              <input type="file" name="documento" class="form-control" accept=".pdf,image/*" required/>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-2 form-check">
+              <input class="form-check-input" type="checkbox" name="rastreador" value="Sim"/>
+              <label class="form-check-label">Rastreador</label>
+            </div>
+            <div class="col-md-3 form-check">
+              <input class="form-check-input" type="checkbox" name="ar_condicionado" value="Sim"/>
+              <label class="form-check-label">Ar Condicionado</label>
+            </div>
+            <div class="col-md-3 form-check">
+              <input class="form-check-input" type="checkbox" name="freios_abs" value="Sim"/>
+              <label class="form-check-label">Freios ABS</label>
+            </div>
+            <div class="col-md-2 form-check">
+              <input class="form-check-input" type="checkbox" name="airbags" value="Sim"/>
+              <label class="form-check-label">Airbags</label>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-3 form-check">
+              <input class="form-check-input" type="checkbox" name="trava_eletrica" value="Sim"/>
+              <label class="form-check-label">Trava Elétrica</label>
+            </div>
+            <div class="col-md-3 form-check">
+              <input class="form-check-input" type="checkbox" name="alarme" value="Sim"/>
+              <label class="form-check-label">Alarme</label>
+            </div>
+            <div class="col-md-3 form-check">
+              <input class="form-check-input" type="checkbox" name="vidros_eletricos" value="Sim"/>
+              <label class="form-check-label">Vidros Elétricos</label>
+            </div>
+            <div class="col-md-3 form-check">
+              <input class="form-check-input" type="checkbox" name="tomada_12v" value="Sim"/>
+              <label class="form-check-label">Tomada 12V</label>
+            </div>
+          </div>
+          <div class="mt-3 text-end">
+            <button class="btn btn-success">Salvar</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
+</div>
 
-
-  <!-- ===== MODAL EDITAR ================================================= -->
-  <div class="modal fade" id="modalEditarVeiculo" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Editar Veículo</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <form id="formEditVeiculo" enctype="multipart/form-data">
-            <input type="hidden" id="edit_id" name="id"/>
-            <!-- campos principais (placa, tipo, capacidade, etc.) -->
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label class="form-label required">Placa</label>
-                <input id="edit_placa" name="placa" class="form-control" required/>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label required">Tipo</label>
-                <select id="edit_tipo" name="tipo_veiculo" class="form-select" required>
-                  <option value="">Selecione</option>
-                  <option>Hatch</option>
-                  <option>Sedã</option>
-                  <option>Pick-Up</option>
-                  <option>Caminhonete</option>
-                  <option>Caminhão</option>
-                  <option>Van</option>
-                  <option>Microônibus</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label required">Capacidade</label>
-                <input id="edit_cap" type="number" name="capacidade" class="form-control" required/>
-              </div>
+<!-- ===== MODAL EDITAR ================================================= -->
+<div class="modal fade" id="modalEditarVeiculo" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Veículo</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditVeiculo" enctype="multipart/form-data">
+          <input type="hidden" id="edit_id" name="id"/>
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label class="form-label required">Placa</label>
+              <input id="edit_placa" name="placa" class="form-control" required/>
             </div>
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label class="form-label">Cor</label>
-                <input id="edit_cor" name="cor_veiculo" class="form-control"/>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Ano</label>
-                <input id="edit_ano" type="number" name="ano" class="form-control"/>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Marca</label>
-                <input id="edit_marca" name="marca" class="form-control"/>
-              </div>
+            <div class="col-md-4">
+              <label class="form-label required">Tipo</label>
+              <select id="edit_tipo" name="tipo_veiculo" class="form-select" required>
+                <option value="">Selecione</option>
+                <option>Hatch</option>
+                <option>Sedã</option>
+                <option>Pick-Up</option>
+                <option>Caminhonete</option>
+                <option>Caminhão</option>
+                <option>Van</option>
+                <option>Microônibus</option>
+              </select>
             </div>
-            <div class="row mb-3">
-              <div class="col-md-12">
-                <label class="form-label">Documento</label>
-                <input id="edit_documento" type="file" name="documento" class="form-control" accept=".pdf,image/*"/>
-              </div>
+            <div class="col-md-4">
+              <label class="form-label required">Capacidade</label>
+              <input id="edit_cap" type="number" name="capacidade" class="form-control" required/>
             </div>
-            <div class="text-end">
-              <button class="btn btn-success">Salvar</button>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Cor</label>
+              <input id="edit_cor" name="cor_veiculo" class="form-control"/>
             </div>
-          </form>
-        </div>
+            <div class="col-md-4">
+              <label class="form-label">Ano</label>
+              <input id="edit_ano" type="number" name="ano" class="form-control"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Marca</label>
+              <input id="edit_marca" name="marca" class="form-control"/>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label required">Fornecedor</label>
+              <select id="edit_fornecedor" name="fornecedor_id" class="form-select" required></select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Documento</label>
+              <input id="edit_documento" type="file" name="documento" class="form-control" accept=".pdf,image/*"/>
+            </div>
+          </div>
+          <div class="text-end">
+            <button class="btn btn-success">Salvar</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
+</div>
+
 
   <!-- ===== SCRIPTS ====================================================== -->
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
