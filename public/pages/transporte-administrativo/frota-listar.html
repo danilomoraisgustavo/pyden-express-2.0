@@ -493,6 +493,7 @@
                           <th>Cap.</th>
                           <th>Fornecedor</th>
                           <th>Ano</th>
+                          <th>CRLV-e</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -701,6 +702,14 @@
       const icons = { success: "fa fa-check-circle", danger: "fa fa-exclamation-circle", warning: "fa fa-exclamation-triangle", info: "fa fa-info-circle" };
       $.notify({ icon: icons[tipo] || "fa fa-bell", message: msg }, { type: tipo, placement: { from: "top", align: "right" }, delay: 3000 });
     }
+    const _serverBase = 'https://semedcanaadoscarajas.pydenexpress.com';
+
+    function baixarCRLVe(path) {
+      if (!path) return;
+      const rel = path.replace(/^\/+/, '');
+      const url = path.startsWith('http') ? path : `${_serverBase}/${rel}`;
+      window.open(url, '_blank');
+    }
 
     /* ========= LISTAGEM ================================================= */
     let tbl = null;
@@ -710,13 +719,17 @@
         .then(lista => {
           const tb = $("#tblFrota tbody").empty();
           lista.forEach(v => {
+            const btnPdf = v.documento
+              ? `<button class="btn btn-link btn-primary btn-sm" title="Baixar CRLV-e" onclick="baixarCRLVe('${v.documento}')"><i class="fa fa-file-download"></i></button>`
+              : '';
             tb.append(`<tr>
               <td>${v.id}</td>
               <td>${v.placa}</td>
               <td>${v.tipo_veiculo}</td>
               <td>${v.capacidade}</td>
-              <td>${v.fornecedor_nome || ""}</td>
-              <td>${v.ano || ""}</td>
+              <td>${v.fornecedor_nome || ''}</td>
+              <td>${v.ano || ''}</td>
+              <td class="text-center">${btnPdf}</td>
               <td>
                 <button class="btn btn-link btn-warning btn-sm" title="Editar" onclick="openEdit(${v.id})"><i class="fa fa-edit"></i></button>
                 <button class="btn btn-link btn-danger btn-sm" title="Excluir" onclick="delVeic(${v.id})"><i class="fa fa-trash"></i></button>
@@ -724,7 +737,11 @@
             </tr>`);
           });
           if (tbl) tbl.destroy();
-          tbl = $("#tblFrota").DataTable({ language: { search: "Pesquisar:" } });
+          tbl = $("#tblFrota").DataTable({
+            language: {
+              url: "//cdn.datatables.net/plug-ins/1.13.5/i18n/pt-BR.json"
+            }
+          });
         })
         .catch(() => notify("danger", "Erro ao listar frota"));
     }
