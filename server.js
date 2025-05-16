@@ -2805,7 +2805,7 @@ app.post(
 
       const frotaId = result.rows[0].id;
 
-      // Relacionamento com motoristas, se houver
+      // Relacionamento com motoristas, se houve
       if (Array.isArray(motoristasAssociados) && motoristasAssociados.length > 0) {
         const relQuery = `
           INSERT INTO frota_motoristas (frota_id, motorista_id)
@@ -12128,47 +12128,55 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
 });
 
 // [GET] Listar todos os checklists com filtro por data, motorista, veículo e fornecedor
+// server.js
+
+// [GET] Listar todos os checklists, com filtros por motorista_id, carro_id, fornecedor_id, data_inicio, data_fim
 app.get("/api/checklists", async (req, res) => {
   try {
     const { motorista_id, carro_id, fornecedor_id, data_inicio, data_fim } = req.query;
-    // Construir consulta SQL dinâmica conforme filtros
-    let query = `
-      SELECT ce.id, ce.data_envio, m.nome_motorista, v.placa, v.tipo_veiculo
+
+    let sql = `
+      SELECT 
+        ce.id,
+        ce.created_at    AS data_envio,
+        m.nome_motorista,
+        v.placa,
+        v.tipo_veiculo
       FROM checklist_extras ce
       JOIN motoristas_administrativos m ON m.id = ce.motorista_id
-      JOIN frota_administrativa v ON v.id = ce.carro_id
+      JOIN frota_administrativa v    ON v.id = ce.carro_id
     `;
     const params = [];
-    const conditions = [];
+    const conds = [];
+
     if (motorista_id) {
       params.push(motorista_id);
-      conditions.push(`ce.motorista_id = $${params.length}`);
+      conds.push(`ce.motorista_id = $${params.length}`);
     }
     if (carro_id) {
       params.push(carro_id);
-      conditions.push(`ce.carro_id = $${params.length}`);
+      conds.push(`ce.carro_id = $${params.length}`);
     }
-    if (data_inicio && data_fim) {
-      params.push(data_inicio, data_fim);
-      conditions.push(`ce.data_envio BETWEEN $${params.length - 1} AND $${params.length}`);
-    } else if (data_inicio) {
+    if (data_inicio) {
       params.push(data_inicio);
-      conditions.push(`ce.data_envio >= $${params.length}`);
-    } else if (data_fim) {
+      conds.push(`ce.created_at >= $${params.length}`);
+    }
+    if (data_fim) {
       params.push(data_fim);
-      conditions.push(`ce.data_envio <= $${params.length}`);
+      conds.push(`ce.created_at <= $${params.length}`);
     }
     if (fornecedor_id) {
-      // Filtrar checklists cujo fornecedor do motorista ou do veículo corresponda
       params.push(fornecedor_id, fornecedor_id);
-      conditions.push(`(m.fornecedor_id = $${params.length - 1} OR v.fornecedor_id = $${params.length})`);
+      conds.push(`(m.fornecedor_id = $${params.length-1} OR v.fornecedor_id = $${params.length})`);
     }
-    if (conditions.length > 0) {
-      query += " WHERE " + conditions.join(" AND ");
+
+    if (conds.length) {
+      sql += " WHERE " + conds.join(" AND ");
     }
-    query += " ORDER BY ce.data_envio DESC;";
-    const result = await pool.query(query, params);
-    return res.json(result.rows);
+    sql += " ORDER BY ce.created_at DESC;";
+
+    const { rows } = await pool.query(sql, params);
+    return res.json(rows);
   } catch (error) {
     console.error("Erro ao listar checklists:", error);
     return res.status(500).json({ success: false, message: "Erro interno do servidor." });
