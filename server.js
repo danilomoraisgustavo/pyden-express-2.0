@@ -12274,42 +12274,112 @@ app.delete("/api/checklists/:id", async (req, res) => {
   }
 });
 
-
-app.get("/api/viagens", async (req, res) => {
+app.get('/api/viagens', async (req, res) => {
   try {
-    const { motorista_id, data_inicio, data_fim } = req.query;
-    let sql = `
-      SELECT v.id, v.motorista_id, v.data_saida, v.data_retorno, v.origem, v.destino,
-             v.tipo, v.retorna_origem, v.observacoes, v.pontos_intermediarios, v.status,
+    const q = `
+      SELECT v.*,
+             to_char(v.data_saida, 'YYYY-MM-DD"T"HH24:MI') AS data_saida,
+             to_char(v.data_retorno, 'YYYY-MM-DD"T"HH24:MI') AS data_retorno,
              m.nome_motorista AS motorista_nome
-        FROM viagens v
-        JOIN motoristas_administrativos m ON v.motorista_id = m.id
+      FROM viagens v
+      JOIN motoristas_administrativos m ON m.id = v.motorista_id
+      ORDER BY v.data_saida DESC
     `;
-    const params = [];
-    const conds = [];
-
-    if (motorista_id) {
-      conds.push(`v.motorista_id = $${params.length + 1}`);
-      params.push(motorista_id);
-    }
-    if (data_inicio) {
-      conds.push(`v.data_saida >= $${params.length + 1}`);
-      params.push(data_inicio);
-    }
-    if (data_fim) {
-      conds.push(`v.data_saida <= $${params.length + 1}`);
-      params.push(data_fim);
-    }
-    if (conds.length > 0) {
-      sql += " WHERE " + conds.join(" AND ");
-    }
-    sql += " ORDER BY v.data_saida DESC";
-
-    const result = await pool.query(sql, params);
+    const result = await pool.query(q);
     return res.json(result.rows);
-  } catch (error) {
-    console.error("Erro ao listar viagens:", error);
-    return res.status(500).json({ error: "Erro interno ao listar viagens." });
+  } catch (err) {
+    console.error('Erro ao listar viagens:', err);
+    return res.status(500).json({ success: false, message: 'Erro interno.' });
+  }
+});
+
+// [POST] Criar nova viagem
+app.post('/api/viagens', async (req, res) => {
+  try {
+    const {
+      motorista_id, tipo, data_saida, data_retorno,
+      vai_esperar, origem, origem_lat, origem_lng,
+      destino, destino_lat, destino_lng,
+      pontos_intermediarios, observacoes
+    } = req.body;
+
+    const q = `
+      INSERT INTO viagens (
+        motorista_id, tipo, data_saida, data_retorno,
+        vai_esperar, origem, origem_lat, origem_lng,
+        destino, destino_lat, destino_lng,
+        pontos_intermediarios, observacoes
+      ) VALUES (
+        $1,$2,$3,$4,
+        $5,$6,$7,$8,
+        $9,$10,$11,
+        $12,$13
+      ) RETURNING id
+    `;
+    const vals = [
+      motorista_id, tipo, data_saida, data_retorno || null,
+      vai_esperar === 'on' || vai_esperar === true, origem, origem_lat||null, origem_lng||null,
+      destino, destino_lat||null, destino_lng||null,
+      pontos_intermediarios ? JSON.parse(pontos_intermediarios) : null,
+      observacoes || null
+    ];
+    const result = await pool.query(q, vals);
+    return res.json({ id: result.rows[0].id });
+  } catch (err) {
+    console.error('Erro ao criar viagem:', err);
+    return res.status(500).json({ success: false, message: 'Não foi possível agendar a viagem.' });
+  }
+});
+
+// [PUT] Atualizar viagem
+app.put('/api/viagens/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      motorista_id, tipo, data_saida, data_retorno,
+      retorna_origem, origem, origem_lat, origem_lng,
+      destino, destino_lat, destino_lng,
+      pontos_intermediarios, observacoes
+    } = req.body;
+    const q = `
+      UPDATE viagens SET
+        motorista_id=$1, tipo=$2,
+        data_saida=$3, data_retorno=$4,
+        vai_esperar=$5,
+        origem=$6, origem_lat=$7, origem_lng=$8,
+        destino=$9, destino_lat=$10, destino_lng=$11,
+        pontos_intermediarios=$12,
+        observacoes=$13,
+        updated_at=NOW()
+      WHERE id=$14
+      RETURNING id
+    `;
+    const vals = [
+      motorista_id, tipo, data_saida, data_retorno || null,
+      retorna_origem === 'on' || retorna_origem === true,
+      origem, origem_lat||null, origem_lng||null,
+      destino, destino_lat||null, destino_lng||null,
+      pontos_intermediarios ? JSON.parse(pontos_intermediarios) : null,
+      observacoes || null,
+      id
+    ];
+    const result = await pool.query(q, vals);
+    return res.json({ id: result.rows[0].id });
+  } catch (err) {
+    console.error('Erro ao atualizar viagem:', err);
+    return res.status(500).json({ success: false, message: 'Não foi possível atualizar a viagem.' });
+  }
+});
+
+// [DELETE] Excluir viagem
+app.delete('/api/viagens/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM viagens WHERE id = $1', [id]);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao excluir viagem:', err);
+    return res.status(500).json({ success: false, message: 'Não foi possível excluir a viagem.' });
   }
 });
 
