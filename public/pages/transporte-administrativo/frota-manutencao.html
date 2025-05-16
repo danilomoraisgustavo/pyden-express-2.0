@@ -1,9 +1,607 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-  <title>frota-manutencao.html</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Manutenção • Transporte Administrativo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+  <!-- Webfont -->
+  <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+  <script>
+    WebFont.load({
+      google: { families: ["Public Sans:300,400,500,600,700"] },
+      custom: {
+        families: ["Font Awesome 5 Solid", "Font Awesome 5 Regular", "Font Awesome 5 Brands", "simple-line-icons"],
+        urls: ["../../assets/css/fonts.min.css"]
+      },
+      active: () => {
+        sessionStorage.fonts = true;
+      }
+    });
+  </script>
+  <!-- CSS -->
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="../../assets/css/plugins.min.css" />
+  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+  <link rel="stylesheet" href="../../assets/css/demo.css" />
+  <style>
+    .required-label::after { content: " *"; color: red; }
+    .modal-lg { max-width: 90% !important; }
+    /* Preserve line breaks in observation text */
+    #viewObs { white-space: pre-wrap; }
+  </style>
 </head>
 <body>
-  <h1>frota-manutencao.html</h1>
+  <div class="wrapper">
+    <!-- SIDEBAR -->
+    <div class="sidebar" data-background-color="dark">
+      <div class="sidebar-logo">
+        <div class="logo-header" data-background-color="dark">
+          <a href="../../pages/transporte-administrativo/dashboard-administrativo.html" class="logo">
+            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand" height="20" />
+          </a>
+          <div class="nav-toggle">
+            <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+            <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+          </div>
+          <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+        </div>
+      </div>
+      <div class="sidebar-wrapper scrollbar scrollbar-inner">
+        <div class="sidebar-content">
+          <ul class="nav nav-secondary">
+            <!-- =========================================================
+            =                  TRANSPORTE ESCOLAR                   =
+            =======================================================-->
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Transporte Escolar</h4>
+            </li>
+            <li class="nav-item">
+              <a href="../../pages/transporte-escolar/dashboard-escolar.html">
+                <i class="fas fa-tachometer-alt"></i>
+                <p>Dashboard Escolar</p>
+              </a>
+            </li>
+            <!-- Alunos -->
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#teAlunos" aria-expanded="false">
+                <i class="fas fa-user-graduate"></i>
+                <p>Alunos</p><span class="caret"></span>
+              </a>
+              <div class="collapse" id="teAlunos">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html">
+                      <span class="sub-item">Listar Solicitações de Transporte</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-escolar/alunos-cadastrar.html">
+                      <span class="sub-item">Cadastrar Aluno</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <!-- ... outras seções de Transporte Escolar ... -->
+            <!-- =========================================================
+            =               TRANSPORTE ADMINISTRATIVO               =
+            =======================================================-->
+            <li class="nav-section">
+              <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
+              <h4 class="text-section">Transporte Administrativo</h4>
+            </li>
+            <li class="nav-item">
+              <a href="../../pages/transporte-administrativo/dashboard-administrativo.html">
+                <i class="fas fa-tachometer-alt"></i>
+                <p>Dashboard Administrativo</p>
+              </a>
+            </li>
+            <!-- Motoristas ADM -->
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taMotoristas" aria-expanded="false">
+                <i class="fas fa-id-card"></i>
+                <p>Motoristas</p><span class="caret"></span>
+              </a>
+              <div class="collapse" id="taMotoristas">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-listar.html">
+                      <span class="sub-item">Listar Motoristas</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-cadastrar.html">
+                      <span class="sub-item">Cadastrar Motorista</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/motoristas-licencas.html">
+                      <span class="sub-item">Licenças e Certificações</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <!-- Frota ADM -->
+            <li class="nav-item active"> <!-- Marca seção Frota ADM ativa -->
+              <a data-bs-toggle="collapse" href="#taFrota" aria-expanded="true">
+                <i class="fas fa-warehouse"></i>
+                <p>Frota Administrativa</p><span class="caret"></span>
+              </a>
+              <div class="collapse show" id="taFrota">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-listar.html">
+                      <span class="sub-item">Listar Frota</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-manutencao.html" class="active">
+                      <span class="sub-item">Manutenção</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/frota-rotas.html">
+                      <span class="sub-item">Rotas Internas</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <!-- Fornecedores Administrativos -->
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#adminFornecedores" aria-expanded="false">
+                <i class="fas fa-truck-loading"></i>
+                <p>Fornecedores</p><span class="caret"></span>
+              </a>
+              <div class="collapse" id="adminFornecedores">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/fornecedores-listar.html">
+                      <span class="sub-item">Listar Fornecedores</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <!-- Agenda -->
+            <li class="nav-item">
+              <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
+                <i class="far fa-calendar-alt"></i>
+                <p>Agenda de Viagens</p><span class="caret"></span>
+              </a>
+              <div class="collapse" id="taAgenda">
+                <ul class="nav nav-collapse">
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-listar.html">
+                      <span class="sub-item">Listar Viagens</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-nova.html">
+                      <span class="sub-item">Agendar Nova Viagem</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="../../pages/transporte-administrativo/agenda-viagens-historico.html">
+                      <span class="sub-item">Histórico de Viagens</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <!-- ... outras seções ... -->
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- TOPBAR -->
+    <div class="main-panel">
+      <div class="content">
+        <nav class="navbar navbar-header navbar-expand-lg" data-background-color="blue2">
+          <!-- (conteúdo do topo: search, notifications, user dropdown) -->
+          <div class="container-fluid">
+            <ul class="navbar-nav topbar-nav align-items-center ms-auto">
+              <!-- ... outros itens de topo ... -->
+              <li class="nav-item dropdown hidden-caret">
+                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
+                  <div class="avatar-sm">
+                    <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
+                  </div>
+                  <span class="profile-username">
+                    <span class="op-7">Olá,</span>
+                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
+                  </span>
+                </a>
+                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                  <div class="dropdown-user-scroll scrollbar-outer">
+                    <li>
+                      <div class="user-box">
+                        <div class="avatar-lg">
+                          <img src="../../assets/img/profile.jpg" alt="image profile" class="avatar-img rounded" />
+                        </div>
+                        <div class="u-text">
+                          <h4 id="dropdownUserBoxName">Nome do Usuário</h4>
+                          <p class="text-muted" id="dropdownUserEmail">email@exemplo.com</p>
+                          <a href="/pages/usuarios/meu-perfil.html" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                        </div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/meu-perfil.html">Meu Perfil</a>
+                      <a class="dropdown-item" href="/pages/usuarios/caixa-entrada.html">Caixa de Entrada</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="/pages/usuarios/configuracoes.html">Configurações</a>
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
+                    </li>
+                  </div>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <!-- MAIN CONTENT -->
+      <div class="container">
+        <div class="page-inner">
+          <div class="page-header">
+            <h3 class="fw-bold mb-3">Frota Administrativa</h3>
+            <ul class="breadcrumbs mb-3">
+              <li class="nav-home"><a href="../../"><i class="icon-home"></i></a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Frota Administrativa</a></li>
+              <li class="separator"><i class="icon-arrow-right"></i></li>
+              <li class="nav-item"><a href="#">Manutenção</a></li>
+            </ul>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span class="card-title">Checklists Semanais</span>
+                </div>
+                <div class="card-body">
+                  <!-- Filtros -->
+                  <div class="row mb-3">
+                    <div class="col-md-3">
+                      <label for="filterStart" class="form-label">Início</label>
+                      <input type="date" id="filterStart" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                      <label for="filterEnd" class="form-label">Fim</label>
+                      <input type="date" id="filterEnd" class="form-control" />
+                    </div>
+                    <div class="col-md-2">
+                      <label for="filterDriver" class="form-label">Motorista</label>
+                      <select id="filterDriver" class="form-select"></select>
+                    </div>
+                    <div class="col-md-2">
+                      <label for="filterVehicle" class="form-label">Veículo</label>
+                      <select id="filterVehicle" class="form-select"></select>
+                    </div>
+                    <div class="col-md-2">
+                      <label for="filterSupplier" class="form-label">Fornecedor</label>
+                      <select id="filterSupplier" class="form-select"></select>
+                    </div>
+                  </div>
+                  <div class="row mb-3">
+                    <div class="col-md-12 text-end">
+                      <button class="btn btn-secondary" id="filterBtn"><i class="fa fa-search"></i> Filtrar</button>
+                    </div>
+                  </div>
+                  <!-- Tabela de Checklists -->
+                  <div class="table-responsive">
+                    <table id="checklists-table" class="display table table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Motorista</th>
+                          <th>Placa</th>
+                          <th>Tipo</th>
+                          <th>Data</th>
+                          <th>Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> <!-- page-inner -->
+      </div> <!-- container -->
+      <!-- FOOTER -->
+      <footer class="footer">
+        <div class="container-fluid d-flex justify-content-between">
+          <div class="copyright"><a href="http://www.pyden.tech">PyDen Technologies</a>® 2025 ©</div>
+        </div>
+      </footer>
+    </div> <!-- main-panel / wrapper main content -->
+  </div> <!-- wrapper -->
+  <!-- Modal Visualizar Checklist -->
+  <div class="modal fade" id="modalViewChecklist" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalhes do Checklist</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Motorista:</strong> <span id="viewMotorista"></span></p>
+          <p><strong>Veículo:</strong> <span id="viewVeiculo"></span> (<span id="viewTipo"></span>)</p>
+          <p><strong>Data de Envio:</strong> <span id="viewData"></span></p>
+          <hr/>
+          <h6 class="fw-bold">Itens Verificados:</h6>
+          <table class="table table-bordered">
+            <thead>
+              <tr><th>Item</th><th>Condição</th></tr>
+            </thead>
+            <tbody id="itensChecklist"></tbody>
+          </table>
+          <h6 class="fw-bold mt-3">Observações Extras</h6>
+          <p id="viewObs"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Editar Observações -->
+  <div class="modal fade" id="modalEditChecklist" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Observações</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="editChecklistId" />
+          <div class="mb-3">
+            <label for="editObs" class="form-label">Observações</label>
+            <textarea id="editObs" class="form-control" rows="4"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" id="saveObsBtn">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- SCRIPTS -->
+  <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+  <script src="../../assets/js/core/popper.min.js"></script>
+  <script src="../../assets/js/core/bootstrap.min.js"></script>
+  <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+  <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+  <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+  <script src="../../assets/js/pydenadmin.min.js"></script>
+  <script src="../../assets/js/usuario.js"></script>
+  <script>
+    // Função de notificação (utiliza bootstrap-notify)
+    function notify(tipo, msg) {
+      const icons = { 
+        success: "fa fa-check-circle", 
+        danger: "fa fa-exclamation-circle", 
+        warning: "fa fa-exclamation-triangle", 
+        info: "fa fa-info-circle" 
+      };
+      $.notify({ icon: icons[tipo] || "fa fa-bell", message: msg }, { 
+        type: tipo, placement: { from: "top", align: "right" }, delay: 3000 
+      });
+    }
+    // Formata data (timestamp/string) para dd/mm/yyyy
+    function formatDate(dateStr) {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("pt-BR");
+    }
+    // Carrega opções de filtros (motoristas, veículos, fornecedores)
+    function loadFilters() {
+      // Motoristas
+      fetch("/api/motoristas_administrativos")
+        .then(res => res.json())
+        .then(motoristas => {
+          const selMotorista = $("#filterDriver");
+          selMotorista.empty().append('<option value="">Todos</option>');
+          motoristas.forEach(m => {
+            selMotorista.append(`<option value="${m.id}">${m.nome_motorista}</option>`);
+          });
+        })
+        .catch(err => console.error("Erro ao carregar motoristas:", err));
+      // Veículos
+      fetch("/api/frota_administrativa")
+        .then(res => res.json())
+        .then(veiculos => {
+          const selVeic = $("#filterVehicle");
+          selVeic.empty().append('<option value="">Todos</option>');
+          veiculos.forEach(v => {
+            selVeic.append(`<option value="${v.id}">${v.placa}</option>`);
+          });
+        })
+        .catch(err => console.error("Erro ao carregar veículos:", err));
+      // Fornecedores
+      fetch("/api/fornecedores_administrativos")
+        .then(res => res.json())
+        .then(fornecedores => {
+          const selForn = $("#filterSupplier");
+          selForn.empty().append('<option value="">Todos</option>');
+          fornecedores.forEach(f => {
+            selForn.append(`<option value="${f.id}">${f.nome_fornecedor}</option>`);
+          });
+        })
+        .catch(err => console.error("Erro ao carregar fornecedores:", err));
+    }
+    // Carrega lista de checklists com filtros aplicados
+    function loadChecklists() {
+      // Construir query string de filtros
+      const params = {};
+      const start = $("#filterStart").val();
+      const end = $("#filterEnd").val();
+      const motoristaId = $("#filterDriver").val();
+      const veiculoId = $("#filterVehicle").val();
+      const fornecedorId = $("#filterSupplier").val();
+      if (start) params.data_inicio = start;
+      if (end) params.data_fim = end;
+      if (motoristaId) params.motorista_id = motoristaId;
+      if (veiculoId) params.frota_id = veiculoId;
+      if (fornecedorId) params.fornecedor_id = fornecedorId;
+      const query = $.param(params);
+      const url = query ? `/api/checklists?${query}` : "/api/checklists";
+      fetch(url)
+        .then(res => res.json())
+        .then(lista => {
+          const tbody = $("#checklists-table tbody");
+          tbody.empty();
+          lista.forEach(chk => {
+            const dataFormatada = formatDate(chk.data_envio);
+            tbody.append(`
+              <tr>
+                <td>${chk.nome_motorista}</td>
+                <td>${chk.placa}</td>
+                <td>${chk.tipo_veiculo}</td>
+                <td>${dataFormatada}</td>
+                <td>
+                  <button class="btn btn-link btn-info btn-sm" title="Visualizar" onclick="openViewChecklist(${chk.id})">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                  <button class="btn btn-link btn-warning btn-sm" title="Editar" onclick="openEditChecklist(${chk.id})">
+                    <i class="fa fa-edit"></i>
+                  </button>
+                  <button class="btn btn-link btn-danger btn-sm" title="Excluir" onclick="deleteChecklist(${chk.id})">
+                    <i class="fa fa-trash-alt"></i>
+                  </button>
+                </td>
+              </tr>
+            `);
+          });
+          // (Re)inicializar DataTable
+          if ($.fn.DataTable.isDataTable("#checklists-table")) {
+            $("#checklists-table").DataTable().clear().destroy();
+          }
+          $("#checklists-table").DataTable({
+            pageLength: 10,
+            language: {
+              decimal: ",",
+              thousands: ".",
+              info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+              infoEmpty: "Mostrando 0 até 0 de 0 registros",
+              infoFiltered: "(filtrado de _MAX_ registros no total)",
+              lengthMenu: "Mostrar _MENU_ registros",
+              loadingRecords: "Carregando...",
+              processing: "Processando...",
+              search: "Pesquisar:",
+              zeroRecords: "Nenhum registro encontrado",
+              paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
+              emptyTable: "Nenhum dado disponível na tabela"
+            }
+          });
+        })
+        .catch(err => {
+          console.error("Erro ao carregar checklists:", err);
+          notify("danger", "Não foi possível carregar os checklists.");
+        });
+    }
+    // Abre modal de visualização com dados completos do checklist
+    function openViewChecklist(id) {
+      fetch(`/api/checklists/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            notify("danger", data.message || "Erro ao carregar checklist");
+            return;
+          }
+          const chk = data.data;
+          $("#viewMotorista").text(chk.nome_motorista || "");
+          $("#viewVeiculo").text(chk.placa || "");
+          $("#viewTipo").text(chk.tipo_veiculo || "");
+          $("#viewData").text(chk.data_envio ? formatDate(chk.data_envio) : "");
+          // Preencher itens verificados
+          const itensBody = $("#itensChecklist");
+          itensBody.empty();
+          chk.itens.forEach(item => {
+            const cond = (item.resposta === true || item.resposta === "Sim") ? "Sim" : "Não";
+            itensBody.append(`<tr><td>${item.nome_item}</td><td>${cond}</td></tr>`);
+          });
+          // Observações extras
+          $("#viewObs").text(chk.observacoes || "");
+          $("#modalViewChecklist").modal("show");
+        })
+        .catch(err => {
+          console.error("Erro ao buscar detalhes do checklist:", err);
+          notify("danger", "Erro ao buscar detalhes do checklist.");
+        });
+    }
+    // Abre modal de edição de observações
+    function openEditChecklist(id) {
+      fetch(`/api/checklists/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            notify("danger", data.message || "Erro ao carregar checklist");
+            return;
+          }
+          const chk = data.data;
+          $("#editChecklistId").val(id);
+          $("#editObs").val(chk.observacoes || "");
+          $("#modalEditChecklist").modal("show");
+        })
+        .catch(err => {
+          console.error("Erro ao carregar checklist para edição:", err);
+          notify("danger", "Erro ao carregar checklist.");
+        });
+    }
+    // Salvar observações editadas
+    $("#saveObsBtn").on("click", function() {
+      const id = $("#editChecklistId").val();
+      const novasObs = $("#editObs").val() || "";
+      fetch(`/api/checklists/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ observacoes: novasObs })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            $("#modalEditChecklist").modal("hide");
+            notify("success", "Observações atualizadas com sucesso!");
+            // Opcional: recarregar lista se necessário (não há mudança visível na tabela)
+            // loadChecklists();
+          } else {
+            notify("danger", data.message || "Não foi possível atualizar as observações.");
+          }
+        })
+        .catch(err => {
+          console.error("Erro ao atualizar observações:", err);
+          notify("danger", "Erro ao atualizar observações.");
+        });
+    });
+    // Excluir checklist
+    function deleteChecklist(id) {
+      if (!confirm("Excluir checklist?")) return;
+      fetch(`/api/checklists/${id}`, { method: "DELETE" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            notify("success", "Checklist excluído com sucesso!");
+            loadChecklists();
+          } else {
+            notify("danger", data.message || "Erro ao excluir checklist.");
+          }
+        })
+        .catch(err => {
+          console.error("Erro ao excluir checklist:", err);
+          notify("danger", "Erro ao excluir checklist.");
+        });
+    }
+    // Acionar carregamento inicial ao abrir a página
+    $(document).ready(function() {
+      loadFilters();
+      loadChecklists();
+    });
+  </script>
 </body>
 </html>

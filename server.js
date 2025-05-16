@@ -12127,6 +12127,127 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
   }
 });
 
+// [GET] Listar todos os checklists com filtro por data, motorista, veículo e fornecedor
+app.get("/api/checklists", async (req, res) => {
+  try {
+    const { motorista_id, frota_id, fornecedor_id, data_inicio, data_fim } = req.query;
+    // Construir consulta SQL dinâmica conforme filtros
+    let query = `
+      SELECT ce.id, ce.data_envio, m.nome_motorista, v.placa, v.tipo_veiculo
+      FROM checklist_extras ce
+      JOIN motoristas_administrativos m ON m.id = ce.motorista_id
+      JOIN frota_administrativa v ON v.id = ce.frota_id
+    `;
+    const params = [];
+    const conditions = [];
+    if (motorista_id) {
+      params.push(motorista_id);
+      conditions.push(`ce.motorista_id = $${params.length}`);
+    }
+    if (frota_id) {
+      params.push(frota_id);
+      conditions.push(`ce.frota_id = $${params.length}`);
+    }
+    if (data_inicio && data_fim) {
+      params.push(data_inicio, data_fim);
+      conditions.push(`ce.data_envio BETWEEN $${params.length - 1} AND $${params.length}`);
+    } else if (data_inicio) {
+      params.push(data_inicio);
+      conditions.push(`ce.data_envio >= $${params.length}`);
+    } else if (data_fim) {
+      params.push(data_fim);
+      conditions.push(`ce.data_envio <= $${params.length}`);
+    }
+    if (fornecedor_id) {
+      // Filtrar checklists cujo fornecedor do motorista ou do veículo corresponda
+      params.push(fornecedor_id, fornecedor_id);
+      conditions.push(`(m.fornecedor_id = $${params.length - 1} OR v.fornecedor_id = $${params.length})`);
+    }
+    if (conditions.length > 0) {
+      query += " WHERE " + conditions.join(" AND ");
+    }
+    query += " ORDER BY ce.data_envio DESC;";
+    const result = await pool.query(query, params);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Erro ao listar checklists:", error);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+  }
+});
+
+// [GET] Buscar os dados completos de um checklist por ID
+app.get("/api/checklists/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Consulta principal do checklist (dados do motorista, veículo, fornecedor e observações)
+    const infoQuery = `
+      SELECT ce.id, ce.data_envio, ce.observacoes,
+             m.nome_motorista, v.placa, v.tipo_veiculo,
+             fm.nome_fornecedor AS fornecedor_motorista,
+             fv.nome_fornecedor AS fornecedor_veiculo
+      FROM checklist_extras ce
+      JOIN motoristas_administrativos m ON m.id = ce.motorista_id
+      LEFT JOIN fornecedores_administrativos fm ON fm.id = m.fornecedor_id
+      JOIN frota_administrativa v ON v.id = ce.frota_id
+      LEFT JOIN fornecedores_administrativos fv ON fv.id = v.fornecedor_id
+      WHERE ce.id = $1
+      LIMIT 1;
+    `;
+    const infoResult = await pool.query(infoQuery, [id]);
+    if (infoResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Checklist não encontrado." });
+    }
+    const checklist = infoResult.rows[0];
+    // Consultar itens e respostas do checklist
+    const itensQuery = `
+      SELECT i.descricao AS nome_item, r.resposta
+      FROM checklist_respostas r
+      JOIN checklist_itens i ON i.id = r.item_id
+      WHERE r.checklist_id = $1;
+    `;
+    const itensResult = await pool.query(itensQuery, [id]);
+    checklist.itens = itensResult.rows;
+    return res.json({ success: true, data: checklist });
+  } catch (error) {
+    console.error("Erro ao buscar checklist:", error);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+  }
+});
+
+// [PUT] Atualizar as observações de um checklist
+app.put("/api/checklists/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { observacoes } = req.body;
+    const updateQuery = "UPDATE checklist_extras SET observacoes = $1 WHERE id = $2;";
+    const result = await pool.query(updateQuery, [observacoes || "", id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Checklist não encontrado." });
+    }
+    return res.json({ success: true, message: "Observações atualizadas com sucesso." });
+  } catch (error) {
+    console.error("Erro ao atualizar checklist:", error);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+  }
+});
+
+// [DELETE] Remover um checklist
+app.delete("/api/checklists/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Apagar respostas associadas e depois o checklist em si
+    await pool.query("DELETE FROM checklist_respostas WHERE checklist_id = $1;", [id]);
+    const result = await pool.query("DELETE FROM checklist_extras WHERE id = $1;", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: "Checklist não encontrado." });
+    }
+    return res.json({ success: true, message: "Checklist removido com sucesso." });
+  } catch (error) {
+    console.error("Erro ao remover checklist:", error);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
+  }
+});
+
 
 // LISTEN (FINAL)
 
