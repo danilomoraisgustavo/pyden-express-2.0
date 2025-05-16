@@ -18,6 +18,7 @@ const JSZip = require("jszip");
 const { DOMParser } = require("@xmldom/xmldom");
 const tj = require("@mapbox/togeojson");
 const axios = require("axios");
+const jwt = require('jsonwebtoken');
 
 
 const {
