@@ -568,38 +568,48 @@
                 <label class="form-label">Fornecedor</label>
                 <select id="selFornecedor" name="fornecedor_id" class="form-select" required></select>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Data Aquisição</label>
-                <input type="date" name="data_aquisicao" class="form-control"/>
-              </div>
             </div>
             <!-- acessórios -->
             <div class="row mb-2">
               <div class="col-md-2 form-check">
-                <input class="form-check-input" type="checkbox" name="adaptado" value="Sim"/>
-                <label class="form-check-label">Adaptado</label>
+                <input class="form-check-input" type="checkbox" name="rastreador" value="Sim" />
+                <label class="form-check-label">Rastreador</label>
               </div>
               <div class="col-md-2 form-check">
-                <input class="form-check-input" type="checkbox" name="elevador" value="Sim"/>
-                <label class="form-check-label">Elevador</label>
+                <input class="form-check-input" type="checkbox" name="ar_condicionado" value="Sim" />
+                <label class="form-check-label">Ar Condicionado</label>
               </div>
               <div class="col-md-2 form-check">
-                <input class="form-check-input" type="checkbox" name="ar_condicionado" value="Sim"/>
-                <label class="form-check-label">Ar Cond.</label>
+                <input class="form-check-input" type="checkbox" name="freios_abs" value="Sim" />
+                <label class="form-check-label">Freios ABS</label>
               </div>
               <div class="col-md-2 form-check">
-                <input class="form-check-input" type="checkbox" name="gps" value="Sim"/>
-                <label class="form-check-label">GPS</label>
+                <input class="form-check-input" type="checkbox" name="airbags" value="Sim" />
+                <label class="form-check-label">Airbags</label>
               </div>
               <div class="col-md-2 form-check">
-                <input class="form-check-input" type="checkbox" name="cinto_seguranca" value="Sim"/>
-                <label class="form-check-label">Cinto</label>
+                <input class="form-check-input" type="checkbox" name="trava_eletrica" value="Sim" />
+                <label class="form-check-label">Trava Elétrica</label>
               </div>
+              <div class="col-md-2 form-check">
+                <input class="form-check-input" type="checkbox" name="alarme" value="Sim" />
+                <label class="form-check-label">Alarme</label>
+              </div>
+              <div class="col-md-2 form-check">
+                <input class="form-check-input" type="checkbox" name="vidros_eletricos" value="Sim" />
+                <label class="form-check-label">Vidros Elétricos</label>
+              </div>
+              <div class="col-md-2 form-check">
+                <input class="form-check-input" type="checkbox" name="tomada_12v" value="Sim" />
+                <label class="form-check-label">Tomada 12V</label>
+              </div>
+            </div>
+
             </div>
             <div class="row mb-3">
               <div class="col-md-12">
-                <label class="form-label">Documento (opcional)</label>
-                <input type="file" name="documento" class="form-control" accept=".pdf,image/*"/>
+                <label class="form-label">Documento</label>
+                <input type="file" name="documento" class="form-control" accept=".pdf,image/*" required/>
               </div>
             </div>
             <div class="mt-3 text-end">
@@ -611,27 +621,6 @@
     </div>
   </div>
 
-  <!-- ===== MODAL ATRIBUIR ROTA ========================================= -->
-  <div class="modal fade" id="modalAtribuirRota" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Atribuir Rota</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <form id="formAtribuirRota">
-            <input type="hidden" id="rotFrotaId"/>
-            <label class="form-label">Rota</label>
-            <select id="rotSelect" class="form-select" required></select>
-            <div class="text-end mt-3">
-              <button class="btn btn-primary">Atribuir</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ===== MODAL EDITAR ================================================= -->
   <div class="modal fade" id="modalEditarVeiculo" tabindex="-1">
@@ -730,7 +719,6 @@
               <td>${v.fornecedor_nome || ""}</td>
               <td>${v.ano || ""}</td>
               <td>
-                <button class="btn btn-link btn-info btn-sm" title="Atribuir Rota" onclick="openRotaModal(${v.id})"><i class="fa fa-route"></i></button>
                 <button class="btn btn-link btn-warning btn-sm" title="Editar" onclick="openEdit(${v.id})"><i class="fa fa-edit"></i></button>
                 <button class="btn btn-link btn-danger btn-sm" title="Excluir" onclick="delVeic(${v.id})"><i class="fa fa-trash"></i></button>
               </td>
@@ -826,36 +814,6 @@
           }
         })
         .fail(() => notify("danger", "Falha ao atualizar"));
-    });
-
-    /* ========= ATRIBUIR ROTA ============================================ */
-    function openRotaModal(fid) {
-      $("#rotFrotaId").val(fid);
-      const sel = $("#rotSelect").empty();
-      fetch("/api/rotas-simples-detalhes")
-        .then(r => r.json())
-        .then(rs => {
-          rs.forEach(r => {
-            sel.append(`<option value="${r.id}">${r.identificador} - ${(r.descricao || "")}</option>`);
-          });
-          $("#modalAtribuirRota").modal("show");
-        })
-        .catch(() => notify("danger", "Erro ao carregar rotas"));
-    }
-    $("#formAtribuirRota").on("submit", function (e) {
-      e.preventDefault();
-      const body = { frota_id: $("#rotFrotaId").val(), rota_id: $("#rotSelect").val() };
-      fetch("/api/frota/atribuir-rota", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      })
-        .then(r => r.json())
-        .then(d => {
-          d.success ? notify("success", "Rota atribuída!") : notify("danger", d.message);
-        })
-        .catch(() => notify("danger", "Falha ao atribuir rota"))
-        .finally(() => $("#modalAtribuirRota").modal("hide"));
     });
 
     /* ========= INIT ===================================================== */
