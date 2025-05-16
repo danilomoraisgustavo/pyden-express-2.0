@@ -737,98 +737,108 @@ let calendar, calendarInitialized = false;
 let geocoder;
 let markerOrigemNova, markerDestinoNova;
 let markersIntermedNova = [];
-let markingOrigin = false, markingDestination = false, markingIntermediary = false;
+function initMarkButtons() {
+  document.getElementById('btnMarkOrigem').addEventListener('click', () => {
+    markingOrigin = true;
+    markingIntermediary = markingDestination = false;
+    // opcional: dar feedback visual no botão
+  });
+  document.getElementById('btnMarkPonto').addEventListener('click', () => {
+    markingIntermediary = true;
+    markingOrigin = markingDestination = false;
+  });
+  document.getElementById('btnMarkDestino').addEventListener('click', () => {
+    markingDestination = true;
+    markingOrigin = markingIntermediary = false;
+  });
+}
 
 // Funções de inicialização de mapas Google para cada modal
+// Flags de qual marcação está ativa
+let markingOrigin = false,
+    markingIntermediary = false,
+    markingDestination = false;
+
+// Event listeners para os botões
+function initMarkButtons() {
+  document.getElementById('btnMarkOrigem').addEventListener('click', () => {
+    markingOrigin = true;
+    markingIntermediary = markingDestination = false;
+    // opcional: dar feedback visual no botão
+  });
+  document.getElementById('btnMarkPonto').addEventListener('click', () => {
+    markingIntermediary = true;
+    markingOrigin = markingDestination = false;
+  });
+  document.getElementById('btnMarkDestino').addEventListener('click', () => {
+    markingDestination = true;
+    markingOrigin = markingIntermediary = false;
+  });
+}
+
+// Mapa de Nova Viagem
 function initMapNovaViagem() {
   mapNovaViagem = new google.maps.Map(document.getElementById('mapNovaViagem'), {
     center: { lat: -6.530066, lng: -49.851630 },
     zoom: 13
   });
-  directionsServiceNova = new google.maps.DirectionsService();
-  directionsRendererNova = new google.maps.DirectionsRenderer({ suppressMarkers: true });
-  directionsRendererNova.setMap(mapNovaViagem);
-  // Inicializa geocoder e eventos de clique no mapa para marcações
   if (!geocoder) geocoder = new google.maps.Geocoder();
-  mapNovaViagem.addListener('click', function(event) {
-    const latLng = event.latLng;
+
+  // clique no mapa só marca o ponto ativo
+  mapNovaViagem.addListener('click', (e) => {
+    const pos = e.latLng;
     if (markingOrigin) {
-      // Marcação de origem
-      if (markerOrigemNova) {
-        markerOrigemNova.setMap(null);
-      }
-      markerOrigemNova = new google.maps.Marker({ position: latLng, map: mapNovaViagem, icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' });
+      if (markerOrigemNova) markerOrigemNova.setMap(null);
+      markerOrigemNova = new google.maps.Marker({
+        position: pos, map: mapNovaViagem,
+        icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+      });
       markingOrigin = false;
-      geocoder.geocode({ location: latLng }, function(results, status) {
-        if (status === 'OK' && results[0]) {
-          document.getElementById('origemLabel').value = results[0].formatted_address;
-          document.getElementById('origemLat').value = latLng.lat();
-          document.getElementById('origemLng').value = latLng.lng();
-          if (document.getElementById('destinoLabel').value) {
-            calculateRouteNova();
-          }
-        } else {
-          console.error('Geocoding da origem falhou: ' + status);
+      geocoder.geocode({ location: pos }, (res, st) => {
+        if (st === 'OK' && res[0]) {
+          document.getElementById('origemLabel').value = res[0].formatted_address;
+          document.getElementById('origemLat').value = pos.lat();
+          document.getElementById('origemLng').value = pos.lng();
         }
       });
-    } else if (markingDestination) {
-      // Marcação de destino
-      if (markerDestinoNova) {
-        markerDestinoNova.setMap(null);
-      }
-      markerDestinoNova = new google.maps.Marker({ position: latLng, map: mapNovaViagem, icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png' });
-      markingDestination = false;
-      geocoder.geocode({ location: latLng }, function(results, status) {
-        if (status === 'OK' && results[0]) {
-          document.getElementById('destinoLabel').value = results[0].formatted_address;
-          document.getElementById('destinoLat').value = latLng.lat();
-          document.getElementById('destinoLng').value = latLng.lng();
-          if (document.getElementById('origemLabel').value) {
-            calculateRouteNova();
-          }
-        } else {
-          console.error('Geocoding do destino falhou: ' + status);
-        }
+    }
+    else if (markingIntermediary) {
+      const m = new google.maps.Marker({
+        position: pos, map: mapNovaViagem,
+        icon: 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png'
       });
-    } else if (markingIntermediary) {
-      // Marcação de ponto intermediário
-      const marker = new google.maps.Marker({ position: latLng, map: mapNovaViagem, icon: 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png' });
-      markersIntermedNova.push(marker);
-      geocoder.geocode({ location: latLng }, function(results, status) {
-        if (status === 'OK' && results[0]) {
-          // Cria campo de ponto intermediário com o endereço
-          let container = document.getElementById('pontosIntermedContainerNova');
-          if (!container) {
-            // Se o container não existe, cria e insere antes do mapa
-            const form = document.getElementById('nova-viagem-form');
-            const interDiv = document.createElement('div');
-            interDiv.className = 'mb-3';
-            const interLabel = document.createElement('label');
-            interLabel.className = 'form-label';
-            interLabel.textContent = 'Pontos Intermediários:';
-            interDiv.appendChild(interLabel);
-            container = document.createElement('div');
-            container.id = 'pontosIntermedContainerNova';
-            interDiv.appendChild(container);
-            form.insertBefore(interDiv, document.getElementById('mapNovaViagem'));
-          }
+      markersIntermedNova.push(m);
+      markingIntermediary = false; // se quiser só um por clique
+      geocoder.geocode({ location: pos }, (res, st) => {
+        if (st === 'OK' && res[0]) {
+          const container = document.getElementById('pontosIntermedContainerNova');
           const inp = document.createElement('input');
-          inp.type = 'text';
-          inp.name = 'ponto_intermediario';
+          inp.type = 'text'; inp.name = 'ponto_intermediario';
           inp.className = 'form-control ponto-intermediario mb-2';
-          inp.placeholder = 'Ponto intermediário (opcional)';
-          inp.value = results[0].formatted_address;
+          inp.value = res[0].formatted_address;
           container.appendChild(inp);
-          if (document.getElementById('origemLabel').value && document.getElementById('destinoLabel').value) {
-            calculateRouteNova();
-          }
-        } else {
-          console.error('Geocoding do ponto intermediário falhou: ' + status);
+        }
+      });
+    }
+    else if (markingDestination) {
+      if (markerDestinoNova) markerDestinoNova.setMap(null);
+      markerDestinoNova = new google.maps.Marker({
+        position: pos, map: mapNovaViagem,
+        icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+      });
+      markingDestination = false;
+      geocoder.geocode({ location: pos }, (res, st) => {
+        if (st === 'OK' && res[0]) {
+          document.getElementById('destinoLabel').value = res[0].formatted_address;
+          document.getElementById('destinoLat').value = pos.lat();
+          document.getElementById('destinoLng').value = pos.lng();
         }
       });
     }
   });
 }
+
+
 function initMapEditarViagem() {
   mapEditarViagem = new google.maps.Map(document.getElementById('mapEditarViagem'), {
     center: { lat: -6.530066, lng: -49.851630 },
@@ -1130,6 +1140,7 @@ function excluirViagem(id) {
 document.addEventListener('DOMContentLoaded', function () {
   loadMotoristas();
   loadViagens();
+  initMarkButtons();
   // Evento de adicionar novo campo de ponto intermediário (Editar Viagem)
   document.getElementById('addPontoEditarBtn').addEventListener('click', function () {
     const container = document.getElementById('pontosIntermedContainerEditar');
