@@ -12050,6 +12050,76 @@ app.delete("/api/frota_administrativa/:id", async (req, res) => {
 });
 
 
+app.get('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
+  try {
+    const motoristaId = req.user.id;
+    // busca carro associado
+    const carroRes = await pool.query(
+      'SELECT carro_id FROM motoristas_administrativos WHERE id = $1',
+      [motoristaId]
+    );
+    const carroId = carroRes.rows[0]?.carro_id;
+    if (!carroId) return res.json([]);
+
+    // busca tipo_veiculo
+    const tipoRes = await pool.query(
+      'SELECT tipo_veiculo FROM frota_administrativa WHERE id = $1',
+      [carroId]
+    );
+    const tipo = tipoRes.rows[0]?.tipo_veiculo;
+    if (!tipo) return res.json([]);
+
+    // lista itens
+    const itensRes = await pool.query(
+      'SELECT id, descricao FROM checklist_itens WHERE tipo_veiculo = $1 ORDER BY id',
+      [tipo]
+    );
+    return res.json(itensRes.rows);
+  } catch (err) {
+    console.error('Erro ao listar checklist:', err);
+    return res.status(500).json({ success: false, message: 'Erro interno' });
+  }
+});
+
+// POST → grava respostas do checklist
+app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
+  try {
+    const motoristaId = req.user.id;
+    const { respostas } = req.body; // array de { item_id, ok, observacao }
+
+    // busca carro associado
+    const carroRes = await pool.query(
+      'SELECT carro_id FROM motoristas_administrativos WHERE id = $1',
+      [motoristaId]
+    );
+    const carroId = carroRes.rows[0]?.carro_id;
+    if (!carroId) {
+      return res.status(400).json({ success: false, message: 'Sem veículo associado' });
+    }
+
+    // insere cada resposta
+    const insertQ = `
+      INSERT INTO checklist_respostas
+        (motorista_id, carro_id, item_id, ok, observacao)
+      VALUES ($1,$2,$3,$4,$5)
+    `;
+    for (const r of respostas) {
+      await pool.query(insertQ, [
+        motoristaId,
+        carroId,
+        r.item_id,
+        r.ok,
+        r.observacao || null
+      ]);
+    }
+
+    return res.json({ success: true, message: 'Checklist enviado com sucesso' });
+  } catch (err) {
+    console.error('Erro ao enviar checklist:', err);
+    return res.status(500).json({ success: false, message: 'Erro interno' });
+  }
+});
+
 // LISTEN (FINAL)
 
 const PORT = process.env.PORT || 3000;
