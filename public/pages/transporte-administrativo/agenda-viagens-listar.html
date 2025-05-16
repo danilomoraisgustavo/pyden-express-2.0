@@ -732,6 +732,7 @@ let mapEditarViagem, directionsServiceEditar, directionsRendererEditar;
 let mapVisualizarViagem, directionsServiceVisualizar, directionsRendererVisualizar;
 let currentViagemVisualizar = null;
 let calendar, calendarInitialized = false;
+let markingOrigin = false, markingDestination = false, markingIntermediary = false;
 
 // Variáveis para marcação no mapa
 let geocoder;
@@ -752,12 +753,6 @@ function initMarkButtons() {
     markingOrigin = markingIntermediary = false;
   });
 }
-
-// Funções de inicialização de mapas Google para cada modal
-// Flags de qual marcação está ativa
-let markingOrigin = false,
-    markingIntermediary = false,
-    markingDestination = false;
 
 // Event listeners para os botões
 function initMarkButtons() {
