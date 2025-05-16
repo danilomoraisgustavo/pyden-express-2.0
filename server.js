@@ -12129,14 +12129,15 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
 
 // [GET] Listar todos os checklists com filtro por data, motorista, veículo e fornecedor
 // server.js
+// Ajustes em server.js:
 
-// [GET] Listar todos os checklists, com filtros por motorista_id, carro_id, fornecedor_id, data_inicio, data_fim
+// [GET] Listar todos os checklists
 app.get("/api/checklists", async (req, res) => {
   try {
     const { motorista_id, carro_id, fornecedor_id, data_inicio, data_fim } = req.query;
 
     let sql = `
-      SELECT 
+      SELECT
         ce.id,
         ce.created_at    AS data_envio,
         m.nome_motorista,
@@ -12144,7 +12145,7 @@ app.get("/api/checklists", async (req, res) => {
         v.tipo_veiculo
       FROM checklist_extras ce
       JOIN motoristas_administrativos m ON m.id = ce.motorista_id
-      JOIN frota_administrativa v    ON v.id = ce.carro_id
+      JOIN frota_administrativa   v ON v.id = ce.carro_id
     `;
     const params = [];
     const conds = [];
@@ -12183,39 +12184,56 @@ app.get("/api/checklists", async (req, res) => {
   }
 });
 
-// [GET] Buscar os dados completos de um checklist por ID
+
+// [GET] Detalhes de um checklist por ID
 app.get("/api/checklists/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    // Consulta principal do checklist (dados do motorista, veículo, fornecedor e observações)
-    const infoQuery = `
-      SELECT ce.id, ce.data_envio, ce.observacoes,
-             m.nome_motorista, v.placa, v.tipo_veiculo,
-             fm.nome_fornecedor AS fornecedor_motorista,
-             fv.nome_fornecedor AS fornecedor_veiculo
+
+    // 1) buscar extras e metadados
+    const infoQ = `
+      SELECT
+        ce.id,
+        ce.created_at        AS data_envio,
+        ce.motorista_id,
+        ce.carro_id,
+        ce.observacoes,
+        m.nome_motorista,
+        v.placa,
+        v.tipo_veiculo
       FROM checklist_extras ce
       JOIN motoristas_administrativos m ON m.id = ce.motorista_id
-      LEFT JOIN fornecedores_administrativos fm ON fm.id = m.fornecedor_id
-      JOIN frota_administrativa v ON v.id = ce.carro_id
-      LEFT JOIN fornecedores_administrativos fv ON fv.id = v.fornecedor_id
+      JOIN frota_administrativa   v ON v.id = ce.carro_id
       WHERE ce.id = $1
-      LIMIT 1;
+      LIMIT 1
     `;
-    const infoResult = await pool.query(infoQuery, [id]);
-    if (infoResult.rows.length === 0) {
+    const infoR = await pool.query(infoQ, [id]);
+    if (infoR.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Checklist não encontrado." });
     }
-    const checklist = infoResult.rows[0];
-    // Consultar itens e respostas do checklist
-    const itensQuery = `
-      SELECT i.descricao AS nome_item, r.resposta
+    const chk = infoR.rows[0];
+
+    // 2) buscar itens/respostas vinculados (mesma combinação de motorista_id, carro_id e timestamp)
+    const itensQ = `
+      SELECT
+        i.descricao  AS nome_item,
+        r.ok         AS resposta
       FROM checklist_respostas r
-      JOIN checklist_itens i ON i.id = r.item_id
-      WHERE r.checklist_id = $1;
+      JOIN checklist_itens      i ON i.id = r.item_id
+      WHERE
+        r.motorista_id = $1
+        AND r.carro_id     = $2
+        AND r.created_at   = $3
+      ORDER BY r.id
     `;
-    const itensResult = await pool.query(itensQuery, [id]);
-    checklist.itens = itensResult.rows;
-    return res.json({ success: true, data: checklist });
+    const itensR = await pool.query(itensQ, [
+      chk.motorista_id,
+      chk.carro_id,
+      chk.data_envio
+    ]);
+
+    chk.itens = itensR.rows;
+    return res.json({ success: true, data: chk });
   } catch (error) {
     console.error("Erro ao buscar checklist:", error);
     return res.status(500).json({ success: false, message: "Erro interno do servidor." });
