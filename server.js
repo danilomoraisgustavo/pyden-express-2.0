@@ -11802,17 +11802,17 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
     }
     const motorista = motoRes.rows[0];
 
-    // 2) Busca veículo associado (usando carro_id)
+    // 2) Busca veículo associado (usando carro_id), agora com alias tipo_veiculo → modelo
     let carro = null;
     if (motorista.carro_id) {
       const carroQ = `
         SELECT
-          f.id,
-          f.modelo,
-          f.placa,
-          f.documento       AS documento_url
-        FROM frota_administrativa f
-        WHERE f.id = $1
+          id,
+          tipo_veiculo   AS modelo,
+          placa,
+          documento      AS documento_url
+        FROM frota_administrativa
+        WHERE id = $1
         LIMIT 1
       `;
       const carroRes = await pool.query(carroQ, [motorista.carro_id]);
