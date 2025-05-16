@@ -675,6 +675,29 @@
               </div>
             </div>
           </div>
+          <!-- ===== MODAL ASSOCIAR VEÍCULO ======================================= -->
+          <div class="modal fade" id="modalAssociarVeiculo" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Associar Motorista a Veículo</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <form id="associate-form">
+                    <input type="hidden" id="associate_motorista_id" name="id"/>
+                    <div class="mb-3">
+                      <label for="associate_carro" class="form-label required-label">Veículo Administrativo</label>
+                      <select id="associate_carro" name="carro_id" class="form-select" required></select>
+                    </div>
+                    <div class="text-end">
+                      <button type="submit" class="btn btn-primary">Associar</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- Modal Cadastrar/Editar Motorista -->
           <div class="modal fade" id="modalCadastroMotorista" tabindex="-1"
             aria-labelledby="modalCadastroMotoristaLabel" aria-hidden="true">
@@ -878,34 +901,43 @@
     function populateTable() {
       const tableBody = $('#motoristas-table tbody');
       tableBody.empty();
+    motoristas.forEach(m => {
+      const linkCnh = m.cnh_pdf
+        ? `<a href="/${m.cnh_pdf}" download target="_blank">CNH</a>`
+        : "";
 
-      motoristas.forEach(m => {
-        // texto fixo “CNH” no link
-        const linkCnh = m.cnh_pdf
-          ? `<a href="/${m.cnh_pdf}" download target="_blank">CNH</a>`
-          : '';
+      // mostra placa do veículo se já houver associação
+      const veículo = m.carro_placa
+        ? `<span>${m.carro_placa}</span>`
+        : "";
 
-        const row = `
-      <tr>
-        <td>${m.id}</td>
-        <td>${m.nome_motorista}</td>
-        <td>${m.cpf}</td>
-        <td>${m.nome_fornecedor || ''}</td>
-        <td>${linkCnh}</td>
-        <td>
-          <button class="btn btn-link btn-info btn-lg"
-                  onclick="openEditMotorista(${m.id})"
-                  title="Editar">
-            <i class="fa fa-edit"></i>
-          </button>
-          <button class="btn btn-link btn-danger btn-lg"
-                  onclick="deleteMotorista(${m.id})"
-                  title="Excluir">
-            <i class="fa fa-trash-alt"></i>
-          </button>
-        </td>
-      </tr>
-    `;
+      tableBody.append(`
+        <tr>
+          <td>${m.id}</td>
+          <td>${m.nome_motorista}</td>
+          <td>${m.cpf}</td>
+          <td>${m.nome_fornecedor || ""}</td>
+          <td>${linkCnh}</td>
+          <td class="text-center">${veículo}</td>
+          <td>
+            <button class="btn btn-link btn-info btn-sm"
+                    title="Associar Veículo"
+                    onclick="openAssociateModal(${m.id})">
+              <i class="fa fa-car"></i>
+            </button>
+            <button class="btn btn-link btn-warning btn-sm"
+                    title="Editar"
+                    onclick="openEditMotorista(${m.id})">
+              <i class="fa fa-edit"></i>
+            </button>
+            <button class="btn btn-link btn-danger btn-sm"
+                    title="Excluir"
+                    onclick="deleteMotorista(${m.id})">
+              <i class="fa fa-trash-alt"></i>
+            </button>
+          </td>
+        </tr>
+      `);
         tableBody.append(row);
       });
 
@@ -988,6 +1020,52 @@
       // Exibir o modal
       $('#modalCadastroMotorista').modal('show');
     }
+    
+    // abre modal e carrega só veículos do mesmo fornecedor
+    function openAssociateModal(motoristaId) {
+      const m = motoristas.find(x => x.id === motoristaId);
+      if (!m) return;
+      $("#associate_motorista_id").val(motoristaId);
+      const sel = $("#associate_carro")
+        .empty()
+        .append('<option value="">Selecione veículo</option>');
+      fetch("/api/frota_administrativa")
+        .then(r => r.json())
+        .then(lista => {
+          lista
+            .filter(v => v.fornecedor_id === m.fornecedor_id)
+            .forEach(v => {
+              sel.append(`<option value="${v.id}">${v.placa}</option>`);
+            });
+          $("#modalAssociarVeiculo").modal("show");
+        })
+        .catch(() => showNotification("danger", "Erro ao carregar veículos"));
+    }
+
+    // trata submit do formulário de associação
+    $("#associate-form").on("submit", function(e) {
+      e.preventDefault();
+      const mid = $("#associate_motorista_id").val();
+      const vid = $("#associate_carro").val();
+      fetch(`/api/motoristas_administrativos/${mid}/associar-carro`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ carro_id: Number(vid) })
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            showNotification("success", d.message);
+            $("#modalAssociarVeiculo").modal("hide");
+            loadMotoristas();
+          } else {
+            showNotification("danger", d.message || "Erro ao associar");
+          }
+        })
+        .catch(() => showNotification("danger", "Erro ao associar motorista"));
+    });
+
+
     function prepAddMotorista() {
       motoristaEditandoId = null;
       document.getElementById('motorista-form').reset();

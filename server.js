@@ -4347,29 +4347,35 @@ app.post("/api/fornecedor/frota/cadastrar", uploadFrota.fields([
 // MOTORISTAS ADMINISTRATIVOS
 // =============================================================================
 
-// [GET] Listar todos os motoristas administrativos
+// [GET] Listar todos os motoristas administrativos (inclui veículo associado)
 app.get("/api/motoristas_administrativos", async (req, res) => {
   try {
     const query = `
-      SELECT m.id,
-             m.nome_motorista,
-             m.cpf,
-             m.rg,
-             m.data_nascimento,
-             m.telefone,
-             m.email,
-             m.endereco,
-             m.cidade,
-             m.estado,
-             m.cep,
-             m.numero_cnh,
-             m.categoria_cnh,
-             m.validade_cnh,
-             m.fornecedor_id,
-             m.cnh_pdf,
-             f.nome_fornecedor
+      SELECT
+        m.id,
+        m.nome_motorista,
+        m.cpf,
+        m.rg,
+        m.data_nascimento,
+        m.telefone,
+        m.email,
+        m.endereco,
+        m.cidade,
+        m.estado,
+        m.cep,
+        m.numero_cnh,
+        m.categoria_cnh,
+        m.validade_cnh,
+        m.fornecedor_id,
+        m.cnh_pdf,
+        m.carro_id,
+        fa.placa       AS carro_placa,
+        f.nome_fornecedor
       FROM motoristas_administrativos m
-      LEFT JOIN fornecedores_administrativos f ON f.id = m.fornecedor_id
+      LEFT JOIN fornecedores_administrativos f
+        ON f.id = m.fornecedor_id
+      LEFT JOIN frota_administrativa fa
+        ON fa.id = m.carro_id
       ORDER BY m.id;
     `;
     const result = await pool.query(query);
@@ -4380,6 +4386,21 @@ app.get("/api/motoristas_administrativos", async (req, res) => {
       success: false,
       message: "Erro interno do servidor."
     });
+  }
+});
+
+app.post("/api/motoristas_administrativos/:id/associar-carro", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { carro_id } = req.body;
+    await pool.query(
+      "UPDATE motoristas_administrativos SET carro_id = $1 WHERE id = $2",
+      [carro_id, id]
+    );
+    res.json({ success: true, message: "Motorista associado ao veículo com sucesso." });
+  } catch (err) {
+    console.error("Erro ao associar motorista ao veículo:", err);
+    res.status(500).json({ success: false, message: "Erro interno ao associar veículo." });
   }
 });
 
