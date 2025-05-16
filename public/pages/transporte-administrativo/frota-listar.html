@@ -720,8 +720,8 @@
           const tb = $("#tblFrota tbody").empty();
           lista.forEach(v => {
             const btnPdf = v.documento
-              ? `<button class="btn btn-link btn-primary btn-sm" title="Baixar CRLV-e" onclick="baixarCRLVe('${v.documento}')"><i class="fa fa-file-download"></i></button>`
-              : '';
+              ? `<button class="btn btn-link btn-sm" onclick="baixarCRLVe('${v.documento}')">CRLV-e</button>`
+          : '';
             tb.append(`<tr>
               <td>${v.id}</td>
               <td>${v.placa}</td>
