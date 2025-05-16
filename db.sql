@@ -534,6 +534,54 @@ CREATE TABLE motoristas_administrativos (
         REFERENCES fornecedores_administrativos(id)
 );
 
+-- Tabela: frota_administrativa
+
+DROP TABLE IF EXISTS frota_administrativa CASCADE;
+
+CREATE TABLE frota_administrativa (
+  id                SERIAL PRIMARY KEY,
+  placa             VARCHAR(15)   NOT NULL,
+  tipo_veiculo      VARCHAR(50)   NOT NULL,
+  capacidade        INTEGER       NOT NULL,
+  cor_veiculo       VARCHAR(30),
+  ano               INTEGER,
+  marca             VARCHAR(50),
+  data_aquisicao    DATE,
+  adaptado          BOOLEAN       DEFAULT FALSE,
+  elevador          BOOLEAN       DEFAULT FALSE,
+  ar_condicionado   BOOLEAN       DEFAULT FALSE,
+  gps               BOOLEAN       DEFAULT FALSE,
+  cinto_seguranca   BOOLEAN       DEFAULT FALSE,
+  fornecedor_id     INTEGER       NOT NULL,
+  documento         VARCHAR(255),
+  created_at        TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at        TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT fk_frota_admin_fornecedor
+    FOREIGN KEY (fornecedor_id)
+    REFERENCES fornecedores_administrativos(id)
+    ON DELETE RESTRICT
+);
+
+-- Índices
+CREATE INDEX idx_frota_admin_placa
+  ON frota_administrativa(placa);
+CREATE INDEX idx_frota_admin_fornecedor
+  ON frota_administrativa(fornecedor_id);
+
+-- Trigger para manter updated_at atualizado
+CREATE OR REPLACE FUNCTION trg_frota_admin_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_frota_admin_updated_at
+  BEFORE UPDATE ON frota_administrativa
+  FOR EACH ROW
+  EXECUTE PROCEDURE trg_frota_admin_updated_at();
+
 
 
 -- ==========================================
