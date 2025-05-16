@@ -2666,7 +2666,7 @@ app.get("/api/frota", async (req, res) => {
         ) AS motoristas
       FROM frota f
       LEFT JOIN fornecedores fr ON fr.id = f.fornecedor_id
-      LEFT JOIN frota_motoristas fm ON fm.frota_id = f.id
+      LEFT JOIN frota_motoristas fm ON fm.carro_id = f.id
       LEFT JOIN motoristas m ON m.id = fm.motorista_id
       GROUP BY f.id, fr.nome_fornecedor
       ORDER BY f.id;
@@ -12130,13 +12130,13 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
 // [GET] Listar todos os checklists com filtro por data, motorista, veículo e fornecedor
 app.get("/api/checklists", async (req, res) => {
   try {
-    const { motorista_id, frota_id, fornecedor_id, data_inicio, data_fim } = req.query;
+    const { motorista_id, carro_id, fornecedor_id, data_inicio, data_fim } = req.query;
     // Construir consulta SQL dinâmica conforme filtros
     let query = `
       SELECT ce.id, ce.data_envio, m.nome_motorista, v.placa, v.tipo_veiculo
       FROM checklist_extras ce
       JOIN motoristas_administrativos m ON m.id = ce.motorista_id
-      JOIN frota_administrativa v ON v.id = ce.frota_id
+      JOIN frota_administrativa v ON v.id = ce.carro_id
     `;
     const params = [];
     const conditions = [];
@@ -12144,9 +12144,9 @@ app.get("/api/checklists", async (req, res) => {
       params.push(motorista_id);
       conditions.push(`ce.motorista_id = $${params.length}`);
     }
-    if (frota_id) {
-      params.push(frota_id);
-      conditions.push(`ce.frota_id = $${params.length}`);
+    if (carro_id) {
+      params.push(carro_id);
+      conditions.push(`ce.carro_id = $${params.length}`);
     }
     if (data_inicio && data_fim) {
       params.push(data_inicio, data_fim);
@@ -12188,7 +12188,7 @@ app.get("/api/checklists/:id", async (req, res) => {
       FROM checklist_extras ce
       JOIN motoristas_administrativos m ON m.id = ce.motorista_id
       LEFT JOIN fornecedores_administrativos fm ON fm.id = m.fornecedor_id
-      JOIN frota_administrativa v ON v.id = ce.frota_id
+      JOIN frota_administrativa v ON v.id = ce.carro_id
       LEFT JOIN fornecedores_administrativos fv ON fv.id = v.fornecedor_id
       WHERE ce.id = $1
       LIMIT 1;
