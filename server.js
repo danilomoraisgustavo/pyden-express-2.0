@@ -12085,9 +12085,8 @@ app.get('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) =
 app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
-    const { respostas } = req.body; // array de { item_id, ok, observacao }
-
-    // busca carro associado
+    const { respostas, observacoes_extras } = req.body;
+    // busca carro
     const carroRes = await pool.query(
       'SELECT carro_id FROM motoristas_administrativos WHERE id = $1',
       [motoristaId]
@@ -12097,14 +12096,14 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
       return res.status(400).json({ success: false, message: 'Sem veículo associado' });
     }
 
-    // insere cada resposta
-    const insertQ = `
+    // insere respostas item a item
+    const insertItem = `
       INSERT INTO checklist_respostas
-        (motorista_id, carro_id, item_id, ok, observacao)
+      (motorista_id, carro_id, item_id, ok, observacao)
       VALUES ($1,$2,$3,$4,$5)
     `;
     for (const r of respostas) {
-      await pool.query(insertQ, [
+      await pool.query(insertItem, [
         motoristaId,
         carroId,
         r.item_id,
@@ -12113,12 +12112,21 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
       ]);
     }
 
+    // insere observação extra
+    await pool.query(
+      `INSERT INTO checklist_extras
+        (motorista_id, carro_id, observacoes)
+       VALUES ($1,$2,$3)`,
+      [motoristaId, carroId, observacoes_extras || null]
+    );
+
     return res.json({ success: true, message: 'Checklist enviado com sucesso' });
   } catch (err) {
     console.error('Erro ao enviar checklist:', err);
     return res.status(500).json({ success: false, message: 'Erro interno' });
   }
 });
+
 
 // LISTEN (FINAL)
 
