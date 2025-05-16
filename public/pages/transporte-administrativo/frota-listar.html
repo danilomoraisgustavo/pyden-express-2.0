@@ -721,7 +721,7 @@
           lista.forEach(v => {
             const btnPdf = v.documento
               ? `<button class="btn btn-link btn-sm" onclick="baixarCRLVe('${v.documento}')">CRLV-e</button>`
-          : '';
+              : '';
             tb.append(`<tr>
               <td>${v.id}</td>
               <td>${v.placa}</td>
@@ -731,8 +731,8 @@
               <td>${v.ano || ''}</td>
               <td class="text-center">${btnPdf}</td>
               <td>
-                <button class="btn btn-link btn-warning btn-sm" title="Editar" onclick="openEdit(${v.id})"><i class="fa fa-edit"></i></button>
-                <button class="btn btn-link btn-danger btn-sm" title="Excluir" onclick="delVeic(${v.id})"><i class="fa fa-trash"></i></button>
+                <button class="btn btn-link btn-warning btn-sm" title="Editar" onclick="openEdit(${v.id})">✎</button>
+                <button class="btn btn-link btn-danger btn-sm" title="Excluir" onclick="delVeic(${v.id})">🗑</button>
               </td>
             </tr>`);
           });
