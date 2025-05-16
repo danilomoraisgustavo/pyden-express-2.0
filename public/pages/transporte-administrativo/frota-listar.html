@@ -764,6 +764,20 @@
         .fail(() => notify("danger", "Falha ao cadastrar"));
     });
 
+    function loadFornecedoresEdit(selectedId) {
+      fetch("/api/fornecedores_administrativos")
+        .then(r => r.json())
+        .then(fs => {
+          const sel = $("#edit_fornecedor")
+            .empty()
+            .append('<option value="">Selecione</option>');
+          fs.forEach(f => {
+            sel.append(`<option value="${f.id}">${f.nome_fornecedor}</option>`);
+          });
+          if (selectedId) sel.val(selectedId);
+        })
+        .catch(() => notify("danger", "Erro ao carregar fornecedores"));
+    }
     /* ========= EXCLUIR =================================================== */
     function delVeic(id) {
       if (!confirm("Excluir veículo?")) return;
@@ -788,7 +802,9 @@
           $("#edit_cor").val(v.cor_veiculo || "");
           $("#edit_ano").val(v.ano || "");
           $("#edit_marca").val(v.marca || "");
-          $("#edit_documento").val(""); // limpa campo arquivo
+          // carrega e seleciona o fornecedor
+          loadFornecedoresEdit(v.fornecedor_id);
+          $("#edit_documento").val(""); // limpa arquivo antigo
           $("#modalEditarVeiculo").modal("show");
         })
         .catch(() => notify("danger", "Erro ao obter dados"));
