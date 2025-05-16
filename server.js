@@ -12275,6 +12275,45 @@ app.delete("/api/checklists/:id", async (req, res) => {
 });
 
 
+app.get("/api/viagens", async (req, res) => {
+  try {
+    const { motorista_id, data_inicio, data_fim } = req.query;
+    let sql = `
+      SELECT v.id, v.motorista_id, v.data_saida, v.data_retorno, v.origem, v.destino,
+             v.tipo, v.retorna_origem, v.observacoes, v.pontos_intermediarios, v.status,
+             m.nome_motorista AS motorista_nome
+        FROM viagens v
+        JOIN motoristas_administrativos m ON v.motorista_id = m.id
+    `;
+    const params = [];
+    const conds = [];
+
+    if (motorista_id) {
+      conds.push(`v.motorista_id = $${params.length + 1}`);
+      params.push(motorista_id);
+    }
+    if (data_inicio) {
+      conds.push(`v.data_saida >= $${params.length + 1}`);
+      params.push(data_inicio);
+    }
+    if (data_fim) {
+      conds.push(`v.data_saida <= $${params.length + 1}`);
+      params.push(data_fim);
+    }
+    if (conds.length > 0) {
+      sql += " WHERE " + conds.join(" AND ");
+    }
+    sql += " ORDER BY v.data_saida DESC";
+
+    const result = await pool.query(sql, params);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Erro ao listar viagens:", error);
+    return res.status(500).json({ error: "Erro interno ao listar viagens." });
+  }
+});
+
+
 // LISTEN (FINAL)
 
 const PORT = process.env.PORT || 3000;
