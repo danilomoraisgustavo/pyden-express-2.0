@@ -12383,22 +12383,28 @@ app.delete('/api/viagens/:id', async (req, res) => {
   }
 });
 
-// [GET] viagens do motorista logado
+// … suas importações iniciais, incluindo verificarTokenJWT e pool …
+
+// [GET] Listar todas as viagens atribuídas ao motorista autenticado
 app.get('/api/admin-motoristas/viagens', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
     const query = `
-      SELECT 
+      SELECT
         v.id,
         v.tipo,
         to_char(v.data_saida, 'YYYY-MM-DD"T"HH24:MI:SS')   AS data_saida,
         to_char(v.data_retorno, 'YYYY-MM-DD"T"HH24:MI:SS') AS data_retorno,
-        v.origem               AS "origem.descricao",
-        v.origem_lat           AS "origem.latitude",
-        v.origem_lng           AS "origem.longitude",
-        v.destino              AS "destino.descricao",
-        v.destino_lat          AS "destino.latitude",
-        v.destino_lng          AS "destino.longitude",
+        json_build_object(
+          'descricao', v.origem,
+          'latitude',  v.origem_lat,
+          'longitude', v.origem_lng
+        ) AS origem,
+        json_build_object(
+          'descricao', v.destino,
+          'latitude',  v.destino_lat,
+          'longitude', v.destino_lng
+        ) AS destino,
         v.pontos_intermediarios,
         v.observacoes,
         v.status
@@ -12406,46 +12412,50 @@ app.get('/api/admin-motoristas/viagens', verificarTokenJWT, async (req, res) => 
       WHERE v.motorista_id = $1
       ORDER BY v.data_saida DESC;
     `;
-    const { rows } = await pool.query(query, [motoristaId]);
-    return res.json(rows);
-  } catch (err) {
-    console.error('Erro ao listar viagens do motorista:', err);
+    const result = await pool.query(query, [motoristaId]);
+    return res.json(result.rows);
+  } catch (error) {
+    console.error('Erro ao listar viagens do motorista:', error);
     return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
   }
 });
 
-// [GET] detalhes de uma viagem específica (para o motorista logado)
+// [GET] Detalhar uma viagem específica
 app.get('/api/admin-motoristas/viagens/:id', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
-    const { id } = req.params;
-    const infoQ = `
-      SELECT 
+    const viagemId = req.params.id;
+    const infoQuery = `
+      SELECT
         v.id,
         v.tipo,
         to_char(v.data_saida, 'YYYY-MM-DD"T"HH24:MI:SS')   AS data_saida,
         to_char(v.data_retorno, 'YYYY-MM-DD"T"HH24:MI:SS') AS data_retorno,
-        v.origem               AS "origem.descricao",
-        v.origem_lat           AS "origem.latitude",
-        v.origem_lng           AS "origem.longitude",
-        v.destino              AS "destino.descricao",
-        v.destino_lat          AS "destino.latitude",
-        v.destino_lng          AS "destino.longitude",
+        json_build_object(
+          'descricao', v.origem,
+          'latitude',  v.origem_lat,
+          'longitude', v.origem_lng
+        ) AS origem,
+        json_build_object(
+          'descricao', v.destino,
+          'latitude',  v.destino_lat,
+          'longitude', v.destino_lng
+        ) AS destino,
         v.pontos_intermediarios,
         v.observacoes,
         v.status
       FROM viagens v
-      WHERE v.id = $1
-        AND v.motorista_id = $2
+      WHERE v.motorista_id = $1
+        AND v.id = $2
       LIMIT 1;
     `;
-    const { rows } = await pool.query(infoQ, [id, motoristaId]);
-    if (rows.length === 0) {
+    const infoResult = await pool.query(infoQuery, [motoristaId, viagemId]);
+    if (infoResult.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Viagem não encontrada.' });
     }
-    return res.json({ success: true, data: rows[0] });
-  } catch (err) {
-    console.error('Erro ao buscar viagem:', err);
+    return res.json({ success: true, data: infoResult.rows[0] });
+  } catch (error) {
+    console.error('Erro ao detalhar viagem:', error);
     return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
   }
 });
