@@ -12393,18 +12393,15 @@ app.get('/api/admin-motoristas/viagens', verificarTokenJWT, async (req, res) => 
       SELECT
         v.id,
         v.tipo,
-        to_char(v.data_saida, 'YYYY-MM-DD"T"HH24:MI:SS')   AS data_saida,
-        to_char(v.data_retorno, 'YYYY-MM-DD"T"HH24:MI:SS') AS data_retorno,
-        json_build_object(
-          'descricao', v.origem,
-          'latitude',  v.origem_lat,
-          'longitude', v.origem_lng
-        ) AS origem,
-        json_build_object(
-          'descricao', v.destino,
-          'latitude',  v.destino_lat,
-          'longitude', v.destino_lng
-        ) AS destino,
+        v.data_saida,
+        v.data_retorno,
+        v.vai_esperar,
+        v.origem,
+        v.origem_lat,
+        v.origem_lng,
+        v.destino,
+        v.destino_lat,
+        v.destino_lng,
         v.pontos_intermediarios,
         v.observacoes,
         v.status
@@ -12416,7 +12413,7 @@ app.get('/api/admin-motoristas/viagens', verificarTokenJWT, async (req, res) => 
     return res.json(result.rows);
   } catch (error) {
     console.error('Erro ao listar viagens do motorista:', error);
-    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    return res.status(500).json({ success: false, message: 'Erro interno ao listar viagens.' });
   }
 });
 
