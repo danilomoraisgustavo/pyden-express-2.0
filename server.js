@@ -12456,6 +12456,44 @@ app.get('/api/admin-motoristas/viagens/:id', verificarTokenJWT, async (req, res)
     return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
   }
 });
+// Atualizar status para "Em andamento"
+app.put('/api/admin-motoristas/viagens/:id/atender', verificarTokenJWT, async (req, res) => {
+  try {
+    const motoristaId = req.user.id;
+    const viagemId = req.params.id;
+    // Atualiza status apenas se a viagem pertencer ao motorista autenticado
+    const result = await pool.query(
+      "UPDATE viagens SET status = 'Em andamento' WHERE id = $1 AND motorista_id = $2 RETURNING id",
+      [viagemId, motoristaId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Viagem não encontrada.' });
+    }
+    return res.sendStatus(204); // sucesso
+  } catch (error) {
+    console.error('Erro ao iniciar viagem:', error);
+    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+  }
+});
+
+// Atualizar status para "Concluída"
+app.put('/api/admin-motoristas/viagens/:id/finalizar', verificarTokenJWT, async (req, res) => {
+  try {
+    const motoristaId = req.user.id;
+    const viagemId = req.params.id;
+    const result = await pool.query(
+      "UPDATE viagens SET status = 'Concluída' WHERE id = $1 AND motorista_id = $2 RETURNING id",
+      [viagemId, motoristaId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Viagem não encontrada.' });
+    }
+    return res.sendStatus(204);
+  } catch (error) {
+    console.error('Erro ao finalizar viagem:', error);
+    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+  }
+});
 
 
 // LISTEN (FINAL)
