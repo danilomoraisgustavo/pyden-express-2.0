@@ -11293,44 +11293,51 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
          filiacao_2                      = $15,
          responsavel                     = $16,
          deficiencia                     = $17,
-         longitude                       = $18,
-         latitude                        = $19,
+         longitude                       = $18::double precision,
+         latitude                        = $19::double precision,
          rua                             = $20,
          geom                            = CASE
-                                             WHEN $19 IS NOT NULL AND $18 IS NOT NULL
-                                             THEN ST_SetSRID(ST_MakePoint($18,$19),4326)
+                                             WHEN $19::double precision IS NOT NULL
+                                              AND $18::double precision IS NOT NULL
+                                             THEN ST_SetSRID(
+                                                    ST_MakePoint(
+                                                      $18::double precision,
+                                                      $19::double precision
+                                                    ),
+                                                    4326
+                                                  )
                                              ELSE NULL
                                            END,
          updated_at                      = NOW()
        WHERE id = $21`,
       [
-        id_matricula || null,
-        escola_id || null,
-        ano || null,
-        modalidade || null,
-        formato_letivo || null,
-        turma || null,
-        pessoa_nome || null,
-        cpf || null,
+        id_matricula               || null,
+        escola_id                  || null,
+        ano                        || null,
+        modalidade                 || null,
+        formato_letivo             || null,
+        turma                      || null,
+        pessoa_nome                || null,
+        cpf                        || null,
         transporte_escolar_poder_publico || null,
-        cep || null,
-        bairro || null,
-        numero_pessoa_endereco || null,
-        filiacao_1 || null,
-        numero_telefone || null,
-        filiacao_2 || null,
-        responsavel || null,
+        cep                        || null,
+        bairro                     || null,
+        numero_pessoa_endereco     || null,
+        filiacao_1                 || null,
+        numero_telefone            || null,
+        filiacao_2                 || null,
+        responsavel                || null,
         defArray,
-        longitude || null,
-        latitude || null,
-        rua || null,
+        longitude                  || null,
+        latitude                   || null,
+        rua                        || null,
         id
       ]
     );
 
     return res.json({ success: true });
   } catch (e) {
-    console.error(e);
+    console.error("Erro ao atualizar aluno:", e);
     return res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
