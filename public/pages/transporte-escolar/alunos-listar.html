@@ -1002,7 +1002,6 @@
         s.append(`<option value="${e.id}">${e.nome}</option>`)
       );
     }
-
     function popularSelectEscolas() {
       const s = document.getElementById("escolaSelect");
       s.innerHTML = '<option value="">Selecione a Escola</option>';
@@ -1019,6 +1018,7 @@
         escolasLista = d; popularSelectEscolas(); popularSelectEscolasMap(); popularFiltroEscola();
       }).catch(() => showNotification("danger", "Erro ao carregar lista de escolas.")).finally(hideLoader);
           // filtra opções do select conforme digitação
+    }
     $("#editarEscolaSearch").on("input", function() {
       const termo = $(this).val().toLowerCase();
       $("#editarEscolaId option").each(function() {
@@ -1026,7 +1026,6 @@
         $(this).toggle(txt.includes(termo));
       });
     });
-    }
 
     /* ---------- importação XLSX ---------- */
     function handleFileImport(e) {
