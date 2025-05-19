@@ -111,8 +111,8 @@
         <div class="sidebar-content">
           <ul class="nav nav-secondary">
             <!-- =========================================================
-           =                  TRANSPORTE ESCOLAR                   =
-           =======================================================-->
+            =                  TRANSPORTE ESCOLAR                   =
+            =======================================================-->
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Transporte Escolar</h4>
@@ -250,8 +250,8 @@
             </li>
 
             <!-- =========================================================
-           =               TRANSPORTE ADMINISTRATIVO               =
-           =======================================================-->
+            =               TRANSPORTE ADMINISTRATIVO               =
+            =======================================================-->
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Transporte Administrativo</h4>
@@ -333,8 +333,8 @@
             
 
             <!-- =========================================================
-           =                       FINANCEIRO                      =
-           =======================================================-->
+            =                       FINANCEIRO                      =
+            =======================================================-->
             <li class="nav-section">
               <span class="sidebar-mini-icon"><i class="fa fa-ellipsis-h"></i></span>
               <h4 class="text-section">Financeiro</h4>
@@ -589,6 +589,10 @@
                 <div class="modal-body">
                   <p>1. Selecione a escola referente a todos os alunos que serão importados.</p>
                   <div class="mb-3">
+                    <label for="importarEscolaSearch" class="form-label">Buscar Escola</label>
+                    <input type="text" class="form-control" id="importarEscolaSearch" placeholder="Digite parte do nome para filtrar" />
+                  </div>
+                  <div class="mb-3">
                     <label for="escolaSelect" class="form-label required-label">Escola</label>
                     <select class="form-select" id="escolaSelect">
                       <option value="">Selecione a Escola</option>
@@ -615,7 +619,9 @@
                 <div class="modal-body">
                   <div class="row g-2 align-items-end mb-3">
                     <div class="col-md-3">
-                      <label for="selectEscolaMap" class="form-label">Escola</label>
+                      <label for="mapearEscolaSearch" class="form-label">Buscar Escola</label>
+                      <input type="text" id="mapearEscolaSearch" class="form-control" placeholder="Digite parte do nome para filtrar" />
+                      <label for="selectEscolaMap" class="form-label mt-2">Escola</label>
                       <select id="selectEscolaMap" class="form-select"></select>
                     </div>
                     <div class="col-md-3">
@@ -805,8 +811,7 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label for="editarEscolaSearch" class="form-label">Buscar Escola</label>
-                <input type="text" class="form-control" id="editarEscolaSearch"
-                      placeholder="Digite parte do nome para filtrar">
+                <input type="text" class="form-control" id="editarEscolaSearch" placeholder="Digite parte do nome para filtrar">
               </div>
             </div>
 
@@ -921,7 +926,6 @@
   </div>
   <!-- Fim do modal de edição -->  
 
-
   <div class="modal fade" id="modalLocalizarAluno" tabindex="-1" aria-labelledby="modalLocalizarAlunoLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -1017,15 +1021,29 @@
       fetch("/api/escolas").then(r => r.json()).then(d => {
         escolasLista = d; popularSelectEscolas(); popularSelectEscolasMap(); popularFiltroEscola();
       }).catch(() => showNotification("danger", "Erro ao carregar lista de escolas.")).finally(hideLoader);
-          // filtra opções do select conforme digitação
-    }
-    $("#editarEscolaSearch").on("input", function() {
-      const termo = $(this).val().toLowerCase();
-      $("#editarEscolaId option").each(function() {
-        const txt = $(this).text().toLowerCase();
-        $(this).toggle(txt.includes(termo));
+      // filtra opções do select conforme digitação
+      $("#editarEscolaSearch").on("input", function() {
+        const termo = $(this).val().toLowerCase();
+        $("#editarEscolaId option").each(function() {
+          const txt = $(this).text().toLowerCase();
+          $(this).toggle(txt.includes(termo));
+        });
       });
-    });
+      $("#importarEscolaSearch").on("input", function() {
+        const termo = $(this).val().toLowerCase();
+        $("#escolaSelect option").each(function() {
+          const txt = $(this).text().toLowerCase();
+          $(this).toggle(txt.includes(termo));
+        });
+      });
+      $("#mapearEscolaSearch").on("input", function() {
+        const termo = $(this).val().toLowerCase();
+        $("#selectEscolaMap option").each(function() {
+          const txt = $(this).text().toLowerCase();
+          $(this).toggle(txt.includes(termo));
+        });
+      });
+    }
 
     /* ---------- importação XLSX ---------- */
     function handleFileImport(e) {
@@ -1376,26 +1394,7 @@
       link.click();
       document.body.removeChild(link);
     });
-
-    // converte o array 2-D devolvido pelo DataTables em um array de objetos
-    const cabecalhos = dataTable.settings()[0].aoColumns.map(c => c.sTitle);
-    const dadosObj = linhas.map(l => {
-      const o = {};
-      cabecalhos.forEach((c, i) => o[c] = l[i]);
-      return o;
-    });
-
-    const csv = jsonParaCSV(dadosObj);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "alunos_listados.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
   </script>
-
 
 </body>
 
