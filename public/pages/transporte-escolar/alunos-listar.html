@@ -785,89 +785,131 @@
     </div>
   </div>
 
-  <div class="modal fade" id="modalEditarAluno" tabindex="-1" aria-labelledby="modalEditarAlunoLabel"
-    aria-hidden="true">
+  <!-- Início do modal de edição -->
+  <div class="modal fade" id="modalEditarAluno" tabindex="-1" aria-labelledby="modalEditarAlunoLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="modalEditarAlunoLabel">Editar Aluno</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <h5 class="modal-title fw-bold" id="modalEditarAlunoLabel">Editar Aluno</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
           <form id="formEditarAluno">
             <input type="hidden" id="editarAlunoId" />
-            <div class="mb-3">
-              <label for="editarIdMatricula" class="form-label">ID Matrícula</label>
-              <input type="text" class="form-control" id="editarIdMatricula" />
+
+            <!-- Linha 1: Matrícula e busca de escola -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editarIdMatricula" class="form-label required-label">ID Matrícula</label>
+                <input type="text" class="form-control" id="editarIdMatricula" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="editarEscolaSearch" class="form-label">Buscar Escola</label>
+                <input type="text" class="form-control" id="editarEscolaSearch"
+                      placeholder="Digite parte do nome para filtrar">
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarEscolaId" class="form-label">Escola (ID)</label>
-              <input type="text" class="form-control" id="editarEscolaId" />
+
+            <!-- Linha 2: Select de Escolas e Ano -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editarEscolaId" class="form-label required-label">Escola</label>
+                <select id="editarEscolaId" class="form-select">
+                  <option value="">Selecione a Escola</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="editarAno" class="form-label">Ano</label>
+                <input type="text" class="form-control" id="editarAno" />
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarAno" class="form-label">Ano</label>
-              <input type="text" class="form-control" id="editarAno" />
+
+            <!-- Linha 3: Modalidade e Formato Letivo -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editarModalidade" class="form-label">Modalidade</label>
+                <input type="text" class="form-control" id="editarModalidade" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="editarFormatoLetivo" class="form-label">Formato Letivo</label>
+                <input type="text" class="form-control" id="editarFormatoLetivo" />
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarModalidade" class="form-label">Modalidade</label>
-              <input type="text" class="form-control" id="editarModalidade" />
+
+            <!-- Linha 4: Turma e Nome -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editarTurma" class="form-label">Turma</label>
+                <input type="text" class="form-control" id="editarTurma" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="editarNomeAluno" class="form-label">Nome do Aluno</label>
+                <input type="text" class="form-control" id="editarNomeAluno" />
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarFormatoLetivo" class="form-label">Formato Letivo</label>
-              <input type="text" class="form-control" id="editarFormatoLetivo" />
+
+            <!-- Linha 5: CPF e Data de Nascimento -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editarCpf" class="form-label">CPF</label>
+                <input type="text" class="form-control" id="editarCpf" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="editarDataNascimento" class="form-label">Data de Nascimento</label>
+                <input type="date" class="form-control" id="editarDataNascimento" />
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarTurma" class="form-label">Turma</label>
-              <input type="text" class="form-control" id="editarTurma" />
+
+            <!-- Linha 6: Transporte e CEP/Bairro -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editarTransporte" class="form-label">Transporte Escolar</label>
+                <input type="text" class="form-control" id="editarTransporte" />
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="editarCep" class="form-label">CEP</label>
+                <input type="text" class="form-control" id="editarCep" />
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="editarBairro" class="form-label">Bairro</label>
+                <input type="text" class="form-control" id="editarBairro" />
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarNomeAluno" class="form-label">Nome Aluno</label>
-              <input type="text" class="form-control" id="editarNomeAluno" />
+
+            <!-- Linha 7: Endereço e Telefones/Filiações -->
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="editarNumeroEndereco" class="form-label">Número de Endereço</label>
+                <input type="text" class="form-control" id="editarNumeroEndereco" />
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="editarTelefone" class="form-label">Telefone</label>
+                <input type="text" class="form-control" id="editarTelefone" />
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="editarDeficiencia" class="form-label">Deficiência</label>
+                <input type="text" class="form-control" id="editarDeficiencia" />
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarCpf" class="form-label">CPF</label>
-              <input type="text" class="form-control" id="editarCpf" />
+
+            <!-- Linha 8: Responsável e Filiações -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editarResponsavel" class="form-label">Responsável</label>
+                <input type="text" class="form-control" id="editarResponsavel" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="editarFiliacao1" class="form-label">Filiação 1</label>
+                <input type="text" class="form-control" id="editarFiliacao1" />
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarDataNascimento" class="form-label">Data de Nascimento</label>
-              <input type="date" class="form-control" id="editarDataNascimento" />
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="editarFiliacao2" class="form-label">Filiação 2</label>
+                <input type="text" class="form-control" id="editarFiliacao2" />
+              </div>
             </div>
-            <div class="mb-3">
-              <label for="editarTransporte" class="form-label">Transp. Escolar</label>
-              <input type="text" class="form-control" id="editarTransporte" />
-            </div>
-            <div class="mb-3">
-              <label for="editarCep" class="form-label">CEP</label>
-              <input type="text" class="form-control" id="editarCep" />
-            </div>
-            <div class="mb-3">
-              <label for="editarBairro" class="form-label">Bairro</label>
-              <input type="text" class="form-control" id="editarBairro" />
-            </div>
-            <div class="mb-3">
-              <label for="editarNumeroEndereco" class="form-label">Número Endereço</label>
-              <input type="text" class="form-control" id="editarNumeroEndereco" />
-            </div>
-            <div class="mb-3">
-              <label for="editarFiliacao1" class="form-label">Filiação 1</label>
-              <input type="text" class="form-control" id="editarFiliacao1" />
-            </div>
-            <div class="mb-3">
-              <label for="editarTelefone" class="form-label">Telefone</label>
-              <input type="text" class="form-control" id="editarTelefone" />
-            </div>
-            <div class="mb-3">
-              <label for="editarFiliacao2" class="form-label">Filiação 2</label>
-              <input type="text" class="form-control" id="editarFiliacao2" />
-            </div>
-            <div class="mb-3">
-              <label for="editarResponsavel" class="form-label">Responsável</label>
-              <input type="text" class="form-control" id="editarResponsavel" />
-            </div>
-            <div class="mb-3">
-              <label for="editarDeficiencia" class="form-label">Deficiência (JSON)</label>
-              <input type="text" class="form-control" id="editarDeficiencia" />
-            </div>
+
           </form>
         </div>
         <div class="modal-footer">
@@ -877,6 +919,8 @@
       </div>
     </div>
   </div>
+  <!-- Fim do modal de edição -->  
+
 
   <div class="modal fade" id="modalLocalizarAluno" tabindex="-1" aria-labelledby="modalLocalizarAlunoLabel"
     aria-hidden="true">
@@ -950,6 +994,15 @@
       escolasLista.forEach(e => f.append(`<option value="${e.id}">${e.nome} (ID:${e.id})</option>`));
       f.val(v);
     }
+    // popula o select de escolas no form de edição
+    function popularSelectEscolasEditar() {
+      const s = $("#editarEscolaId");
+      s.empty().append('<option value="">Selecione a Escola</option>');
+      escolasLista.forEach(e =>
+        s.append(`<option value="${e.id}">${e.nome}</option>`)
+      );
+    }
+
     function popularSelectEscolas() {
       const s = document.getElementById("escolaSelect");
       s.innerHTML = '<option value="">Selecione a Escola</option>';
@@ -965,6 +1018,14 @@
       fetch("/api/escolas").then(r => r.json()).then(d => {
         escolasLista = d; popularSelectEscolas(); popularSelectEscolasMap(); popularFiltroEscola();
       }).catch(() => showNotification("danger", "Erro ao carregar lista de escolas.")).finally(hideLoader);
+          // filtra opções do select conforme digitação
+    $("#editarEscolaSearch").on("input", function() {
+      const termo = $(this).val().toLowerCase();
+      $("#editarEscolaId option").each(function() {
+        const txt = $(this).text().toLowerCase();
+        $(this).toggle(txt.includes(termo));
+      });
+    });
     }
 
     /* ---------- importação XLSX ---------- */
