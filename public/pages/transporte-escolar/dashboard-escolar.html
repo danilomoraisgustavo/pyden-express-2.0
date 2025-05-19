@@ -362,9 +362,10 @@
           <div class="container-fluid">
             <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-            <button id="themeToggle" class="btn btn-sm btn-outline-secondary ms-2" onclick="toggleTheme()">
-              🌙/☀️
-            </button>
+            <label class="switch">
+              <input type="checkbox" id="themeSwitch">
+              <span class="slider"></span>
+            </label>
               <!-- =====================================
              ÍCONE MENSAGENS (exemplo)
         ===================================== -->
@@ -946,6 +947,8 @@
 
   <!-- pydenadmin DEMO methods, don't include it in your project! -->
   <script src="../../assets/js/setting-demo.js"></script>
+
+  <script src="../../assets/js/toggle.js"></script>
 
   <script>
     let map, marker, escolaMarker, directionsService, directionsRenderer;
