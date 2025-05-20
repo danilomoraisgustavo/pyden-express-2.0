@@ -968,7 +968,7 @@
           })
           .catch(err => {
             console.error(err);
-            notify('danger', 'Não foi possível carregar as viagens agendadas.');
+            showNotification('danger', 'Não foi possível carregar as viagens agendadas.');
           });
       }
     
@@ -1108,15 +1108,15 @@
           .then(res => res.json())
           .then(result => {
             if (result.success) {
-              notify('success', 'Viagem excluída com sucesso.');
+              showNotification('success', 'Viagem excluída com sucesso.');
               loadViagens();
             } else {
-              notify('danger', result.message || 'Não foi possível excluir a viagem.');
+              showNotification('danger', result.message || 'Não foi possível excluir a viagem.');
             }
           })
           .catch(err => {
             console.error(err);
-            notify('danger', 'Erro ao excluir a viagem.');
+            showNotification('danger', 'Erro ao excluir a viagem.');
           });
       }
     
@@ -1179,14 +1179,14 @@
             if (result.id) {
               $('#modalNovaViagem').modal('hide');
               loadViagens();
-              notify('success', 'Viagem agendada com sucesso!');
+              showNotification('success', 'Viagem agendada com sucesso!');
             } else {
-              notify('danger', 'Erro ao agendar viagem: ' + (result.message || ''));
+              showNotification('danger', 'Erro ao agendar viagem: ' + (result.message || ''));
             }
           })
           .catch(err => {
             console.error(err);
-            notify('danger', 'Erro ao agendar a viagem. Tente novamente.');
+            showNotification('danger', 'Erro ao agendar a viagem. Tente novamente.');
           });
       });
       // Submit do formulário Editar Viagem
@@ -1209,14 +1209,14 @@
             if (result.id) {
               $('#modalEditarViagem').modal('hide');
               loadViagens();
-              notify('success', 'Viagem atualizada com sucesso!');
+              showNotification('success', 'Viagem atualizada com sucesso!');
             } else {
-              notify('danger', 'Erro ao atualizar viagem: ' + (result.message || ''));
+              showNotification('danger', 'Erro ao atualizar viagem: ' + (result.message || ''));
             }
           })
           .catch(err => {
             console.error(err);
-            notify('danger', 'Erro ao salvar alterações da viagem.');
+            showNotification('danger', 'Erro ao salvar alterações da viagem.');
           });
       });
       // Inicializa FullCalendar ao abrir modal de calendário
