@@ -12544,7 +12544,7 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
     //    * Ajuste o nome da tabela se você tiver definido outro
     const viagensCount = await pool.query(
       `SELECT COUNT(*) AS total
-         FROM agenda_viagens`
+         FROM viagens`
     );
 
     // Envia o JSON esperado pelo front
