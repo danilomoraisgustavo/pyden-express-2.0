@@ -12327,7 +12327,7 @@ app.post('/api/viagens', async (req, res) => {
       motorista_id, tipo, data_saida, data_retorno || null,
       vai_esperar === 'on' || vai_esperar === true, origem, origem_lat||null, origem_lng||null,
       destino, destino_lat||null, destino_lng||null,
-      pontos_intermediarios ? JSON.parse(pontos_intermediarios) : null,
+      pontos_intermediarios || null,,
       observacoes || null
     ];
     const result = await pool.query(q, vals);
@@ -12366,7 +12366,7 @@ app.put('/api/viagens/:id', async (req, res) => {
       retorna_origem === 'on' || retorna_origem === true,
       origem, origem_lat||null, origem_lng||null,
       destino, destino_lat||null, destino_lng||null,
-      pontos_intermediarios ? JSON.parse(pontos_intermediarios) : null,
+      pontos_intermediarios || null,,
       observacoes || null,
       id
     ];
