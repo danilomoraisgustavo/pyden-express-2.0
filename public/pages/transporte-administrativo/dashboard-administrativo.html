@@ -675,21 +675,8 @@
 
   <!-- pydenadmin DEMO methods, don't include it in your project! -->
   <script src="../../assets/js/setting-demo.js"></script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const html = document.documentElement;
-      const sw = document.getElementById('themeSwitch');
-      const saved = localStorage.getItem('theme') || 'light';
-      html.setAttribute('data-bs-theme', saved);
-      sw.checked = (saved === 'dark');
-      sw.addEventListener('change', () => {
-        const next = sw.checked ? 'dark' : 'light';
-        html.setAttribute('data-bs-theme', next);
-        localStorage.setItem('theme', next);
-      });
-    });
-  </script>
+  
+  <script src="../../assets/js/toggle.js"></script>
 
   <script>
     async function carregarDadosDashboard() {
