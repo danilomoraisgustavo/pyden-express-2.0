@@ -12525,13 +12525,13 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
     // 1) Total de motoristas administrativos
     const motoristaCount = await pool.query(
       `SELECT COUNT(*) AS total
-         FROM motoristas`
+         FROM motoristas_administrativos`
     );
 
     // 2) Total de veículos da frota administrativa
     const frotaCount = await pool.query(
       `SELECT COUNT(*) AS total
-         FROM frota`
+         FROM frota_administrativa`
     );
 
     // 3) Total de fornecedores administrativos
