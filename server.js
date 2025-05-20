@@ -12520,6 +12520,47 @@ app.put('/api/admin-motoristas/viagens/:id/finalizar', verificarTokenJWT, async 
   }
 });
 
+app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
+  try {
+    // 1) Total de motoristas administrativos
+    const motoristaCount = await pool.query(
+      `SELECT COUNT(*) AS total
+         FROM motoristas`
+    );
+
+    // 2) Total de veículos da frota administrativa
+    const frotaCount = await pool.query(
+      `SELECT COUNT(*) AS total
+         FROM frota`
+    );
+
+    // 3) Total de fornecedores administrativos
+    const fornecedorAdmCount = await pool.query(
+      `SELECT COUNT(*) AS total
+         FROM fornecedores_administrativos`
+    );
+
+    // 4) Total de viagens internas agendadas
+    //    * Ajuste o nome da tabela se você tiver definido outro
+    const viagensCount = await pool.query(
+      `SELECT COUNT(*) AS total
+         FROM agenda_viagens`
+    );
+
+    // Envia o JSON esperado pelo front
+    return res.json({
+      motoristas_adm_total:     parseInt(motoristaCount.rows[0].total,     10),
+      frota_total:              parseInt(frotaCount.rows[0].total,          10),
+      fornecedores_adm_total:   parseInt(fornecedorAdmCount.rows[0].total,  10),
+      viagens_agendadas_total:  parseInt(viagensCount.rows[0].total,        10)
+    });
+  } catch (error) {
+    console.error('Erro ao carregar dados do dashboard administrativo:', error);
+    return res.status(500).json({
+      error: 'Não foi possível carregar os dados do dashboard administrativo.'
+    });
+  }
+});
 
 // LISTEN (FINAL)
 
