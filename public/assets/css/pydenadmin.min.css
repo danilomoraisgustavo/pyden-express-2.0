@@ -276,7 +276,7 @@ label {
 body {
    min-height: 100vh;
    position: relative;
-   background: #000000;
+   background: #f5f7fd;
    background-size: cover;
    background-attachment: fixed;
    background-repeat: no-repeat

@@ -37,7 +37,7 @@
     --bs-warning: #ffc107;
     --bs-danger: #dc3545;
     --bs-light: #f8f9fa;
-    --bs-dark: #212529;
+    --bs-dark: #111213;
     --bs-primary-rgb: 13, 110, 253;
     --bs-secondary-rgb: 108, 117, 125;
     --bs-success-rgb: 25, 135, 84;
@@ -81,7 +81,7 @@
     --bs-body-line-height: 1.5;
     --bs-body-color: #212529;
     --bs-body-color-rgb: 33, 37, 41;
-    --bs-body-bg: #fff;
+    --bs-body-bg: #000000;
     --bs-body-bg-rgb: 255, 255, 255;
     --bs-emphasis-color: #000;
     --bs-emphasis-color-rgb: 0, 0, 0;
