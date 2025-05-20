@@ -12300,7 +12300,6 @@ app.get('/api/viagens', async (req, res) => {
   }
 });
 
-// [POST] Criar nova viagem
 app.post('/api/viagens', async (req, res) => {
   try {
     const {
@@ -12320,16 +12319,25 @@ app.post('/api/viagens', async (req, res) => {
         $1,$2,$3,$4,
         $5,$6,$7,$8,
         $9,$10,$11,
-        $12,$13
+        $12::json,  $13
       ) RETURNING id
     `;
     const vals = [
-      motorista_id, tipo, data_saida, data_retorno || null,
-      vai_esperar === 'on' || vai_esperar === true, origem, origem_lat||null, origem_lng||null,
-      destino, destino_lat||null, destino_lng||null,
-      pontos_intermediarios || null,,
+      motorista_id,
+      tipo,
+      data_saida,
+      data_retorno || null,
+      vai_esperar === 'on' || vai_esperar === true,
+      origem,
+      origem_lat || null,
+      origem_lng || null,
+      destino,
+      destino_lat || null,
+      destino_lng || null,
+      pontos_intermediarios || null,  // sem vírgula extra
       observacoes || null
     ];
+
     const result = await pool.query(q, vals);
     return res.json({ id: result.rows[0].id });
   } catch (err) {
@@ -12337,6 +12345,7 @@ app.post('/api/viagens', async (req, res) => {
     return res.status(500).json({ success: false, message: 'Não foi possível agendar a viagem.' });
   }
 });
+
 
 // [PUT] Atualizar viagem
 app.put('/api/viagens/:id', async (req, res) => {
@@ -12348,6 +12357,7 @@ app.put('/api/viagens/:id', async (req, res) => {
       destino, destino_lat, destino_lng,
       pontos_intermediarios, observacoes
     } = req.body;
+
     const q = `
       UPDATE viagens SET
         motorista_id=$1, tipo=$2,
@@ -12355,21 +12365,29 @@ app.put('/api/viagens/:id', async (req, res) => {
         vai_esperar=$5,
         origem=$6, origem_lat=$7, origem_lng=$8,
         destino=$9, destino_lat=$10, destino_lng=$11,
-        pontos_intermediarios=$12,
+        pontos_intermediarios=$12::json,
         observacoes=$13,
         updated_at=NOW()
       WHERE id=$14
       RETURNING id
     `;
     const vals = [
-      motorista_id, tipo, data_saida, data_retorno || null,
+      motorista_id,
+      tipo,
+      data_saida,
+      data_retorno || null,
       retorna_origem === 'on' || retorna_origem === true,
-      origem, origem_lat||null, origem_lng||null,
-      destino, destino_lat||null, destino_lng||null,
-      pontos_intermediarios || null,,
+      origem,
+      origem_lat || null,
+      origem_lng || null,
+      destino,
+      destino_lat || null,
+      destino_lng || null,
+      pontos_intermediarios || null,  // sem vírgula extra
       observacoes || null,
       id
     ];
+
     const result = await pool.query(q, vals);
     return res.json({ id: result.rows[0].id });
   } catch (err) {
