@@ -719,6 +719,33 @@
     let markerOrigemNova, markerDestinoNova;
     let markersIntermedNova = [];
     // Event listeners para os botões
+
+    function showNotification(type, message, title = "") {
+      $.notify({
+        title: title ? title + ' ' : '',
+        message: message,
+        icon:
+          type === 'success' ? 'fa fa-check-circle' :
+            type === 'danger' ? 'fa fa-exclamation-circle' :
+              type === 'warning' ? 'fa fa-exclamation-triangle' :
+                type === 'info' ? 'fa fa-info-circle' : ''
+      }, {
+        type: type,
+        placement: {
+          from: "top",
+          align: "right"
+        },
+        offset: 20,
+        spacing: 10,
+        z_index: 1031,
+        delay: 3000,
+        timer: 1000,
+        animate: {
+          enter: 'animated fadeInDown',
+          exit: 'animated fadeOutUp'
+        }
+      });
+    }
     function initMarkButtons() {
       document.getElementById('btnAddOrigem').addEventListener('click', () => {
         markingOrigin = true;
