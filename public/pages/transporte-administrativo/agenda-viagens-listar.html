@@ -912,32 +912,14 @@
     }
     function calculateRouteVisualizar() {
       if (!currentViagemVisualizar) return;
-
-      // Origem e destino como objetos LatLng
-      const origin = {
-        lat:  parseFloat(currentViagemVisualizar.origem_lat),
-        lng:  parseFloat(currentViagemVisualizar.origem_lng)
-      };
-      const destination = {
-        lat:  parseFloat(currentViagemVisualizar.destino_lat),
-        lng:  parseFloat(currentViagemVisualizar.destino_lng)
-      };
-
-      // Waypoints como array de objetos { location: LatLng, stopover: true }
-      const waypoints = (currentViagemVisualizar.pontos_intermediarios_coords || [])
-        .map(pt => ({
-          location: {
-            lat: parseFloat(pt.lat),
-            lng: parseFloat(pt.lng)
-          },
-          stopover: true
-        }));
-
+      const origin = currentViagemVisualizar.origem;
+      const destination = currentViagemVisualizar.destino;
+      const waypoints = (currentViagemVisualizar.pontos_intermediarios || []).map(pt => ({ location: pt, stopover: true }));
       directionsServiceVisualizar.route({
-        origin:      origin,
+        origin: origin,
         destination: destination,
-        waypoints:   waypoints,
-        travelMode:  'DRIVING'
+        waypoints: waypoints,
+        travelMode: 'DRIVING'
       }, (response, status) => {
         if (status === 'OK') {
           directionsRendererVisualizar.setDirections(response);
@@ -1099,53 +1081,26 @@
       $('#modalEditarViagem').modal('show');
     }
     
-        // Abre o modal de visualização preenchendo os detalhes da viagem
+    // Abre o modal de visualização preenchendo os detalhes da viagem
     function openVisualizarViagemModal(id) {
-      // Encontra a viagem selecionada
       const viagem = viagens.find(v => v.id === id);
       if (!viagem) return;
-
-      // Preenche o objeto currentViagemVisualizar com todas as infos necessárias,
-      // incluindo coordenadas e pontos intermediários com lat/lng
-      currentViagemVisualizar = {
-        ...viagem,
-        // Origem e destino devem vir do servidor como números ou strings parseáveis
-        origem_lat: parseFloat(viagem.origem_lat),
-        origem_lng: parseFloat(viagem.origem_lng),
-        destino_lat: parseFloat(viagem.destino_lat),
-        destino_lng: parseFloat(viagem.destino_lng),
-        // Este array deve ser retornado pela API; cada item: { lat: "...", lng: "..." }
-        pontos_intermediarios_coords: (viagem.pontos_intermediarios_coords || []).map(pt => ({
-          lat: parseFloat(pt.lat),
-          lng: parseFloat(pt.lng)
-        }))
-      };
-
-      // Preenche os campos de texto no modal
-      document.getElementById('viewMotorista').textContent     = viagem.motorista_nome || '';
-      document.getElementById('viewDataSaida').textContent     = formatDatetime(viagem.data_saida);
-      document.getElementById('viewDataRetorno').textContent   = viagem.data_retorno ? formatDatetime(viagem.data_retorno) : '—';
-      document.getElementById('viewOrigem').textContent        = viagem.origem;
-      document.getElementById('viewDestino').textContent       = viagem.destino;
-      document.getElementById('viewTipo').textContent          = viagem.tipo;
-      document.getElementById('viewRetorna').textContent       = viagem.retorna_origem ? 'Sim' : 'Não';
-      document.getElementById('viewObs').textContent           = viagem.observacoes || 'Nenhuma';
-
-      // Pontos intermediários (texto)
-      const ptsText = (viagem.pontos_intermediarios && viagem.pontos_intermediarios.length)
-        ? viagem.pontos_intermediarios.join(', ')
-        : 'Nenhum';
-      document.getElementById('viewPontos').textContent = ptsText;
-
-      // Quando o modal estiver visível, traça a rota usando coordenadas
-      $('#modalVisualizarViagem')
-        .off('shown.bs.modal')                    // remove handler anterior, se houver
-        .on('shown.bs.modal', () => {
-          calculateRouteVisualizar();
-        })
-        .modal('show');
+      currentViagemVisualizar = viagem;
+      // Preenche textos dos detalhes
+      document.getElementById('viewMotorista').textContent = viagem.motorista_nome || '';
+      document.getElementById('viewDataSaida').textContent = formatDatetime(viagem.data_saida);
+      document.getElementById('viewDataRetorno').textContent = viagem.data_retorno ? formatDatetime(viagem.data_retorno) : '—';
+      document.getElementById('viewOrigem').textContent = viagem.origem;
+      document.getElementById('viewDestino').textContent = viagem.destino;
+      const pts = viagem.pontos_intermediarios && viagem.pontos_intermediarios.length ? viagem.pontos_intermediarios.join(', ') : 'Nenhum';
+      document.getElementById('viewPontos').textContent = pts;
+      document.getElementById('viewTipo').textContent = viagem.tipo;
+      document.getElementById('viewRetorna').textContent = viagem.retorna_origem ? 'Sim' : 'Não';
+      document.getElementById('viewObs').textContent = viagem.observacoes || 'Nenhuma';
+      // Exibe modal de visualização
+      $('#modalVisualizarViagem').modal('show');
     }
-
+    
     // Função para excluir viagem (solicita confirmação)
       function excluirViagem(id) {
         if (!confirm('Tem certeza que deseja excluir esta viagem?')) return;
