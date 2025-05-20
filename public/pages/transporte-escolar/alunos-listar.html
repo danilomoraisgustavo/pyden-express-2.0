@@ -314,7 +314,7 @@
                 </ul>
               </div>
 
-              <!-- Agenda -->
+            <!-- Agenda -->
             <li class="nav-item">
               <a data-bs-toggle="collapse" href="#taAgenda" aria-expanded="false">
                 <i class="far fa-calendar-alt"></i>
@@ -1019,7 +1019,11 @@
     function carregarEscolas() {
       showLoader();
       fetch("/api/escolas").then(r => r.json()).then(d => {
-        escolasLista = d; popularSelectEscolas(); popularSelectEscolasMap(); popularFiltroEscola();
+        escolasLista = d;
+        popularSelectEscolas();
+        popularSelectEscolasMap();
+        popularFiltroEscola();
+        popularSelectEscolasEditar();
       }).catch(() => showNotification("danger", "Erro ao carregar lista de escolas.")).finally(hideLoader);
       // filtra opções do select conforme digitação
       $("#editarEscolaSearch").on("input", function() {
@@ -1236,9 +1240,9 @@
           <td>${it.numero_pessoa_endereco || ""}</td><td>${it.filiacao_1 || ""}</td><td>${it.numero_telefone || ""}</td>
           <td>${it.filiacao_2 || ""}</td><td>${it.responsavel || ""}</td><td>${def}</td><td>${it.latitude || ""}</td><td>${it.longitude || ""}</td>
           <td>
-            <button class="btn btn-sm btn-warning btn-editar"   title="Editar"><i class="fa fa-edit"></i></button>
-            <button class="btn btn-sm btn-info    btn-localizar" title="Localizar"><i class="fa fa-map-marker-alt"></i></button>
-            <button class="btn btn-sm btn-danger  btn-excluir"   title="Excluir"><i class="fa fa-trash"></i></button>
+            <button class="btn btn-sm btn-warning btn-editar" title="Editar"><i class="fa fa-edit"></i></button>
+            <button class="btn btn-sm btn-info btn-localizar" title="Localizar"><i class="fa fa-map-marker-alt"></i></button>
+            <button class="btn btn-sm btn-danger btn-excluir" title="Excluir"><i class="fa fa-trash"></i></button>
           </td>
         </tr>`);
         });
@@ -1285,13 +1289,21 @@
 
       $(document).on("click", ".btn-editar", function () {
         const o = JSON.parse($(this).closest("tr").attr("data-obj") || "{}"); alunoAtual = o.id;
-        $("#editarAlunoId").val(o.id); $("#editarIdMatricula").val(o.id_matricula || ""); $("#editarEscolaId").val(o.escola_id || "");
-        $("#editarAno").val(o.ano || ""); $("#editarModalidade").val(o.modalidade || ""); $("#editarFormatoLetivo").val(o.formato_letivo || "");
-        $("#editarTurma").val(o.turma || ""); $("#editarNomeAluno").val(o.pessoa_nome || ""); $("#editarCpf").val(o.cpf || "");
+        $("#editarAlunoId").val(o.id);
+        $("#editarIdMatricula").val(o.id_matricula || "");
+        $("#editarEscolaId").val(o.escola_id || "");
+        $("#editarAno").val(o.ano || "");
+        $("#editarModalidade").val(o.modalidade || "");
+        $("#editarFormatoLetivo").val(o.formato_letivo || "");
+        $("#editarTurma").val(o.turma || "");
+        $("#editarNomeAluno").val(o.pessoa_nome || ""); $("#editarCpf").val(o.cpf || "");
         $("#editarDataNascimento").val(o.data_nascimento || ""); $("#editarTransporte").val(o.transporte_escolar_poder_publico || "");
         $("#editarCep").val(o.cep || ""); $("#editarBairro").val(o.bairro || ""); $("#editarNumeroEndereco").val(o.numero_pessoa_endereco || "");
         $("#editarFiliacao1").val(o.filiacao_1 || ""); $("#editarTelefone").val(o.numero_telefone || ""); $("#editarFiliacao2").val(o.filiacao_2 || "");
-        $("#editarResponsavel").val(o.responsavel || ""); $("#editarDeficiencia").val(o.deficiencia && Array.isArray(o.deficiencia) ? JSON.stringify(o.deficiencia) : o.deficiencia || "");
+        $("#editarResponsavel").val(o.responsavel || "");
+        $("#editarDeficiencia").val(o.deficiencia && Array.isArray(o.deficiencia) ? JSON.stringify(o.deficiencia) : o.deficiencia || "");
+        $("#editarEscolaSearch").val("");
+        $("#editarEscolaId option").show();
         $("#modalEditarAluno").modal("show");
       });
 
