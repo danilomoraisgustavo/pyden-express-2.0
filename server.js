@@ -177,7 +177,7 @@ app.use(
 // ROTAS PRINCIPAIS
 // Rota para carregar a página HTML do painel admin
 app.get("/admin", isAdmin, (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin-dashboard.html"));
+  res.sendFile(path.join(__dirname, "public", "admin/admin-dashboard.html"));
 });
 
 app.get("/", (req, res) => {
