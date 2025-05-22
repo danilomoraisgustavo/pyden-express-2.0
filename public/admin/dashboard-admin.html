@@ -1,700 +1,680 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PyDen Express - Dashboard Admin</title>
-  <!-- Estilos: mantendo os links de CSS existentes -->
-  <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="/assets/css/datatables.min.css" />
-  <link rel="stylesheet" href="/assets/css/style.css" />
-  <!-- Biblioteca de gráficos Chart.js (via CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>PyDen Express Admin - Usuários e GPS</title>
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+    <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+    <script>
+        WebFont.load({
+            google: { families: ["Public Sans:300,400,500,600,700"] },
+            custom: {
+                families: [
+                    "Font Awesome 5 Solid",
+                    "Font Awesome 5 Regular",
+                    "Font Awesome 5 Brands",
+                    "simple-line-icons",
+                ],
+                urls: ["../../assets/css/fonts.min.css"],
+            },
+            active: function () {
+                sessionStorage.fonts = true;
+            },
+        });
+    </script>
+    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css" />
+    
+    <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
+    
+    <link rel="stylesheet" href="../../assets/js/plugin/datatables/datatables.min.css" />
 </head>
+
 <body>
-  <!-- Barra de navegação (simplificada) com botão de ajuda e logout -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <a class="navbar-brand" href="#">PyDen Express</a>
-    <button class="btn btn-outline-info ml-auto" data-toggle="modal" data-target="#helpModal">Ajuda</button>
-    <a class="btn btn-danger ml-2" href="/logout">Sair</a>
-  </nav>
+    <div class="wrapper">
+        <div class="sidebar" data-background-color="dark">
+            <div class="sidebar-logo">
+                <div class="logo-header" data-background-color="dark">
+                    <a href="dashboard-admin.html" class="logo">
+                        <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand" class="navbar-brand"
+                            height="20" />
+                    </a>
+                    <div class="nav-toggle">
+                        <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+                        <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+                    </div>
+                    <button class="topbar-toggler more"><i class="gg-more-vertical-alt"></i></button>
+                </div>
+            </div>
+            <div class="sidebar-wrapper scrollbar scrollbar-inner">
+                <div class="sidebar-content">
+                    <ul class="nav nav-primary">
+                        <li class="nav-item active">
+                            <a href="#sectionDashboard" class="scroll-link">
+                                <i class="fas fa-tachometer-alt"></i>
+                                <p>Dashboard Admin</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#secUsers" class="scroll-link">
+                                <i class="fas fa-users-cog"></i>
+                                <p>Gerenciar Usuários</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#secGPS" class="scroll-link">
+                                <i class="fas fa-microchip"></i>
+                                <p>Gerenciar GPS</p>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-  <div class="container-fluid mt-4">
-    <h1 class="mb-4 text-center">Painel Administrativo</h1>
+        <div class="main-panel">
+            <div class="main-header" style="top: 0;">
+                <div class="main-header-logo">
+                    <div class="logo-header" data-background-color="dark">
+                        <a href="dashboard-admin.html" class="logo">
+                            <img src="../../assets/img/pydenadmin/logo_light.png" alt="navbar brand"
+                                class="navbar-brand" height="20" />
+                        </a>
+                        <div class="nav-toggle">
+                            <button class="btn btn-toggle toggle-sidebar">
+                                <i class="gg-menu-right"></i>
+                            </button>
+                            <button class="btn btn-toggle sidenav-toggler">
+                                <i class="gg-menu-left"></i>
+                            </button>
+                        </div>
+                        <button class="topbar-toggler more">
+                            <i class="gg-more-vertical-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
+                    <div class="container-fluid">
+                        <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
+                            <li class="nav-item topbar-user dropdown hidden-caret">
+                                <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
+                                    aria-expanded="false">
+                                    <div class="avatar-sm">
+                                        <img src="../../assets/img/profile.jpg" alt="..."
+                                            class="avatar-img rounded-circle" />
+                                    </div>
+                                    <span class="profile-username">
+                                        <span class="op-7">Olá,</span>
+                                        <span class="fw-bold" id="dropdownUserName">Admin</span>
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-user animated fadeIn">
+                                    <div class="dropdown-user-scroll scrollbar-outer">
+                                        <li>
+                                            <div class="user-box">
+                                                <div class="avatar-lg">
+                                                    <img src="../../assets/img/profile.jpg" alt="image profile"
+                                                        class="avatar-img rounded" />
+                                                </div>
+                                                <div class="u-text">
+                                                    <h4 id="dropdownUserBoxName">Admin</h4>
+                                                    <p class="text-muted" id="dropdownUserEmail">admin@pydenexpress.com
+                                                    </p>
+                                                    <a href="#" class="btn btn-xs btn-secondary btn-sm">Ver Perfil</a>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#">Meu Perfil</a>
+                                            <div class="dropdown-divider"></div>
+                                            <a class="dropdown-item" href="#" id="logoutLink">Sair</a>
+                                        </li>
+                                    </div>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
 
-    <!-- ======================= Painel de Estatísticas ======================= -->
-    <section id="stats-section" class="mb-5">
-      <h2>Estatísticas Gerais</h2>
-      <div class="row">
-        <div class="col-md-6 mb-4">
-          <h5 class="text-center">Usuários Ativos vs Inativos</h5>
-          <canvas id="userChart" width="400" height="300"></canvas>
-        </div>
-        <div class="col-md-6 mb-4">
-          <h5 class="text-center">Dispositivos: Em Uso vs Disponíveis</h5>
-          <canvas id="deviceChart" width="400" height="300"></canvas>
-        </div>
-      </div>
-    </section>
+            <div class="container">
+                <div class="page-inner" id="sectionDashboard">
+                    <div class="d-flex align-items-left align-items-md-center flex-column flex-md-row pt-2 pb-4">
+                        <div>
+                            <h3 class="fw-bold mb-3">Painel Administrativo</h3>
+                            <h6 class="op-7 mb-2">Gerencie configurações e usuários do sistema</h6>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card-round">
+                                <div class="card-header">
+                                    <div class="card-head-row">
+                                        <div class="card-title">Estatísticas / Resumo</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p>Aqui podem vir estatísticas administrativas. Exemplo: Quantidade de usuários,
+                                        etc.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- ======================= Seção de Usuários ======================= -->
-    <section id="users-section" class="mb-5">
-      <h2>Gerenciamento de Usuários</h2>
-      <!-- Filtros de busca e filtros avançados para usuários -->
-      <form class="form-inline mb-3">
-        <div class="form-group mr-3">
-          <label for="userSearch" class="mr-1">Buscar Nome/Email:</label>
-          <input type="text" id="userSearch" class="form-control" placeholder="Buscar nome ou email" />
-        </div>
-        <div class="form-group mr-3">
-          <label for="userPhoneSearch" class="mr-1">Telefone:</label>
-          <input type="text" id="userPhoneSearch" class="form-control" placeholder="Buscar telefone" />
-        </div>
-        <div class="form-group mr-3">
-          <label for="filterPermission" class="mr-1">Permissão:</label>
-          <select id="filterPermission" class="form-control">
-            <option value="">Todas</option>
-            <option value="master">Master</option>
-            <option value="admin">Admin</option>
-            <option value="gestor">Gestor</option>
-            <!-- Outras permissões específicas de fornecedores podem ser filtradas via busca livre -->
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="filterUserStatus" class="mr-1">Status:</label>
-          <select id="filterUserStatus" class="form-control">
-            <option value="">Todos</option>
-            <option value="ativo">Ativos</option>
-            <option value="inativo">Restritos</option>
-          </select>
-        </div>
-      </form>
+                <div class="page-inner" id="secUsers">
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card card-round">
+                                <div class="card-header">
+                                    <div class="card-head-row">
+                                        <div class="card-title">Gerenciamento de Usuários</div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <table id="tableUsers" class="table table-striped table-bordered"
+                                        style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Nome Completo</th>
+                                                <th>Telefone</th>
+                                                <th>Email</th>
+                                                <th>Permissões</th>
+                                                <th>Init</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-      <!-- Tabela de usuários com resultados filtráveis -->
-      <div class="table-responsive">
-        <table id="userTable" class="table table-striped table-hover">
-          <thead class="thead-dark">
-            <tr>
-              <th>ID</th>
-              <th>Nome</th>
-              <th>Telefone</th>
-              <th>Email</th>
-              <th>Permissões</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Conteúdo preenchido dinamicamente via JavaScript -->
-          </tbody>
-        </table>
-      </div>
-    </section>
+                <div class="page-inner" id="secGPS">
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card card-round">
+                                <div class="card-header d-flex justify-content-between">
+                                    <div class="card-head-row">
+                                        <div class="card-title">Lista de Dispositivos GPS</div>
+                                    </div>
+                                    <button class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#modalCadastroGPS">
+                                        <i class="fa fa-plus"></i> Cadastrar Novo Dispositivo
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <table id="tableGPS" class="table table-striped table-bordered" style="width:100%">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Modelo</th>
+                                                <th>IMEI</th>
+                                                <th>ICCID</th>
+                                                <th>Telefone</th>
+                                                <th>Veículo Associado</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- ======================= Seção de Dispositivos ======================= -->
-    <section id="devices-section" class="mb-5">
-      <h2>Gerenciamento de Dispositivos GPS</h2>
-      <!-- Filtros de busca e filtros avançados para dispositivos -->
-      <form class="form-inline mb-3">
-        <div class="form-group mr-3">
-          <label for="deviceSearch" class="mr-1">Buscar Modelo/IMEI:</label>
-          <input type="text" id="deviceSearch" class="form-control" placeholder="Buscar modelo ou IMEI" />
-        </div>
-        <div class="form-group mr-3">
-          <label for="devicePhoneSearch" class="mr-1">Telefone SIM:</label>
-          <input type="text" id="devicePhoneSearch" class="form-control" placeholder="Buscar telefone do SIM" />
-        </div>
-        <div class="form-group">
-          <label for="filterDeviceStatus" class="mr-1">Status:</label>
-          <select id="filterDeviceStatus" class="form-control">
-            <option value="">Todos</option>
-            <option value="uso">Em uso</option>
-            <option value="livre">Disponíveis</option>
-          </select>
-        </div>
-      </form>
+                    <div class="modal fade" id="modalCadastroGPS" tabindex="-1" aria-labelledby="modalCadastroGPSLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalCadastroGPSLabel">Cadastrar Novo Dispositivo GPS
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="gps-form">
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="modelo" class="form-label">Modelo</label>
+                                                <input type="text" class="form-control" id="modelo" name="modelo"
+                                                    value="J16 4G" required />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="imei" class="form-label">IMEI</label>
+                                                <input type="text" class="form-control" id="imei" name="imei"
+                                                    required />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="iccid" class="form-label">ICCID</label>
+                                                <input type="text" class="form-control" id="iccid" name="iccid" />
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="telefone" class="form-label">Telefone (SIM)</label>
+                                                <input type="text" class="form-control" id="telefone" name="telefone"
+                                                    placeholder="(99) 99999-9999" />
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="veiculo_id" class="form-label">Associar ao Veículo (ID ou
+                                                    Placa)</label>
+                                                <select class="form-control" id="veiculo_id" name="veiculo_id">
+                                                    <option value="">Nenhum</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="observacao" class="form-label">Observação</label>
+                                                <input type="text" class="form-control" id="observacao"
+                                                    name="observacao" />
+                                            </div>
+                                        </div>
+                                        <div class="mt-4 text-end">
+                                            <button type="submit" class="btn btn-success">Cadastrar Dispositivo</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Botão para abrir modal de cadastro de dispositivo -->
-      <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#addDeviceModal">Adicionar Dispositivo</button>
+                    <div class="modal fade" id="modalAjudaGPS" tabindex="-1" aria-labelledby="modalAjudaGPSLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalAjudaGPSLabel">Passo a Passo de Configuração J16
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Fechar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <h5>1. Inserir o SIM Card</h5>
+                                    <p>Abra o dispositivo, insira corretamente o SIM Card M2M (com dados habilitados) e
+                                        certifique-se de que o chip está ativo.</p>
 
-      <!-- Tabela de dispositivos -->
-      <div class="table-responsive">
-        <table id="deviceTable" class="table table-striped table-hover">
-          <thead class="thead-dark">
-            <tr>
-              <th>ID</th>
-              <th>Modelo</th>
-              <th>IMEI</th>
-              <th>Telefone</th>
-              <th>Veículo</th>
-              <th>Observação</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Conteúdo preenchido dinamicamente via JavaScript -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+                                    <h5>2. Alimentação e Instalação</h5>
+                                    <p>Conecte o dispositivo à bateria ou parte elétrica do veículo de acordo com o
+                                        manual. O fio Vermelho (positivo), Preto (negativo), etc.</p>
 
-  <!-- ======================= Modal de Ajuda (Passo a passo do GPS) ======================= -->
-  <div class="modal fade" id="helpModal" tabindex="-1" role="dialog" aria-labelledby="helpModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="helpModalLabel">Ajuda - Passo a Passo do GPS</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
-            <span aria-hidden="true">&times;</span>
-          </button>
+                                    <h5>3. Configurar APN e Servidor</h5>
+                                    <p>Use os comandos SMS numerados a seguir, enviando cada um deles para o número do
+                                        SIM Card inserido no dispositivo:</p>
+                                    <ol>
+                                        <li><strong>SERVER</strong>:
+                                            <code>SERVER,0,semedcanaadoscarajas.pydenexpress.com,8741,0#</code>
+                                        </li>
+                                        <li><strong>APN</strong>: <code>APN,sua.apn,aqui,senha#</code></li>
+                                        <li><strong>TIMER</strong>: <code>TIMER,60,3600#</code></li>
+                                    </ol>
+                                    <p>Se preferir usar o IP diretamente, substitua o comando SERVER pelo seguinte:</p>
+                                    <ol>
+                                        <li><strong>SERVER</strong>: <code>SERVER,0,54.233.187.107,8741,0#</code></li>
+                                        <li><strong>APN</strong>: <code>APN,sua.apn,aqui,senha#</code></li>
+                                        <li><strong>TIMER</strong>: <code>TIMER,60,3600#</code></li>
+                                    </ol>
+
+                                    <h5>4. Testar Conexão</h5>
+                                    <p>Após configurar, verifique no sistema se o dispositivo está reportando
+                                        corretamente a posição (latitude/longitude). O servidor HTTP está na porta 3000,
+                                        enquanto a porta 8741 é utilizada para os dados do rastreador.</p>
+
+                                    <h5>5. Fixação no Veículo</h5>
+                                    <p>Instale o dispositivo em um local oculto, mas que não bloqueie o sinal GPS.</p>
+
+                                    <h5>Observações</h5>
+                                    <p>Para mais detalhes, consulte o manual do J16 e o protocolo GT06. Em caso de
+                                        dúvidas, entre em contato com o suporte.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalAjudaGPS">
+                                <i class="fa fa-info-circle"></i> Ajuda para Configuração
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="container-fluid d-flex justify-content-between">
+                    <nav class="pull-left">
+                        <ul class="nav">
+                            <li class="nav-item"><a class="nav-link" target="_blank" href="https://pydenexpress.com/">
+                                    PyDen Express</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#">Ajuda</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#">Termos de Uso</a></li>
+                        </ul>
+                    </nav>
+                    <div class="copyright">
+                        2025 &copy; Todos os direitos reservados
+                    </div>
+                    <div>
+                        Desenvolvido por <a target="_blank" href="http://www.pyden.tech">PyDen Technologies</a>&reg;.
+                    </div>
+                </div>
+            </footer>
         </div>
-        <div class="modal-body">
-          <!-- Conteúdo explicativo passo a passo -->
-          <ol>
-            <li>Insira o cartão SIM no dispositivo GPS e verifique se o dispositivo está ligado.</li>
-            <li>Instale o dispositivo no veículo em um local com boa cobertura de sinal GPS.</li>
-            <li>Aguarde o dispositivo adquirir sinal GPS (pode levar alguns minutos no primeiro uso).</li>
-            <li>No sistema, cadastre o dispositivo informando modelo, IMEI e número de telefone do SIM.</li>
-            <li>Vincule o dispositivo a um veículo (opcional) e a um fornecedor, se aplicável.</li>
-            <li>Monitore a localização e status do dispositivo em tempo real através deste painel.</li>
-          </ol>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- ======================= Modal de Cadastro de Dispositivo ======================= -->
-  <div class="modal fade" id="addDeviceModal" tabindex="-1" role="dialog" aria-labelledby="addDeviceModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <form id="deviceForm" novalidate>
-          <div class="modal-header">
-            <h5 class="modal-title" id="addDeviceModalLabel">Cadastrar Novo Dispositivo</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="deviceModelo">Modelo:</label>
-              <input type="text" id="deviceModelo" name="modelo" class="form-control" required />
-              <div class="invalid-feedback">Por favor, informe o modelo do dispositivo.</div>
+    <div class="modal fade" id="modalRelateFornecedor" tabindex="-1" aria-labelledby="modalRelateFornecedorLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRelateFornecedorLabel">Vincular Usuário a Fornecedor</h5>
+                    <button type="button" class="close btn btn-link" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="relateUserId" />
+                    <div class="form-group">
+                        <label for="fornecedorSelect">Selecione o Fornecedor:</label>
+                        <select id="fornecedorSelect" class="form-control">
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-info" id="btnVincular">Vincular</button>
+                </div>
             </div>
-            <div class="form-group">
-              <label for="deviceIMEI">IMEI:</label>
-              <input type="text" id="deviceIMEI" name="imei" class="form-control" pattern="\d{15}" required />
-              <div class="invalid-feedback">IMEI deve conter 15 dígitos numéricos.</div>
-            </div>
-            <div class="form-group">
-              <label for="deviceICCID">ICCID (SIM):</label>
-              <input type="text" id="deviceICCID" name="iccid" class="form-control" required />
-              <div class="invalid-feedback">Por favor, informe o código ICCID do chip SIM.</div>
-            </div>
-            <div class="form-group">
-              <label for="devicePhone">Telefone (SIM):</label>
-              <input type="text" id="devicePhone" name="telefone" class="form-control" pattern="\d+" required />
-              <div class="invalid-feedback">Informe o número de telefone do SIM (somente dígitos).</div>
-            </div>
-            <div class="form-group">
-              <label for="deviceVeiculo">Veículo:</label>
-              <select id="deviceVeiculo" name="veiculo_id" class="form-control">
-                <option value="" selected>-- Não vincular a veículo --</option>
-                <!-- Opções de veículos serão carregadas via JavaScript -->
-              </select>
-              <div class="invalid-feedback">Selecione um veículo válido ou deixe como "Não vincular".</div>
-            </div>
-            <div class="form-group">
-              <label for="deviceObs">Observação:</label>
-              <input type="text" id="deviceObs" name="observacao" class="form-control" />
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Cadastrar</button>
-          </div>
-        </form>
-      </div>
+        </div>
     </div>
-  </div>
 
-  <!-- ======================= Modal de Vínculo de Usuário a Fornecedor ======================= -->
-  <div class="modal fade" id="linkModal" tabindex="-1" role="dialog" aria-labelledby="linkModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <form id="linkForm">
-          <div class="modal-header">
-            <h5 class="modal-title" id="linkModalLabel">Vincular Usuário a Fornecedor</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p id="linkUserInfo">Usuário: <strong id="linkUserName"></strong></p>
-            <input type="hidden" id="linkUserId" name="userId" />
-            <div class="form-group">
-              <label for="fornecedorSelect">Fornecedor:</label>
-              <select id="fornecedorSelect" name="fornecedorId" class="form-control" required>
-                <option value="" disabled selected>Selecione um fornecedor</option>
-                <!-- Lista de fornecedores carregada via JS -->
-              </select>
-              <div class="invalid-feedback">Por favor, selecione um fornecedor.</div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Vincular</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+    <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
+    <script src="../../assets/js/core/popper.min.js"></script>
+    <script src="../../assets/js/core/bootstrap.min.js"></script>
+    <script src="../../assets/js/usuario.js"></script>
+    <script src="../../assets/js/plugin/bootstrap-notify/bootstrap-notify.min.js"></script>
+    <script src="../../assets/js/plugin/jquery-scrollbar/jquery.scrollbar.min.js"></script>
+    <script src="../../assets/js/plugin/datatables/datatables.min.js"></script>
+    <script src="../../assets/js/pydenadmin.min.js"></script>
+    <script src="../../assets/js/setting-demo2.js"></script>
+    <script>
+        const permissoesDisponiveis = [
+            "gestor", "admin", "locan", "talisma", "roma", "ctl", "diamond"
+        ];
 
-  <!-- Scripts JS (jQuery, Bootstrap, DataTables) -->
-  <script src="/assets/js/jquery.min.js"></script>
-  <script src="/assets/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/datatables.min.js"></script>
-  <script>
-    $(document).ready(function() {
-      // Arrays globais para armazenar dados carregados
-      let usersData = [];
-      let devicesData = [];
-      let suppliersData = [];
+        let table;
+        let tableGPS;
+        let vehiclesList = [];
 
-      // Carrega a lista de usuários via API
-      fetch('/api/admin/users')
-        .then(response => response.json())
-        .then(data => {
-          usersData = data;
-          populateUserTable(usersData);
-          updateUserChart();
-        })
-        .catch(error => console.error('Erro ao buscar usuários:', error));
+        $(document).ready(function () {
+            // Tabela de usuários
+            table = $("#tableUsers").DataTable({
+                ajax: {
+                    url: "/api/admin/users",
+                    dataSrc: ""
+                },
+                columns: [
+                    { data: "id" },
+                    { data: "nome_completo" },
+                    { data: "telefone" },
+                    { data: "email" },
+                    {
+                        data: "permissoes",
+                        render: function (data, type, row, meta) {
+                            const userPerms = data ? data.split(",") : [];
+                            let selectHtml = `<select class="form-select form-select-sm permissoes-select" multiple data-user-id="${row.id}">`;
+                            permissoesDisponiveis.forEach((perm) => {
+                                const selected = userPerms.includes(perm) ? "selected" : "";
+                                selectHtml += `<option value="${perm}" ${selected}>${perm}</option>`;
+                            });
+                            selectHtml += `</select>`;
+                            return selectHtml;
+                        }
+                    },
+                    {
+                        data: "init",
+                        render: function (data, type, row, meta) {
+                            return data ? "Ativo" : "Inativo";
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            let btnInit = row.init
+                                ? `<button class="btn btn-warning btn-sm toggle-init" data-user-id="${row.id}" data-init="false">Restringir</button>`
+                                : `<button class="btn btn-success btn-sm toggle-init" data-user-id="${row.id}" data-init="true">Permitir</button>`;
+                            const btnDelete = `<button class="btn btn-danger btn-sm delete-user" data-user-id="${row.id}">Excluir</button>`;
+                            const btnFornecedor = `<button class="btn btn-info btn-sm relate-fornecedor" data-user-id="${row.id}"><i class="fas fa-link"></i></button>`;
+                            return `${btnInit} ${btnDelete} ${btnFornecedor}`;
+                        }
+                    }
+                ]
+            });
 
-      // Carrega a lista de dispositivos via API
-      fetch('/api/admin/devices')
-        .then(response => response.json())
-        .then(data => {
-          devicesData = data;
-          populateDeviceTable(devicesData);
-          updateDeviceChart();
-        })
-        .catch(error => console.error('Erro ao buscar dispositivos:', error));
+            $("#tableUsers").on("change", ".permissoes-select", function () {
+                const userId = $(this).data("user-id");
+                const selectedOptions = $(this).val() || [];
+                const newPerms = selectedOptions.join(",");
 
-      // Carrega a lista de fornecedores para uso no modal de vínculo
-      fetch('/api/fornecedores-admin')
-        .then(response => response.json())
-        .then(data => {
-          suppliersData = data;
-          const fornecedorSelect = $('#fornecedorSelect');
-          data.forEach(f => {
-            // adiciona cada fornecedor como opção no select
-            fornecedorSelect.append(new Option(f.nome_fornecedor, f.id));
-          });
-        })
-        .catch(error => console.error('Erro ao buscar fornecedores:', error));
+                $.ajax({
+                    url: "/api/admin/update-user",
+                    method: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({ id: userId, permissoes: newPerms }),
+                    success: function (res) {
+                        table.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao atualizar permissões do usuário.");
+                    }
+                });
+            });
 
-      // ========== Preenche tabela de usuários ==========
-      function populateUserTable(data) {
-        const tbody = $('#userTable tbody');
-        tbody.empty();
-        data.forEach(user => {
-          // Determina o status textual do usuário
-          const statusText = user.init ? 'Ativo' : 'Restrito';
-          // Formata as permissões para exibição
-          let permText = '';
-          if (user.permissoes) {
-            try {
-              const permList = JSON.parse(user.permissoes);
-              permText = Array.isArray(permList) ? permList.join(', ') : String(user.permissoes);
-            } catch {
-              permText = String(user.permissoes);
-            }
-          }
-          // Define texto e classe do botão de ativar/restringir
-          const toggleBtnText = user.init ? 'Restringir' : 'Ativar';
-          const toggleBtnClass = user.init ? 'btn-warning' : 'btn-success';
-          // Monta a linha da tabela
-          const tr = $(`
-            <tr>
-              <td>${user.id}</td>
-              <td>${user.nome_completo}</td>
-              <td>${user.telefone || ''}</td>
-              <td>${user.email}</td>
-              <td>${permText}</td>
-              <td>${statusText}</td>
-              <td>
-                <button class="btn ${toggleBtnClass} btn-sm toggle-access-btn">${toggleBtnText}</button>
-                <button class="btn btn-info btn-sm link-user-btn" data-toggle="modal" data-target="#linkModal">Vincular</button>
-                <button class="btn btn-danger btn-sm delete-user-btn">Excluir</button>
-              </td>
-            </tr>
-          `);
-          // Armazena ID e info do usuário nos botões para uso nos handlers
-          tr.find('.toggle-access-btn').data('userid', user.id).data('current', user.init);
-          tr.find('.link-user-btn').data('userid', user.id).data('username', user.nome_completo);
-          tr.find('.delete-user-btn').data('userid', user.id);
-          tbody.append(tr);
+            $("#tableUsers").on("click", ".toggle-init", function () {
+                const userId = $(this).data("user-id");
+                const newInit = $(this).data("init") === true;
+
+                $.ajax({
+                    url: "/api/admin/toggle-init",
+                    method: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({ id: userId, init: newInit }),
+                    success: function (res) {
+                        table.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao atualizar status do usuário.");
+                    }
+                });
+            });
+
+            $("#tableUsers").on("click", ".delete-user", function () {
+                const userId = $(this).data("user-id");
+                if (!confirm("Tem certeza que deseja excluir este usuário?")) {
+                    return;
+                }
+                $.ajax({
+                    url: `/api/admin/delete-user/${userId}`,
+                    method: "DELETE",
+                    success: function (res) {
+                        table.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao excluir usuário.");
+                    }
+                });
+            });
+
+            $("#tableUsers").on("click", ".relate-fornecedor", function () {
+                const userId = $(this).data("user-id");
+                $("#relateUserId").val(userId);
+                $.getJSON("/api/fornecedores-admin", function (data) {
+                    $("#fornecedorSelect").empty();
+                    data.forEach((forn) => {
+                        $("#fornecedorSelect").append(`
+                            <option value="${forn.id}">${forn.nome_fornecedor}</option>
+                        `);
+                    });
+                    $("#modalRelateFornecedor").modal("show");
+                });
+            });
+
+            $("#btnVincular").on("click", function () {
+                const userId = $("#relateUserId").val();
+                const fornecedorId = $("#fornecedorSelect").val();
+
+                $.ajax({
+                    url: "/api/admin/relate-user-fornecedor",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({ userId, fornecedorId }),
+                    success: function (res) {
+                        alert("Usuário vinculado ao fornecedor com sucesso!");
+                        $("#modalRelateFornecedor").modal("hide");
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao vincular usuário ao fornecedor.");
+                    }
+                });
+            });
+
+            $(".scroll-link").on("click", function (e) {
+                e.preventDefault();
+                const target = $(this).attr("href");
+                $("html, body").animate({ scrollTop: $(target).offset().top - 70 }, 800);
+            });
+
+            // GPS
+            $.ajax({
+                url: "/api/veiculos-simples",
+                method: "GET",
+                success: function (data) {
+                    vehiclesList = data;
+                    const veiculoSelect = $("#veiculo_id");
+                    data.forEach((veh) => {
+                        const text = `${veh.id} - ${veh.placa || ""}`;
+                        veiculoSelect.append(`<option value="${veh.id}">${text}</option>`);
+                    });
+                },
+                error: function (err) {
+                    console.error(err);
+                    alert("Erro ao carregar lista de veículos.");
+                }
+            });
+
+            tableGPS = $("#tableGPS").DataTable({
+                ajax: {
+                    url: "/api/admin/devices",
+                    dataSrc: ""
+                },
+                columns: [
+                    { data: "id" },
+                    { data: "modelo" },
+                    { data: "imei" },
+                    { data: "iccid" },
+                    { data: "telefone" },
+                    {
+                        data: "veiculo",
+                        render: function (data, type, row) {
+                            if (!data) return "Nenhum";
+                            return data.placa ? data.placa : data.id;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            const btnDelete = `<button class="btn btn-danger btn-sm delete-device" data-device-id="${row.id}">
+                                <i class="fa fa-trash-alt"></i>
+                            </button>`;
+                            const btnEdit = `<button class="btn btn-warning btn-sm edit-device" data-device-id="${row.id}">
+                                <i class="fa fa-edit"></i>
+                            </button>`;
+                            return `${btnEdit} ${btnDelete}`;
+                        }
+                    }
+                ],
+                language: {
+                    decimal: ",",
+                    thousands: ".",
+                    info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+                    infoEmpty: "Mostrando 0 até 0 de 0 registros",
+                    infoFiltered: "(filtrado de _MAX_ registros no total)",
+                    lengthMenu: "Mostrar _MENU_ registros",
+                    loadingRecords: "Carregando...",
+                    processing: "Processando...",
+                    search: "Pesquisar:",
+                    zeroRecords: "Nenhum registro encontrado",
+                    paginate: {
+                        first: "Primeiro",
+                        last: "Último",
+                        next: "Próximo",
+                        previous: "Anterior"
+                    },
+                    emptyTable: "Nenhum dispositivo cadastrado"
+                }
+            });
+
+            $("#gps-form").on("submit", function (e) {
+                e.preventDefault();
+                const formData = {
+                    modelo: $("#modelo").val(),
+                    imei: $("#imei").val(),
+                    iccid: $("#iccid").val(),
+                    telefone: $("#telefone").val(),
+                    veiculo_id: $("#veiculo_id").val() || null,
+                    observacao: $("#observacao").val()
+                };
+                $.ajax({
+                    url: "/api/admin/devices",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(formData),
+                    success: function (res) {
+                        $("#modalCadastroGPS").modal("hide");
+                        $("#gps-form")[0].reset();
+                        tableGPS.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao cadastrar dispositivo.");
+                    }
+                });
+            });
+
+            $("#tableGPS").on("click", ".delete-device", function () {
+                const deviceId = $(this).data("device-id");
+                if (!confirm("Tem certeza que deseja excluir este dispositivo?")) return;
+                $.ajax({
+                    url: `/api/admin/devices/${deviceId}`,
+                    method: "DELETE",
+                    success: function (res) {
+                        tableGPS.ajax.reload(null, false);
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("Erro ao excluir dispositivo.");
+                    }
+                });
+            });
+
+            $("#tableGPS").on("click", ".edit-device", function () {
+                const deviceId = $(this).data("device-id");
+                alert("Aqui poderia abrir um modal de edição para ID: " + deviceId + " (Função não implementada).");
+            });
         });
-      }
-
-      // ========== Preenche tabela de dispositivos ==========
-      function populateDeviceTable(data) {
-        const tbody = $('#deviceTable tbody');
-        tbody.empty();
-        data.forEach(dev => {
-          const veiculoText = dev.veiculo && dev.veiculo.placa ? dev.veiculo.placa : '-';
-          const obsText = dev.observacao || '';
-          const tr = $(`
-            <tr>
-              <td>${dev.id}</td>
-              <td>${dev.modelo}</td>
-              <td>${dev.imei}</td>
-              <td>${dev.telefone || ''}</td>
-              <td>${veiculoText}</td>
-              <td>${obsText}</td>
-              <td>
-                <button class="btn btn-danger btn-sm delete-device-btn">Excluir</button>
-              </td>
-            </tr>
-          `);
-          tr.find('.delete-device-btn').data('deviceid', dev.id);
-          tbody.append(tr);
-        });
-      }
-
-      // ========== Atualiza gráfico de usuários (Chart.js) ==========
-      function updateUserChart() {
-        if (!usersData.length) return;
-        const totalUsers = usersData.length;
-        const activeUsers = usersData.filter(u => u.init).length;
-        const inactiveUsers = totalUsers - activeUsers;
-        const ctx = document.getElementById('userChart').getContext('2d');
-        // Destroi gráfico anterior se existir, para poder atualizar
-        if (window.userChartInstance) {
-          window.userChartInstance.destroy();
-        }
-        window.userChartInstance = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: ['Ativos', 'Restritos'],
-            datasets: [{
-              data: [activeUsers, inactiveUsers],
-              backgroundColor: ['#4caf50', '#f44336']
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'bottom' }
-            }
-          }
-        });
-      }
-
-      // ========== Atualiza gráfico de dispositivos (Chart.js) ==========
-      function updateDeviceChart() {
-        if (!devicesData.length) return;
-        const totalDevices = devicesData.length;
-        const inUse = devicesData.filter(d => d.veiculo && d.veiculo.id).length;
-        const available = totalDevices - inUse;
-        const ctx = document.getElementById('deviceChart').getContext('2d');
-        if (window.deviceChartInstance) {
-          window.deviceChartInstance.destroy();
-        }
-        window.deviceChartInstance = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: ['Em uso', 'Disponíveis'],
-            datasets: [{
-              data: [inUse, available],
-              backgroundColor: ['#42a5f5', '#9e9e9e']
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'bottom' }
-            }
-          }
-        });
-      }
-
-      // ========== Filtros de busca na tabela de usuários ==========
-      function filterUsers() {
-        let filtered = usersData.slice();  // cópia da lista
-        const textQuery = $('#userSearch').val().toLowerCase();
-        const phoneQuery = $('#userPhoneSearch').val().toLowerCase();
-        const permFilter = $('#filterPermission').val();
-        const statusFilter = $('#filterUserStatus').val();
-        filtered = filtered.filter(u => {
-          // Busca texto em nome ou email
-          if (textQuery) {
-            const combined = (u.nome_completo + ' ' + u.email).toLowerCase();
-            if (!combined.includes(textQuery)) return false;
-          }
-          // Busca em telefone
-          if (phoneQuery) {
-            const phoneStr = (u.telefone || '').toLowerCase();
-            if (!phoneStr.includes(phoneQuery)) return false;
-          }
-          // Filtra por permissão (se selecionada)
-          if (permFilter) {
-            if (!u.permissoes || !u.permissoes.includes(permFilter)) return false;
-          }
-          // Filtra por status (ativo/inativo)
-          if (statusFilter) {
-            const isActive = u.init;
-            if (statusFilter === 'ativo' && !isActive) return false;
-            if (statusFilter === 'inativo' && isActive) return false;
-          }
-          return true;
-        });
-        populateUserTable(filtered);
-      }
-
-      // ========== Filtros de busca na tabela de dispositivos ==========
-      function filterDevices() {
-        let filtered = devicesData.slice();
-        const textQuery = $('#deviceSearch').val().toLowerCase();
-        const phoneQuery = $('#devicePhoneSearch').val().toLowerCase();
-        const statusFilter = $('#filterDeviceStatus').val();
-        filtered = filtered.filter(d => {
-          if (textQuery) {
-            const combined = (d.modelo + ' ' + d.imei).toLowerCase();
-            if (!combined.includes(textQuery)) return false;
-          }
-          if (phoneQuery) {
-            const phoneStr = (d.telefone || '').toLowerCase();
-            if (!phoneStr.includes(phoneQuery)) return false;
-          }
-          if (statusFilter) {
-            const isInUse = d.veiculo && d.veiculo.id;
-            if (statusFilter === 'uso' && !isInUse) return false;
-            if (statusFilter === 'livre' && isInUse) return false;
-          }
-          return true;
-        });
-        populateDeviceTable(filtered);
-      }
-
-      // Atrela eventos de filtro nos campos de busca
-      $('#userSearch, #userPhoneSearch').on('input', filterUsers);
-      $('#filterPermission, #filterUserStatus').on('change', filterUsers);
-      $('#deviceSearch, #devicePhoneSearch').on('input', filterDevices);
-      $('#filterDeviceStatus').on('change', filterDevices);
-
-      // ========== Evento: Ativar/Restringir usuário ==========
-      $('#userTable').on('click', '.toggle-access-btn', function() {
-        const userId = $(this).data('userid');
-        const currentlyActive = $(this).data('current');  // estado atual (booleano)
-        const newInit = !currentlyActive;
-        const btn = $(this);
-        btn.prop('disabled', true).text('Processando...');
-        fetch('/api/admin/toggle-init', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: userId, init: newInit })
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            // Atualiza status no array local
-            const user = usersData.find(u => u.id === userId);
-            if (user) user.init = newInit;
-            // Atualiza tabela filtrada e gráfico
-            filterUsers();
-            updateUserChart();
-          } else {
-            console.error('Falha ao alterar status do usuário.');
-          }
-        })
-        .catch(error => console.error('Erro ao alterar status do usuário:', error))
-        .finally(() => btn.prop('disabled', false));
-      });
-
-      // ========== Evento: Abrir modal de vínculo (preencher dados do usuário) ==========
-      $('#linkModal').on('show.bs.modal', function(event) {
-        const button = $(event.relatedTarget);
-        const userId = button.data('userid');
-        const userName = button.data('username');
-        $('#linkUserId').val(userId);
-        $('#linkUserName').text(userName);
-        // Limpa seleção anterior
-        $('#fornecedorSelect').val('');
-        $('#fornecedorSelect').removeClass('is-invalid');
-      });
-
-      // ========== Evento: Vincular usuário a fornecedor ==========
-      $('#linkForm').on('submit', function(e) {
-        e.preventDefault();
-        const userId = $('#linkUserId').val();
-        const fornecedorId = $('#fornecedorSelect').val();
-        if (!fornecedorId) {
-          // validação simples: seleção obrigatória
-          $('#fornecedorSelect').addClass('is-invalid');
-          return;
-        }
-        // Desabilita botão para evitar duplo envio
-        $('#linkModal .btn-primary').prop('disabled', true).text('Vinculando...');
-        fetch('/api/admin/relate-user-fornecedor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: userId, fornecedorId: fornecedorId })
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            alert('Usuário vinculado com sucesso!');
-            $('#linkModal').modal('hide');
-            // (Opcional: poderia atualizar a tabela de usuários para indicar vínculo, se exibido)
-          } else {
-            alert('Falha ao vincular usuário.');
-          }
-        })
-        .catch(error => {
-          console.error('Erro ao vincular usuário:', error);
-          alert('Erro ao vincular usuário.');
-        })
-        .finally(() => {
-          $('#linkModal .btn-primary').prop('disabled', false).text('Vincular');
-        });
-      });
-
-      // ========== Evento: Excluir usuário ==========
-      $('#userTable').on('click', '.delete-user-btn', function() {
-        const userId = $(this).data('userid');
-        if (!confirm('Tem certeza que deseja excluir este usuário?')) {
-          return;
-        }
-        const btn = $(this);
-        btn.prop('disabled', true).text('Excluindo...');
-        fetch(`/api/admin/delete-user/${userId}`, { method: 'DELETE' })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            // Remove usuário da lista local e atualiza UI
-            usersData = usersData.filter(u => u.id !== userId);
-            filterUsers();
-            updateUserChart();
-          } else {
-            alert('Não foi possível excluir o usuário.');
-          }
-        })
-        .catch(error => {
-          console.error('Erro ao excluir usuário:', error);
-          alert('Erro ao excluir usuário.');
-        });
-      });
-
-      // ========== Evento: Excluir dispositivo ==========
-      $('#deviceTable').on('click', '.delete-device-btn', function() {
-        const deviceId = $(this).data('deviceid');
-        if (!confirm('Tem certeza que deseja excluir este dispositivo?')) {
-          return;
-        }
-        const btn = $(this);
-        btn.prop('disabled', true).text('Excluindo...');
-        fetch(`/api/admin/devices/${deviceId}`, { method: 'DELETE' })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            devicesData = devicesData.filter(d => d.id !== deviceId);
-            filterDevices();
-            updateDeviceChart();
-          } else {
-            alert('Não foi possível excluir o dispositivo.');
-          }
-        })
-        .catch(error => {
-          console.error('Erro ao excluir dispositivo:', error);
-          alert('Erro ao excluir dispositivo.');
-        });
-      });
-
-      // ========== Validações em tempo real no formulário de dispositivo ==========
-      $('#deviceIMEI').on('input', function() {
-        const pattern = /^\d{15}$/;
-        if (pattern.test(this.value)) {
-          this.setCustomValidity('');
-          $(this).removeClass('is-invalid');
-        } else {
-          this.setCustomValidity('IMEI inválido');
-          if (this.value !== '') $(this).addClass('is-invalid');
-        }
-      });
-      $('#devicePhone').on('input', function() {
-        const pattern = /^\d+$/;
-        if (pattern.test(this.value)) {
-          this.setCustomValidity('');
-          $(this).removeClass('is-invalid');
-        } else {
-          this.setCustomValidity('Telefone inválido');
-          if (this.value !== '') $(this).addClass('is-invalid');
-        }
-      });
-      $('#deviceModelo, #deviceICCID').on('input', function() {
-        if ($(this).val().trim() === '') {
-          $(this).addClass('is-invalid');
-        } else {
-          $(this).removeClass('is-invalid');
-        }
-      });
-
-      // ========== Cadastro de novo dispositivo (submit do formulário) ==========
-      $('#deviceForm').on('submit', function(e) {
-        e.preventDefault();
-        const form = this;
-        // Utiliza API HTML5 para verificar validade geral do formulário
-        if (!form.checkValidity()) {
-          e.stopPropagation();
-          $(form).addClass('was-validated');
-          return;
-        }
-        // Prepara os dados do novo dispositivo
-        const newDevice = {
-          modelo: $('#deviceModelo').val().trim(),
-          imei: $('#deviceIMEI').val().trim(),
-          iccid: $('#deviceICCID').val().trim(),
-          telefone: $('#devicePhone').val().trim(),
-          veiculo_id: $('#deviceVeiculo').val() || null,
-          observacao: $('#deviceObs').val().trim() || ''
-        };
-        // Feedback visual: desabilita botão de submit e indica carregamento
-        $('#addDeviceModal .btn-primary').prop('disabled', true).text('Cadastrando...');
-        fetch('/api/admin/devices', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newDevice)
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result && result.id) {
-            // Adiciona novo dispositivo à lista local e atualiza tabela/gráfico
-            devicesData.push(result);
-            filterDevices();
-            updateDeviceChart();
-            alert('Dispositivo cadastrado com sucesso!');
-            $('#addDeviceModal').modal('hide');
-            form.reset();
-          } else {
-            alert('Falha ao cadastrar dispositivo.');
-          }
-        })
-        .catch(error => {
-          console.error('Erro ao cadastrar dispositivo:', error);
-          alert('Erro ao cadastrar dispositivo.');
-        })
-        .finally(() => {
-          $('#addDeviceModal .btn-primary').prop('disabled', false).text('Cadastrar');
-        });
-      });
-    });
-  </script>
+    </script>
 </body>
+
 </html>
