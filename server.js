@@ -183,6 +183,11 @@ app.get("/admin", isAdmin, (req, res) => {
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/login-cadastro.html"));
 });
+
+app.get("/politicaprivacidade", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "politicas-privacidade.html"));
+});
+
 app.get("/solicitar-rota.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/solicitar-rota.html"));
 });
