@@ -12525,6 +12525,44 @@ app.put('/api/admin-motoristas/viagens/:id/finalizar', verificarTokenJWT, async 
   }
 });
 
+app.put('/api/admin-motoristas/status', verificarTokenJWT, async (req, res) => {
+  try {
+    const motoristaId = req.user.id;
+    const { status } = req.body;
+    const result = await pool.query(
+      "UPDATE motoristas_administrativos SET status = $1 WHERE id = $2",
+      [status, motoristaId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Motorista não encontrado.' });
+    }
+    return res.sendStatus(204); // sucesso (sem conteúdo)
+  } catch (error) {
+    console.error('Erro ao atualizar status do motorista:', error);
+    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+  }
+});
+
+// [POST] Registrar avaliação do passageiro ao final da viagem (nota e observação)
+app.post('/api/admin-motoristas/viagens/:id/avaliar', verificarTokenJWT, async (req, res) => {
+  try {
+    const motoristaId = req.user.id;
+    const viagemId = req.params.id;
+    const { nota, observacao } = req.body;
+    const result = await pool.query(
+      "UPDATE viagens SET avaliacao_nota = $1, avaliacao_obs = $2 WHERE id = $3 AND motorista_id = $4",
+      [nota, observacao || '', viagemId, motoristaId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Viagem não encontrada.' });
+    }
+    return res.sendStatus(201); // criado/atualizado com sucesso
+  } catch (error) {
+    console.error('Erro ao registrar avaliação da viagem:', error);
+    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+  }
+});
+
 app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
   try {
     // 1) Total de motoristas administrativos
