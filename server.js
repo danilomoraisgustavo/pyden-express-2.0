@@ -4957,7 +4957,7 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
 
     const { latitude, longitude, poder } = alunoRows[0];
 
-    // regra 1 – poder público deve ser Municipal ou Estadual
+    // regra 1 – poder público deve ser Municipal ou Estadual
     const poderOk =
       poder && ['municipal', 'estadual'].includes(poder.toLowerCase());
     if (!poderOk) {
@@ -4966,12 +4966,19 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
         .json({ error: 'Aluno não é atendido pelo poder público Municipal/Estadual' });
     }
 
-    // regra 2 – precisa ter lat/lng válidos
+    // regra 2 – precisa ter lat/lng válidos
     if (latitude == null || longitude == null) {
       return res
         .status(400)
         .json({ error: 'Aluno sem coordenadas (latitude/longitude)' });
     }
+
+    // 0) Busca associação antiga, para possível desativação do ponto anterior ----
+    const { rows: oldRows } = await client.query(
+      `SELECT ponto_id FROM alunos_pontos WHERE aluno_id = $1`,
+      [alunoId]
+    );
+    const oldPontoId = oldRows[0]?.ponto_id;
 
     // 2) Seleciona o ponto mais próximo ---------------------------------------
     const { rows: pontoRows } = await client.query(
@@ -4989,8 +4996,8 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
       )
       SELECT id, d
         FROM cand
-    ORDER BY d
-       LIMIT 1
+   ORDER BY d
+      LIMIT 1
       `,
       [latitude, longitude]
     );
@@ -5004,7 +5011,7 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
     const pontoId = pontoRows[0].id;
     const distanciaKm = Number(pontoRows[0].d).toFixed(3);
 
-    // 3) Grava associação (regra 3 – apenas um ponto por aluno) ---------------
+    // 3) Grava associação (regra 3 – apenas um ponto por aluno) ---------------
     await client.query('BEGIN');
 
     // upsert na tabela de ligações
@@ -5024,7 +5031,7 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
       [alunoId, pontoId]
     );
 
-    // coloca o ponto como ATIVO se ainda não estiver
+    // ativa o ponto novo, se ainda não estiver ativo
     await client.query(
       `UPDATE pontos
           SET status = 'ativo'
@@ -5033,9 +5040,23 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
       [pontoId]
     );
 
+    // 4) Desativa o ponto antigo, se não houver mais alunos vinculados a ele ---
+    if (oldPontoId && oldPontoId !== pontoId) {
+      const { rows: cntRows } = await client.query(
+        `SELECT COUNT(*)::int AS c FROM alunos_pontos WHERE ponto_id = $1`,
+        [oldPontoId]
+      );
+      if (cntRows[0].c === 0) {
+        await client.query(
+          `UPDATE pontos SET status = 'inativo' WHERE id = $1`,
+          [oldPontoId]
+        );
+      }
+    }
+
     await client.query('COMMIT');
 
-    // 4) Resposta --------------------------------------------------------------
+    // 5) Resposta --------------------------------------------------------------
     return res.json({
       alunoId,
       pontoId,
