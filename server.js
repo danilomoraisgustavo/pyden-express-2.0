@@ -5054,9 +5054,34 @@ app.post('/api/alunos/:id/associar-ponto-mais-proximo', async (req, res) => {
       }
     }
 
+    // 5) Ajusta status de TODOS os pontos conforme existência de alunos ---------
+    // inativa pontos sem NENHUM aluno associado
+    await client.query(`
+      UPDATE pontos p
+         SET status = 'inativo'
+       WHERE status <> 'inativo'
+         AND NOT EXISTS (
+           SELECT 1
+             FROM alunos_pontos ap
+            WHERE ap.ponto_id = p.id
+         )
+    `);
+
+    // ativa pontos que tenham ao menos UM aluno, mas estejam inativos
+    await client.query(`
+      UPDATE pontos p
+         SET status = 'ativo'
+       WHERE status <> 'ativo'
+         AND EXISTS (
+           SELECT 1
+             FROM alunos_pontos ap
+            WHERE ap.ponto_id = p.id
+         )
+    `);
+
     await client.query('COMMIT');
 
-    // 5) Resposta --------------------------------------------------------------
+    // 6) Resposta --------------------------------------------------------------
     return res.json({
       alunoId,
       pontoId,
