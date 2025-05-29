@@ -5636,37 +5636,40 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     /* 6) Agrupa alunos por ponto e turno */
     const stopsMap = {};
     alunos.forEach(a => {
+      // 1) define o turno com base em a.turma
+      const turno = /MAT/i.test(a.turma) ? 'manha'
+                  : /VESP/i.test(a.turma) ? 'tarde'
+                  : /NOT/i.test(a.turma) ? 'noite'
+                  : /INT/i.test(a.turma) ? 'integral'
+                  : 'manha';
+
+      // 2) inicializa o objeto do ponto, se ainda não existir
       if (!stopsMap[a.ponto_id]) {
         stopsMap[a.ponto_id] = {
-          lat: +a.latitude,
-          lng: +a.longitude,
           alunos: { manha: [], tarde: [], noite: [], integral: [] }
         };
       }
-      const turno =
-        /MAT/i.test(a.turma) ? 'manha' :
-          /VESP/i.test(a.turma) ? 'tarde' :
-            /NOT/i.test(a.turma) ? 'noite' :
-              /INT/i.test(a.turma) ? 'integral' : 'manha';
+      // 3) agrupa o aluno no turno correto
       stopsMap[a.ponto_id].alunos[turno].push(a.aluno_id);
-    });
+      });
+      /* 7) Agora atribui sempre a lat/lng correta do ponto */
+      const { rows: pts } = await client.query(`
+        SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
+          FROM public.pontos
+        WHERE id = ANY($1)
+      `, [pontosIds]);
 
-    /* 7) Garante pontos sem alunos */
-    const { rows: pts } = await client.query(
-      `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
-         FROM public.pontos
-        WHERE id = ANY($1)`,
-      [pontosIds]
-    );
-    pts.forEach(p => {
-      if (!stopsMap[p.id]) {
-        stopsMap[p.id] = {
-          lat: +p.lat,
-          lng: +p.lng,
-          alunos: { manha: [], tarde: [], noite: [], integral: [] }
-        };
-      }
-    });
+      pts.forEach(p => {
+        // se por acaso houver ponto sem alunos, inicializa o objeto também
+        if (!stopsMap[p.id]) {
+          stopsMap[p.id] = {
+            alunos: { manha: [], tarde: [], noite: [], integral: [] }
+          };
+        }
+        // sobrescreve lat/lng com a coordenada do ponto
+        stopsMap[p.id].lat = +p.lat;
+        stopsMap[p.id].lng = +p.lng;
+      });
 
     /* 8) Vetor de stops com pelo menos 1 aluno */
     let stops = Object.entries(stopsMap).map(([pid, v]) => ({
