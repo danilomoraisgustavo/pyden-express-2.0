@@ -12666,47 +12666,42 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
 
 
 // server.js  -------------------------------------------
+// server.js
 app.get('/api/linhas/:id/pontos-alunos', async (req, res) => {
   const linhaId = Number(req.params.id);
-
   try {
-    // 1) pega a escola da linha
-    const { rows: escolaRows } = await pool.query(`
-      SELECT e.id, e.nome,
-             ST_Y(e.geom) AS lat,
-             ST_X(e.geom) AS lng
-        FROM linhas l
-        JOIN escolas e ON e.id = l.escola_id
-       WHERE l.id = $1
-    `, [linhaId]);
-
+    console.time(`pontos-linha-${linhaId}`);
+    const { rows: escolaRows } = await pool.query(
+      `SELECT e.id, e.nome,
+              ST_Y(e.geom) AS lat,
+              ST_X(e.geom) AS lng
+         FROM linhas l
+         JOIN escolas e ON e.id = l.escola_id
+        WHERE l.id = $1`,
+      [linhaId]
+    );
     if (escolaRows.length === 0) {
+      console.timeEnd(`pontos-linha-${linhaId}`);
       return res.status(404).json({ error: 'Linha não encontrada' });
     }
     const escola = escolaRows[0];
-
-    // 2) pega todos os pontos **da linha** que tenham aluno ativo
-    const { rows: pontos } = await pool.query(`
-      SELECT p.id, p.nome,
-             ST_Y(p.geom) AS lat,
-             ST_X(p.geom) AS lng
-        FROM linhas_paradas lp
-        JOIN paradas p        ON p.id = lp.parada_id
-        JOIN alunos  a        ON a.parada_id = p.id   -- garante aluno ativo no ponto
-       WHERE lp.linha_id = $1
-         AND a.ativo = TRUE
-       GROUP BY p.id, p.nome, p.geom
-    `, [linhaId]);
-
+    const { rows: pontos } = await pool.query(
+      `SELECT p.id, p.nome,
+              ST_Y(p.geom) AS lat,
+              ST_X(p.geom) AS lng
+         FROM linhas_paradas lp
+         JOIN paradas p ON p.id = lp.parada_id
+         JOIN alunos a ON a.parada_id = p.id
+        WHERE lp.linha_id = $1
+          AND a.ativo = TRUE
+        GROUP BY p.id, p.nome, p.geom`,
+      [linhaId]
+    );
+    console.log('Escola:', escola);
+    console.log('Pontos encontrados:', pontos.length);
+    pontos.slice(0, 5).forEach(p => console.log(' ', p));
+    console.timeEnd(`pontos-linha-${linhaId}`);
     res.json({ escola, pontos });
-  console.time(`pontos-linha-${linhaId}`);   // cronômetro opcional
-
-  /* depois da query da escola */
-  console.log('Escola:', escolaRows[0]);
-
-  /* depois da query dos pontos */
-  console.log('Pontos encontrados:', rows.rows.length);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erro ao buscar pontos/alunos' });

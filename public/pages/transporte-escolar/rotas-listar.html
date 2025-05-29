@@ -1063,79 +1063,60 @@
   }
 
   //Teste de novo mapa de rotas
-  function exibirMapa(linhaId /* , escolaLat, escolaLng */) {
-    // Mostra o modal
-    const modalEl = document.getElementById('modalMapa');
-    modalEl.style.display = 'block';
-
-    // Cria mapa/Directions na primeira vez
-    if (!map) {
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: -20, lng: -40 },   // valor neutro; será reajustado já já
-        zoom: 13
-      });
-      directionsService  = new google.maps.DirectionsService();
-      directionsRenderer = new google.maps.DirectionsRenderer();
-      directionsRenderer.setMap(map);
-    }
-
-    // Limpa desenho anterior
-    directionsRenderer.setDirections({ routes: [] });
-    if (fallbackPolyline) fallbackPolyline.setMap(null);
-
-    // ---------- chama backend ----------
-    fetch(`/api/linhas/${linhaId}/pontos-alunos`)
-      .then(r => r.json())
-      .then(({ escola, pontos }) => {
-    /* 👇👇 adicione estes logs */
-        console.log('Escola recebida:', escola);     // deve mostrar lat/lng corretos
-        console.table(pontos);                       // lista tabular de todas as paradas
-        console.log('Total de pontos:', pontos.length);
-        if (!pontos || !pontos.length) {
-          alert('Nenhum aluno ativo nesta linha.');
-          return;
-        }
-
-        // Origem/destino = escola
-        const originDest = {
-          lat: escola?.lat ?? /* escolaLat */ -20,
-          lng: escola?.lng ?? /* escolaLng */ -40
-        };
-
-        // Atualiza centro do mapa
-        map.setCenter(originDest);
-
-        // Waypoints (máx. 23)
-        const waypoints = pontos
-          .slice(0, 23)
-          .map(pt => ({
-            location: { lat: pt.lat, lng: pt.lng },
-            stopover: true
-          }));
-
-        // Solicita rota
-        directionsService.route(
-          {
-            origin: originDest,
-            destination: originDest,
-            waypoints,
-            optimizeWaypoints: true,
-            travelMode: google.maps.TravelMode.DRIVING
-          },
-          (res, status) => {
-            if (status === 'OK') {
-              directionsRenderer.setDirections(res);
-            } else {
-              console.warn('Directions falhou:', status);
-              desenharFallback(originDest, waypoints.map(w => w.location));
-            }
-          }
-        );
-      })
-      .catch(err => {
-        console.error('Erro ao buscar pontos-alunos:', err);
-      });
+  // rotas-listar.html – função exibirMapa
+function exibirMapa(linhaId) {
+  const modalEl = document.getElementById('modalMapa');
+  modalEl.style.display = 'block';
+  if (!map) {
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: { lat: -20, lng: -40 },
+      zoom: 13
+    });
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer();
+    directionsRenderer.setMap(map);
   }
+  directionsRenderer.setDirections({ routes: [] });
+  if (fallbackPolyline) fallbackPolyline.setMap(null);
+  fetch(`/api/linhas/${linhaId}/pontos-alunos`)
+    .then(r => r.json())
+    .then(({ escola, pontos }) => {
+      console.log('Escola recebida:', escola);
+      console.table(pontos);
+      console.log('Total de pontos:', pontos.length);
+      if (!pontos || !pontos.length) {
+        alert('Nenhum aluno ativo nesta linha.');
+        return;
+      }
+      const originDest = { lat: escola.lat, lng: escola.lng };
+      map.setCenter(originDest);
+      const waypoints = pontos.slice(0, 23).map(pt => ({
+        location: { lat: pt.lat, lng: pt.lng },
+        stopover: true
+      }));
+      directionsService.route(
+        {
+          origin: originDest,
+          destination: originDest,
+          waypoints,
+          optimizeWaypoints: true,
+          travelMode: google.maps.TravelMode.DRIVING
+        },
+        (res, status) => {
+          if (status === 'OK') {
+            directionsRenderer.setDirections(res);
+          } else {
+            console.warn('Directions falhou:', status);
+            desenharFallback(originDest, waypoints.map(w => w.location));
+          }
+        }
+      );
+    })
+    .catch(err => {
+      console.error('Erro ao buscar pontos-alunos:', err);
+    });
+}
+
     // Função para fechar o modal do mapa
     function fecharMapa() {
       const modalEl = document.getElementById('modalMapa');
