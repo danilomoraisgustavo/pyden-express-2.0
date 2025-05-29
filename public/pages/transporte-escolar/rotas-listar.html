@@ -1087,6 +1087,10 @@
     fetch(`/api/linhas/${linhaId}/pontos-alunos`)
       .then(r => r.json())
       .then(({ escola, pontos }) => {
+    /* 👇👇 adicione estes logs */
+        console.log('Escola recebida:', escola);     // deve mostrar lat/lng corretos
+        console.table(pontos);                       // lista tabular de todas as paradas
+        console.log('Total de pontos:', pontos.length);
         if (!pontos || !pontos.length) {
           alert('Nenhum aluno ativo nesta linha.');
           return;
