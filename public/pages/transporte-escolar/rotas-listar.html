@@ -850,16 +850,15 @@
   </div>
 
   <!-- Modal/Janela para exibir o mapa (mantida conforme implementação existente) -->
-  <div class="modal" id="modalMapa" tabindex="-1" style="display:none;">
-    <div class="modal-dialog modal-lg">
+  <div class="modal fade" id="modalRouteMap" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Rota no Mapa</h5>
-          <button type="button" class="btn-close" onclick="fecharMapa()" aria-label="Fechar"></button>
+          <h5 class="modal-title">Trajeto da Rota</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <!-- Div do mapa com altura definida para ser visível -->
-          <div id="map" style="height: 500px; width: 100%;"></div>
+          <div id="mapRoute" style="height: 500px; width: 100%;"></div>
         </div>
       </div>
     </div>
