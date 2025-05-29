@@ -12665,22 +12665,47 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
 });
 
 
-app.get('/api/linhas/:id/paradas', async (req, res) => {
-  const { id } = req.params;
+// server.js  -------------------------------------------
+app.get('/api/linhas/:id/pontos-alunos', async (req, res) => {
+  const linhaId = Number(req.params.id);
+
   try {
-    const rows = await pool.query(`
-      SELECT p.id, p.nome, p.latitude AS lat, p.longitude AS lng
-        FROM paradas AS p
-        JOIN linhas_paradas lp ON lp.parada_id = p.id
+    // 1) pega a escola da linha
+    const { rows: escolaRows } = await pool.query(`
+      SELECT e.id, e.nome,
+             ST_Y(e.geom) AS lat,
+             ST_X(e.geom) AS lng
+        FROM linhas l
+        JOIN escolas e ON e.id = l.escola_id
+       WHERE l.id = $1
+    `, [linhaId]);
+
+    if (escolaRows.length === 0) {
+      return res.status(404).json({ error: 'Linha não encontrada' });
+    }
+    const escola = escolaRows[0];
+
+    // 2) pega todos os pontos **da linha** que tenham aluno ativo
+    const { rows: pontos } = await pool.query(`
+      SELECT p.id, p.nome,
+             ST_Y(p.geom) AS lat,
+             ST_X(p.geom) AS lng
+        FROM linhas_paradas lp
+        JOIN paradas p        ON p.id = lp.parada_id
+        JOIN alunos  a        ON a.parada_id = p.id   -- garante aluno ativo no ponto
        WHERE lp.linha_id = $1
-       ORDER BY p.nome
-    `, [id]);
-    res.json(rows.rows);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Erro ao recuperar paradas' });
+         AND a.ativo = TRUE
+       GROUP BY p.id, p.nome, p.geom
+    `, [linhaId]);
+
+    res.json({ escola, pontos });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar pontos/alunos' });
   }
 });
+
 
 // LISTEN (FINAL)
 

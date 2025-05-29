@@ -1063,88 +1063,75 @@
   }
 
   //Teste de novo mapa de rotas
-  function exibirMapa(linhaId, escolaLat, escolaLng) {
-      // Exibe o modal do mapa (ajuste conforme sua biblioteca de UI, ex: Bootstrap)
-      const modalEl = document.getElementById('modalMapa');
-      modalEl.style.display = 'block';  // Exemplo simples; use modalEl.classList.add('show') ou Bootstrap modal if aplicável
+  function exibirMapa(linhaId /* , escolaLat, escolaLng */) {
+    // Mostra o modal
+    const modalEl = document.getElementById('modalMapa');
+    modalEl.style.display = 'block';
 
-      // Inicializa o mapa e o DirectionsService/DirectionsRenderer na primeira vez
-      if (!map) {
-        map = new google.maps.Map(document.getElementById('map'), {
-          center: { lat: escolaLat, lng: escolaLng },  // centraliza na escola por padrão
-          zoom: 13
-        });
-        directionsService = new google.maps.DirectionsService();
-        directionsRenderer = new google.maps.DirectionsRenderer();
-        directionsRenderer.setMap(map);
-      }
+    // Cria mapa/Directions na primeira vez
+    if (!map) {
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: -20, lng: -40 },   // valor neutro; será reajustado já já
+        zoom: 13
+      });
+      directionsService  = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer();
+      directionsRenderer.setMap(map);
+    }
 
-      // Limpa rotas ou polylines anteriores, se existirem
-      if (directionsRenderer) {
-        directionsRenderer.setDirections({ routes: [] });
-      }
-      if (fallbackPolyline) {
-        fallbackPolyline.setMap(null);
-      }
+    // Limpa desenho anterior
+    directionsRenderer.setDirections({ routes: [] });
+    if (fallbackPolyline) fallbackPolyline.setMap(null);
 
-      // Chama a API backend para obter as paradas da linha (lat/lng das paradas dos alunos)
-      fetch(`/api/linhas/${linhaId}/paradas`)
-        .then(response => response.json())
-        .then(paradas => {
-          if (!paradas || paradas.length === 0) {
-            alert('Nenhuma parada encontrada para esta rota.');
-            return;
-          }
+    // ---------- chama backend ----------
+    fetch(`/api/linhas/${linhaId}/pontos-alunos`)
+      .then(r => r.json())
+      .then(({ escola, pontos }) => {
+        if (!pontos || !pontos.length) {
+          alert('Nenhum aluno ativo nesta linha.');
+          return;
+        }
 
-          // Limita o número de waypoints a no máximo 23 para evitar exceder o limite da Directions API:contentReference[oaicite:2]{index=2}
-          const stops = paradas.slice(0, 23);
-          const waypoints = stops.map(p => ({
-            location: { lat: p.lat, lng: p.lng },
+        // Origem/destino = escola
+        const originDest = {
+          lat: escola?.lat ?? /* escolaLat */ -20,
+          lng: escola?.lng ?? /* escolaLng */ -40
+        };
+
+        // Atualiza centro do mapa
+        map.setCenter(originDest);
+
+        // Waypoints (máx. 23)
+        const waypoints = pontos
+          .slice(0, 23)
+          .map(pt => ({
+            location: { lat: pt.lat, lng: pt.lng },
             stopover: true
           }));
 
-          // Define origem e destino como a localização da escola (início/fim da rota)
-          const origem = { lat: escolaLat, lng: escolaLng };
-          const destino = { lat: escolaLat, lng: escolaLng };
-
-          // Monta a requisição de direções com otimização de waypoints ativada:contentReference[oaicite:3]{index=3}
-          const request = {
-            origin: origem,
-            destination: destino,
-            travelMode: google.maps.TravelMode.DRIVING,
-            waypoints: waypoints,
-            optimizeWaypoints: true
-          };
-
-          // Chama a Directions API para calcular a rota
-          directionsService.route(request, function(result, status) {
-            if (status === google.maps.DirectionsStatus.OK) {
-              // Sucesso: exibe rota otimizada no mapa
-              directionsRenderer.setDirections(result);
+        // Solicita rota
+        directionsService.route(
+          {
+            origin: originDest,
+            destination: originDest,
+            waypoints,
+            optimizeWaypoints: true,
+            travelMode: google.maps.TravelMode.DRIVING
+          },
+          (res, status) => {
+            if (status === 'OK') {
+              directionsRenderer.setDirections(res);
             } else {
-              console.error('Directions request failed: ' + status);
-              // Fallback: desenha manualmente a rota Escola -> Paradas -> Escola usando Polyline
-              const routePoints = [origem, ...stops.map(p => ({ lat: p.lat, lng: p.lng })), destino];
-              fallbackPolyline = new google.maps.Polyline({
-                path: routePoints,
-                geodesic: true,
-                strokeColor: '#007BFF',
-                strokeOpacity: 0.6,
-                strokeWeight: 5
-              });
-              fallbackPolyline.setMap(map);
-              // Ajusta o zoom/centro do mapa para mostrar todos os pontos da rota
-              const bounds = new google.maps.LatLngBounds();
-              routePoints.forEach(pt => bounds.extend(new google.maps.LatLng(pt.lat, pt.lng)));
-              map.fitBounds(bounds);
+              console.warn('Directions falhou:', status);
+              desenharFallback(originDest, waypoints.map(w => w.location));
             }
-          });
-        })
-        .catch(err => {
-          console.error('Erro ao buscar paradas da linha:', err);
-        });
-    }
-
+          }
+        );
+      })
+      .catch(err => {
+        console.error('Erro ao buscar pontos-alunos:', err);
+      });
+  }
     // Função para fechar o modal do mapa
     function fecharMapa() {
       const modalEl = document.getElementById('modalMapa');
