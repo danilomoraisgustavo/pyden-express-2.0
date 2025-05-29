@@ -12665,27 +12665,25 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
 });
 
 
-// server.js
+/* ---------- server.js ---------- */
 app.get('/api/linhas/:id/pontos-alunos', async (req, res) => {
   const linhaId = Number(req.params.id);
   try {
     const { rows: escolaRows } = await pool.query(
       `SELECT e.id, e.nome,
-              ST_Y(e.geom) AS lat,
-              ST_X(e.geom) AS lng
+              ST_Y(e.geom)::float  AS lat,
+              ST_X(e.geom)::float  AS lng
          FROM linhas l
          JOIN escolas e ON e.id = l.escola_id
         WHERE l.id = $1`,
       [linhaId]
     );
-    if (escolaRows.length === 0) {
-      return res.status(404).json({ error: 'Linha não encontrada' });
-    }
+    if (!escolaRows.length) return res.status(404).json({ error: 'Linha não encontrada' });
     const escola = escolaRows[0];
     const { rows: pontos } = await pool.query(
       `SELECT p.id, p.nome,
-              ST_Y(p.geom) AS lat,
-              ST_X(p.geom) AS lng
+              ST_Y(p.geom)::float AS lat,
+              ST_X(p.geom)::float AS lng
          FROM linhas_paradas lp
          JOIN paradas p ON p.id = lp.parada_id
          JOIN alunos  a ON a.parada_id = p.id
