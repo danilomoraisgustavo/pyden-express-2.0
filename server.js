@@ -5651,22 +5651,27 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       stopsMap[a.ponto_id].alunos[turno].push(a.aluno_id);
     });
 
-    /* 7) Garante pontos sem alunos */
-    const { rows: pts } = await client.query(
-      `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
-         FROM public.pontos
-        WHERE id = ANY($1)`,
-      [pontosIds]
-    );
-    pts.forEach(p => {
-      if (!stopsMap[p.id]) {
-        stopsMap[p.id] = {
-          lat: +p.lat,
-          lng: +p.lng,
-          alunos: { manha: [], tarde: [], noite: [], integral: [] }
+    // passo 6: só agrupa alunos
+    alunos.forEach(a => {
+      if (!stopsMap[a.ponto_id]) {
+        stopsMap[a.ponto_id] = { 
+          alunos: { manha: [], tarde: [], noite: [], integral: [] } 
         };
       }
+      stopsMap[a.ponto_id].alunos[turno].push(a.aluno_id);
     });
+
+    // passo 7: atribui sempre a lat/lng do ponto
+    const { rows: pts } = await client.query(
+      `SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
+        FROM public.pontos
+        WHERE id = ANY($1)`, [pontosIds]
+    );
+    pts.forEach(p => {
+      stopsMap[p.id].lat = +p.lat;
+      stopsMap[p.id].lng = +p.lng;
+    });
+
 
     /* 8) Vetor de stops com pelo menos 1 aluno */
     let stops = Object.entries(stopsMap).map(([pid, v]) => ({
