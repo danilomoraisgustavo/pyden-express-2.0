@@ -12699,6 +12699,13 @@ app.get('/api/linhas/:id/pontos-alunos', async (req, res) => {
     `, [linhaId]);
 
     res.json({ escola, pontos });
+  console.time(`pontos-linha-${linhaId}`);   // cronômetro opcional
+
+  /* depois da query da escola */
+  console.log('Escola:', escolaRows[0]);
+
+  /* depois da query dos pontos */
+  console.log('Pontos encontrados:', rows.rows.length);
 
   } catch (err) {
     console.error(err);
