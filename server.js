@@ -12664,6 +12664,25 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
   }
 });
 
+
+app.get('/api/linhas/:id/paradas', (req, res) => {
+  const linhaId = req.params.id;
+  
+  // Consulta ao banco de dados para recuperar paradas da linha (exemplo usando SQL)
+  const sql = 'SELECT id, nome, lat, lng FROM paradas WHERE linha_id = ?';
+  db.query(sql, [linhaId], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar paradas no DB:', err);
+      return res.status(500).json({ erro: 'Erro no servidor ao obter paradas' });
+    }
+    // Retorna as paradas em formato JSON
+    res.json(results);
+  });
+  
+  // **Observação:** Caso você utilize um sistema diferente (por exemplo, dados em memória),
+  // adapte o código para filtrar e retornar as paradas existentes relacionadas a linhaId.
+});
+
 // LISTEN (FINAL)
 
 const PORT = process.env.PORT || 3000;

@@ -38,7 +38,7 @@
   
 
   <!-- Google Maps JS Key -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&callback=" async defer></script>
 
   <style>
     #map-modal-create,
@@ -849,16 +849,17 @@
     </div>
   </div>
 
-  <!-- Modal para exibir rota no mapa -->
-  <div class="modal fade" id="modalRouteMap" tabindex="-1" aria-labelledby="modalRouteMapLabel" aria-hidden="true">
+  <!-- Modal/Janela para exibir o mapa (mantida conforme implementação existente) -->
+  <div class="modal" id="modalMapa" tabindex="-1" style="display:none;">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="modalRouteMapLabel">Visualizar Rota</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title">Rota no Mapa</h5>
+          <button type="button" class="btn-close" onclick="fecharMapa()" aria-label="Fechar"></button>
         </div>
-        <div class="modal-body p-0">
-          <div id="mapRoute" style="width:100%;height:500px;"></div>
+        <div class="modal-body">
+          <!-- Div do mapa com altura definida para ser visível -->
+          <div id="map" style="height: 500px; width: 100%;"></div>
         </div>
       </div>
     </div>
@@ -1039,8 +1040,9 @@
   let pontosData = [], fornecedoresData = []
   let isPlacingStart = false, zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = []
   let isPlacingEditStart = false, editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = []
-  let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", directionsService = null, directionsRenderer = null, alunosRouteData = []
+  let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", alunosRouteData = []
   let currentRouteDistanceKm = 0
+  let map, directionsService, directionsRenderer, fallbackPolyline;
 
   function showNotification(t, m) {
     const i = {
@@ -1060,6 +1062,97 @@
       animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" }
     })
   }
+
+  //Teste de novo mapa de rotas
+  function exibirMapa(linhaId, escolaLat, escolaLng) {
+      // Exibe o modal do mapa (ajuste conforme sua biblioteca de UI, ex: Bootstrap)
+      const modalEl = document.getElementById('modalMapa');
+      modalEl.style.display = 'block';  // Exemplo simples; use modalEl.classList.add('show') ou Bootstrap modal if aplicável
+
+      // Inicializa o mapa e o DirectionsService/DirectionsRenderer na primeira vez
+      if (!map) {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: { lat: escolaLat, lng: escolaLng },  // centraliza na escola por padrão
+          zoom: 13
+        });
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer();
+        directionsRenderer.setMap(map);
+      }
+
+      // Limpa rotas ou polylines anteriores, se existirem
+      if (directionsRenderer) {
+        directionsRenderer.setDirections({ routes: [] });
+      }
+      if (fallbackPolyline) {
+        fallbackPolyline.setMap(null);
+      }
+
+      // Chama a API backend para obter as paradas da linha (lat/lng das paradas dos alunos)
+      fetch(`/api/linhas/${linhaId}/paradas`)
+        .then(response => response.json())
+        .then(paradas => {
+          if (!paradas || paradas.length === 0) {
+            alert('Nenhuma parada encontrada para esta rota.');
+            return;
+          }
+
+          // Limita o número de waypoints a no máximo 23 para evitar exceder o limite da Directions API:contentReference[oaicite:2]{index=2}
+          const stops = paradas.slice(0, 23);
+          const waypoints = stops.map(p => ({
+            location: { lat: p.lat, lng: p.lng },
+            stopover: true
+          }));
+
+          // Define origem e destino como a localização da escola (início/fim da rota)
+          const origem = { lat: escolaLat, lng: escolaLng };
+          const destino = { lat: escolaLat, lng: escolaLng };
+
+          // Monta a requisição de direções com otimização de waypoints ativada:contentReference[oaicite:3]{index=3}
+          const request = {
+            origin: origem,
+            destination: destino,
+            travelMode: google.maps.TravelMode.DRIVING,
+            waypoints: waypoints,
+            optimizeWaypoints: true
+          };
+
+          // Chama a Directions API para calcular a rota
+          directionsService.route(request, function(result, status) {
+            if (status === google.maps.DirectionsStatus.OK) {
+              // Sucesso: exibe rota otimizada no mapa
+              directionsRenderer.setDirections(result);
+            } else {
+              console.error('Directions request failed: ' + status);
+              // Fallback: desenha manualmente a rota Escola -> Paradas -> Escola usando Polyline
+              const routePoints = [origem, ...stops.map(p => ({ lat: p.lat, lng: p.lng })), destino];
+              fallbackPolyline = new google.maps.Polyline({
+                path: routePoints,
+                geodesic: true,
+                strokeColor: '#007BFF',
+                strokeOpacity: 0.6,
+                strokeWeight: 5
+              });
+              fallbackPolyline.setMap(map);
+              // Ajusta o zoom/centro do mapa para mostrar todos os pontos da rota
+              const bounds = new google.maps.LatLngBounds();
+              routePoints.forEach(pt => bounds.extend(new google.maps.LatLng(pt.lat, pt.lng)));
+              map.fitBounds(bounds);
+            }
+          });
+        })
+        .catch(err => {
+          console.error('Erro ao buscar paradas da linha:', err);
+        });
+    }
+
+    // Função para fechar o modal do mapa
+    function fecharMapa() {
+      const modalEl = document.getElementById('modalMapa');
+      modalEl.style.display = 'none';
+      // (Se necessário, poderia também limpar rotas existentes aqui)
+    }
+  // Fim do teste
 
   function loadRotas() {
     fetch("/api/itinerarios")
@@ -1122,6 +1215,7 @@
   // chama no carregamento da página
   loadRotas();
 
+  
   function deleteItinerario(id) {
     if (!confirm("Deseja realmente excluir este itinerário?")) return;
     fetch(`/api/itinerarios/${id}`, { method: "DELETE" })
