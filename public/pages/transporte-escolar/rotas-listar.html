@@ -1069,31 +1069,42 @@ function exibirMapa(linhaId) {
   modalEl.style.display = 'block';
   if (!map) {
     map = new google.maps.Map(document.getElementById('map'), {
-      center: { lat: -20, lng: -40 },
+      center: { lat: 0, lng: 0 },
       zoom: 13
     });
-    directionsService = new google.maps.DirectionsService();
+    directionsService  = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer();
     directionsRenderer.setMap(map);
   }
   directionsRenderer.setDirections({ routes: [] });
   if (fallbackPolyline) fallbackPolyline.setMap(null);
   fetch(`/api/linhas/${linhaId}/pontos-alunos`)
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(({ escola, pontos }) => {
-      console.log('Escola recebida:', escola);
+      console.log('Escola:', escola);
       console.table(pontos);
-      console.log('Total de pontos:', pontos.length);
-      if (!pontos || !pontos.length) {
+      if (!pontos.length) {
         alert('Nenhum aluno ativo nesta linha.');
         return;
       }
       const originDest = { lat: escola.lat, lng: escola.lng };
       map.setCenter(originDest);
-      const waypoints = pontos.slice(0, 23).map(pt => ({
-        location: { lat: pt.lat, lng: pt.lng },
-        stopover: true
-      }));
+      const chave = k => k.lat.toFixed(5) + ',' + k.lng.toFixed(5);
+      const uniq = {};
+      pontos.forEach(p => {
+        const k = chave(p);
+        if (!uniq[k] && (p.lat !== originDest.lat || p.lng !== originDest.lng)) uniq[k] = p;
+      });
+      const waypoints = Object.values(uniq)
+        .slice(0, 23)
+        .map(p => ({ location: { lat: p.lat, lng: p.lng }, stopover: true }));
+      if (!waypoints.length) {
+        alert('Nenhum ponto distinto da escola.');
+        return;
+      }
       directionsService.route(
         {
           origin: originDest,
@@ -1103,17 +1114,20 @@ function exibirMapa(linhaId) {
           travelMode: google.maps.TravelMode.DRIVING
         },
         (res, status) => {
+          console.log('Status Directions:', status);
           if (status === 'OK') {
             directionsRenderer.setDirections(res);
           } else {
-            console.warn('Directions falhou:', status);
-            desenharFallback(originDest, waypoints.map(w => w.location));
+            desenharFallback(
+              originDest,
+              [originDest, ...waypoints.map(w => w.location), originDest]
+            );
           }
         }
       );
     })
     .catch(err => {
-      console.error('Erro ao buscar pontos-alunos:', err);
+      console.error('Fetch/rota erro:', err);
     });
 }
 
