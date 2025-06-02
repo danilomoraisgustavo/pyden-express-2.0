@@ -609,6 +609,34 @@
         </div>
       </div>
 
+      <!-- MODAL: Editar Zoneamento -->
+      <div class="modal fade" id="editZoneamentoModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+          <div class="modal-content">
+            <form id="editZoneamentoForm">
+              <div class="modal-header">
+                <h5 class="modal-title">Editar Zoneamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label required-label">Nome</label>
+                  <input type="text" class="form-control" id="editNome" required>
+                </div>
+                <div class="map-instructions mb-2">
+                  Ajuste o polígono ou linha. Use as ferramentas para redesenhar se necessário.
+                </div>
+                <div id="editMap" style="height:500px;width:100%;"></div>
+              </div>
+              <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
 
       <footer class="footer">
         <div class="container-fluid d-flex justify-content-between">
@@ -719,13 +747,15 @@
             <td>
               <div class="form-button-action">
                 <button type="button" class="btn btn-link btn-primary btn-lg"
-                  onclick="focusZoneamento(${z.id})" data-bs-toggle="tooltip"
-                  title="Focar no Mapa">
+                  onclick="focusZoneamento(${z.id})" title="Focar no Mapa">
                   <i class="fa fa-map-marker-alt"></i>
                 </button>
+                <button type="button" class="btn btn-link btn-warning btn-lg"
+                  onclick="openEditModal(${z.id})" title="Editar Zoneamento">
+                  <i class="fa fa-edit"></i>
+                </button>
                 <button type="button" class="btn btn-link btn-danger btn-lg"
-                  onclick="deleteZoneamento(${z.id})" data-bs-toggle="tooltip"
-                  title="Excluir Zoneamento">
+                  onclick="deleteZoneamento(${z.id})" title="Excluir Zoneamento">
                   <i class="fa fa-trash-alt"></i>
                 </button>
               </div>
@@ -951,6 +981,142 @@
         });
       }
     });
+
+    // ---------- EDIÇÃO ----------
+    let editMap, editDrawingManager, editShape, editingId;
+
+    function openEditModal(id){
+      const z = zoneamentos.find(x => x.id == id);
+      if(!z) return;
+      editingId = id;
+      $('#editNome').val(z.nome);
+      $('#editZoneamentoModal').modal('show');
+
+      // cria mapa quando modal abrir
+      $('#editZoneamentoModal').on('shown.bs.modal', function(){
+        if(!editMap) initEditMap(z);
+        else loadGeometryOnEditMap(z);
+      }).on('hidden.bs.modal', function(){
+        // limpar para próxima vez
+        if(editShape) editShape.setMap(null);
+        editShape=null;
+        editMap=null;
+        $('#editZoneamentoModal').off('shown.bs.modal hidden.bs.modal');
+      });
+    }
+
+    function initEditMap(z){
+      editMap = new google.maps.Map(document.getElementById('editMap'),{
+        center:{lat:-6.53, lng:-49.85},
+        zoom:13,
+        mapTypeId:'satellite'
+      });
+
+      editDrawingManager = new google.maps.drawing.DrawingManager({
+        drawingMode:null,
+        drawingControl:true,
+        drawingControlOptions:{
+          position:google.maps.ControlPosition.TOP_LEFT,
+          drawingModes:['polygon','polyline']
+        },
+        polygonOptions:{
+          fillColor:'#1E90FF',fillOpacity:.4,strokeWeight:2,strokeColor:'#1E90FF',editable:true
+        },
+        polylineOptions:{
+          strokeWeight:3,strokeColor:'#FF1493',editable:true
+        }
+      });
+      editDrawingManager.setMap(editMap);
+
+      google.maps.event.addListener(editDrawingManager,'overlaycomplete',e=>{
+        if(editShape) editShape.setMap(null);
+        editShape = e.overlay;
+        editShape.type = e.type;
+        editDrawingManager.setDrawingMode(null);
+      });
+
+      loadGeometryOnEditMap(z);
+    }
+
+    function loadGeometryOnEditMap(z){
+      if(editShape) editShape.setMap(null);
+      editShape=null;
+
+      if(!z.geojson) return;
+
+      const g = z.geojson;
+      const bounds = new google.maps.LatLngBounds();
+
+      if(g.type==='Polygon'){
+        const coords = g.coordinates[0].map(c=>({lat:c[1],lng:c[0]}));
+        editShape = new google.maps.Polygon({
+          paths:coords,
+          fillColor:'#1E90FF',fillOpacity:.4,strokeWeight:2,strokeColor:'#1E90FF',
+          editable:true,map:editMap
+        });
+        coords.forEach(p=>bounds.extend(p));
+      } else if(g.type==='LineString'){
+        const coords = g.coordinates.map(c=>({lat:c[1],lng:c[0]}));
+        editShape = new google.maps.Polyline({
+          path:coords,strokeWeight:3,strokeColor:'#FF1493',
+          editable:true,map:editMap
+        });
+        coords.forEach(p=>bounds.extend(p));
+      }
+      if(!bounds.isEmpty()) editMap.fitBounds(bounds);
+    }
+
+    $('#editZoneamentoForm').on('submit', function(e){
+      e.preventDefault();
+      if(!editShape){
+        showNotification('warning','Desenhe ou ajuste a geometria antes de salvar.');
+        return;
+      }
+
+      const nome = $('#editNome').val().trim();
+      let geometryType='', coords=[];
+
+      if(editShape instanceof google.maps.Polygon){
+        geometryType='Polygon';
+        const path = editShape.getPath().getArray();
+        coords = path.map(p=>[p.lng(),p.lat()]);
+        coords.push([coords[0][0],coords[0][1]]);
+      } else {
+        geometryType='LineString';
+        const path = editShape.getPath().getArray();
+        coords = path.map(p=>[p.lng(),p.lat()]);
+      }
+
+      const geometryObj = (geometryType==='Polygon') ?
+        {type:'Polygon', coordinates:[coords]} :
+        {type:'LineString', coordinates:coords};
+
+      const geojson = {
+        type:'Feature',
+        properties:{ nome },
+        geometry:geometryObj
+      };
+
+      fetch('/api/zoneamento/'+editingId,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ nome_zoneamento:nome, geojson:JSON.stringify(geojson)})
+      })
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.success){
+          showNotification('success', d.message);
+          $('#editZoneamentoModal').modal('hide');
+          loadZoneamentos();
+        }else{
+          showNotification('danger','Erro: '+d.message);
+        }
+      })
+      .catch(err=>{
+        console.error(err);
+        showNotification('danger','Erro ao atualizar zoneamento.');
+      });
+});
   </script>
 </body>
 

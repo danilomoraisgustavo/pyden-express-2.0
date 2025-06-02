@@ -2070,6 +2070,47 @@ app.post(
   }
 );
 
+app.put("/api/zoneamento/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome_zoneamento, geojson } = req.body;
+
+    if (!nome_zoneamento || !geojson) {
+      return res.status(400).json({ success:false, message:"Nome ou GeoJSON não fornecidos." });
+    }
+
+    let parsed;
+    try { parsed = JSON.parse(geojson); }
+    catch { return res.status(400).json({ success:false, message:"GeoJSON inválido." }); }
+
+    if (parsed.type !== "Feature" || !parsed.geometry)
+      return res.status(400).json({ success:false, message:"GeoJSON inválido ou sem geometry." });
+
+    const validTypes = ["Polygon","LineString"];
+    if (!validTypes.includes(parsed.geometry.type))
+      return res.status(400).json({ success:false, message:"GeoJSON deve ser Polygon ou LineString." });
+
+    const userId = req.session?.userId || null;
+
+    const upd = await pool.query(
+      `UPDATE zoneamentos SET nome=$1, geom=ST_SetSRID(ST_GeomFromGeoJSON($2),4326)
+       WHERE id=$3 RETURNING id`,
+      [nome_zoneamento, JSON.stringify(parsed.geometry), id]
+    );
+    if (!upd.rowCount)
+      return res.status(404).json({ success:false, message:"Zoneamento não encontrado." });
+
+    await pool.query(
+      `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
+       VALUES ($1,'UPDATE','zoneamentos',$2,$3)`,
+      [userId, id, `Zoneamento atualizado: ${nome_zoneamento}`]
+    );
+    res.json({ success:true, message:"Zoneamento atualizado com sucesso!" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success:false, message:"Erro interno do servidor." });
+  }
+});
 // ====================================================================================
 // ESCOLAS
 // ====================================================================================
