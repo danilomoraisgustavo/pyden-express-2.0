@@ -11055,6 +11055,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
     const where = [];
     let idx = 1;
 
+    // filtros existentes
     if (req.query.escola_id) {
       where.push(`a.escola_id = $${idx++}`);
       params.push(parseInt(req.query.escola_id, 10));
@@ -11095,24 +11096,31 @@ app.get("/api/alunos-ativos", async (req, res) => {
       params.push(`%-${req.query.turno}`);
     }
 
+    // SQL completo: inclui join com alunos_linhas → linhas_rotas → itinerarios
     const sql = `
       SELECT
         a.*,
         e.nome AS escola_nome,
+        -- nome da linha (“A”, “B”, “C” etc.)
         lr.nome_linha          AS linha,
-        lr.itinerario_id       AS itinerario_id,
-        i.descricao            AS itinerario_descricao
-      FROM alunos_ativos a
-      LEFT JOIN escolas e ON e.id = a.escola_id
-      LEFT JOIN alunos_linhas al ON al.aluno_id = a.id
-      LEFT JOIN linhas_rotas lr ON lr.id = al.linha_id
-      LEFT JOIN itinerarios i ON i.id = lr.itinerario_id
+        -- id do itinerário ao qual essa linha pertence
+        lr.itinerario_id       AS itinerario_id
+      FROM public.alunos_ativos a
+      LEFT JOIN public.escolas e
+        ON e.id = a.escola_id
+      LEFT JOIN public.alunos_linhas al
+        ON al.aluno_id = a.id
+      LEFT JOIN public.linhas_rotas lr
+        ON lr.id = al.linha_id
       ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY a.id DESC
     `;
+
     const { rows } = await pool.query(sql, params);
     res.json(rows);
-  } catch {
+
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: "Erro ao buscar alunos." });
   }
 });
