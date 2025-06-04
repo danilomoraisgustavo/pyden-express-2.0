@@ -11070,7 +11070,8 @@ app.get("/api/alunos-ativos", async (req, res) => {
     if (req.query.search) {
       const s = `%${req.query.search}%`;
       where.push(`(a.pessoa_nome ILIKE $${idx} OR CAST(a.id_matricula AS TEXT) ILIKE $${idx} OR a.cpf ILIKE $${idx})`);
-      params.push(s); idx++;
+      params.push(s);
+      idx++;
     }
     if (req.query.transporte) {
       where.push(`a.transporte_escolar_poder_publico ILIKE $${idx++}`);
@@ -11091,9 +11092,20 @@ app.get("/api/alunos-ativos", async (req, res) => {
     }
 
     const sql = `
-      SELECT a.*, e.nome AS escola_nome
+      SELECT
+        a.*,
+        e.nome AS escola_nome,
+        ar.rota_id AS itinerario_id,
+        (
+          SELECT lr.nome_linha
+          FROM public.linhas_rotas lr
+          WHERE lr.itinerario_id = ar.rota_id
+            AND a.id = ANY(lr.alunos_ids)
+          LIMIT 1
+        ) AS linha
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
+      LEFT JOIN alunos_rotas ar ON ar.aluno_id = a.id
       ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY a.id DESC
     `;
@@ -11103,6 +11115,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
     res.status(500).json({ success: false, message: "Erro ao buscar alunos." });
   }
 });
+
 
 
 app.get("/api/alunos_ativos/:id", async (req, res) => {

@@ -722,6 +722,8 @@
                           <th>Deficiência</th>
                           <th>Latitude</th>
                           <th>Longitude</th>
+                          <th>Itinerário ID</th>
+                          <th>Linha</th>
                           <th>Ações</th>
                         </tr>
                       </thead>
@@ -748,6 +750,8 @@
                           <th>Deficiência</th>
                           <th>Latitude</th>
                           <th>Longitude</th>
+                          <th>Itinerário ID</th>
+                          <th>Linha</th>
                           <th>Ações</th>
                         </tr>
                       </tfoot>
@@ -1234,20 +1238,47 @@
           const def = it.deficiencia && Array.isArray(it.deficiencia)
             ? JSON.stringify(it.deficiencia)
             : it.deficiencia || "";
+
           tbody.append(`
-        <tr data-id="${it.id}" data-obj='${JSON.stringify(it)}'>
-          <td>${it.id_matricula || ""}</td><td>${it.id_pessoa || ""}</td><td>${it.escola_nome || ""}</td>
-          <td>${it.ano || ""}</td><td>${it.modalidade || ""}</td><td>${it.formato_letivo || ""}</td><td>${it.turma || ""}</td>
-          <td>${it.pessoa_nome || ""}</td><td>${it.cpf || ""}</td><td>${it.data_nascimento || ""}</td>
-          <td>${it.transporte_escolar_poder_publico || ""}</td><td>${it.cep || ""}</td><td>${it.bairro || ""}</td>
-          <td>${it.numero_pessoa_endereco || ""}</td><td>${it.filiacao_1 || ""}</td><td>${it.numero_telefone || ""}</td>
-          <td>${it.filiacao_2 || ""}</td><td>${it.responsavel || ""}</td><td>${def}</td><td>${it.latitude || ""}</td><td>${it.longitude || ""}</td>
-          <td>
-            <button class="btn btn-sm btn-warning btn-editar" title="Editar"><i class="fa fa-edit"></i></button>
-            <button class="btn btn-sm btn-info btn-localizar" title="Localizar"><i class="fa fa-map-marker-alt"></i></button>
-            <button class="btn btn-sm btn-danger btn-excluir" title="Excluir"><i class="fa fa-trash"></i></button>
-          </td>
-        </tr>`);
+            <tr data-id="${it.id}" data-obj='${JSON.stringify(it)}'>
+              <td>${it.id_matricula || ""}</td>
+              <td>${it.id_pessoa || ""}</td>
+              <td>${it.escola_nome || ""}</td>
+              <td>${it.ano || ""}</td>
+              <td>${it.modalidade || ""}</td>
+              <td>${it.formato_letivo || ""}</td>
+              <td>${it.turma || ""}</td>
+              <td>${it.pessoa_nome || ""}</td>
+              <td>${it.cpf || ""}</td>
+              <td>${it.data_nascimento || ""}</td>
+              <td>${it.transporte_escolar_poder_publico || ""}</td>
+              <td>${it.cep || ""}</td>
+              <td>${it.bairro || ""}</td>
+              <td>${it.numero_pessoa_endereco || ""}</td>
+              <td>${it.filiacao_1 || ""}</td>
+              <td>${it.numero_telefone || ""}</td>
+              <td>${it.filiacao_2 || ""}</td>
+              <td>${it.responsavel || ""}</td>
+              <td>${def}</td>
+              <!-- NOVAS COLUNAS: Itinerário e Linha -->
+              <td>${it.itinerario_id || ""}</td>
+              <td>${it.linha || ""}</td>
+              <!-- FIM NOVAS COLUNAS -->
+              <td>${it.latitude || ""}</td>
+              <td>${it.longitude || ""}</td>
+              <td>
+                <button class="btn btn-sm btn-warning btn-editar" title="Editar">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-info btn-localizar" title="Localizar">
+                  <i class="fa fa-map-marker-alt"></i>
+                </button>
+                <button class="btn btn-sm btn-danger btn-excluir" title="Excluir">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `);
         });
       }
 
