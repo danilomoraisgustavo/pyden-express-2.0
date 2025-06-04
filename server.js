@@ -11078,9 +11078,9 @@ app.get("/api/alunos-ativos", async (req, res) => {
       params.push(`%${req.query.transporte}%`);
     }
     if (req.query.deficiencia === "sim") {
-      where.push(`(a.deficiencia IS NOT NULL AND array_length(a.deficiencia,1) > 0)`);
+      where.push(`(a.deficiencia IS NOT NULL AND array_length(a.deficiencia, 1) > 0)`);
     } else if (req.query.deficiencia === "nao") {
-      where.push(`(a.deficiencia IS NULL OR array_length(a.deficiencia,1) = 0)`);
+      where.push(`(a.deficiencia IS NULL OR array_length(a.deficiencia, 1) = 0)`);
     }
     if (req.query.idade) {
       where.push(`DATE_PART('year', AGE(a.data_nascimento)) = $${idx++}`);
@@ -11095,17 +11095,12 @@ app.get("/api/alunos-ativos", async (req, res) => {
       SELECT
         a.*,
         e.nome AS escola_nome,
-        ar.rota_id AS itinerario_id,
-        (
-          SELECT lr.nome_linha
-          FROM public.linhas_rotas lr
-          WHERE lr.itinerario_id = ar.rota_id
-            AND a.id = ANY(lr.alunos_ids)
-          LIMIT 1
-        ) AS linha
+        lr.itinerario_id,
+        lr.nome_linha AS linha
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
-      LEFT JOIN alunos_rotas ar ON ar.aluno_id = a.id
+      LEFT JOIN alunos_linhas al ON al.aluno_id = a.id
+      LEFT JOIN linhas_rotas lr ON lr.id = al.linha_id
       ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY a.id DESC
     `;
@@ -11115,8 +11110,6 @@ app.get("/api/alunos-ativos", async (req, res) => {
     res.status(500).json({ success: false, message: "Erro ao buscar alunos." });
   }
 });
-
-
 
 app.get("/api/alunos_ativos/:id", async (req, res) => {
   try {
