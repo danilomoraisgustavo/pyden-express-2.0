@@ -11055,7 +11055,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
     const where = [];
     let idx = 1;
 
-    // filtros existentes
+    // —————— filtros já existentes ——————
     if (req.query.escola_id) {
       where.push(`a.escola_id = $${idx++}`);
       params.push(parseInt(req.query.escola_id, 10));
@@ -11095,47 +11095,47 @@ app.get("/api/alunos-ativos", async (req, res) => {
       where.push(`a.turma ILIKE $${idx++}`);
       params.push(`%-${req.query.turno}`);
     }
+    // ————————————————————————————————
 
-    // SQL completo: inclui join com alunos_linhas → linhas_rotas → itinerarios
-const sql = `
+    const sql = `
       SELECT
         a.*,
         e.nome AS escola_nome,
 
-        -- Dados da rota simples
-        rs.id           AS rota_simples_id,
-        rs.nome         AS rota_simples_nome,   -- exemplo de campo em 'rotas_simples'
+        -- Se o aluno estiver listado em algum linha de linhas_rotas.alunos_ids,
+        -- traz o nome dessa linha
+        (
+          SELECT lr2.nome_linha
+            FROM public.linhas_rotas lr2
+           WHERE a.id = ANY(lr2.alunos_ids)
+           LIMIT 1
+        ) AS linha,
 
-        -- Dados da linha (A, B, C, …) associados àquela rota
-        lr.nome_linha   AS linha,
-        lr.itinerario_id AS itinerario_id
+        -- Se o aluno estiver listado em algum linha de linhas_rotas.alunos_ids,
+        -- traz o itinerario_id dessa linha
+        (
+          SELECT lr2.itinerario_id
+            FROM public.linhas_rotas lr2
+           WHERE a.id = ANY(lr2.alunos_ids)
+           LIMIT 1
+        ) AS itinerario_id
 
       FROM public.alunos_ativos a
-
       LEFT JOIN public.escolas e
         ON e.id = a.escola_id
-
-      -- 1) Pega a rota simples diretamente pelo campo `rota_id` em alunos_ativos
-      LEFT JOIN public.rotas_simples rs
-        ON rs.id = a.rota_id
-
-      -- 2) Puxa a “linha” que pertence a esse mesmo itinerário:
-      --    se rotas_simples.id == linhas_rotas.itinerario_id, faz JOIN direto:
-      LEFT JOIN public.linhas_rotas lr
-        ON lr.itinerario_id = rs.id
-
       ${ where.length ? "WHERE " + where.join(" AND ") : "" }
       ORDER BY a.id DESC
     `;
 
     const { rows } = await pool.query(sql, params);
-
     res.json(rows);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Erro ao buscar alunos." });
   }
 });
+
 
 app.get("/api/alunos_ativos/:id", async (req, res) => {
   try {
