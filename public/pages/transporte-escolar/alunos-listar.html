@@ -684,6 +684,14 @@
                     <option value="NOT">Noturno</option>
                     <option value="INT">Integral</option>
                   </select></div>
+                  <div class="col-md-3">
+                    <label for="filtroAssociado" class="form-label">Associado a Rota</label>
+                    <select id="filtroAssociado" class="form-select">
+                      <option value="">Todos</option>
+                      <option value="sim">Sim</option>
+                      <option value="nao">Não</option>
+                    </select>
+                  </div>
                 <div class="col-md-3 d-flex align-items-end"><button id="btnBuscarAlunos"
                     class="btn btn-primary w-100">Filtrar Alunos</button></div>
               </div>
@@ -1197,22 +1205,25 @@
 
     /* ---------- busca / filtros ---------- */
     function buscarAlunosComFiltros() {
-      const escola = $("#filtroEscola").val(),
-        bairro = $("#filtroBairro").val(),
-        transporte = $("#filtroTransporte").val(),
-        def = $("#filtroDeficiencia").val(),
-        idade = $("#filtroIdade").val(),
-        cep = $("#filtroCep").val(),
-        turno = $("#filtroTurno").val(),
-        q = new URLSearchParams();
+      const escola      = $("#filtroEscola").val(),
+            bairro      = $("#filtroBairro").val(),
+            transporte  = $("#filtroTransporte").val(),
+            def         = $("#filtroDeficiencia").val(),
+            idade       = $("#filtroIdade").val(),
+            cep         = $("#filtroCep").val(),
+            turno       = $("#filtroTurno").val(),
+            associado   = $("#filtroAssociado").val(),  // novo: sim / nao
 
-      if (escola) q.append("escola_id", escola);
-      if (bairro) q.append("bairro", bairro);
-      if (cep) q.append("cep", cep);
+            q = new URLSearchParams();
+
+      if (escola)     q.append("escola_id", escola);
+      if (bairro)     q.append("bairro", bairro);
+      if (cep)        q.append("cep", cep);
       if (transporte) q.append("transporte", transporte);
-      if (def) q.append("deficiencia", def);
-      if (idade) q.append("idade", idade);
-      if (turno) q.append("turno", turno);
+      if (def)        q.append("deficiencia", def);
+      if (idade)      q.append("idade", idade);
+      if (turno)      q.append("turno", turno);
+      if (associado)  q.append("associado_rota", associado);
 
       showLoader();
       fetch("/api/alunos-ativos?" + q.toString())
@@ -1221,11 +1232,12 @@
           alunosData = d;
           popularTabela(alunosData);
           popularFiltros(alunosData);
-          toggleDownloadBtn();            // garante estado correto quando lista vazia
+          toggleDownloadBtn();
         })
         .catch(() => showNotification("danger", "Erro ao carregar dados do banco."))
         .finally(hideLoader);
     }
+
 
     /* ---------- DataTable ---------- */
     function popularTabela(alunos) {
@@ -1412,14 +1424,17 @@
     }
     /* ---------- download CSV da listagem ---------- */
     const exportCols = [
-      { header: "Nome Aluno", index: 7 },
-      { header: "Escola", index: 2 },
-      { header: "Telefone", index: 15 },
-      { header: "Deficiência", index: 18 },
-      { header: "Latitude", index: 19 },
-      { header: "Longitude", index: 20 },
-      { header: "Bairro", index: 12 }
+      { header: "Nome Aluno",       index: 7  },
+      { header: "Escola",           index: 2  },
+      { header: "Bairro",           index: 12 },
+      { header: "Telefone",         index: 15 },
+      { header: "Itinerário ID",    index: 19 },
+      { header: "Linha",            index: 20 },
+      { header: "Latitude",         index: 21 },
+      { header: "Longitude",        index: 22 },
+      { header: "Deficiência",      index: 18 }
     ];
+
 
     function toggleDownloadBtn() {
       const temDados = dataTable && dataTable.rows({ search: "applied" }).any();

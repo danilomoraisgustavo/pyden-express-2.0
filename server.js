@@ -11055,7 +11055,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
     const where = [];
     let idx = 1;
 
-    // —————— filtros já existentes ——————
+    // ————— filtros atuais —————
     if (req.query.escola_id) {
       where.push(`a.escola_id = $${idx++}`);
       params.push(parseInt(req.query.escola_id, 10));
@@ -11095,15 +11095,36 @@ app.get("/api/alunos-ativos", async (req, res) => {
       where.push(`a.turma ILIKE $${idx++}`);
       params.push(`%-${req.query.turno}`);
     }
-    // ————————————————————————————————
+    // ————————————————————————————
 
+    // → NOVO FILTRO: associado_rota = sim / nao
+    if (req.query.associado_rota === "sim") {
+      // Apenas alunos cujo ID apareça em ANY(linhas_rotas.alunos_ids)
+      where.push(`
+        EXISTS (
+          SELECT 1
+            FROM public.linhas_rotas lrf
+           WHERE a.id = ANY(lrf.alunos_ids)
+        )
+      `);
+    } else if (req.query.associado_rota === "nao") {
+      // Apenas alunos que NÃO estejam em nenhuma linha
+      where.push(`
+        NOT EXISTS (
+          SELECT 1
+            FROM public.linhas_rotas lrf
+           WHERE a.id = ANY(lrf.alunos_ids)
+        )
+      `);
+    }
+
+    // ——— montar SQL principal ———
     const sql = `
       SELECT
         a.*,
         e.nome AS escola_nome,
 
-        -- Se o aluno estiver listado em algum linha de linhas_rotas.alunos_ids,
-        -- traz o nome dessa linha
+        /* traz o nome da linha (ex.: “A”, “B”, ...) se houver */
         (
           SELECT lr2.nome_linha
             FROM public.linhas_rotas lr2
@@ -11111,8 +11132,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
            LIMIT 1
         ) AS linha,
 
-        -- Se o aluno estiver listado em algum linha de linhas_rotas.alunos_ids,
-        -- traz o itinerario_id dessa linha
+        /* traz o itinerario_id associado, se houver */
         (
           SELECT lr2.itinerario_id
             FROM public.linhas_rotas lr2
@@ -11123,7 +11143,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
       FROM public.alunos_ativos a
       LEFT JOIN public.escolas e
         ON e.id = a.escola_id
-      ${ where.length ? "WHERE " + where.join(" AND ") : "" }
+      ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY a.id DESC
     `;
 
@@ -11135,6 +11155,7 @@ app.get("/api/alunos-ativos", async (req, res) => {
     res.status(500).json({ success: false, message: "Erro ao buscar alunos." });
   }
 });
+
 
 
 app.get("/api/alunos_ativos/:id", async (req, res) => {
