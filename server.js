@@ -11097,34 +11097,45 @@ app.get("/api/alunos-ativos", async (req, res) => {
     }
 
     // SQL completo: inclui join com alunos_linhas → linhas_rotas → itinerarios
-    const sql = `
+const sql = `
       SELECT
         a.*,
         e.nome AS escola_nome,
-        -- nome da linha (“A”, “B”, “C” etc.)
-        lr.nome_linha          AS linha,
-        -- id do itinerário ao qual essa linha pertence
-        lr.itinerario_id       AS itinerario_id
+
+        -- Dados da rota simples
+        rs.id           AS rota_simples_id,
+        rs.nome         AS rota_simples_nome,   -- exemplo de campo em 'rotas_simples'
+
+        -- Dados da linha (A, B, C, …) associados àquela rota
+        lr.nome_linha   AS linha,
+        lr.itinerario_id AS itinerario_id
+
       FROM public.alunos_ativos a
+
       LEFT JOIN public.escolas e
         ON e.id = a.escola_id
-      LEFT JOIN public.alunos_linhas al
-        ON al.aluno_id = a.id
+
+      -- 1) Pega a rota simples diretamente pelo campo `rota_id` em alunos_ativos
+      LEFT JOIN public.rotas_simples rs
+        ON rs.id = a.rota_id
+
+      -- 2) Puxa a “linha” que pertence a esse mesmo itinerário:
+      --    se rotas_simples.id == linhas_rotas.itinerario_id, faz JOIN direto:
       LEFT JOIN public.linhas_rotas lr
-        ON lr.id = al.linha_id
-      ${where.length ? "WHERE " + where.join(" AND ") : ""}
+        ON lr.itinerario_id = rs.id
+
+      ${ where.length ? "WHERE " + where.join(" AND ") : "" }
       ORDER BY a.id DESC
     `;
 
     const { rows } = await pool.query(sql, params);
-    res.json(rows);
 
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Erro ao buscar alunos." });
   }
 });
-
 
 app.get("/api/alunos_ativos/:id", async (req, res) => {
   try {
