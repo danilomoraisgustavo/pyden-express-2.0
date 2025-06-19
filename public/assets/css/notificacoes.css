@@ -1,0 +1,18 @@
+/* layout do “bolinha” – mantém o círculo perfeito */
+.notif-icon{
+  width:32px;height:32px;min-width:32px;min-height:32px;
+  aspect-ratio:1/1;border-radius:50%;
+  display:flex;justify-content:center;align-items:center;
+  line-height:0;flex-shrink:0;padding:0
+}
+.notif-icon i{font-size:14px}
+
+/* item da lista */
+.notif-item{display:flex;align-items:flex-start;text-decoration:none}
+.notif-content{font-size:.875rem;line-height:1.15}
+.notif-content .block{display:block}
+.notif-content .time{font-size:.75rem;opacity:.7}
+
+/* botão-check individual só aparece no hover */
+.mark-single-read{display:none}
+.notif-item:hover .mark-single-read{display:inline-block}

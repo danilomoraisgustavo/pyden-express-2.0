@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-bs-theme="light"> 
+<html lang="pt-br" data-bs-theme="light">
 
 <head>
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -28,13 +28,15 @@
   </script>
 
   <!-- CSS Files -->
-    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css">
   <link rel="stylesheet" href="../../assets/css/plugins.min.css">
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css">
   <link rel="stylesheet" href="../../assets/css/demo.css">
-  
+
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
-  
+
+  <link rel="stylesheet" href="../../assets/css/notificacoes.css">
+
 
   <!-- Google Maps API -->
   <script
@@ -91,7 +93,7 @@
               <div class="collapse" id="teAlunos">
                 <ul class="nav nav-collapse">
                   <li><a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html"><span
-                        class="sub-item">Listar Solicitações de Transporte</span></a></li>
+                        class="sub-item">Solicitações</span></a></li>
                   <li><a href="../../pages/transporte-escolar/alunos-listar.html"><span class="sub-item">Listar
                         Alunos</span></a></li>
                 </ul>
@@ -281,13 +283,13 @@
                 <ul class="nav nav-collapse">
                   <li><a href="../../pages/transporte-administrativo/agenda-viagens-listar.html"><span
                         class="sub-item">Listar Viagens</span></a></li>
-                  
+
                 </ul>
               </div>
             </li>
 
             <!-- Logística Interna -->
-            
+
 
             <!-- =========================================================
            =                       FINANCEIRO                      =
@@ -365,13 +367,6 @@
           <div class="container-fluid">
             <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-            <label class="switch">
-              <input type="checkbox" id="themeSwitch">
-              <span class="slider"></span>
-            </label>
-              <!-- =====================================
-             ÍCONE MENSAGENS (exemplo)
-        ===================================== -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -419,22 +414,23 @@
                   <span class="notification" id="notifCount">0</span>
                 </a>
                 <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
+                  <li class="px-3 py-2 d-flex justify-content-between align-items-center border-bottom">
+                    <span class="mb-0 flex-grow-1 fw-semibold" id="notifTitle">Você não tem novas notificações</span>
+                    <button class="btn btn-sm btn-link text-success p-0" id="notifMarkAllRead"
+                      title="Marcar todas como lidas">
+                      <i class="fa fa-check-circle fs-5"></i>
+                    </button>
+                  </li>
+
                   <li>
-                    <div class="dropdown-title" id="notifTitle">
-                      Você não tem novas notificações
+                    <div class="notif-scroll scrollbar-outer" style="max-height:260px">
+                      <div id="notifList"></div>
                     </div>
                   </li>
-                  <li>
-                    <div class="notif-scroll scrollbar-outer">
-                      <div class="notif-center" id="notifList">
-                        <!-- Conteúdo gerado dinamicamente -->
-                      </div>
-                    </div>
-                  </li>
-                  <li>
+
+                  <li class="border-top">
                     <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
-                      Ver todas as notificações
-                      <i class="fa fa-angle-right"></i>
+                      Ver todas as notificações <i class="fa fa-angle-right"></i>
                     </a>
                   </li>
                 </ul>
@@ -495,18 +491,12 @@
                 </div>
               </li>
 
-              <!-- =====================================
-             DROPDOWN USUÁRIO
-        ===================================== -->
+              <!-- USER DROPDOWN -->
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
                     <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
                   </div>
-                  <span class="profile-username">
-                    <span class="op-7">Olá,</span>
-                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
-                  </span>
                 </a>
                 <ul class="dropdown-menu dropdown-user animated fadeIn">
                   <div class="dropdown-user-scroll scrollbar-outer">
@@ -535,6 +525,7 @@
                   </div>
                 </ul>
               </li>
+
             </ul>
           </div>
         </nav>
@@ -548,11 +539,6 @@
             <div>
               <h3 class="fw-bold mb-3">Painel de Controle</h3>
               <h6 class="op-7 mb-2">Sistema de Gestão de Transporte Escolar</h6>
-            </div>
-            <div class="ms-md-auto py-2 py-md-0">
-              <!-- Botão para abrir o modal com o formulário completo -->
-              <button type="button" class="btn btn-primary btn-round" data-bs-toggle="modal"
-                data-bs-target="#modalAdicionarAluno">Adicionar Aluno</button>
             </div>
           </div>
 
@@ -951,7 +937,6 @@
   <!-- pydenadmin DEMO methods, don't include it in your project! -->
   <script src="../../assets/js/setting-demo.js"></script>
 
-  <script src="../../assets/js/toggle.js"></script>
 
   <script>
     let map, marker, escolaMarker, directionsService, directionsRenderer;
@@ -1151,7 +1136,6 @@
       document.getElementById('solicitacao-form').appendChild(inputCriterio);
 
       $('#modalDireito').modal('hide');
-
       document.getElementById('enviar-solicitacao').classList.remove('d-none');
     });
 
@@ -1190,22 +1174,15 @@
 
     $('#cpfResponsavel').on('input', function () {
       let cpf = $(this).val().replace(/\D/g, '');
-      if (cpf.length > 11) {
-        cpf = cpf.substring(0, 11);
-      }
-      cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
-      cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
-      cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+      if (cpf.length > 11) cpf = cpf.substring(0, 11);
+      cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
       $(this).val(cpf);
     });
 
     $('#celularResponsavel').on('input', function () {
       let celular = $(this).val().replace(/\D/g, '');
-      if (celular.length > 11) {
-        celular = celular.substring(0, 11);
-      }
-      celular = celular.replace(/(\d{2})(\d)/, "($1) $2");
-      celular = celular.replace(/(\d{5})(\d{1,4})$/, "$1-$2");
+      if (celular.length > 11) celular = celular.substring(0, 11);
+      celular = celular.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d{1,4})$/, "$1-$2");
       $(this).val(celular);
     });
 
@@ -1231,10 +1208,8 @@
       document.getElementById('monitores-total').textContent = data.monitores_total || 0;
       document.getElementById('fornecedores-total').textContent = data.fornecedores_total || 0;
       document.getElementById('pontos-total').textContent = data.pontos_total || 0;
-
-      // Novo campo de escolas
       document.getElementById('escolas-total').textContent = data.escolas_total || 0;
-    };
+    }
 
     document.addEventListener('DOMContentLoaded', carregarDadosDashboard);
 
@@ -1273,34 +1248,33 @@
         ]
       };
 
-      const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: false
-        },
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        }
-      };
-
       const estatisticasChart = new Chart(ctx, {
         type: 'line',
         data: chartData,
-        options: chartOptions
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                boxWidth: 12,
+                padding: 20,
+                usePointStyle: false
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
       });
-
-      if (document.getElementById('myChartLegend')) {
-        document.getElementById('myChartLegend').innerHTML = estatisticasChart.generateLegend();
-      }
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      await carregarEstatisticasTransporte();
-    });
+    document.addEventListener('DOMContentLoaded', carregarEstatisticasTransporte);
   </script>
+
 </body>
 
 </html>

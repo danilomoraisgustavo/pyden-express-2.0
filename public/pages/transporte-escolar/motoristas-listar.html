@@ -28,13 +28,15 @@
   </script>
 
   <!-- CSS -->
-    <link rel="stylesheet" href="../../assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css">
   <link rel="stylesheet" href="../../assets/css/plugins.min.css">
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css">
   <link rel="stylesheet" href="../../assets/css/demo.css">
-  
+
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
-  
+
+  <link rel="stylesheet" href="../../assets/css/notificacoes.css">
+
 
   <style>
     .required-label::after {
@@ -92,7 +94,7 @@
               <div class="collapse" id="teAlunos">
                 <ul class="nav nav-collapse">
                   <li><a href="../../pages/transporte-escolar/alunos-solicitacoes-listar.html"><span
-                        class="sub-item">Listar Solicitações de Transporte</span></a></li>
+                        class="sub-item">Solicitações</span></a></li>
                   <li><a href="../../pages/transporte-escolar/alunos-listar.html"><span class="sub-item">Listar
                         Alunos</span></a></li>
                 </ul>
@@ -282,13 +284,13 @@
                 <ul class="nav nav-collapse">
                   <li><a href="../../pages/transporte-administrativo/agenda-viagens-listar.html"><span
                         class="sub-item">Listar Viagens</span></a></li>
-                  
+
                 </ul>
               </div>
             </li>
 
             <!-- Logística Interna -->
-            
+
 
             <!-- =========================================================
            =                       FINANCEIRO                      =
@@ -339,6 +341,7 @@
     </div>
     <!-- END SIDEBAR -->
 
+
     <div class="main-panel">
       <div class="main-header" style="top: 0;">
         <div class="main-header-logo">
@@ -365,10 +368,6 @@
           <div class="container-fluid">
             <!-- Ícones de mensagens, notificações, ações rápidas, etc. -->
             <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-
-              <!-- =====================================
-             ÍCONE MENSAGENS (exemplo)
-        ===================================== -->
               <li class="nav-item topbar-icon dropdown hidden-caret">
                 <a class="nav-link dropdown-toggle" href="#" id="messageDropdown" role="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -384,7 +383,6 @@
                   <li>
                     <div class="message-notif-scroll scrollbar-outer">
                       <div class="notif-center">
-                        <!-- Exemplos de mensagens fixas ou carregadas via JS -->
                         <a href="#">
                           <div class="notif-img">
                             <img src="../../assets/img/jm_denis.jpg" alt="Img Profile" />
@@ -395,7 +393,6 @@
                             <span class="time">Há 5 minutos</span>
                           </div>
                         </a>
-                        <!-- ... -->
                       </div>
                     </div>
                   </li>
@@ -418,22 +415,23 @@
                   <span class="notification" id="notifCount">0</span>
                 </a>
                 <ul class="dropdown-menu notif-box animated fadeIn" aria-labelledby="notifDropdown">
+                  <li class="px-3 py-2 d-flex justify-content-between align-items-center border-bottom">
+                    <span class="mb-0 flex-grow-1 fw-semibold" id="notifTitle">Você não tem novas notificações</span>
+                    <button class="btn btn-sm btn-link text-success p-0" id="notifMarkAllRead"
+                      title="Marcar todas como lidas">
+                      <i class="fa fa-check-circle fs-5"></i>
+                    </button>
+                  </li>
+
                   <li>
-                    <div class="dropdown-title" id="notifTitle">
-                      Você não tem novas notificações
+                    <div class="notif-scroll scrollbar-outer" style="max-height:260px">
+                      <div id="notifList"></div>
                     </div>
                   </li>
-                  <li>
-                    <div class="notif-scroll scrollbar-outer">
-                      <div class="notif-center" id="notifList">
-                        <!-- Conteúdo gerado dinamicamente -->
-                      </div>
-                    </div>
-                  </li>
-                  <li>
+
+                  <li class="border-top">
                     <a class="see-all" href="javascript:void(0);" id="notifSeeAll">
-                      Ver todas as notificações
-                      <i class="fa fa-angle-right"></i>
+                      Ver todas as notificações <i class="fa fa-angle-right"></i>
                     </a>
                   </li>
                 </ul>
@@ -455,7 +453,6 @@
                   <div class="quick-actions-scroll scrollbar-outer">
                     <div class="quick-actions-items">
                       <div class="row m-0">
-                        <!-- Exemplo de cards para algumas páginas existentes -->
                         <a class="col-6 col-md-4 p-0" href="/pages/transporte-escolar/escolas-cadastrar.html">
                           <div class="quick-actions-item">
                             <div class="avatar-item bg-primary rounded-circle">
@@ -495,18 +492,12 @@
                 </div>
               </li>
 
-              <!-- =====================================
-             DROPDOWN USUÁRIO
-        ===================================== -->
+              <!-- USER DROPDOWN -->
               <li class="nav-item topbar-user dropdown hidden-caret">
                 <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
                   <div class="avatar-sm">
                     <img src="../../assets/img/profile.jpg" alt="..." class="avatar-img rounded-circle" />
                   </div>
-                  <span class="profile-username">
-                    <span class="op-7">Olá,</span>
-                    <span class="fw-bold" id="dropdownUserName">Carregando...</span>
-                  </span>
                 </a>
                 <ul class="dropdown-menu dropdown-user animated fadeIn">
                   <div class="dropdown-user-scroll scrollbar-outer">
@@ -535,6 +526,7 @@
                   </div>
                 </ul>
               </li>
+
             </ul>
           </div>
         </nav>

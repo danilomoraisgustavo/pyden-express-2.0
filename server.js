@@ -179,15 +179,12 @@ app.use(
 app.get("/admin", isAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin/admin-dashboard.html"));
 });
-
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/login-cadastro.html"));
 });
-
 app.get("/politicaprivacidade", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "politicas-privacidade.html"));
 });
-
 app.get("/solicitar-rota.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/solicitar-rota.html"));
 });
@@ -2076,19 +2073,19 @@ app.put("/api/zoneamento/:id", async (req, res) => {
     const { nome_zoneamento, geojson } = req.body;
 
     if (!nome_zoneamento || !geojson) {
-      return res.status(400).json({ success:false, message:"Nome ou GeoJSON não fornecidos." });
+      return res.status(400).json({ success: false, message: "Nome ou GeoJSON não fornecidos." });
     }
 
     let parsed;
     try { parsed = JSON.parse(geojson); }
-    catch { return res.status(400).json({ success:false, message:"GeoJSON inválido." }); }
+    catch { return res.status(400).json({ success: false, message: "GeoJSON inválido." }); }
 
     if (parsed.type !== "Feature" || !parsed.geometry)
-      return res.status(400).json({ success:false, message:"GeoJSON inválido ou sem geometry." });
+      return res.status(400).json({ success: false, message: "GeoJSON inválido ou sem geometry." });
 
-    const validTypes = ["Polygon","LineString"];
+    const validTypes = ["Polygon", "LineString"];
     if (!validTypes.includes(parsed.geometry.type))
-      return res.status(400).json({ success:false, message:"GeoJSON deve ser Polygon ou LineString." });
+      return res.status(400).json({ success: false, message: "GeoJSON deve ser Polygon ou LineString." });
 
     const userId = req.session?.userId || null;
 
@@ -2098,17 +2095,17 @@ app.put("/api/zoneamento/:id", async (req, res) => {
       [nome_zoneamento, JSON.stringify(parsed.geometry), id]
     );
     if (!upd.rowCount)
-      return res.status(404).json({ success:false, message:"Zoneamento não encontrado." });
+      return res.status(404).json({ success: false, message: "Zoneamento não encontrado." });
 
     await pool.query(
       `INSERT INTO notificacoes (user_id, acao, tabela, registro_id, mensagem)
        VALUES ($1,'UPDATE','zoneamentos',$2,$3)`,
       [userId, id, `Zoneamento atualizado: ${nome_zoneamento}`]
     );
-    res.json({ success:true, message:"Zoneamento atualizado com sucesso!" });
+    res.json({ success: true, message: "Zoneamento atualizado com sucesso!" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success:false, message:"Erro interno do servidor." });
+    res.status(500).json({ success: false, message: "Erro interno do servidor." });
   }
 });
 // ====================================================================================
@@ -5679,10 +5676,10 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     alunos.forEach(a => {
       // 1) define o turno com base em a.turma
       const turno = /MAT/i.test(a.turma) ? 'manha'
-                  : /VESP/i.test(a.turma) ? 'tarde'
-                  : /NOT/i.test(a.turma) ? 'noite'
-                  : /INT/i.test(a.turma) ? 'integral'
-                  : 'manha';
+        : /VESP/i.test(a.turma) ? 'tarde'
+          : /NOT/i.test(a.turma) ? 'noite'
+            : /INT/i.test(a.turma) ? 'integral'
+              : 'manha';
 
       // 2) inicializa o objeto do ponto, se ainda não existir
       if (!stopsMap[a.ponto_id]) {
@@ -5692,25 +5689,25 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       }
       // 3) agrupa o aluno no turno correto
       stopsMap[a.ponto_id].alunos[turno].push(a.aluno_id);
-      });
-      /* 7) Agora atribui sempre a lat/lng correta do ponto */
-      const { rows: pts } = await client.query(`
+    });
+    /* 7) Agora atribui sempre a lat/lng correta do ponto */
+    const { rows: pts } = await client.query(`
         SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
           FROM public.pontos
         WHERE id = ANY($1)
       `, [pontosIds]);
 
-      pts.forEach(p => {
-        // se por acaso houver ponto sem alunos, inicializa o objeto também
-        if (!stopsMap[p.id]) {
-          stopsMap[p.id] = {
-            alunos: { manha: [], tarde: [], noite: [], integral: [] }
-          };
-        }
-        // sobrescreve lat/lng com a coordenada do ponto
-        stopsMap[p.id].lat = +p.lat;
-        stopsMap[p.id].lng = +p.lng;
-      });
+    pts.forEach(p => {
+      // se por acaso houver ponto sem alunos, inicializa o objeto também
+      if (!stopsMap[p.id]) {
+        stopsMap[p.id] = {
+          alunos: { manha: [], tarde: [], noite: [], integral: [] }
+        };
+      }
+      // sobrescreve lat/lng com a coordenada do ponto
+      stopsMap[p.id].lat = +p.lat;
+      stopsMap[p.id].lng = +p.lng;
+    });
 
     /* 8) Vetor de stops com pelo menos 1 aluno */
     let stops = Object.entries(stopsMap).map(([pid, v]) => ({
@@ -6419,65 +6416,51 @@ app.delete("/api/pontos/:id", async (req, res) => {
 // ====================================================================================
 app.get("/api/notificacoes", async (req, res) => {
   try {
-    // Verifica se o usuário está logado
-    if (!req.session || !req.session.userId) {
-      return res.json({ success: false, message: "Não logado" });
+    // 1) Verifica autenticação
+    if (!req.session?.userId) {
+      return res.status(401).json({ success: false, message: "Não logado" });
     }
     const userId = req.session.userId;
 
-    // Consulta as 10 notificações mais recentes para esse user
-    // ou notificações cujo user_id é NULL (notificações gerais).
+    // 2) Consulta todas as notificações não lidas (user-specific ou gerais), ordenadas por data
     const query = `
-            SELECT id,
-      acao,
-      tabela,
-      registro_id,
-      mensagem,
-      datahora,
-      is_read
-            FROM notificacoes
-            WHERE user_id = $1 OR user_id IS NULL
-            ORDER BY datahora DESC
-            LIMIT 10
-      `;
+      SELECT id,
+             acao,
+             tabela,
+             registro_id,
+             mensagem,
+             datahora,
+             is_read
+      FROM notificacoes
+      WHERE (user_id = $1 OR user_id IS NULL)
+        AND is_read = FALSE
+      ORDER BY datahora DESC
+    `;
     const { rows } = await pool.query(query, [userId]);
 
-    // Formata o "tempo" relativo (ex.: "Há 15 minutos")
+    // 3) Formata o tempo relativo
     const now = Date.now();
-    const notifications = rows.map((r) => {
-      const diffMs = now - r.datahora.getTime();
-      const diffMin = Math.floor(diffMs / 60000);
-
-      let tempoStr = `Há ${diffMin} minuto(s)`;
-      if (diffMin >= 60) {
-        const horas = Math.floor(diffMin / 60);
-        tempoStr = `Há ${horas} hora(s)`;
-      }
-
+    const notifications = rows.map(r => {
+      const diffMin = Math.floor((now - r.datahora.getTime()) / 60000);
+      const tempoStr = diffMin < 60
+        ? `Há ${diffMin} minuto(s)`
+        : `Há ${Math.floor(diffMin / 60)} hora(s)`;
       return {
         id: r.id,
-        acao: r.acao,
-        tabela: r.tabela,
-        registro_id: r.registro_id,
         mensagem: r.mensagem,
-        datahora: r.datahora, // data/hora real do banco
-        is_read: r.is_read, // para o front saber se está lida ou não
-        tempo: tempoStr, // ex.: "Há 12 minutos"
+        tempo: tempoStr,
+        is_read: r.is_read
       };
     });
 
-    return res.json({
-      success: true,
-      notifications,
-    });
+    // 4) Retorna tudo
+    return res.json({ success: true, notifications });
   } catch (err) {
-    console.error("Erro ao buscar notificacoes:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor.",
-    });
+    console.error("Erro ao buscar notificações:", err);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor." });
   }
 });
+
 
 // Marcar uma ou várias notificações como lidas
 app.patch("/api/notificacoes/marcar-lido", async (req, res) => {
@@ -11459,26 +11442,26 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
          updated_at                      = NOW()
        WHERE id = $21`,
       [
-        id_matricula               || null,
-        escola_id                  || null,
-        ano                        || null,
-        modalidade                 || null,
-        formato_letivo             || null,
-        turma                      || null,
-        pessoa_nome                || null,
-        cpf                        || null,
+        id_matricula || null,
+        escola_id || null,
+        ano || null,
+        modalidade || null,
+        formato_letivo || null,
+        turma || null,
+        pessoa_nome || null,
+        cpf || null,
         transporte_escolar_poder_publico || null,
-        cep                        || null,
-        bairro                     || null,
-        numero_pessoa_endereco     || null,
-        filiacao_1                 || null,
-        numero_telefone            || null,
-        filiacao_2                 || null,
-        responsavel                || null,
+        cep || null,
+        bairro || null,
+        numero_pessoa_endereco || null,
+        filiacao_1 || null,
+        numero_telefone || null,
+        filiacao_2 || null,
+        responsavel || null,
         defArray,
-        longitude                  || null,
-        latitude                   || null,
-        rua                        || null,
+        longitude || null,
+        latitude || null,
+        rua || null,
         id
       ]
     );
@@ -12158,21 +12141,21 @@ app.put("/api/frota_administrativa/:id", uploadFrota.single("documento"), async 
     const fields = [];
     const vals = [];
     let idx = 1;
-    if (placa != null)          { fields.push(`placa=$${idx++}`); vals.push(placa); }
-    if (tipo_veiculo != null)   { fields.push(`tipo_veiculo=$${idx++}`); vals.push(tipo_veiculo); }
-    if (capacidade != null)     { fields.push(`capacidade=$${idx++}`); vals.push(parseInt(capacidade,10)); }
-    if (cor_veiculo != null)    { fields.push(`cor_veiculo=$${idx++}`); vals.push(cor_veiculo); }
-    if (ano != null)            { fields.push(`ano=$${idx++}`); vals.push(parseInt(ano,10)); }
-    if (marca != null)          { fields.push(`marca=$${idx++}`); vals.push(marca); }
+    if (placa != null) { fields.push(`placa=$${idx++}`); vals.push(placa); }
+    if (tipo_veiculo != null) { fields.push(`tipo_veiculo=$${idx++}`); vals.push(tipo_veiculo); }
+    if (capacidade != null) { fields.push(`capacidade=$${idx++}`); vals.push(parseInt(capacidade, 10)); }
+    if (cor_veiculo != null) { fields.push(`cor_veiculo=$${idx++}`); vals.push(cor_veiculo); }
+    if (ano != null) { fields.push(`ano=$${idx++}`); vals.push(parseInt(ano, 10)); }
+    if (marca != null) { fields.push(`marca=$${idx++}`); vals.push(marca); }
     fields.push(`ar_condicionado=$${idx++}`); vals.push(ar_condicionado === "Sim");
-    fields.push(`rastreador=$${idx++}`);      vals.push(rastreador === "Sim");
-    fields.push(`freios_abs=$${idx++}`);      vals.push(freios_abs === "Sim");
-    fields.push(`airbags=$${idx++}`);         vals.push(airbags === "Sim");
-    fields.push(`trava_eletrica=$${idx++}`);  vals.push(trava_eletrica === "Sim");
-    fields.push(`alarme=$${idx++}`);          vals.push(alarme === "Sim");
-    fields.push(`vidros_eletricos=$${idx++}`);vals.push(vidros_eletricos === "Sim");
-    fields.push(`tomada_12v=$${idx++}`);      vals.push(tomada_12v === "Sim");
-    if (docPath)                { fields.push(`documento=$${idx++}`); vals.push(docPath); }
+    fields.push(`rastreador=$${idx++}`); vals.push(rastreador === "Sim");
+    fields.push(`freios_abs=$${idx++}`); vals.push(freios_abs === "Sim");
+    fields.push(`airbags=$${idx++}`); vals.push(airbags === "Sim");
+    fields.push(`trava_eletrica=$${idx++}`); vals.push(trava_eletrica === "Sim");
+    fields.push(`alarme=$${idx++}`); vals.push(alarme === "Sim");
+    fields.push(`vidros_eletricos=$${idx++}`); vals.push(vidros_eletricos === "Sim");
+    fields.push(`tomada_12v=$${idx++}`); vals.push(tomada_12v === "Sim");
+    if (docPath) { fields.push(`documento=$${idx++}`); vals.push(docPath); }
 
     const updateQ = `
       UPDATE frota_administrativa
@@ -12323,7 +12306,7 @@ app.get("/api/checklists", async (req, res) => {
     }
     if (fornecedor_id) {
       params.push(fornecedor_id, fornecedor_id);
-      conds.push(`(m.fornecedor_id = $${params.length-1} OR v.fornecedor_id = $${params.length})`);
+      conds.push(`(m.fornecedor_id = $${params.length - 1} OR v.fornecedor_id = $${params.length})`);
     }
 
     if (conds.length) {
@@ -12695,7 +12678,7 @@ app.put('/api/admin-motoristas/status', verificarTokenJWT, async (req, res) => {
 app.post('/api/admin-motoristas/viagens/:id/avaliar', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
-    const viagemId    = req.params.id;
+    const viagemId = req.params.id;
     const { nota, observacao } = req.body;
     const result = await pool.query(
       `UPDATE viagens 
@@ -12745,10 +12728,10 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
 
     // Envia o JSON esperado pelo front
     return res.json({
-      motoristas_adm_total:     parseInt(motoristaCount.rows[0].total,     10),
-      frota_total:              parseInt(frotaCount.rows[0].total,          10),
-      fornecedores_adm_total:   parseInt(fornecedorAdmCount.rows[0].total,  10),
-      viagens_agendadas_total:  parseInt(viagensCount.rows[0].total,        10)
+      motoristas_adm_total: parseInt(motoristaCount.rows[0].total, 10),
+      frota_total: parseInt(frotaCount.rows[0].total, 10),
+      fornecedores_adm_total: parseInt(fornecedorAdmCount.rows[0].total, 10),
+      viagens_agendadas_total: parseInt(viagensCount.rows[0].total, 10)
     });
   } catch (error) {
     console.error('Erro ao carregar dados do dashboard administrativo:', error);
