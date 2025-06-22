@@ -37,10 +37,6 @@
   <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css" />
 
 
-  <!-- Google Maps JS Key -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&callback=" async
-    defer></script>
-
   <style>
     #map-modal-create,
     #map-modal-edit {
@@ -828,6 +824,7 @@
         <div class="modal-body">
           <input type="hidden" id="alunosLinhaId" />
           <input type="hidden" id="alunosLinhaTurno" />
+          <div id="map-rotas" style="width:100%; height:300px; margin-bottom:1em;"></div>
           <table class="table table-hover" id="alunos-linha-table">
             <thead>
               <tr>
@@ -835,11 +832,16 @@
                 <th>Escola</th>
                 <th>Ponto</th>
                 <th>Turno</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
                 <th>Deficiência?</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
+          <button id="btnExportarCSV" class="btn btn-outline-primary" onclick="exportarCSV()" disabled>
+            Exportar CSV
+          </button>
         </div>
       </div>
     </div>
@@ -992,74 +994,60 @@
 
   <!-- Empilhamento automático de modais (todos os tipos) -->
   <script>
-    /*  Bootstrap 5 + jQuery  ────────────────────────────────────────────
-        ▸ Qualquer modal aberto dentro de outro será exibido por cima,
-          com backdrop alinhado e sem perder o bloqueio de rolagem.
-    -------------------------------------------------------------------*/
+    /*  Bootstrap 5 + jQuery – Empilhamento de modais */
     $(document).on('show.bs.modal', '.modal', function () {
       const $modal = $(this);
-      const idx = $('.modal:visible').length;   // 0, 1, 2…
-      const z = 1050 + idx * 10;              // 1050, 1060, 1070…
-
+      const idx = $('.modal:visible').length;   // 0, 1, 2, …
+      const z = 1050 + idx * 10;                // 1050, 1060, 1070, …
       $modal.css('z-index', z);
-
-      /* O Bootstrap injeta o backdrop DEPOIS de disparar show.bs.modal.
-         Aguarde um tick para ajustar o z-index do backdrop recém-criado. */
       setTimeout(() => {
-        $('.modal-backdrop:not(.modal-stack)')
-          .first()                 // backdrop relativo ao modal atual
-          .css('z-index', z - 1)   // sempre logo abaixo do modal
+        $('.modal-backdrop:not(.modal-stack)').first()
+          .css('z-index', z - 1)
           .addClass('modal-stack');
       }, 0);
     });
-
-    /*  Quando um dos modais é fechado, pode haver outro por baixo.
-        Se houver, recoloque a classe .modal-open no <body>
-        para que o scroll da página continue bloqueado. */
     $(document).on('hidden.bs.modal', '.modal', function () {
       if ($('.modal:visible').length) {
         $('body').addClass('modal-open');
       }
     });
-  </script>
 
-  <script>
-    const iconStartEndUrl = "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
-    const iconEscolaUrl = "../../assets/img/escola.png"
-    const iconPontoUrl = "../../assets/img/bus-stop.png"
-    const iconAlunoUrl = "../../assets/img/alunos.png"
-    let mapEdit, modalMapView
-    let editEscolasData = [], editEscolasMarkers = {}, editEscolasSelecionadas = []
-    let startMarker = null, editStartMarker = null
-    let escolaMarkers = [], pontoMarkers = [], editEscolaMarkers = [], editPontoMarkers = [], alunoMarkers = []
-    let pontosData = [], fornecedoresData = []
-    let isPlacingStart = false, zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = []
-    let isPlacingEditStart = false, editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = []
-    let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", alunosRouteData = []
-    let currentRouteDistanceKm = 0
-    let map, directionsService, directionsRenderer, fallbackPolyline;
+    /* Constantes de ícones e variáveis globais */
+    const iconStartEndUrl = "https://maps.google.com/mapfiles/ms/icons/green-dot.png";
+    const iconEscolaUrl = "../../assets/img/escola.png";
+    const iconPontoUrl = "../../assets/img/bus-stop.png";
+    const iconAlunoUrl = "../../assets/img/alunos.png";
+    let mapEdit, modalMapView;
+    let editEscolasData = [], editEscolasMarkers = {}, editEscolasSelecionadas = [];
+    let startMarker = null, editStartMarker = null;
+    let escolaMarkers = [], pontoMarkers = [], editEscolaMarkers = [], editPontoMarkers = [], alunoMarkers = [];
+    let pontosData = [], fornecedoresData = [];
+    let isPlacingStart = false, zoneamentosSelecionados = [], pontosParadaSelecionados = [], fornecedoresSelecionados = [];
+    let isPlacingEditStart = false, editPontosParadaSelecionados = [], editFornecedoresSelecionados = [], editRotasEscolasData = [], editRotasPontosData = [];
+    let rotasTable = null, currentRotaId = null, currentAreaZona = "URBANA", alunosRouteData = [];
+    let currentRouteDistanceKm = 0;
+    let map, directionsService, directionsRenderer, fallbackPolyline, mapRoute, routeBounds, rawPolyline;
 
-    function showNotification(t, m) {
-      const i = {
+    function showNotification(type, message) {
+      const icons = {
         success: "fa fa-check-circle",
         danger: "fa fa-exclamation-circle",
         warning: "fa fa-exclamation-triangle",
         info: "fa fa-info-circle"
       };
-      $.notify({ icon: i[t] || "fa fa-bell", message: m }, {
-        type: t,
-        placement: { from: "top", align: "right" },
-        offset: 20,
-        spacing: 10,
-        z_index: 1031,
-        delay: 3000,
-        timer: 1000,
-        animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" }
-      })
+      $.notify(
+        { icon: icons[type] || "fa fa-bell", message: message },
+        {
+          type: type,
+          placement: { from: "top", align: "right" },
+          offset: 20, spacing: 10, z_index: 1031,
+          delay: 3000, timer: 1000,
+          animate: { enter: "animated fadeInDown", exit: "animated fadeOutUp" }
+        }
+      );
     }
 
-    //Teste de novo mapa de rotas
-    /* ---------- rotas-listar.html (trecho) ---------- */
+    // Teste de novo mapa de rotas (funções de exemplo mantidas)
     function exibirMapa(linhaId) {
       document.getElementById('modalMapa').style.display = 'block';
       if (!map) {
@@ -1070,107 +1058,92 @@
       }
       directionsRenderer.setDirections({ routes: [] });
       if (fallbackPolyline) fallbackPolyline.setMap(null);
-
       fetch(`/api/linhas/${linhaId}/pontos-alunos`)
         .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
         .then(({ escola, pontos }) => {
-          console.log('escola', escola);
-          console.table(pontos);
           if (!pontos.length) { alert('Nenhum aluno ativo nesta linha'); return; }
-
           const originDest = { lat: Number(escola.lat), lng: Number(escola.lng) };
           map.setCenter(originDest);
-
+          // Remove duplicatas de pontos
           const uniq = {};
           pontos.forEach(p => {
-            const k = p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
-            if (!uniq[k] && (p.lat !== originDest.lat || p.lng !== originDest.lng)) uniq[k] = { lat: Number(p.lat), lng: Number(p.lng) };
+            const key = p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
+            if (!uniq[key] && (p.lat !== originDest.lat || p.lng !== originDest.lng)) {
+              uniq[key] = { lat: Number(p.lat), lng: Number(p.lng) };
+            }
           });
           const wayArr = Object.values(uniq).slice(0, 23);
           if (!wayArr.length) { alert('Sem pontos distintos da escola'); return; }
-
-          directionsService.route(
-            {
-              origin: originDest,
-              destination: originDest,
-              waypoints: wayArr.map(p => ({ location: p, stopover: true })),
-              optimizeWaypoints: true,
-              travelMode: google.maps.TravelMode.DRIVING
-            },
-            (r, s) => {
-              console.log('directions status', s);
-              if (s === 'OK') {
-                directionsRenderer.setDirections(r);
-              } else {
-                desenharFallback([originDest, ...wayArr, originDest]);
-              }
+          directionsService.route({
+            origin: originDest,
+            destination: originDest,
+            waypoints: wayArr.map(p => ({ location: p, stopover: true })),
+            optimizeWaypoints: true,
+            travelMode: google.maps.TravelMode.DRIVING
+          }, (result, status) => {
+            if (status === 'OK') {
+              directionsRenderer.setDirections(result);
+            } else {
+              desenharFallback([originDest, ...wayArr, originDest]);
             }
-          );
+          });
         })
-        .catch(err => console.error('erro', err));
+        .catch(err => console.error('Erro ao exibir mapa (teste):', err));
     }
-
-    function desenharFallback(arr) {
+    function desenharFallback(pathCoords) {
       if (fallbackPolyline) fallbackPolyline.setMap(null);
       fallbackPolyline = new google.maps.Polyline({
-        path: arr,
+        path: pathCoords,
         geodesic: true,
         strokeColor: '#007BFF',
         strokeOpacity: 0.6,
         strokeWeight: 5
       });
       fallbackPolyline.setMap(map);
-      const b = new google.maps.LatLngBounds();
-      arr.forEach(p => b.extend(p));
-      map.fitBounds(b);
+      const bounds = new google.maps.LatLngBounds();
+      pathCoords.forEach(p => bounds.extend(p));
+      map.fitBounds(bounds);
     }
-
-    // Função para fechar o modal do mapa
     function fecharMapa() {
-      const modalEl = document.getElementById('modalMapa');
-      modalEl.style.display = 'none';
-      // (Se necessário, poderia também limpar rotas existentes aqui)
+      document.getElementById('modalMapa').style.display = 'none';
+      // (Poderia limpar rotas existentes aqui, se necessário)
     }
-    // Fim do teste
+    // Fim do teste de mapa
 
+    /* Carrega e renderiza lista de itinerários */
     function loadRotas() {
       fetch("/api/itinerarios")
         .then(r => r.json())
-        .then(itins => {
-          const tb = $("#rotas-table tbody").empty();
-          itins.forEach(it => {
+        .then(itinerarios => {
+          const tbody = $("#rotas-table tbody").empty();
+          itinerarios.forEach(it => {
             const zn = (it.zoneamentos || []).map(z => z.nome).join(", ");
             const es = (it.escolas || []).map(e => e.nome).join(", ");
-            const row = encodeURIComponent(JSON.stringify(it));
-            tb.append(`
-        <tr>
-          <td>${it.id}</td>
-          <td>${it.descricao || ""}</td>
-          <td>${zn}</td>
-          <td>${es}</td>
-          <td>
-            <!-- Editar -->
-            <button class="btn btn-link btn-secondary me-1" onclick="openEditModal('${row}')">
-              <i class="fa fa-edit"></i>
-            </button>
-            <!-- Visualizar -->
-            <!-- Deletar -->
-            <button class="btn btn-link btn-danger" onclick="deleteItinerario(${it.id})">
-              <i class="fa fa-trash"></i>
-            </button>
-            <button class="btn btn-link btn-info me-1" onclick="openLinhasModal('${row}')">
-              <i class="fa fa-route"></i>
-            </button>
-          </td>
-        </tr>`);
+            const rowData = encodeURIComponent(JSON.stringify(it));
+            tbody.append(`
+              <tr>
+                <td>${it.id}</td>
+                <td>${it.descricao || ""}</td>
+                <td>${zn}</td>
+                <td>${es}</td>
+                <td>
+                  <button class="btn btn-link btn-secondary me-1" onclick="openEditModal('${rowData}')">
+                    <i class="fa fa-edit"></i>
+                  </button>
+                  <button class="btn btn-link btn-danger me-1" onclick="deleteItinerario(${it.id})">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                  <button class="btn btn-link btn-info" onclick="openLinhasModal('${rowData}')">
+                    <i class="fa fa-route"></i>
+                  </button>
+                </td>
+              </tr>`);
           });
-
           if (rotasTable) rotasTable.destroy();
           rotasTable = $("#rotas-table").DataTable({
             pageLength: 10,
             language: {
-              decimal: ",",
-              thousands: ".",
+              decimal: ",", thousands: ".",
               info: "Mostrando _START_ até _END_ de _TOTAL_",
               infoEmpty: "Mostrando 0 até 0 de 0",
               infoFiltered: "(filtrado de _MAX_ no total)",
@@ -1179,111 +1152,93 @@
               processing: "Processando...",
               search: "Pesquisar:",
               zeroRecords: "Nenhum registro",
-              paginate: {
-                first: "Primeiro",
-                last: "Último",
-                next: "Próximo",
-                previous: "Anterior"
-              },
+              paginate: { first: "Primeiro", last: "Último", next: "Próximo", previous: "Anterior" },
               emptyTable: "Nenhuma rota"
             }
           });
         })
         .catch(() => showNotification("danger", "Erro ao carregar rotas."));
     }
-    // chama no carregamento da página
-    loadRotas();
+    // Chama ao carregar a página
+    $(document).ready(loadRotas);
 
-
-    function deleteItinerario(id) {
-      if (!confirm("Deseja realmente excluir este itinerário?")) return;
-      fetch(`/api/itinerarios/${id}`, { method: "DELETE" })
-        .then(r => r.json())
-        .then(d => {
-          if (d.success) {
-            showNotification("success", "Itinerário excluído.");
-            loadRotas();
-          } else {
-            showNotification("danger", d.error || "Erro ao excluir.");
-          }
-        })
-        .catch(() => showNotification("danger", "Erro interno."));
-    }
-
-    function turnoNormalizado(s) {
-      const l = (s || "").toLowerCase();
-      if (l.includes("vesp") || l.includes("tarde")) return "tarde";
-      if (l.includes("mat") || l.includes("manh")) return "manha";
-      if (l.includes("not") || l.includes("noit")) return "noite";
-      if (l.includes("int") || l.includes("integral")) return "integral";
+    function turnoNormalizado(str) {
+      const s = (str || "").toLowerCase();
+      if (s.includes("vesp") || s.includes("tarde")) return "tarde";
+      if (s.includes("mat") || s.includes("manh")) return "manha";
+      if (s.includes("not") || s.includes("noit")) return "noite";
+      if (s.includes("int") || s.includes("integral")) return "integral";
       return "";
     }
 
+    /* Preenche modal de visualização de alunos de um itinerário */
     function populateAlunos(alunos) {
       alunosRouteData = alunos;
       alunoMarkers.forEach(m => m.setMap(null));
       alunoMarkers = [];
-      const c = { manha: 0, tarde: 0, noite: 0, integral: 0 };
+      const contagem = { manha: 0, tarde: 0, noite: 0, integral: 0 };
       alunos.forEach(a => {
         const t = turnoNormalizado(a.turno);
-        if (c[t] !== undefined) c[t]++;
-        const mk = new google.maps.Marker({
+        if (contagem[t] !== undefined) contagem[t]++;
+        const marker = new google.maps.Marker({
           position: { lat: +a.latitude, lng: +a.longitude },
           map: modalMapView,
           icon: { url: iconAlunoUrl, scaledSize: new google.maps.Size(24, 24) },
           title: a.nome
         });
-        alunoMarkers.push(mk)
+        alunoMarkers.push(marker);
       });
-      $("#contador-manha").text(c.manha);
-      $("#contador-tarde").text(c.tarde);
-      $("#contador-noite").text(c.noite);
-      $("#contador-integral").text(c.integral);
-      const tb = $("#tabela-alunos-rota tbody").empty();
+      $("#contador-manha").text(contagem.manha);
+      $("#contador-tarde").text(contagem.tarde);
+      $("#contador-noite").text(contagem.noite);
+      $("#contador-integral").text(contagem.integral);
+      const tbody = $("#tabela-alunos-rota tbody").empty();
       alunos.forEach(a => {
-        const n = turnoNormalizado(a.turno);
-        const label = n === "manha" ? "Manhã" : n === "tarde" ? "Tarde" : n === "noite" ? "Noite" : n === "integral" ? "Integral" : a.turno;
-        tb.append(`<tr><td>${a.nome}</td><td>${a.escola_nome}</td><td>${a.latitude}</td><td>${a.longitude}</td><td>${a.ponto_id}</td><td>${a.ponto_latitude}</td><td>${a.ponto_longitude}</td><td>${label}</td></tr>`)
+        const turnoLabel = turnoNormalizado(a.turno);
+        const label =
+          turnoLabel === "manha" ? "Manhã" :
+            turnoLabel === "tarde" ? "Tarde" :
+              turnoLabel === "noite" ? "Noite" :
+                turnoLabel === "integral" ? "Integral" : a.turno;
+        tbody.append(`<tr>
+                        <td>${a.nome}</td>
+                        <td>${a.escola_nome}</td>
+                        <td>${a.latitude}</td>
+                        <td>${a.longitude}</td>
+                        <td>${a.ponto_id}</td>
+                        <td>${a.ponto_latitude}</td>
+                        <td>${a.ponto_longitude}</td>
+                        <td>${label}</td>
+                      </tr>`);
       });
-      renderVehicleSuggestions(c)
+      renderVehicleSuggestions(contagem);  // (função existente em outro script)
     }
 
     let itinerarioEmEdicao = null;
 
-    // Abre o modal de edição, recebe o objeto roteiro serializado
     function openEditModal(rowEncoded) {
-      // corrige aqui: usa rowEncoded e armazena no global
       itinerarioEmEdicao = JSON.parse(decodeURIComponent(rowEncoded));
-      const it = itinerarioEmEdicao;
       $('#modalEditarRota').modal('show');
-
       setTimeout(async () => {
-        // 1) Inicializa mapa (se ainda não)
+        // 1) Inicializa mapa de edição se necessário
         if (!mapEdit) {
-          mapEdit = new google.maps.Map(
-            document.getElementById('map-modal-edit'),
-            { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13 }
-          );
+          mapEdit = new google.maps.Map(document.getElementById('map-modal-edit'), {
+            center: { lat: -6.530066, lng: -49.85163 }, zoom: 13
+          });
         }
-        // 2) Carrega todas as escolas (com seus zoneamentos)
+        // 2) Carrega escolas (com zoneamentos) e limpa seleção anterior
         editEscolasData = await fetch('/api/escolas').then(r => r.json());
-
-        // 3) Limpa seleções anteriores
-        editEscolasSelecionadas = [...it.escolas_ids];
+        editEscolasSelecionadas = [...(itinerarioEmEdicao.escolas_ids || [])];
         Object.values(editEscolasMarkers).forEach(m => m.setMap(null));
         editEscolasMarkers = {};
-
-        // 4) Posiciona marcadores e set listener
+        // 3) Posiciona marcadores das escolas e define listener de seleção
         editEscolasData.forEach(e => {
           const mk = new google.maps.Marker({
             position: { lat: +e.latitude, lng: +e.longitude },
             map: mapEdit,
-            icon: editEscolasSelecionadas.includes(e.id)
-              ? selectedIconUrl
-              : defaultIconUrl
+            icon: editEscolasSelecionadas.includes(e.id) ? selectedIconUrl : defaultIconUrl
           });
           mk.addListener('click', () => {
-            // toggle seleção
             const idx = editEscolasSelecionadas.indexOf(e.id);
             if (idx === -1) {
               editEscolasSelecionadas.push(e.id);
@@ -1299,26 +1254,22 @@
           });
           editEscolasMarkers[e.id] = mk;
         });
-
-        // 5) Renderiza listas iniciais
+        // 4) Renderiza listas iniciais de escolas e zoneamentos selecionados
         renderEditEscolasSelecionadas();
         renderEditZoneamentos();
-
       }, 300);
     }
 
-    // 3) front-end: abrir modal e carregar linhas
-    function openLinhasModal(enc) {
-      const it = JSON.parse(decodeURIComponent(enc));
-      const id = it.id;
-      $('#linhasItinerarioId').val(id);
+    function openLinhasModal(rowEncoded) {
+      const itinerario = JSON.parse(decodeURIComponent(rowEncoded));
+      $('#linhasItinerarioId').val(itinerario.id);
       $('#modalLinhasItinerario').modal('show');
-      loadLinhas(id);
+      loadLinhas(itinerario.id);
     }
 
-    // botão “Gerar Linhas Inteligentes”
     document.getElementById('btnGerarLinhas').addEventListener('click', () => {
       const id = $('#linhasItinerarioId').val();
+      if (!id) return;
       fetch(`/api/itinerarios/${id}/linhas/gerar`, { method: 'POST' })
         .then(r => r.json())
         .then(res => {
@@ -1332,10 +1283,9 @@
         .catch(() => showNotification('danger', 'Erro de rede ao gerar linhas'));
     });
 
-    // Renderiza botões das escolas selecionadas (Edição)
     function renderEditEscolasSelecionadas() {
-      const cont = document.getElementById('editListaEscolasSelecionadas');
-      cont.innerHTML = '';
+      const container = document.getElementById('editListaEscolasSelecionadas');
+      container.innerHTML = '';
       editEscolasSelecionadas.forEach(id => {
         const esc = editEscolasData.find(e => e.id === id);
         const btn = document.createElement('button');
@@ -1343,15 +1293,14 @@
         btn.className = 'btn btn-sm btn-outline-primary me-1 mb-1';
         btn.textContent = esc.nome;
         btn.onclick = () => {
-          // simula clique no mapa
+          // Simula clique no marcador (listener do mapa cuidará do restante)
           editEscolasMarkers[id].dispatchEvent(new google.maps.event.addDomListener(window, 'click', () => { }));
-          toggle; // realmente usa o listener acima (manter lógica original)
+          // (A lógica de toggle da seleção ocorre no listener do marcador)
         };
-        cont.appendChild(btn);
+        container.appendChild(btn);
       });
     }
 
-    // Monta e renderiza checkboxes de zoneamentos (Edição)
     function renderEditZoneamentos() {
       const zonas = {};
       editEscolasSelecionadas.forEach(id => {
@@ -1371,27 +1320,18 @@
       });
     }
 
-    // Salva edição via PUT /api/itinerarios/:id
     document.getElementById('btnSalvarEdicao').onclick = async () => {
-      const zoneamentos_ids = Array.from(
-        document.querySelectorAll('#editListaZoneamentos input:checked')
-      ).map(cb => parseInt(cb.value));
-
-      const payload = {
-        escolas_ids: editEscolasSelecionadas,
-        zoneamentos_ids
-      };
-
-      // use itinerarioEmEdicao.id diretamente
-      const id = itinerarioEmEdicao.id;
-
+      const zoneamentos_ids = Array.from(document.querySelectorAll('#editListaZoneamentos input:checked'))
+        .map(cb => parseInt(cb.value));
+      const payload = { escolas_ids: editEscolasSelecionadas, zoneamentos_ids };
+      const id = itinerarioEmEdicao ? itinerarioEmEdicao.id : null;
+      if (!id) return;
       try {
         const resp = await fetch(`/api/itinerarios/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         }).then(r => r.json());
-
         if (resp.success) {
           showNotification('success', 'Itinerário atualizado com sucesso');
           $('#modalEditarRota').modal('hide');
@@ -1404,50 +1344,49 @@
         showNotification('danger', 'Erro de rede ao atualizar itinerário');
       }
     };
-  </script>
-  <script>
-    let alunosModal = null, capacidadeTotal = 0, capacidadeUsada = 0, rotasAlunosTable = null, rotaModalId = null, alunosDisponiveis = []
+
+    /* Modal de associação de alunos à rota */
+    let alunosModal = null, capacidadeTotal = 0, capacidadeUsada = 0;
+    let rotasAlunosTable = null, rotaModalId = null, alunosDisponiveis = [];
     $(document).on("click", ".btn-alunos", function () {
       rotaModalId = $(this).data("id");
-      $("#modalAlunosRota").modal("show")
-    })
-    $("#modalAlunosRota").on("shown.bs.modal", function () {
-      carregarCapacidadeEAlunos()
-    })
+      $("#modalAlunosRota").modal("show");
+    });
+    $("#modalAlunosRota").on("shown.bs.modal", () => {
+      carregarCapacidadeEAlunos();
+    });
     function carregarCapacidadeEAlunos() {
+      if (!rotaModalId) return;
       $.getJSON(`/api/rotas/${rotaModalId}/capacidade`, cap => {
         capacidadeTotal = cap.total;
         capacidadeUsada = cap.usados;
         $("#capTotal").text(capacidadeTotal);
         $("#capUsada").text(capacidadeUsada);
-        $("#capLivre").text(capacidadeTotal - capacidadeUsada)
+        $("#capLivre").text(capacidadeTotal - capacidadeUsada);
       });
       $.getJSON(`/api/rotas/${rotaModalId}/alunos-elegiveis`, data => {
         alunosDisponiveis = data;
-        popularTabelaAlunos()
-      })
+        popularTabelaAlunos();
+      });
     }
-
     function popularTabelaAlunos() {
       const tbody = $("#tblAlunosDisp tbody").empty();
       alunosDisponiveis.forEach(a => {
-        tbody.append(`<tr><td><input type="checkbox" class="ck-aluno" value="${a.id}"></td><td>${a.id}</td><td>${a.nome}</td><td>${a.turma}</td></tr>`)
+        tbody.append(`<tr>
+                        <td><input type="checkbox" class="ck-aluno" value="${a.id}"></td>
+                        <td>${a.id}</td><td>${a.nome}</td><td>${a.turma}</td>
+                      </tr>`);
       });
       if (rotasAlunosTable) rotasAlunosTable.destroy();
-      rotasAlunosTable = $("#tblAlunosDisp").DataTable({
-        pageLength: 10,
-        language: { search: "Pesquisar:" }
-      })
+      rotasAlunosTable = $("#tblAlunosDisp").DataTable({ pageLength: 10, language: { search: "Pesquisar:" } });
     }
-
     $(document).on("change", ".ck-aluno", function () {
-      const sel = $(".ck-aluno:checked").length;
-      $("#selCount").text(sel);
-      $("#btnVincularAlunos").prop("disabled", capacidadeTotal - capacidadeUsada < sel)
-    })
-
+      const selectedCount = $(".ck-aluno:checked").length;
+      $("#selCount").text(selectedCount);
+      $("#btnVincularAlunos").prop("disabled", capacidadeTotal - capacidadeUsada < selectedCount);
+    });
     $("#btnVincularAlunos").click(function () {
-      const ids = $(".ck-aluno:checked").map((_, c) => +c.value).get();
+      const ids = $(".ck-aluno:checked").map((_, el) => +el.value).get();
       if (!ids.length) return;
       $.ajax({
         url: `/api/rotas/${rotaModalId}/alunos`,
@@ -1457,28 +1396,48 @@
       }).done(() => {
         $("#modalAlunosRota").modal("hide");
         showNotification("success", "Alunos vinculados!");
-        loadRotas()
-      }).fail(x => {
-        showNotification("danger", x.responseJSON && x.responseJSON.message ? x.responseJSON.message : "Erro")
-      })
-    })
-
+        loadRotas();
+      }).fail(xhr => {
+        const msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : "Erro";
+        showNotification("danger", msg);
+      });
+    });
+    // Cria dinamicamente o modal de associação de alunos à rota (para evitar conflito de múltiplos modais abertos)
     $(document).ready(function () {
-      $("body").append(`<div class="modal fade" id="modalAlunosRota" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Associar Alunos à Rota</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p><p>Selecionados: <span id="selCount">0</span></p><table id="tblAlunosDisp" class="table table-striped"><thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead><tbody></tbody></table></div><div class="modal-footer"><button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button></div></div></div></div>`);
-    })
-  </script>
-  <script>
+      $("body").append(`
+        <div class="modal fade" id="modalAlunosRota" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Associar Alunos à Rota</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p>Capacidade total: <span id="capTotal">0</span> | Usada: <span id="capUsada">0</span> | Livre: <span id="capLivre">0</span></p>
+                <p>Selecionados: <span id="selCount">0</span></p>
+                <table id="tblAlunosDisp" class="table table-striped">
+                  <thead><tr><th></th><th>ID</th><th>Nome</th><th>Turma</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-primary" id="btnVincularAlunos" disabled>Vincular</button>
+              </div>
+            </div>
+          </div>
+        </div>`);
+    });
+
+    /* Nova rota – seleção de escolas no mapa */
     let mapCreate;
     let escolasData = [], escolasMarkers = {}, escolasSelecionadas = [];
     const defaultIconUrl = "../../assets/img/escola.png";
     const selectedIconUrl = "../../assets/img/escola-selecionada.png";
 
-    // 1) Inicializa mapa e posiciona marcadores de escolas
     function initMapCreate() {
-      mapCreate = new google.maps.Map(
-        document.getElementById("map-modal-create"),
-        { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13 }
-      );
+      mapCreate = new google.maps.Map(document.getElementById("map-modal-create"), {
+        center: { lat: -6.530066, lng: -49.85163 }, zoom: 13
+      });
       fetch('/api/escolas')
         .then(r => r.json())
         .then(data => {
@@ -1489,13 +1448,14 @@
               map: mapCreate,
               icon: defaultIconUrl
             });
-            marker.addListener('click', () => toggleEscola(e.id));
+            marker.addEventListener ?
+              marker.addEventListener('click', () => toggleEscola(e.id)) :
+              marker.addListener('click', () => toggleEscola(e.id));
             escolasMarkers[e.id] = marker;
           });
         });
     }
 
-    // 2) Alterna seleção de escola e atualiza ícone
     function toggleEscola(id) {
       const idx = escolasSelecionadas.indexOf(id);
       if (idx === -1) {
@@ -1509,7 +1469,6 @@
       updateZoneamentos();
     }
 
-    // 3) Renderiza botões das escolas selecionadas
     function renderEscolasSelecionadas() {
       const container = document.getElementById('listaEscolasSelecionadas');
       container.innerHTML = '';
@@ -1524,15 +1483,14 @@
       });
     }
 
-    // 4) Atualiza checkboxes de zoneamentos das escolas marcadas
     function updateZoneamentos() {
       const zonas = {};
       escolasSelecionadas.forEach(id => {
         const esc = escolasData.find(e => e.id === id);
         esc.zoneamentos.forEach(z => zonas[z.id] = z.nome);
       });
-      const contZ = document.getElementById('listaZoneamentos');
-      contZ.innerHTML = '';
+      const cont = document.getElementById('listaZoneamentos');
+      cont.innerHTML = '';
       Object.entries(zonas).forEach(([id, nome]) => {
         const cb = document.createElement('input');
         cb.type = 'checkbox'; cb.value = id; cb.id = 'zon_' + id;
@@ -1540,28 +1498,22 @@
         lbl.htmlFor = cb.id; lbl.textContent = nome;
         const div = document.createElement('div');
         div.append(cb, ' ', lbl);
-        contZ.appendChild(div);
+        cont.appendChild(div);
       });
     }
 
-    // 5) Submete o itinerário ao backend (sem window.alert)
     document.getElementById('btnSalvarItinerario').onclick = async () => {
-      const zoneamentos_ids = Array.from(
-        document.querySelectorAll('#listaZoneamentos input:checked')
-      ).map(cb => parseInt(cb.value));
-
+      const zoneamentos_ids = Array.from(document.querySelectorAll('#listaZoneamentos input:checked'))
+        .map(cb => parseInt(cb.value));
       const payload = { escolas_ids: escolasSelecionadas, zoneamentos_ids };
-
       try {
         const resp = await fetch('/api/itinerarios', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         }).then(r => r.json());
-
         if (resp.id) {
           showNotification('success', `Itinerário #${resp.id} criado: ${resp.descricao}`);
-          // fecha o modal e recarrega a lista sem usar alert()
           $('#modalNovaRota').modal('hide');
           loadRotas();
         } else {
@@ -1573,67 +1525,179 @@
       }
     };
 
-    // Função de exclusão usando showNotification (sobrescrevendo possível duplicata)
+    /* Sobrescrita da função de exclusão (evita duplicata) */
     function deleteItinerario(id) {
       if (!confirm("Deseja realmente excluir este itinerário?")) return;
       fetch(`/api/itinerarios/${id}`, { method: "DELETE" })
         .then(r => r.json())
-        .then(d => {
-          if (d.success) {
+        .then(res => {
+          if (res.success) {
             showNotification('success', 'Itinerário excluído com sucesso');
             loadRotas();
           } else {
-            showNotification('danger', d.error || 'Erro ao excluir itinerário');
+            showNotification('danger', res.error || 'Erro ao excluir itinerário');
           }
         })
         .catch(() => showNotification('danger', 'Erro interno ao excluir itinerário'));
     }
 
-    // 6) Inicia o mapa sempre que o modal abrir
-    const modal = document.getElementById('modalNovaRota');
-    modal.addEventListener('shown.bs.modal', initMapCreate);
+    document.getElementById('modalNovaRota').addEventListener('shown.bs.modal', initMapCreate);
 
+    /* Carrega linhas geradas para um itinerário (por ID) */
     function loadLinhas(itinerarioId) {
       fetch(`/api/itinerarios/${itinerarioId}/linhas`)
         .then(r => r.json())
         .then(linhas => {
-          const tb = $('#linhas-table tbody').empty();
+          const tbody = $('#linhas-table tbody').empty();
           linhas.forEach(l => {
             const qtdParadas = (l.paradas_ids || []).length;
-            tb.append(`
-          <tr>
-            <td>${l.nome_linha}</td>
-            <td>${l.descricao}</td>
-            <td>${l.veiculo_tipo}</td>
-            <td>${l.capacidade}</td>
-            <td><a href="#" onclick="openAlunosLinha(${l.id},'manha')">${l.alunos_manha}</a></td>
-            <td><a href="#" onclick="openAlunosLinha(${l.id},'tarde')">${l.alunos_tarde}</a></td>
-            <td><a href="#" onclick="openAlunosLinha(${l.id},'noite')">${l.alunos_noite}</a></td>
-            <td><a href="#" onclick="openAlunosLinha(${l.id},'integral')">${l.alunos_integral}</a></td>
-            <td>${qtdParadas}</td>
-            <td>
-              <button class="btn btn-link btn-show-map" data-geo='${JSON.stringify(l.geojson)}'>
-                <i class="fa fa-map-marker-alt"></i>
-              </button>
-            </td>
-          </tr>`);
+            tbody.append(`
+              <tr>
+                <td>${l.nome_linha}</td>
+                <td>${l.descricao}</td>
+                <td>${l.veiculo_tipo}</td>
+                <td>${l.capacidade}</td>
+                <td><a href="#" onclick="openAlunosLinha(${l.id},'manha')">${l.alunos_manha}</a></td>
+                <td><a href="#" onclick="openAlunosLinha(${l.id},'tarde')">${l.alunos_tarde}</a></td>
+                <td><a href="#" onclick="openAlunosLinha(${l.id},'noite')">${l.alunos_noite}</a></td>
+                <td><a href="#" onclick="openAlunosLinha(${l.id},'integral')">${l.alunos_integral}</a></td>
+                <td>${qtdParadas}</td>
+              </tr>`);
           });
         })
         .catch(() => showNotification('danger', 'Erro ao carregar linhas'));
     }
 
-    // listener para abrir o modal de mapa
-    $(document).on('click', '.btn-show-map', function () {
-      const geojson = JSON.parse($(this).attr('data-geo'));
-      $('#modalRouteMap').modal('show');
-      setTimeout(() => {
-        // inicializa ou limpa o mapa e desenha a linha usando geojson.coordinates
-        // (lógica implementada abaixo)
-      }, 300);
-    });
+    /* Inicialização do mapa principal (rota otimizada) */
+    window.initMap = function () {
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: false });
+      map = new google.maps.Map(document.getElementById('map-rotas'), {
+        zoom: 13,
+        center: { lat: -6.530077, lng: -49.851628 }
+      });
+      directionsRenderer.setMap(map);
+    }
 
-    // abre o modal de alunos e carrega a lista
+
+    /* Traça rota otimizada (Google Directions API) entre pontos de parada e escola */
+    let routeMarkers = [];
+
+    function clearRouteMarkers() {
+      routeMarkers.forEach(m => m.setMap(null));
+      routeMarkers = [];
+    }
+
+    function renderRoute(alunos) {
+      console.log('🛣️ Iniciando renderRoute...');
+
+      if (!alunos || !alunos.length) {
+        console.warn('⚠️ Nenhum aluno para traçar rota.');
+        return;
+      }
+
+      if (!directionsService || !directionsRenderer || !map) {
+        console.error("❌ Google Maps ainda não foi inicializado.");
+        return;
+      }
+
+      const escola = alunos[0];
+      const escolaCoord = {
+        lat: parseFloat(escola.escola_lat),
+        lng: parseFloat(escola.escola_lng),
+      };
+
+      console.log(`🏫 Escola: ${escola.escola_nome} (${escolaCoord.lat}, ${escolaCoord.lng})`);
+
+      const waypoints = [];
+      const uniqPontos = new Set();
+
+      alunos.forEach(a => {
+        const key = `${a.ponto_lat},${a.ponto_lng}`;
+        if (!uniqPontos.has(key)) {
+          uniqPontos.add(key);
+
+          if (
+            parseFloat(a.ponto_lat) === escolaCoord.lat &&
+            parseFloat(a.ponto_lng) === escolaCoord.lng
+          ) return;
+
+          waypoints.push({
+            location: { lat: parseFloat(a.ponto_lat), lng: parseFloat(a.ponto_lng) },
+            stopover: true,
+          });
+        }
+      });
+
+      console.log(`📍 Waypoints únicos: ${waypoints.length}`);
+
+      if (!waypoints.length) {
+        console.warn("⚠️ Sem pontos distintos da escola");
+        return;
+      }
+
+      clearRouteMarkers(); // remove marcadores anteriores
+      directionsRenderer.set('directions', null);
+      if (fallbackPolyline) {
+        fallbackPolyline.setMap(null);
+        fallbackPolyline = null;
+      }
+
+      directionsService.route({
+        origin: escolaCoord,
+        destination: escolaCoord,
+        waypoints: waypoints,
+        optimizeWaypoints: true,
+        travelMode: google.maps.TravelMode.DRIVING
+      }, (result, status) => {
+        console.log(`📡 Google Directions API status: ${status}`);
+        if (status === 'OK') {
+          directionsRenderer.setDirections(result);
+        } else {
+          console.warn('⚠️ Fallback: usando Polyline direta');
+          const rawPath = [escolaCoord, ...waypoints.map(w => w.location), escolaCoord];
+          fallbackPolyline = new google.maps.Polyline({
+            path: rawPath,
+            geodesic: true,
+            strokeColor: '#007BFF',
+            strokeOpacity: 0.6,
+            strokeWeight: 5,
+            map: map
+          });
+
+          // marcador da escola
+          const escolaMarker = new google.maps.Marker({
+            position: escolaCoord,
+            map,
+            icon: {
+              url: iconEscolaUrl,
+              scaledSize: new google.maps.Size(32, 32)
+            },
+            title: "Escola"
+          });
+          routeMarkers.push(escolaMarker);
+
+          // marcadores dos pontos
+          waypoints.forEach(wp => {
+            const pontoMarker = new google.maps.Marker({
+              position: wp.location,
+              map,
+              icon: {
+                url: iconPontoUrl,
+                scaledSize: new google.maps.Size(24, 24)
+              },
+              title: "Ponto de parada"
+            });
+            routeMarkers.push(pontoMarker);
+          });
+        }
+      });
+    }
+
+
+    /* Abre modal de alunos por linha e turno, carrega lista e traça rota no mapa */
     function openAlunosLinha(linhaId, turno) {
+
       $('#alunosLinhaId').val(linhaId);
       $('#alunosLinhaTurno').val(turno);
       const label = turno.charAt(0).toUpperCase() + turno.slice(1);
@@ -1643,24 +1707,38 @@
       fetch(`/api/linhas/${linhaId}/alunos?turno=${turno}`)
         .then(r => r.json())
         .then(alunos => {
+
           const tb = $('#alunos-linha-table tbody').empty();
           alunos.forEach(a => {
-            tb.append(`
-        <tr>
+            tb.append(`<tr>
           <td>${a.nome}</td>
           <td>${a.escola_nome}</td>
           <td>${a.ponto_nome}</td>
           <td>${a.turno}</td>
+          <td>${a.ponto_lat}</td>
+          <td>${a.ponto_lng}</td>
           <td>${a.tem_deficiencia ? 'Sim' : 'Não'}</td>
         </tr>`);
           });
-          toggleCsvBtn(); // habilita/desabilita o botão CSV (definido em outro escopo)
+
+          toggleCsvBtn && toggleCsvBtn();
+
+          console.log('📤 Chamando renderRoute com os dados...');
+          renderRoute(alunos);
         })
-        .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
+        .catch(err => console.error('❌ Erro ao buscar alunos:', err));
     }
 
-    let mapRoute, routeBounds, rawPolyline;
 
+    // Ajusta mapa quando o modal de alunos for exibido
+    $('#modalAlunosLinha').on('shown.bs.modal', () => {
+      if (map) {
+        google.maps.event.trigger(map, 'resize');
+        if (routeBounds) map.fitBounds(routeBounds);
+      }
+    });
+
+    // Ajusta mapa quando o modal de trajeto (rota completa) for exibido
     $('#modalRouteMap').on('shown.bs.modal', () => {
       if (mapRoute) {
         google.maps.event.trigger(mapRoute, 'resize');
@@ -1668,46 +1746,38 @@
       }
     });
 
+    // Exibe trajeto da linha (normal ou especial) no mapa do modalRouteMap
     $(document).on('click', '.btn-show-map', function () {
       const geojson = JSON.parse($(this).attr('data-geo'));
       $('#modalRouteMap').modal('show');
-
       setTimeout(() => {
         if (!mapRoute) {
-          mapRoute = new google.maps.Map(
-            document.getElementById('mapRoute'),
-            {
-              center: { lat: geojson.coordinates[0][1], lng: geojson.coordinates[0][0] },
-              zoom: 13
-            }
-          );
+          mapRoute = new google.maps.Map(document.getElementById('mapRoute'), {
+            center: { lat: geojson.coordinates[0][1], lng: geojson.coordinates[0][0] },
+            zoom: 13
+          });
           directionsService = new google.maps.DirectionsService();
           directionsRenderer = new google.maps.DirectionsRenderer({ map: mapRoute, suppressMarkers: true });
         }
-
         directionsRenderer.set('directions', null);
         if (rawPolyline) {
           rawPolyline.setMap(null);
           rawPolyline = null;
         }
-
-        // escola → paradas → escola
+        // Define origem/destino como escola, waypoints como paradas
         const school = geojson.coordinates[0];
         const stops = geojson.coordinates.slice(1)
           .filter(c => c[0] !== school[0] || c[1] !== school[1])
           .map(c => ({ lat: c[1], lng: c[0] }));
-
         const origin = { lat: school[1], lng: school[0] };
         const destination = { lat: school[1], lng: school[0] };
         const waypoints = stops.map(s => ({ location: s, stopover: true }));
-
         const garagemIcon = { url: '../../assets/img/garagem.png', scaledSize: new google.maps.Size(32, 32) };
         const pontoIcon = { url: '../../assets/img/bus-stop.png', scaledSize: new google.maps.Size(24, 24) };
-
         directionsService.route({
-          origin,
-          destination,
-          waypoints,
+          origin: origin,
+          destination: destination,
+          waypoints: waypoints,
           travelMode: 'DRIVING',
           optimizeWaypoints: false
         }, (result, status) => {
@@ -1716,50 +1786,41 @@
             routeBounds = new google.maps.LatLngBounds();
             result.routes[0].overview_path.forEach(p => routeBounds.extend(p));
             mapRoute.fitBounds(routeBounds);
-
-            // marcadores
+            // Marcadores de início/fim (escola) e paradas
             new google.maps.Marker({ position: origin, map: mapRoute, icon: garagemIcon });
             new google.maps.Marker({ position: destination, map: mapRoute, icon: garagemIcon });
-            waypoints.forEach(wp => new google.maps.Marker({
-              position: wp.location, map: mapRoute, icon: pontoIcon
-            }));
+            waypoints.forEach(wp => {
+              new google.maps.Marker({ position: wp.location, map: mapRoute, icon: pontoIcon });
+            });
           } else {
             showNotification('warning', 'Directions: ' + status);
-            // fallback em Polyline
+            // Fallback: desenha Polyline simples
             const rawPath = [origin, ...stops, destination];
             rawPolyline = new google.maps.Polyline({
-              path: rawPath,
-              geodesic: true,
-              strokeOpacity: 0.7,
-              strokeWeight: 4,
-              map: mapRoute
+              path: rawPath, geodesic: true, strokeOpacity: 0.7, strokeWeight: 4, map: mapRoute
             });
             routeBounds = new google.maps.LatLngBounds();
             rawPath.forEach(p => routeBounds.extend(p));
             mapRoute.fitBounds(routeBounds);
-
             new google.maps.Marker({ position: origin, map: mapRoute, icon: garagemIcon });
             new google.maps.Marker({ position: destination, map: mapRoute, icon: garagemIcon });
-            stops.forEach(s => new google.maps.Marker({
-              position: s, map: mapRoute, icon: pontoIcon
-            }));
+            stops.forEach(s => {
+              new google.maps.Marker({ position: s, map: mapRoute, icon: pontoIcon });
+            });
           }
         });
       }, 300);
     });
-  </script>
-  <script>
+
     /* === ROTAS ESPECIAIS === */
     let mapCreateEspecial;
     let escolasEspData = [], escolasEspMarkers = {};
-    let escolasEspSelecionadas = [];           // [{ id: 3, bairros: ['Centro','Jardim América'] }, …]
+    let escolasEspSelecionadas = [];  // Ex.: [{ id: 3, bairros: ['Centro','Jardim América'] }, …]
 
     function initMapCreateEspecial() {
-      mapCreateEspecial = new google.maps.Map(
-        document.getElementById("map-modal-create-especial"),
-        { center: { lat: -6.530066, lng: -49.85163 }, zoom: 13 }
-      );
-
+      mapCreateEspecial = new google.maps.Map(document.getElementById("map-modal-create-especial"), {
+        center: { lat: -6.530066, lng: -49.85163 }, zoom: 13
+      });
       fetch('/api/escolas')
         .then(r => r.json())
         .then(data => {
@@ -1777,19 +1838,19 @@
     }
 
     function toggleEscolaEspecial(id) {
-      const idx = escolasEspSelecionadas.findIndex(o => o.id === id);
-
+      const idx = escolasEspSelecionadas.findIndex(obj => obj.id === id);
       if (idx === -1) {
+        // Seleciona escola especial e obtém seus bairros
         escolasEspMarkers[id].setIcon(selectedIconUrl);
-        // 1) Busca apenas alunos da escola com DEFICIÊNCIA preenchida
         fetch(`/api/escolas/${id}/alunos-especiais`)
           .then(r => r.json())
           .then(alunos => {
             const bairros = [...new Set(alunos.map(a => a.bairro).filter(Boolean))];
-            escolasEspSelecionadas.push({ id, bairros });
+            escolasEspSelecionadas.push({ id: id, bairros: bairros });
             renderEscolasEsp();
           });
       } else {
+        // Desseleciona escola especial
         escolasEspMarkers[id].setIcon(defaultIconUrl);
         escolasEspSelecionadas.splice(idx, 1);
         renderEscolasEsp();
@@ -1797,78 +1858,73 @@
     }
 
     function renderEscolasEsp() {
-      // escolas
-      const divEsc = document.getElementById('listaEscolasSelecionadasEspecial');
-      divEsc.innerHTML = escolasEspSelecionadas.map(o => {
-        const esc = escolasEspData.find(e => e.id === o.id);
-        return `<span class="badge bg-primary me-1">${esc ? esc.nome : o.id}</span>`;
+      // Atualiza lista de escolas selecionadas
+      const divEscolas = document.getElementById('listaEscolasSelecionadasEspecial');
+      divEscolas.innerHTML = escolasEspSelecionadas.map(obj => {
+        const esc = escolasEspData.find(e => e.id === obj.id);
+        return `<span class="badge bg-primary me-1">${esc ? esc.nome : obj.id}</span>`;
       }).join('');
-
-      // bairros
-      const divB = document.getElementById('listaBairrosEspecial');
-      divB.innerHTML = '';
-      escolasEspSelecionadas.forEach(o => {
-        o.bairros.forEach(b => {
-          const chk = `<div><input type="checkbox" data-esc="${o.id}" data-bairro="${b}" checked> ${b}</div>`;
-          divB.insertAdjacentHTML('beforeend', chk);
+      // Atualiza checkboxes de bairros selecionados
+      const divBairros = document.getElementById('listaBairrosEspecial');
+      divBairros.innerHTML = '';
+      escolasEspSelecionadas.forEach(obj => {
+        obj.bairros.forEach(bairro => {
+          const chk = `<div><input type="checkbox" data-esc="${obj.id}" data-bairro="${bairro}" checked> ${bairro}</div>`;
+          divBairros.insertAdjacentHTML('beforeend', chk);
         });
       });
     }
 
-    /* Salvar itinerário especial */
-    document.getElementById('btnSalvarItinerarioEspecial')
-      .addEventListener('click', async () => {
-        const payload = {
-          escolas: escolasEspSelecionadas.map(o => o.id),
-          bairros_por_escola: escolasEspSelecionadas
-        };
+    document.getElementById('btnSalvarItinerarioEspecial').addEventListener('click', async () => {
+      const payload = {
+        escolas: escolasEspSelecionadas.map(o => o.id),
+        bairros_por_escola: escolasEspSelecionadas
+      };
+      try {
+        const res = await fetch('/api/itinerarios-especiais', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+        if (res.id) {
+          $('#modalNovaRotaEspecial').modal('hide');
+          showNotification('success', `Itinerário Especial #${res.id} criado.`);
+          loadRotasEspeciais();
+        } else {
+          showNotification('danger', res.error || 'Erro ao criar itinerário especial');
+        }
+      } catch {
+        showNotification('danger', 'Falha de rede.');
+      }
+    });
 
-        try {
-          const r = await fetch('/api/itinerarios-especiais', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }).then(r => r.json());
-
-          if (r.id) {
-            $('#modalNovaRotaEspecial').modal('hide');
-            showNotification('success', `Itinerário Especial #${r.id} criado.`);
-            loadRotasEspeciais();
-          } else {
-            showNotification('danger', r.error || 'Erro ao criar itinerário especial');
-          }
-        } catch { showNotification('danger', 'Falha de rede.'); }
-      });
-
-    /* Carregar tabela */
     function loadRotasEspeciais() {
       fetch('/api/itinerarios-especiais')
         .then(r => r.json())
-        .then(data => {
-          const tb = $('#rotas-especiais-table tbody').empty();
-          data.forEach(it => {
-            tb.append(`
-          <tr>
-            <td>${it.escola}</td>
-            <td>${it.bairros.join(', ')}</td>
-            <td>${it.descricao}</td>
-            <td>
-              <button class="btn btn-link btn-secondary" onclick="editarItEsp(${it.id})">
-                <i class="fa fa-edit"></i>
-              </button>
-              <button class="btn btn-link btn-danger" onclick="apagarItEsp(${it.id})">
-                <i class="fa fa-trash"></i>
-              </button>
-              <button class="btn btn-link btn-info" onclick="openLinhasEsp(${it.id})">
-                <i class="fa fa-route"></i>
-              </button>
-            </td>
-          </tr>`);
+        .then(lista => {
+          const tbody = $('#rotas-especiais-table tbody').empty();
+          lista.forEach(it => {
+            tbody.append(`
+              <tr>
+                <td>${it.escola}</td>
+                <td>${it.bairros.join(', ')}</td>
+                <td>${it.descricao}</td>
+                <td>
+                  <button class="btn btn-link btn-secondary" onclick="editarItEsp(${it.id})">
+                    <i class="fa fa-edit"></i>
+                  </button>
+                  <button class="btn btn-link btn-danger" onclick="apagarItEsp(${it.id})">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                  <button class="btn btn-link btn-info" onclick="openLinhasEsp(${it.id})">
+                    <i class="fa fa-route"></i>
+                  </button>
+                </td>
+              </tr>`);
           });
-
-          if ($.fn.DataTable.isDataTable('#rotas-especiais-table'))
+          if ($.fn.DataTable.isDataTable('#rotas-especiais-table')) {
             $('#rotas-especiais-table').DataTable().destroy();
-
+          }
           $('#rotas-especiais-table').DataTable({
             pageLength: 10,
             language: { search: 'Pesquisar:' }
@@ -1876,11 +1932,9 @@
         });
     }
 
-    /* Inicializações de rotas especiais */
     document.getElementById('modalNovaRotaEspecial').addEventListener('shown.bs.modal', initMapCreateEspecial);
     $(document).ready(loadRotasEspeciais);
 
-    // Atualizar lista de bairros conforme marcações
     document.getElementById('listaBairrosEspecial').addEventListener('change', e => {
       if (e.target.matches('input[type="checkbox"]')) {
         const escId = parseInt(e.target.getAttribute('data-esc'));
@@ -1890,67 +1944,48 @@
           if (e.target.checked) {
             if (!sel.bairros.includes(bairro)) sel.bairros.push(bairro);
           } else {
-            const idxB = sel.bairros.indexOf(bairro);
-            if (idxB > -1) sel.bairros.splice(idxB, 1);
+            const idx = sel.bairros.indexOf(bairro);
+            if (idx > -1) sel.bairros.splice(idx, 1);
           }
         }
       }
     });
 
-    /* =========================================================
-     *  LINHAS ESPECIAIS
-     * ========================================================= */
-    let itEspAtual = null;     // guarda o itinerário especial aberto
-
+    /* LINHAS ESPECIAIS (geradas a partir de itinerário especial) */
+    let itEspAtual = null;
     function openLinhasEsp(itinerarioId) {
       itEspAtual = itinerarioId;
       document.getElementById('itEspIdSpan').textContent = `#${itinerarioId}`;
-      loadLinhasEsp();                       // carrega a tabela
-      $('#modalLinhasEsp').modal('show');    // abre o modal
+      loadLinhasEsp();
+      $('#modalLinhasEsp').modal('show');
     }
 
     async function loadLinhasEsp() {
       if (!itEspAtual) return;
-
-      const linhas = await fetch(
-        `/api/itinerarios-especiais/${itEspAtual}/linhas`)
-        .then(r => r.json());
-
+      const linhas = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas`).then(r => r.json());
       const tbody = $('#linhas-especiais-table tbody').empty();
-
       linhas.forEach(l => {
         tbody.append(`
-      <tr>
-        <td>${l.id}</td>
-        <td>${l.descricao}</td>
-        <td class="text-center">
-          <a href="#" onclick="openAlunosLinhaEsp(${l.id},'manha')">${l.alunos_manha}</a>
-        </td>
-        <td class="text-center">
-          <a href="#" onclick="openAlunosLinhaEsp(${l.id},'tarde')">${l.alunos_tarde}</a>
-        </td>
-        <td class="text-center">
-          <a href="#" onclick="openAlunosLinhaEsp(${l.id},'noite')">${l.alunos_noite}</a>
-        </td>
-        <td class="text-center">
-          <a href="#" onclick="openAlunosLinhaEsp(${l.id},'integral')">${l.alunos_integral}</a>
-        </td>
-        <td>
-          <button class="btn btn-link btn-info btn-show-map"
-                  data-geo='${JSON.stringify(l.geojson)}'>
-            <i class="fa fa-map-marker-alt"></i>
-          </button>
-          <button class="btn btn-link btn-danger"
-                  onclick="apagarLinhaEsp(${l.id})">
-            <i class="fa fa-trash"></i>
-          </button>
-        </td>
-      </tr>`);
+          <tr>
+            <td>${l.id}</td>
+            <td>${l.descricao}</td>
+            <td class="text-center"><a href="#" onclick="openAlunosLinhaEsp(${l.id},'manha')">${l.alunos_manha}</a></td>
+            <td class="text-center"><a href="#" onclick="openAlunosLinhaEsp(${l.id},'tarde')">${l.alunos_tarde}</a></td>
+            <td class="text-center"><a href="#" onclick="openAlunosLinhaEsp(${l.id},'noite')">${l.alunos_noite}</a></td>
+            <td class="text-center"><a href="#" onclick="openAlunosLinhaEsp(${l.id},'integral')">${l.alunos_integral}</a></td>
+            <td>
+              <button class="btn btn-link btn-info btn-show-map" data-geo='${JSON.stringify(l.geojson)}'>
+                <i class="fa fa-map-marker-alt"></i>
+              </button>
+              <button class="btn btn-link btn-danger" onclick="apagarLinhaEsp(${l.id})">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
+          </tr>`);
       });
-
-      if ($.fn.DataTable.isDataTable('#linhas-especiais-table'))
+      if ($.fn.DataTable.isDataTable('#linhas-especiais-table')) {
         $('#linhas-especiais-table').DataTable().destroy();
-
+      }
       $('#linhas-especiais-table').DataTable({
         pageLength: 10,
         language: { search: 'Pesquisar:' },
@@ -1961,65 +1996,72 @@
     function openAlunosLinhaEsp(linhaId, turno) {
       $('#alunosLinhaId').val(linhaId);
       $('#alunosLinhaTurno').val(turno);
-      const lbl = turno.charAt(0).toUpperCase() + turno.slice(1);
-      $('#modalAlunosLinhaLabel').text(`Alunos (${lbl})`);
+      const label = turno.charAt(0).toUpperCase() + turno.slice(1);
+      $('#modalAlunosLinhaLabel').text(`Alunos (${label})`);
       $('#modalAlunosLinha').modal('show');
-
-
       fetch(`/api/linhas-especiais/${linhaId}/alunos?turno=${turno}`)
         .then(r => r.json())
         .then(alunos => {
-          const tb = $('#alunos-linha-table tbody').empty();
+          const tbody = $('#alunos-linha-table tbody').empty();
           alunos.forEach(a => {
-            tb.append(`<tr>
-          <td>${a.nome}</td>
-          <td>${a.escola_nome}</td>
-          <td>${a.bairro}</td>
-          <td>${a.turno}</td>
-          <td>Sim</td>
-        </tr>`);
+            tbody.append(`<tr>
+                            <td>${a.nome}</td>
+                            <td>${a.escola_nome}</td>
+                            <td>${a.bairro}</td>
+                            <td>${a.turno}</td>
+                            <td>Sim</td>
+                          </tr>`);
           });
-          toggleCsvBtn && toggleCsvBtn();     // reusa função existente
+          toggleCsvBtn && toggleCsvBtn();
         })
         .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
     }
 
-    /* Gerar Linhas Especiais */
-    document.getElementById('btnGerarLinhasEsp')
-      .addEventListener('click', async () => {
-        if (!itEspAtual) return;
-        const ok = confirm("Gerar/atualizar linhas para este itinerário especial?");
-        if (!ok) return;
-        try {
-          const r = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas/gerar`, { method: 'POST' }).then(r => r.json());
-          if (r.success) {
-            showNotification('success', r.message || 'Linhas geradas.');
-            loadLinhasEsp();
-            loadRotasEspeciais();             // atualiza tabela principal
-          } else {
-            showNotification('danger', r.error || 'Falha na geração.');
-          }
-        } catch {
-          showNotification('danger', 'Erro de rede.');
+    document.getElementById('btnGerarLinhasEsp').addEventListener('click', async () => {
+      if (!itEspAtual) return;
+      if (!confirm("Gerar/atualizar linhas para este itinerário especial?")) return;
+      try {
+        const res = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas/gerar`, {
+          method: 'POST'
+        }).then(r => r.json());
+        if (res.success) {
+          showNotification('success', res.message || 'Linhas geradas.');
+          loadLinhasEsp();
+          loadRotasEspeciais();
+        } else {
+          showNotification('danger', res.error || 'Falha na geração.');
         }
-      });
+      } catch {
+        showNotification('danger', 'Erro de rede.');
+      }
+    });
 
-    /* Excluir uma linha especial */
     async function apagarLinhaEsp(id) {
       if (!confirm('Excluir esta linha?')) return;
       try {
-        const r = await fetch(`/api/linhas-especiais/${id}`, { method: 'DELETE' }).then(r => r.json());
-        if (r.success) {
+        const res = await fetch(`/api/linhas-especiais/${id}`, { method: 'DELETE' }).then(r => r.json());
+        if (res.success) {
           showNotification('success', 'Linha excluída.');
           loadLinhasEsp();
         } else {
-          showNotification('danger', r.error || 'Erro ao excluir.');
+          showNotification('danger', res.error || 'Erro ao excluir.');
         }
       } catch {
         showNotification('danger', 'Erro de rede.');
       }
     }
+    function toggleCsvBtn() {
+      const btn = document.getElementById('btnExportarCSV');
+      const tabela = document.getElementById('alunos-linha-table');
+      if (!btn || !tabela) return;
+      const linhas = tabela.querySelectorAll('tbody tr');
+      btn.disabled = linhas.length === 0;
+    }
+
   </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&callback=initMap"
+    async defer></script>
+
 </body>
 
 </html>

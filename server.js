@@ -5806,21 +5806,24 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
 app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
   try {
     const { linha_id } = req.params;
-    const { turno } = req.query;      // 'manha' | 'tarde' | 'noite' | 'integral'
+    const { turno } = req.query;
 
-    /* 1) Ids de alunos e paradas já gravados na linha ---------------- */
+    console.log(`▶️  Requisição recebida para linha ${linha_id}, turno: ${turno}`);
+
     const lr = await pool.query(
       `SELECT alunos_ids, paradas_ids
          FROM public.linhas_rotas
-        WHERE id = $1`,
-      [linha_id]
+        WHERE id = $1`, [linha_id]
     );
+
     if (!lr.rowCount) {
+      console.warn(`⚠️  Nenhuma linha encontrada com ID ${linha_id}`);
       return res.status(404).json({ error: 'Linha não encontrada.' });
     }
-    const { alunos_ids, paradas_ids } = lr.rows[0];
 
-    /* 2) CASE para padronizar o turno -------------------------------- */
+    const { alunos_ids, paradas_ids } = lr.rows[0];
+    console.log(`✅ IDs encontrados: ${alunos_ids.length} alunos, ${paradas_ids.length} paradas`);
+
     const turnoCase = `
       CASE
         WHEN a.turma ILIKE '%MAT%'  THEN 'manha'
@@ -5831,19 +5834,21 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
       END
     `;
 
-    /* 3) Consulta principal ----------------------------------------- */
     const sql = `
       SELECT
         a.id,
-        a.pessoa_nome                 AS nome,
-        ${turnoCase}                 AS turno,
-        e.nome                        AS escola_nome,
-        p.id                          AS ponto_id,
-        p.nome_ponto                  AS ponto_nome,
-        /* flag “tem_deficiencia”: TRUE se houver 1-N itens no array */
-        COALESCE(array_length(a.deficiencia,1),0) > 0 AS tem_deficiencia
+        a.pessoa_nome                  AS nome,
+        ${turnoCase}                  AS turno,
+        e.nome                         AS escola_nome,
+        COALESCE(e.latitude, -6.5201) AS escola_lat,
+        COALESCE(e.longitude, -49.8532) AS escola_lng,
+        p.id                           AS ponto_id,
+        p.nome_ponto                   AS ponto_nome,
+        p.latitude                     AS ponto_lat,
+        p.longitude                    AS ponto_lng,
+        COALESCE(array_length(a.deficiencia, 1), 0) > 0 AS tem_deficiencia
       FROM public.alunos_ativos a
-      JOIN public.escolas        e  ON e.id  = a.escola_id
+      JOIN public.escolas        e  ON e.id = a.escola_id
       JOIN public.alunos_pontos  ap ON ap.aluno_id = a.id
       JOIN public.pontos         p  ON p.id = ap.ponto_id
       WHERE a.id        = ANY($1)
@@ -5851,14 +5856,23 @@ app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
         AND ${turnoCase} = $3
       ORDER BY a.pessoa_nome;
     `;
-    const { rows } = await pool.query(sql, [alunos_ids, paradas_ids, turno]);
 
-    res.json(rows);
+    const result = await pool.query(sql, [alunos_ids, paradas_ids, turno]);
+
+    console.log(`✅ Alunos retornados: ${result.rows.length}`);
+    if (result.rows.length > 0) {
+      console.log(`🔎 Exemplo: ${JSON.stringify(result.rows[0], null, 2)}`);
+    }
+
+    res.json(result.rows);
+
   } catch (err) {
-    console.error('Erro ao listar alunos da linha:', err);
+    console.error('❌ Erro ao listar alunos da linha:', err);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
+
+
 
 // LISTAR alunos com necessidades especiais de uma determinada escola
 app.get('/api/escolas/:id/alunos-especiais', async (req, res) => {
@@ -12738,40 +12752,6 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
     return res.status(500).json({
       error: 'Não foi possível carregar os dados do dashboard administrativo.'
     });
-  }
-});
-
-
-/* ---------- server.js ---------- */
-app.get('/api/linhas/:id/pontos-alunos', async (req, res) => {
-  const linhaId = Number(req.params.id);
-  try {
-    const { rows: escolaRows } = await pool.query(
-      `SELECT e.id, e.nome,
-              ST_Y(e.geom)::float  AS lat,
-              ST_X(e.geom)::float  AS lng
-         FROM linhas l
-         JOIN escolas e ON e.id = l.escola_id
-        WHERE l.id = $1`,
-      [linhaId]
-    );
-    if (!escolaRows.length) return res.status(404).json({ error: 'Linha não encontrada' });
-    const escola = escolaRows[0];
-    const { rows: pontos } = await pool.query(
-      `SELECT p.id, p.nome,
-              ST_Y(p.geom)::float AS lat,
-              ST_X(p.geom)::float AS lng
-         FROM linhas_paradas lp
-         JOIN paradas p ON p.id = lp.parada_id
-         JOIN alunos  a ON a.parada_id = p.id
-        WHERE lp.linha_id = $1
-          AND a.ativo = TRUE
-        GROUP BY p.id, p.nome, p.geom`,
-      [linhaId]
-    );
-    res.json({ escola, pontos });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar pontos/alunos' });
   }
 });
 
