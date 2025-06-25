@@ -626,6 +626,14 @@
                       <option value="Ambos">Ambos</option>
                     </select>
                   </div>
+                  <div class="mb-3">
+                    <label class="form-label required">Tipo de Agendamento</label><br>
+                    <input type="radio" id="tipoUnica" name="recorrencia" value="unica" checked> 
+                    <label for="tipoUnica">Viagem Única</label>&nbsp;&nbsp;
+
+                    <input type="radio" id="tipoFixa" name="recorrencia" value="fixa"> 
+                    <label for="tipoFixa">Viagem Fixa (Semanal)</label>
+                  </div>
                 </div>
                 <!-- Datas -->
                 <div class="row mb-3">
@@ -1369,12 +1377,41 @@
               fetch(`/api/viagens?data_inicio=${start}&data_fim=${end}`)
                 .then(res => res.json())
                 .then(data => {
-                  const events = data.map(v => ({
-                    id: v.id,
-                    title: (v.motorista_nome ? v.motorista_nome : 'Viagem') + ' (' + v.tipo + ')',
-                    start: v.data_saida,
-                    end: v.data_retorno ? v.data_retorno : undefined
-                  }));
+                  const events = [];
+
+                  data.forEach(v => {
+                    if (v.recorrencia === 'fixa') {
+                      // Gerar eventos semanais para viagens fixas no intervalo
+                      let dataInicio = new Date(v.data_saida);
+                      const dataFimIntervalo = new Date(end);
+
+                      while (dataInicio <= dataFimIntervalo) {
+                        events.push({
+                          id: v.id,
+                          title: `${v.motorista_nome || 'Viagem'} (${v.tipo})`,
+                          start: dataInicio.toISOString(),
+                          end: v.data_retorno ? new Date(
+                            new Date(dataInicio).setHours(
+                              new Date(v.data_retorno).getHours(),
+                              new Date(v.data_retorno).getMinutes()
+                            )
+                          ).toISOString() : undefined,
+                          color: '#257e4a' // Verde para viagem fixa
+                        });
+                        // Incrementa em 7 dias para próxima semana
+                        dataInicio.setDate(dataInicio.getDate() + 7);
+                      }
+                    } else {
+                      // Viagem única
+                      events.push({
+                        id: v.id,
+                        title: `${v.motorista_nome || 'Viagem'} (${v.tipo})`,
+                        start: v.data_saida,
+                        end: v.data_retorno || undefined
+                      });
+                    }
+                  });
+
                   successCallback(events);
                 })
                 .catch(err => {
@@ -1383,10 +1420,10 @@
                 });
             },
             dateClick: function (info) {
-              // Poderíamos filtrar/mostrar viagens do dia clicado se desejado
+              // Lógica para filtrar ou exibir detalhes da data clicada, se necessário
             },
             eventClick: function (info) {
-              // Ao clicar em um evento, abre modal de visualização da viagem correspondente
+              // Abrir modal com detalhes da viagem clicada
               const viagemId = info.event.id;
               openVisualizarViagemModal(parseInt(viagemId));
             }
@@ -1395,6 +1432,7 @@
           calendarInitialized = true;
         }
       });
+
       // Ao abrir modais, inicializa mapas e rotas conforme necessário
       $('#modalNovaViagem').on('shown.bs.modal', function () {
         initMapNovaViagem();

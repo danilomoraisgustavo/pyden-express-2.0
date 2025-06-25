@@ -12445,13 +12445,14 @@ app.get('/api/viagens', async (req, res) => {
   }
 });
 
+
 app.post('/api/viagens', async (req, res) => {
   try {
     const {
       motorista_id, tipo, data_saida, data_retorno,
       vai_esperar, origem, origem_lat, origem_lng,
       destino, destino_lat, destino_lng,
-      pontos_intermediarios, observacoes
+      pontos_intermediarios, observacoes, recorrencia
     } = req.body;
 
     const q = `
@@ -12459,12 +12460,12 @@ app.post('/api/viagens', async (req, res) => {
         motorista_id, tipo, data_saida, data_retorno,
         vai_esperar, origem, origem_lat, origem_lng,
         destino, destino_lat, destino_lng,
-        pontos_intermediarios, observacoes
+        pontos_intermediarios, observacoes, recorrencia
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,
         $9,$10,$11,
-        $12::json,  $13
+        $12::json, $13, $14
       ) RETURNING id
     `;
     const vals = [
@@ -12479,8 +12480,9 @@ app.post('/api/viagens', async (req, res) => {
       destino,
       destino_lat || null,
       destino_lng || null,
-      pontos_intermediarios || null,  // sem vírgula extra
-      observacoes || null
+      pontos_intermediarios || null,
+      observacoes || null,
+      recorrencia || 'unica'
     ];
 
     const result = await pool.query(q, vals);
@@ -12492,6 +12494,7 @@ app.post('/api/viagens', async (req, res) => {
 });
 
 
+
 // [PUT] Atualizar viagem
 app.put('/api/viagens/:id', async (req, res) => {
   try {
@@ -12500,7 +12503,7 @@ app.put('/api/viagens/:id', async (req, res) => {
       motorista_id, tipo, data_saida, data_retorno,
       retorna_origem, origem, origem_lat, origem_lng,
       destino, destino_lat, destino_lng,
-      pontos_intermediarios, observacoes
+      pontos_intermediarios, observacoes, recorrencia
     } = req.body;
 
     const q = `
@@ -12512,8 +12515,9 @@ app.put('/api/viagens/:id', async (req, res) => {
         destino=$9, destino_lat=$10, destino_lng=$11,
         pontos_intermediarios=$12::json,
         observacoes=$13,
+        recorrencia=$14,
         updated_at=NOW()
-      WHERE id=$14
+      WHERE id=$15
       RETURNING id
     `;
     const vals = [
@@ -12528,8 +12532,9 @@ app.put('/api/viagens/:id', async (req, res) => {
       destino,
       destino_lat || null,
       destino_lng || null,
-      pontos_intermediarios || null,  // sem vírgula extra
+      pontos_intermediarios || null,
       observacoes || null,
+      recorrencia || 'unica',
       id
     ];
 
