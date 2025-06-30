@@ -1444,17 +1444,17 @@
     }
     /* ---------- download CSV da listagem ---------- */
     const exportCols = [
+      { header: "ID Pessoa", index: 1 },
       { header: "Nome Aluno", index: 7 },
       { header: "Escola", index: 2 },
       { header: "Bairro", index: 12 },
       { header: "Telefone", index: 15 },
-      { header: "Itinerário ID", index: 19 },
-      { header: "Linha", index: 20 },
+
+      { header: "Rota", fn: row => `${row[19] || ""} - ${row[20] || ""}` },
       { header: "Latitude", index: 21 },
       { header: "Longitude", index: 22 },
       { header: "Deficiência", index: 18 }
     ];
-
 
     function toggleDownloadBtn() {
       const temDados = dataTable && dataTable.rows({ search: "applied" }).any();
@@ -1463,23 +1463,31 @@
 
     $("#btnDownloadAlunosCSV").on("click", () => {
       const linhas = dataTable.rows({ search: "applied" }).data().toArray();
-      if (!linhas.length) { showNotification("info", "Nenhum aluno para exportar."); return; }
+      if (!linhas.length) { 
+        showNotification("info", "Nenhum aluno para exportar."); 
+        return; 
+    }
 
-      const dadosParaCSV = linhas.map(l => {
-        const o = {};
-        exportCols.forEach(c => (o[c.header] = l[c.index]));
-        return o;
+    const dadosParaCSV = linhas.map(l => {
+      const o = {};
+      exportCols.forEach(c => {
+        // se c.fn existir, usa função para montar valor, senão pega pelo índice
+        o[c.header] = c.fn 
+          ? c.fn(l) 
+          : (l[c.index] != null ? l[c.index] : "");
       });
-
-      const csv = jsonParaCSV(dadosParaCSV);
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "alunos_filtrados.csv";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      return o;
     });
+
+  const csv = "\uFEFF" + jsonParaCSV(dadosParaCSV);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "alunos_filtrados.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
   </script>
 
 </body>
