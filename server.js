@@ -11329,7 +11329,8 @@ app.delete("/api/alunos-ativos/:id", async (req, res) => {
   }
 });
 
-app.put("/api/alunos-recadastro/:id", async (req, res) => {
+// PUT /api/alunos-recadastro/:id — não zera mais campos inadvertidamente
+app.put('/api/alunos-recadastro/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -11342,53 +11343,72 @@ app.put("/api/alunos-recadastro/:id", async (req, res) => {
       longitude,
       rua
     } = req.body;
+
+    // Normaliza deficiências -> text[]
     let defArray = null;
     if (Array.isArray(deficiencia)) {
-      defArray = deficiencia.map(item => item === "NADA INFORMADO" ? null : item).filter(Boolean);
-      if (defArray.length === 0) defArray = null;
-    } else if (typeof deficiencia === "string") {
-      if (deficiencia.trim() && deficiencia.trim() !== "NADA INFORMADO") {
-        defArray = [deficiencia.trim()];
-      } else {
-        defArray = null;
-      }
+      defArray = deficiencia
+        .map(d => (d && d !== 'NADA INFORMADO' ? d : null))
+        .filter(Boolean);
+      if (!defArray.length) defArray = null;
+    } else if (
+      typeof deficiencia === 'string' &&
+      deficiencia.trim() &&
+      deficiencia.trim() !== 'NADA INFORMADO'
+    ) {
+      defArray = [deficiencia.trim()];
     }
-    const query = `
-      UPDATE alunos_ativos
-      SET
-        cep = $1,
-        bairro = $2,
-        numero_pessoa_endereco = $3,
-        numero_telefone = $4,
-        deficiencia = $5,
-        latitude = $6,
-        longitude = $7,
-        rua = $8,
-        transporte_escolar_poder_publico = 'MUNICIPAL'
+
+    const sql = `
+      UPDATE alunos_ativos SET
+        cep                    = COALESCE(NULLIF($1, '')          , cep),
+        bairro                 = COALESCE(NULLIF($2, '')          , bairro),
+        numero_pessoa_endereco = COALESCE(NULLIF($3, '')::text    , numero_pessoa_endereco),
+        numero_telefone        = COALESCE(NULLIF($4, '')          , numero_telefone),
+        deficiencia            = COALESCE($5::text[]              , deficiencia),
+        latitude               = COALESCE($6::double precision    , latitude),
+        longitude              = COALESCE($7::double precision    , longitude),
+        rua                    = COALESCE(NULLIF($8, '')          , rua),
+        transporte_escolar_poder_publico = 'MUNICIPAL',
+        geom = CASE
+                 WHEN $6::double precision IS NOT NULL
+                  AND $7::double precision IS NOT NULL
+                 THEN ST_SetSRID(
+                        ST_MakePoint($7::double precision, $6::double precision),
+                        4326
+                      )
+                 ELSE geom
+               END,
+        updated_at = NOW()
       WHERE id = $9
-      RETURNING id
+      RETURNING id;
     `;
-    const values = [
-      cep || null,
-      bairro || null,
-      numero_pessoa_endereco || null,
-      numero_telefone || null,
+
+    const params = [
+      cep ?? '',
+      bairro ?? '',
+      numero_pessoa_endereco ?? '',
+      numero_telefone ?? '',
       defArray,
-      latitude || null,
-      longitude || null,
-      rua || null,
+      latitude ?? null,
+      longitude ?? null,
+      rua ?? '',
       id
     ];
-    const result = await pool.query(query, values);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: "Aluno não encontrado." });
-    }
-    return res.json({ success: true, message: "Dados atualizados com sucesso." });
-  } catch (error) {
-    console.error("Erro ao atualizar aluno:", error);
-    return res.status(500).json({ success: false, message: "Erro ao atualizar aluno." });
+
+    const { rowCount } = await pool.query(sql, params);
+    if (!rowCount)
+      return res
+        .status(404)
+        .json({ success: false, message: 'Aluno não encontrado.' });
+
+    res.json({ success: true, message: 'Dados atualizados.' });
+  } catch (err) {
+    console.error('Erro ao recadastrar aluno:', err);
+    res.status(500).json({ success: false, message: 'Erro interno.' });
   }
 });
+
 
 app.post("/api/alunos-ativos-estadual", async (req, res) => {
   try {
@@ -11523,6 +11543,11 @@ app.put("/api/alunos-ativos-estadual/:id", async (req, res) => {
 });
 
 
+// ---------- helpers de saneamento -------------------------------------
+const toText = v => (v === "" || v === undefined ? null : v);
+const toInt = v => (v === "" || v === undefined ? null : parseInt(v, 10));
+const toFloat = v => (v === "" || v === undefined ? null : parseFloat(v));
+
 app.put("/api/alunos-ativos/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -11549,6 +11574,7 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
       rua
     } = req.body;
 
+    /* deficiencia pode vir string JSON ou array */
     const defArray =
       typeof deficiencia === "string" && deficiencia.trim()
         ? JSON.parse(deficiencia)
@@ -11558,61 +11584,54 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
 
     await pool.query(
       `UPDATE alunos_ativos SET
-         id_matricula                    = $1,
-         escola_id                       = $2,
-         ano                             = $3,
-         modalidade                      = $4,
-         formato_letivo                  = $5,
-         turma                           = $6,
-         pessoa_nome                     = $7,
-         cpf                             = $8,
-         transporte_escolar_poder_publico= $9,
-         cep                             = $10,
-         bairro                          = $11,
-         numero_pessoa_endereco          = $12,
-         filiacao_1                      = $13,
-         numero_telefone                 = $14,
-         filiacao_2                      = $15,
-         responsavel                     = $16,
-         deficiencia                     = $17,
-         longitude                       = $18::double precision,
-         latitude                        = $19::double precision,
-         rua                             = $20,
-         geom                            = CASE
-                                             WHEN $19::double precision IS NOT NULL
-                                              AND $18::double precision IS NOT NULL
-                                             THEN ST_SetSRID(
-                                                    ST_MakePoint(
-                                                      $18::double precision,
-                                                      $19::double precision
-                                                    ),
-                                                    4326
-                                                  )
-                                             ELSE NULL
-                                           END,
-         updated_at                      = NOW()
+         id_matricula                    = COALESCE($1 , id_matricula),
+         escola_id                       = COALESCE($2 , escola_id),
+         ano                             = COALESCE($3 , ano),
+         modalidade                      = COALESCE($4 , modalidade),
+         formato_letivo                  = COALESCE($5 , formato_letivo),
+         turma                           = COALESCE($6 , turma),
+         pessoa_nome                     = COALESCE($7 , pessoa_nome),
+         cpf                             = COALESCE($8 , cpf),
+         transporte_escolar_poder_publico= COALESCE($9 , transporte_escolar_poder_publico),
+         cep                             = COALESCE($10, cep),
+         bairro                          = COALESCE($11, bairro),
+         numero_pessoa_endereco          = COALESCE($12, numero_pessoa_endereco),
+         filiacao_1                      = COALESCE($13, filiacao_1),
+         numero_telefone                 = COALESCE($14, numero_telefone),
+         filiacao_2                      = COALESCE($15, filiacao_2),
+         responsavel                     = COALESCE($16, responsavel),
+         deficiencia                     = COALESCE($17, deficiencia),
+         longitude                       = COALESCE($18, longitude),
+         latitude                        = COALESCE($19, latitude),
+         rua                             = COALESCE($20, rua),
+         geom = CASE
+                   WHEN $18 IS NOT NULL AND $19 IS NOT NULL
+                   THEN ST_SetSRID(ST_MakePoint($18,$19),4326)
+                   ELSE geom
+                 END,
+         updated_at = NOW()
        WHERE id = $21`,
       [
-        id_matricula || null,
-        escola_id || null,
-        ano || null,
-        modalidade || null,
-        formato_letivo || null,
-        turma || null,
-        pessoa_nome || null,
-        cpf || null,
-        transporte_escolar_poder_publico || null,
-        cep || null,
-        bairro || null,
-        numero_pessoa_endereco || null,
-        filiacao_1 || null,
-        numero_telefone || null,
-        filiacao_2 || null,
-        responsavel || null,
-        defArray,
-        longitude || null,
-        latitude || null,
-        rua || null,
+        toText(id_matricula),
+        toInt(escola_id),
+        toInt(ano),
+        toText(modalidade),
+        toText(formato_letivo),
+        toText(turma),
+        toText(pessoa_nome),
+        toText(cpf),
+        toText(transporte_escolar_poder_publico),
+        toText(cep),
+        toText(bairro),
+        toText(numero_pessoa_endereco),
+        toText(filiacao_1),
+        toText(numero_telefone),
+        toText(filiacao_2),
+        toText(responsavel),
+        defArray,                  // já é array ou null
+        toFloat(longitude),
+        toFloat(latitude),
+        toText(rua),
         id
       ]
     );
@@ -11623,6 +11642,7 @@ app.put("/api/alunos-ativos/:id", async (req, res) => {
     return res.status(500).json({ success: false, message: "Erro interno." });
   }
 });
+
 
 function getDistanceFromLatLngInKm(lat1, lng1, lat2, lng2) {
   const R = 6371; // Raio da terra em km
