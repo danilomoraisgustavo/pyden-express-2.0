@@ -5622,13 +5622,13 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     await client.query('BEGIN');
     await client.query('SET search_path TO public');
 
-    /* 2) Limpa linhas antigas */
+    /* 1) limpa linhas antigas */
     await client.query(
       `DELETE FROM public.linhas_rotas WHERE itinerario_id = $1`,
       [itinerario_id]
     );
 
-    /* 3) Pontos + escolas do itinerário */
+    /* 2) pontos + escolas do itinerário */
     const itRes = await client.query(
       `SELECT pontos_ids, escolas_ids
          FROM public.itinerarios
@@ -5640,7 +5640,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     const escolasIds = itRes.rows[0].escolas_ids;
     if (!pontosIds.length) throw new Error('Itinerário sem pontos');
 
-    /* 4) Usa a 1ª escola como origem/destino */
+    /* 3) origem/destino = 1ª escola */
     const escRes = await client.query(
       `SELECT latitude AS lat, longitude AS lng
          FROM public.escolas
@@ -5653,70 +5653,75 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
       lat: +escRes.rows[0].lat,
       lng: +escRes.rows[0].lng
     };
-
-    /* 5) Alunos vinculados (SOMENTE sem deficiência) */
+    const incluirDef = !!req.body?.incluir_deficiencia;
+    /* 4) alunos vinculados (TODOS, especiais ou não) */
     const { rows: alunos } = await client.query(
       `SELECT ap.ponto_id,
-              a.id         AS aluno_id,
-              a.latitude,
-              a.longitude,
-              a.turma
-         FROM public.alunos_ativos a
-         JOIN public.alunos_pontos ap ON ap.aluno_id = a.id
-        WHERE ap.ponto_id = ANY($1)
-          AND a.escola_id = ANY($2)
-          AND a.latitude  IS NOT NULL
-          AND a.longitude IS NOT NULL
-          AND COALESCE(array_length(a.deficiencia,1),0)=0`,
+          a.id  AS aluno_id,
+          a.latitude,
+          a.longitude,
+          a.turma,
+          (a.deficiencia IS NOT NULL AND array_length(a.deficiencia,1) > 0)
+            AS tem_deficiencia
+     FROM public.alunos_ativos a
+     JOIN public.alunos_pontos ap ON ap.aluno_id = a.id
+    WHERE ap.ponto_id = ANY($1)
+      AND a.escola_id  = ANY($2)
+      AND a.latitude  IS NOT NULL
+      AND a.longitude IS NOT NULL
+      ${incluirDef ? '' :
+        'AND (a.deficiencia IS NULL OR array_length(a.deficiencia,1) = 0)'} `,
       [pontosIds, escolasIds]
     );
 
-    /* 6) Agrupa alunos por ponto e turno */
+    /* 5) agrupa alunos por “stop” */
     const stopsMap = {};
     alunos.forEach(a => {
-      // 1) define o turno com base em a.turma
       const turno = /MAT/i.test(a.turma) ? 'manha'
         : /VESP/i.test(a.turma) ? 'tarde'
           : /NOT/i.test(a.turma) ? 'noite'
             : /INT/i.test(a.turma) ? 'integral'
               : 'manha';
 
-      // 2) inicializa o objeto do ponto, se ainda não existir
-      if (!stopsMap[a.ponto_id]) {
-        stopsMap[a.ponto_id] = {
-          alunos: { manha: [], tarde: [], noite: [], integral: [] }
+      // chave: ponto normal OU “E-<aluno_id>” para especiais
+      const key = a.tem_deficiencia ? `E-${a.aluno_id}` : String(a.ponto_id);
+
+      if (!stopsMap[key]) {
+        stopsMap[key] = {
+          alunos: { manha: [], tarde: [], noite: [], integral: [] },
+          lat: a.tem_deficiencia ? +a.latitude : undefined,
+          lng: a.tem_deficiencia ? +a.longitude : undefined,
+          ponto_id: a.tem_deficiencia ? null : a.ponto_id   // não existe registro em “pontos” para especiais
         };
       }
-      // 3) agrupa o aluno no turno correto
-      stopsMap[a.ponto_id].alunos[turno].push(a.aluno_id);
+      stopsMap[key].alunos[turno].push(a.aluno_id);
     });
-    /* 7) Agora atribui sempre a lat/lng correta do ponto */
+
+    /* 6) latitude/longitude dos pontos REGULARES */
     const { rows: pts } = await client.query(`
         SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
           FROM public.pontos
-        WHERE id = ANY($1)
+         WHERE id = ANY($1)
       `, [pontosIds]);
 
     pts.forEach(p => {
-      // se por acaso houver ponto sem alunos, inicializa o objeto também
       if (!stopsMap[p.id]) {
+        // ponto sem aluno (raro, mas garante consistência)
         stopsMap[p.id] = {
-          alunos: { manha: [], tarde: [], noite: [], integral: [] }
+          alunos: { manha: [], tarde: [], noite: [], integral: [] },
+          ponto_id: p.id
         };
       }
-      // sobrescreve lat/lng com a coordenada do ponto
       stopsMap[p.id].lat = +p.lat;
       stopsMap[p.id].lng = +p.lng;
     });
 
-    /* 8) Vetor de stops com pelo menos 1 aluno */
-    let stops = Object.entries(stopsMap).map(([pid, v]) => ({
-      ponto_id: +pid, lat: v.lat, lng: v.lng, alunos: v.alunos
-    })).filter(s => {
-      return Object.values(s.alunos).some(arr => arr.length);
-    });
+    /* 7) vetor de stops com ≥1 aluno */
+    let stops = Object.values(stopsMap).filter(s =>
+      Object.values(s.alunos).some(arr => arr.length)
+    );
 
-    /* 9) util haversine */
+    /* 8) haversine + clusterização (inalterados) */
     const hav = (lat1, lng1, lat2, lng2) => {
       const r = Math.PI / 180, R = 6371;
       const dφ = (lat2 - lat1) * r, dλ = (lng2 - lng1) * r;
@@ -5726,9 +5731,8 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     };
     const MAX_POR_TURNO = 50;
 
-    /* 10) insert */
-    const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt) => {
-      await client.query(
+    const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt) =>
+      client.query(
         `INSERT INTO public.linhas_rotas
            (itinerario_id,nome_linha,descricao,
             veiculo_tipo,capacidade,
@@ -5736,26 +5740,26 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
          VALUES($1,$2,$3,$4,$5,$6,$7,ST_GeomFromEWKT($8))`,
         [itinerario_id, nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt]
       );
-    };
 
-    /* 11) clusterização */
+    /* 9) clusterização */
     let nextChar = 'A'.charCodeAt(0);
     while (stops.length) {
-      stops.sort((a, b) => {
-        const sa = Object.values(a.alunos).reduce((s, u) => s + u.length, 0);
-        const sb = Object.values(b.alunos).reduce((s, u) => s + u.length, 0);
-        return sb - sa;
-      });
+      stops.sort((a, b) =>
+        Object.values(b.alunos).reduce((s, u) => s + u.length, 0) -
+        Object.values(a.alunos).reduce((s, u) => s + u.length, 0)
+      );
       const cluster = [stops.shift()];
       const counts = { manha: 0, tarde: 0, noite: 0, integral: 0 };
-      Object.entries(cluster[0].alunos).forEach(([t, arr]) => counts[t] += arr.length);
+      Object.entries(cluster[0].alunos)
+        .forEach(([t, arr]) => counts[t] += arr.length);
 
       let added;
       do {
         added = false;
         let best = -1, dist = Infinity;
         for (let i = 0; i < stops.length; i++) {
-          const s = stops[i], last = cluster[cluster.length - 1];
+          const s = stops[i];
+          const last = cluster[cluster.length - 1];
           const d = hav(last.lat, last.lng, s.lat, s.lng);
           const ok = Object.entries(s.alunos)
             .every(([t, arr]) => counts[t] + arr.length <= MAX_POR_TURNO);
@@ -5764,16 +5768,23 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
         if (best >= 0) {
           const nxt = stops.splice(best, 1)[0];
           cluster.push(nxt);
-          Object.entries(nxt.alunos).forEach(([t, arr]) => counts[t] += arr.length);
+          Object.entries(nxt.alunos)
+            .forEach(([t, arr]) => counts[t] += arr.length);
           added = true;
         }
       } while (added);
 
-      const paradas_ids = cluster.map(s => s.ponto_id);
-      const alunos_ids = [...new Set(cluster.flatMap(s => [
-        ...s.alunos.manha, ...s.alunos.tarde,
-        ...s.alunos.noite, ...s.alunos.integral]))];
+      const paradas_ids = cluster
+        .map(s => s.ponto_id)
+        .filter(pid => pid !== null && pid !== undefined);   // IGNORA os “E‑…”
+      const alunos_ids = [...new Set(
+        cluster.flatMap(s => [
+          ...s.alunos.manha, ...s.alunos.tarde,
+          ...s.alunos.noite, ...s.alunos.integral
+        ])
+      )];
 
+      /* rota bruta: escola → stops → escola */
       const routePts = [];
       for (let v = 0; v < 3; v++) {
         routePts.push([school.lng, school.lat]);
@@ -5784,11 +5795,14 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
         routePts.map(c => c.join(' ')).join(',') + ')';
 
       const maxTur = Math.max(counts.manha, counts.tarde, counts.noite, counts.integral);
-      const vt = maxTur <= 33 ? 'microonibus' : maxTur <= 50 ? 'onibus' : 'van';
-      const cap = vt === 'onibus' ? 50 : vt === 'microonibus' ? 33 : 16;
+      let vt, cap;
+      if (maxTur <= 16) { vt = 'van'; cap = 16; }
+      else if (maxTur <= 33) { vt = 'microonibus'; cap = 33; }
+      else /* até 50 lugares */ { vt = 'onibus'; cap = 50; }
 
       const nome = String.fromCharCode(nextChar++);
-      await insertLine(nome, `Linha ${nome}`, vt, cap, alunos_ids, paradas_ids, ewkt);
+      await insertLine(nome, `Linha ${nome}`, vt, cap,
+        alunos_ids, paradas_ids, ewkt);
     }
 
     await client.query('COMMIT');
@@ -5801,6 +5815,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     client.release();
   }
 });
+
 
 // GET /api/linhas/:linha_id/alunos — lista alunos da sub-rota por turno
 app.get('/api/linhas/:linha_id/alunos', async (req, res) => {
@@ -10881,21 +10896,44 @@ function normalizeDate(value) {
 }
 
 /* ---------- rota ----------------------------------------------------- */
-app.post("/api/import-alunos-ativos", async (req, res) => {
-  const { alunos, escolaId } = req.body;
+app.post('/api/import-alunos-ativos', async (req, res) => {
+  const { alunos, escolaId, overrideConflicts = false } = req.body;
   if (!Array.isArray(alunos) || !escolaId) {
-    return res.status(400).json({
-      success: false,
-      message: "Dados inválidos."
-    });
+    return res.status(400).json({ success: false, message: 'Dados inválidos.' });
   }
 
   const client = await pool.connect();
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
+    // 1) detectar conflitos antes de inserir
+    if (!overrideConflicts) {
+      const conflicts = [];
+      for (const a of alunos) {
+        const cpfNorm = typeof a.cpf === 'string' && (a.cpf = a.cpf.trim()) && a.cpf.length
+          ? a.cpf
+          : null;
+        const { rows } = await client.query(
+          `SELECT id, id_pessoa, cpf, escola_id AS currentEscola, id_matricula
+             FROM alunos_ativos
+            WHERE (
+                  id_pessoa    = $1
+               OR cpf          = $2
+               OR id_matricula = $3
+            )
+              AND escola_id != $4`,
+          [a.id_pessoa, cpfNorm, a.id_matricula, escolaId]
+        );
+        if (rows.length) conflicts.push(...rows);
+      }
+      if (conflicts.length) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ success: false, type: 'conflicts', conflicts });
+      }
+    }
+
+    // 2) loop de importação
     for (const a of alunos) {
-      /* ---------- destruturação ------------------------------------- */
       let {
         id_pessoa,
         id_matricula,
@@ -10916,76 +10954,109 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
         data_nascimento
       } = a;
 
-      /* ---------- normalizações ------------------------------------- */
-      const cpfNorm =
-        typeof cpf === "string" && (cpf = cpf.trim()) && cpf.length
-          ? cpf
-          : null;
-
-      // converte string/array/JSON em array de texto ou NULL
+      // normalizações
+      const cpfNorm = typeof cpf === 'string' && (cpf = cpf.trim()) && cpf.length
+        ? cpf
+        : null;
       let defArray = null;
-      if (typeof deficiencia === "string" && deficiencia.trim()) {
-        try {
-          defArray = JSON.parse(deficiencia);
-        } catch {
-          defArray = [deficiencia.trim()];
-        }
+      if (typeof deficiencia === 'string' && deficiencia.trim()) {
+        try { defArray = JSON.parse(deficiencia); }
+        catch { defArray = [deficiencia.trim()]; }
       } else if (Array.isArray(deficiencia)) {
         defArray = deficiencia;
       }
-
-      // data_nascimento pronta para o INSERT
       data_nascimento = normalizeDate(data_nascimento);
 
-      /* ---------- 1. preenche id_pessoa pela matrícula --------------- */
+      // 2.1) conflito individual?
+      const { rowCount: hasConflict, rows: conflictRow } = await client.query(
+        `SELECT id FROM alunos_ativos
+           WHERE (
+                 id_pessoa    = $1
+              OR cpf          = $2
+              OR id_matricula = $3
+            )
+             AND escola_id != $4
+           LIMIT 1`,
+        [id_pessoa, cpfNorm, id_matricula, escolaId]
+      );
+      if (hasConflict) {
+        if (overrideConflicts) {
+          // reatribui escola e atualiza dados (sem tocar em campos sensíveis)
+          await client.query(
+            `UPDATE alunos_ativos SET
+               escola_id               = $1,
+               ano                     = $2,
+               modalidade              = $3,
+               formato_letivo          = $4,
+               turma                   = $5,
+               pessoa_nome             = $6,
+               cpf                     = $7,
+               cep                     = $8,
+               bairro                  = $9,
+               numero_pessoa_endereco  = $10,
+               filiacao_1              = $11,
+               numero_telefone         = $12,
+               filiacao_2              = $13,
+               responsavel             = $14,
+               deficiencia             = $15,
+               data_nascimento         = $16
+             WHERE id = $17`,
+            [
+              escolaId,
+              ANO, MODALIDADE, FORMATO_LETIVO, TURMA,
+              pessoa_nome, cpfNorm, cep, bairro, numero_pessoa_endereco,
+              filiacao_1, telefone_filiacao_1, filiacao_2, RESPONSAVEL,
+              defArray, data_nascimento,
+              conflictRow[0].id
+            ]
+          );
+        }
+        continue;
+      }
+
+      // 2.2) preenche por matrícula se der
       const { rowCount: fillByMat } = await client.query(
         `UPDATE alunos_ativos
             SET id_pessoa = $1
           WHERE id_matricula = $2
             AND id_pessoa IS NULL
-            AND NOT EXISTS (
-                  SELECT 1 FROM alunos_ativos
-                   WHERE id_pessoa = $1
-            );`,
+            AND NOT EXISTS (SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1)`,
         [id_pessoa, id_matricula]
       );
       if (fillByMat) continue;
 
-      /* ---------- 2. preenche id_pessoa pelo CPF --------------------- */
+      // 2.3) preenche por CPF
       if (cpfNorm) {
         const { rowCount: fillByCpf } = await client.query(
           `UPDATE alunos_ativos
               SET id_pessoa = $1
             WHERE cpf = $2
               AND id_pessoa IS NULL
-              AND NOT EXISTS (
-                    SELECT 1 FROM alunos_ativos
-                     WHERE id_pessoa = $1
-              );`,
+              AND NOT EXISTS (SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1)`,
           [id_pessoa, cpfNorm]
         );
         if (fillByCpf) continue;
       }
 
-      /* ---------- 3. id_pessoa já existe? então ignora --------------- */
+      // 2.4) já existe pessoa? ignora
       const { rowCount: dupPessoa } = await client.query(
-        `SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1 LIMIT 1;`,
+        `SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1 LIMIT 1`,
         [id_pessoa]
       );
       if (dupPessoa) continue;
 
-      /* ---------- 4. matrícula ou CPF já existem? ignora ------------- */
+      // 2.5) chave duplicada? ignora
       const { rowCount: dupKey } = await client.query(
         `SELECT 1
            FROM alunos_ativos
           WHERE id_matricula = $1
              OR (cpf = $2 AND $2 IS NOT NULL)
-          LIMIT 1;`,
+          LIMIT 1`,
         [id_matricula, cpfNorm]
       );
       if (dupKey) continue;
 
-      /* ---------- 5. registro inédito → INSERT/UPSERT --------------- */
+      // 2.6) insert/upsert
       await client.query(
         `INSERT INTO alunos_ativos (
            id_pessoa, id_matricula, escola_id, ano, modalidade,
@@ -11002,44 +11073,41 @@ app.post("/api/import-alunos-ativos", async (req, res) => {
          )
          ON CONFLICT ON CONSTRAINT alunos_ativos_id_matricula_uk
          DO UPDATE
-           SET id_pessoa = COALESCE(alunos_ativos.id_pessoa,
-                                    EXCLUDED.id_pessoa)
-         WHERE alunos_ativos.id_pessoa IS NULL;`,
+           SET id_pessoa = COALESCE(alunos_ativos.id_pessoa, EXCLUDED.id_pessoa)
+         WHERE alunos_ativos.id_pessoa IS NULL`,
         [
-          id_pessoa,
-          id_matricula,
-          escolaId,
-          ANO,
-          MODALIDADE,
-          FORMATO_LETIVO,
-          TURMA,
-          pessoa_nome,
-          cpfNorm,
-          cep,
-          bairro,
-          numero_pessoa_endereco,
-          filiacao_1,
-          telefone_filiacao_1,
-          filiacao_2,
-          RESPONSAVEL,
-          defArray,
-          data_nascimento
+          id_pessoa, id_matricula, escolaId, ANO, MODALIDADE,
+          FORMATO_LETIVO, TURMA, pessoa_nome, cpfNorm,
+          cep, bairro, numero_pessoa_endereco,
+          filiacao_1, telefone_filiacao_1, filiacao_2, RESPONSAVEL,
+          defArray, data_nascimento
         ]
       );
     }
 
-    await client.query("COMMIT");
-    res.json({
-      success: true,
-      message: "Importação concluída com sucesso."
-    });
+    // 3) marcar transferidos
+    const incomingMats = alunos
+      .map(a => parseInt(a.id_matricula, 10))
+      .filter(n => !isNaN(n)); // array de números
+
+    if (incomingMats.length) {
+      await client.query(
+        `
+    UPDATE alunos_ativos
+       SET status    = 'transferido',
+           escola_id = NULL
+     WHERE escola_id = $1
+       AND id_matricula <> ALL ($2::int[])
+    `,
+        [escolaId, incomingMats]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Importação concluída com sucesso.' });
   } catch (err) {
-    await client.query("ROLLBACK");
-    console.error("Erro na importação:", err);
-    res.status(500).json({
-      success: false,
-      message: "Erro interno na importação."
-    });
+    await client.query('ROLLBACK');
+    console.error('Erro na importação:', err);
+    res.status(500).json({ success: false, message: 'Erro interno na importação.' });
   } finally {
     client.release();
   }
@@ -11084,9 +11152,10 @@ app.get("/api/alunos-ativos", async (req, res) => {
     } else if (req.query.deficiencia === "nao") {
       where.push(`(a.deficiencia IS NULL OR array_length(a.deficiencia, 1) = 0)`);
     }
-    if (req.query.idade) {
-      where.push(`DATE_PART('year', AGE(a.data_nascimento)) = $${idx++}`);
-      params.push(parseInt(req.query.idade, 10));
+    if (req.query.mapeados === "sim") {
+      where.push("(a.latitude IS NOT NULL AND a.longitude IS NOT NULL)");
+    } else if (req.query.mapeados === "nao") {
+      where.push("(a.latitude IS NULL OR a.longitude IS NULL)");
     }
     if (req.query.turno) {
       where.push(`a.turma ILIKE $${idx++}`);

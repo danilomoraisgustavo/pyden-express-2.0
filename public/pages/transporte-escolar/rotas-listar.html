@@ -610,11 +610,6 @@
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaRota">
                       <i class="fa fa-plus"></i> Nova Rota
                     </button>
-
-                    <!-- NOVO -->
-                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNovaRotaEspecial">
-                      <i class="fa fa-wheelchair"></i> Nova Rota Especial
-                    </button>
                   </div>
 
                   <div class="table-responsive">
@@ -641,6 +636,8 @@
                     </table>
                   </div>
                 </div>
+
+                <!-- lista de rotas especiais permanece, mas sem criação/geração de LINHAS especiais -->
                 <div class="card mt-4">
                   <div class="card-header">
                     <h4 class="card-title mb-0">Rotas Especiais Cadastradas</h4>
@@ -662,21 +659,15 @@
                   </div>
                 </div>
 
-                <div class="card-footer text-right">
-                  <div class="dropdown dropdown-download">
+                <div class="card-footer text-end">
+                  <div class="dropdown dropdown-download d-inline-block">
                     <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                       Exportar Todas
                     </button>
                     <ul class="dropdown-menu">
-                      <li>
-                        <a class="dropdown-item" href="#" onclick="downloadAll('kml')">Baixar em KML</a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="#" onclick="downloadAll('kmz')">Baixar em KMZ</a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="#" onclick="downloadAll('gpx')">Baixar em GPX</a>
-                      </li>
+                      <li><a class="dropdown-item" href="#" onclick="downloadAll('kml')">Baixar em KML</a></li>
+                      <li><a class="dropdown-item" href="#" onclick="downloadAll('kmz')">Baixar em KMZ</a></li>
+                      <li><a class="dropdown-item" href="#" onclick="downloadAll('gpx')">Baixar em GPX</a></li>
                     </ul>
                   </div>
                 </div>
@@ -716,23 +707,19 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <!-- 1) Mapa para selecionar escolas -->
           <div class="mb-3">
             <label class="form-label">Mapa de Escolas</label>
             <div id="map-modal-create" style="height:400px;width:100%;"></div>
           </div>
-          <!-- 2) Lista de escolas selecionadas -->
           <div class="mb-3">
             <label class="form-label">Escolas Selecionadas</label>
             <div id="listaEscolasSelecionadas" style="min-height:50px;border:1px solid #ccc;padding:8px;"></div>
           </div>
-          <!-- 3) Zoneamentos associados -->
           <div class="mb-3">
             <label class="form-label">Zoneamentos</label>
             <div id="listaZoneamentos" style="min-height:100px;border:1px solid #ccc;padding:8px;overflow-y:auto;">
             </div>
           </div>
-          <!-- 5) Botão de salvar -->
           <div class="text-end">
             <button id="btnSalvarItinerario" class="btn btn-success">Salvar Itinerário</button>
           </div>
@@ -750,23 +737,19 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <!-- 1) Mapa para selecionar escolas -->
           <div class="mb-3">
             <label class="form-label">Mapa de Escolas</label>
             <div id="map-modal-edit" style="height:400px;width:100%;"></div>
           </div>
-          <!-- 2) Lista de escolas selecionadas -->
           <div class="mb-3">
             <label class="form-label">Escolas Selecionadas</label>
             <div id="editListaEscolasSelecionadas" style="min-height:50px;border:1px solid #ccc;padding:8px;"></div>
           </div>
-          <!-- 3) Zoneamentos associados -->
           <div class="mb-3">
             <label class="form-label">Zoneamentos</label>
             <div id="editListaZoneamentos" style="min-height:100px;border:1px solid #ccc;padding:8px;overflow-y:auto;">
             </div>
           </div>
-          <!-- 4) Botão de salvar -->
           <div class="text-end">
             <button id="btnSalvarEdicao" class="btn btn-success">Salvar Alterações</button>
           </div>
@@ -775,7 +758,7 @@
     </div>
   </div>
 
-  <!-- 2) Modal de Linhas do Itinerário -->
+  <!-- MODAL LINHAS (apenas para rotas padrão) -->
   <div class="modal fade" id="modalLinhasItinerario" tabindex="-1" aria-labelledby="modalLinhasItinerarioLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -812,7 +795,7 @@
     </div>
   </div>
 
-  <!-- Modal de Alunos por Linha e Turno -->
+  <!-- MODAL ALUNOS POR LINHA -->
   <div class="modal fade" id="modalAlunosLinha" tabindex="-1" aria-labelledby="modalAlunosLinhaLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -824,7 +807,7 @@
         <div class="modal-body">
           <input type="hidden" id="alunosLinhaId" />
           <input type="hidden" id="alunosLinhaTurno" />
-          <div id="map-rotas" style="width:100%; height:300px; margin-bottom:1em;"></div>
+          <div id="map-rotas" style="width:100%;height:300px;margin-bottom:1em;"></div>
           <table class="table table-hover" id="alunos-linha-table">
             <thead>
               <tr>
@@ -847,139 +830,7 @@
     </div>
   </div>
 
-  <!-- Modal/Janela para exibir o mapa (mantida conforme implementação existente) -->
-  <div class="modal fade" id="modalRouteMap" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Trajeto da Rota</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div id="mapRoute" style="height: 500px; width: 100%;"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODAL NOVA ROTA ESPECIAL -->
-  <div class="modal fade" id="modalNovaRotaEspecial" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Cadastrar Nova Rota Especial</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <!-- 1) Mapa para selecionar escolas -->
-          <div class="mb-3">
-            <label class="form-label">Mapa de Escolas</label>
-            <div id="map-modal-create-especial" style="height:400px;width:100%;"></div>
-          </div>
-          <!-- 2) Lista de escolas selecionadas -->
-          <div class="mb-3">
-            <label class="form-label">Escolas Selecionadas</label>
-            <div id="listaEscolasSelecionadasEspecial" style="min-height:50px;border:1px solid #ccc;padding:8px;"></div>
-          </div>
-          <!-- 3) Bairros associados -->
-          <div class="mb-3">
-            <label class="form-label">Bairros</label>
-            <div id="listaBairrosEspecial" style="min-height:100px;border:1px solid #ccc;padding:8px;overflow-y:auto;">
-            </div>
-          </div>
-          <!-- 5) Botão de salvar -->
-          <div class="text-end">
-            <button id="btnSalvarItinerarioEspecial" class="btn btn-success">Salvar Itinerário</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL NOVA ROTA ESPECIAL -->
-  <div class="modal fade" id="modalLinhasEsp" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            Linhas Inteligentes – Itinerário Especial
-            <span id="itEspIdSpan" class="text-muted"></span>
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-
-        <div class="modal-body">
-          <!-- Botão Gerar -->
-          <div class="mb-3 text-end">
-            <button id="btnGerarLinhasEsp" class="btn btn-success">
-              <i class="fa fa-magic"></i> Gerar Linhas Especiais
-            </button>
-          </div>
-
-          <!-- Tabela -->
-          <div class="table-responsive">
-            <table id="linhas-especiais-table" class="display table table-striped table-hover w-100">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Descrição</th>
-                  <th>Manhã</th>
-                  <th>Tarde</th>
-                  <th>Noite</th>
-                  <th>Integral</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL LINHAS INTELIGENTES - ESPECIAIS -->
-  <div class="modal fade" id="modalLinhasItinerarioEsp" tabindex="-1" aria-labelledby="modalLinhasItinerarioEspLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalLinhasItinerarioEspLabel">
-            Linhas do Itinerário Especial
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-
-        <div class="modal-body">
-          <input type="hidden" id="linhasEspItinerarioId" />
-
-          <div class="mb-3 text-end">
-            <button id="btnGerarLinhasEsp" class="btn btn-warning">
-              Gerar Linhas Inteligentes Especiais
-            </button>
-          </div>
-
-          <table class="table table-striped" id="linhas-especiais-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Descrição</th>
-                <th>Veículo</th>
-                <th>Capacidade</th>
-                <th>Manhã</th>
-                <th>Tarde</th>
-                <th>Noite</th>
-                <th>Integral</th>
-                <th># Paradas</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- JS CORE / PLUGINS -->
   <script src="../../assets/js/core/jquery-3.7.1.min.js"></script>
@@ -1270,7 +1121,19 @@
     document.getElementById('btnGerarLinhas').addEventListener('click', () => {
       const id = $('#linhasItinerarioId').val();
       if (!id) return;
-      fetch(`/api/itinerarios/${id}/linhas/gerar`, { method: 'POST' })
+
+      // pergunta ➜ OK = inclui / Cancelar = exclui
+      const incluirEsp = confirm(
+        'Incluir alunos com necessidades especiais?\n\n' +
+        '• OK  →  incluir\n' +
+        '• Cancelar →  ignorar'
+      );
+
+      fetch(`/api/itinerarios/${id}/linhas/gerar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ incluir_deficiencia: incluirEsp })
+      })
         .then(r => r.json())
         .then(res => {
           if (res.success) {
@@ -1280,7 +1143,9 @@
             showNotification('danger', res.error || 'Falha ao gerar linhas');
           }
         })
-        .catch(() => showNotification('danger', 'Erro de rede ao gerar linhas'));
+        .catch(() =>
+          showNotification('danger', 'Erro de rede ao gerar linhas')
+        );
     });
 
     function renderEditEscolasSelecionadas() {
@@ -1613,20 +1478,21 @@
       const uniqPontos = new Set();
 
       alunos.forEach(a => {
-        const key = `${a.ponto_lat},${a.ponto_lng}`;
-        if (!uniqPontos.has(key)) {
-          uniqPontos.add(key);
+        /* fallback para ponto “especial” */
+        const lat = a.ponto_lat ?? a.latitude;
+        const lng = a.ponto_lng ?? a.longitude;
 
-          if (
-            parseFloat(a.ponto_lat) === escolaCoord.lat &&
-            parseFloat(a.ponto_lng) === escolaCoord.lng
-          ) return;
+        const key = `${lat},${lng}`;
+        if (uniqPontos.has(key)) return;              // evita duplicar
+        uniqPontos.add(key);
 
-          waypoints.push({
-            location: { lat: parseFloat(a.ponto_lat), lng: parseFloat(a.ponto_lng) },
-            stopover: true,
-          });
-        }
+        // ignora a própria escola
+        if (lat === escolaCoord.lat && lng === escolaCoord.lng) return;
+
+        waypoints.push({
+          location: { lat, lng },
+          stopover: true
+        });
       });
 
       console.log(`📍 Waypoints únicos: ${waypoints.length}`);
@@ -1697,7 +1563,6 @@
 
     /* Abre modal de alunos por linha e turno, carrega lista e traça rota no mapa */
     function openAlunosLinha(linhaId, turno) {
-
       $('#alunosLinhaId').val(linhaId);
       $('#alunosLinhaTurno').val(turno);
       const label = turno.charAt(0).toUpperCase() + turno.slice(1);
@@ -1707,28 +1572,29 @@
       fetch(`/api/linhas/${linhaId}/alunos?turno=${turno}`)
         .then(r => r.json())
         .then(alunos => {
-
+          /* ---------- tabela ---------- */
           const tb = $('#alunos-linha-table tbody').empty();
           alunos.forEach(a => {
+            /* se o ponto for “especial”, usa lat/lng do aluno */
+            const lat = a.ponto_lat ?? a.latitude;
+            const lng = a.ponto_lng ?? a.longitude;
             tb.append(`<tr>
           <td>${a.nome}</td>
           <td>${a.escola_nome}</td>
-          <td>${a.ponto_nome}</td>
+          <td>${a.ponto_nome ?? '(Ponto individual)'}</td>
           <td>${a.turno}</td>
-          <td>${a.ponto_lat}</td>
-          <td>${a.ponto_lng}</td>
+          <td>${lat}</td>
+          <td>${lng}</td>
           <td>${a.tem_deficiencia ? 'Sim' : 'Não'}</td>
         </tr>`);
           });
-
           toggleCsvBtn && toggleCsvBtn();
 
-          console.log('📤 Chamando renderRoute com os dados...');
-          renderRoute(alunos);
+          /* ---------- mapa ---------- */
+          renderRoute(alunos);  // usa a nova lógica com fallback; ver abaixo
         })
         .catch(err => console.error('❌ Erro ao buscar alunos:', err));
     }
-
 
     // Ajusta mapa quando o modal de alunos for exibido
     $('#modalAlunosLinha').on('shown.bs.modal', () => {
@@ -1812,244 +1678,8 @@
       }, 300);
     });
 
-    /* === ROTAS ESPECIAIS === */
-    let mapCreateEspecial;
-    let escolasEspData = [], escolasEspMarkers = {};
-    let escolasEspSelecionadas = [];  // Ex.: [{ id: 3, bairros: ['Centro','Jardim América'] }, …]
 
-    function initMapCreateEspecial() {
-      mapCreateEspecial = new google.maps.Map(document.getElementById("map-modal-create-especial"), {
-        center: { lat: -6.530066, lng: -49.85163 }, zoom: 13
-      });
-      fetch('/api/escolas')
-        .then(r => r.json())
-        .then(data => {
-          escolasEspData = data;
-          data.forEach(e => {
-            const mk = new google.maps.Marker({
-              position: { lat: +e.latitude, lng: +e.longitude },
-              map: mapCreateEspecial,
-              icon: defaultIconUrl
-            });
-            mk.addListener('click', () => toggleEscolaEspecial(e.id));
-            escolasEspMarkers[e.id] = mk;
-          });
-        });
-    }
 
-    function toggleEscolaEspecial(id) {
-      const idx = escolasEspSelecionadas.findIndex(obj => obj.id === id);
-      if (idx === -1) {
-        // Seleciona escola especial e obtém seus bairros
-        escolasEspMarkers[id].setIcon(selectedIconUrl);
-        fetch(`/api/escolas/${id}/alunos-especiais`)
-          .then(r => r.json())
-          .then(alunos => {
-            const bairros = [...new Set(alunos.map(a => a.bairro).filter(Boolean))];
-            escolasEspSelecionadas.push({ id: id, bairros: bairros });
-            renderEscolasEsp();
-          });
-      } else {
-        // Desseleciona escola especial
-        escolasEspMarkers[id].setIcon(defaultIconUrl);
-        escolasEspSelecionadas.splice(idx, 1);
-        renderEscolasEsp();
-      }
-    }
-
-    function renderEscolasEsp() {
-      // Atualiza lista de escolas selecionadas
-      const divEscolas = document.getElementById('listaEscolasSelecionadasEspecial');
-      divEscolas.innerHTML = escolasEspSelecionadas.map(obj => {
-        const esc = escolasEspData.find(e => e.id === obj.id);
-        return `<span class="badge bg-primary me-1">${esc ? esc.nome : obj.id}</span>`;
-      }).join('');
-      // Atualiza checkboxes de bairros selecionados
-      const divBairros = document.getElementById('listaBairrosEspecial');
-      divBairros.innerHTML = '';
-      escolasEspSelecionadas.forEach(obj => {
-        obj.bairros.forEach(bairro => {
-          const chk = `<div><input type="checkbox" data-esc="${obj.id}" data-bairro="${bairro}" checked> ${bairro}</div>`;
-          divBairros.insertAdjacentHTML('beforeend', chk);
-        });
-      });
-    }
-
-    document.getElementById('btnSalvarItinerarioEspecial').addEventListener('click', async () => {
-      const payload = {
-        escolas: escolasEspSelecionadas.map(o => o.id),
-        bairros_por_escola: escolasEspSelecionadas
-      };
-      try {
-        const res = await fetch('/api/itinerarios-especiais', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).then(r => r.json());
-        if (res.id) {
-          $('#modalNovaRotaEspecial').modal('hide');
-          showNotification('success', `Itinerário Especial #${res.id} criado.`);
-          loadRotasEspeciais();
-        } else {
-          showNotification('danger', res.error || 'Erro ao criar itinerário especial');
-        }
-      } catch {
-        showNotification('danger', 'Falha de rede.');
-      }
-    });
-
-    function loadRotasEspeciais() {
-      fetch('/api/itinerarios-especiais')
-        .then(r => r.json())
-        .then(lista => {
-          const tbody = $('#rotas-especiais-table tbody').empty();
-          lista.forEach(it => {
-            tbody.append(`
-              <tr>
-                <td>${it.escola}</td>
-                <td>${it.bairros.join(', ')}</td>
-                <td>${it.descricao}</td>
-                <td>
-                  <button class="btn btn-link btn-secondary" onclick="editarItEsp(${it.id})">
-                    <i class="fa fa-edit"></i>
-                  </button>
-                  <button class="btn btn-link btn-danger" onclick="apagarItEsp(${it.id})">
-                    <i class="fa fa-trash"></i>
-                  </button>
-                  <button class="btn btn-link btn-info" onclick="openLinhasEsp(${it.id})">
-                    <i class="fa fa-route"></i>
-                  </button>
-                </td>
-              </tr>`);
-          });
-          if ($.fn.DataTable.isDataTable('#rotas-especiais-table')) {
-            $('#rotas-especiais-table').DataTable().destroy();
-          }
-          $('#rotas-especiais-table').DataTable({
-            pageLength: 10,
-            language: { search: 'Pesquisar:' }
-          });
-        });
-    }
-
-    document.getElementById('modalNovaRotaEspecial').addEventListener('shown.bs.modal', initMapCreateEspecial);
-    $(document).ready(loadRotasEspeciais);
-
-    document.getElementById('listaBairrosEspecial').addEventListener('change', e => {
-      if (e.target.matches('input[type="checkbox"]')) {
-        const escId = parseInt(e.target.getAttribute('data-esc'));
-        const bairro = e.target.getAttribute('data-bairro');
-        const sel = escolasEspSelecionadas.find(o => o.id === escId);
-        if (sel) {
-          if (e.target.checked) {
-            if (!sel.bairros.includes(bairro)) sel.bairros.push(bairro);
-          } else {
-            const idx = sel.bairros.indexOf(bairro);
-            if (idx > -1) sel.bairros.splice(idx, 1);
-          }
-        }
-      }
-    });
-
-    /* LINHAS ESPECIAIS (geradas a partir de itinerário especial) */
-    let itEspAtual = null;
-    function openLinhasEsp(itinerarioId) {
-      itEspAtual = itinerarioId;
-      document.getElementById('itEspIdSpan').textContent = `#${itinerarioId}`;
-      loadLinhasEsp();
-      $('#modalLinhasEsp').modal('show');
-    }
-
-    async function loadLinhasEsp() {
-      if (!itEspAtual) return;
-      const linhas = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas`).then(r => r.json());
-      const tbody = $('#linhas-especiais-table tbody').empty();
-      linhas.forEach(l => {
-        tbody.append(`
-          <tr>
-            <td>${l.id}</td>
-            <td>${l.descricao}</td>
-            <td class="text-center"><a href="#" onclick="openAlunosLinhaEsp(${l.id},'manha')">${l.alunos_manha}</a></td>
-            <td class="text-center"><a href="#" onclick="openAlunosLinhaEsp(${l.id},'tarde')">${l.alunos_tarde}</a></td>
-            <td class="text-center"><a href="#" onclick="openAlunosLinhaEsp(${l.id},'noite')">${l.alunos_noite}</a></td>
-            <td class="text-center"><a href="#" onclick="openAlunosLinhaEsp(${l.id},'integral')">${l.alunos_integral}</a></td>
-            <td>
-              <button class="btn btn-link btn-info btn-show-map" data-geo='${JSON.stringify(l.geojson)}'>
-                <i class="fa fa-map-marker-alt"></i>
-              </button>
-              <button class="btn btn-link btn-danger" onclick="apagarLinhaEsp(${l.id})">
-                <i class="fa fa-trash"></i>
-              </button>
-            </td>
-          </tr>`);
-      });
-      if ($.fn.DataTable.isDataTable('#linhas-especiais-table')) {
-        $('#linhas-especiais-table').DataTable().destroy();
-      }
-      $('#linhas-especiais-table').DataTable({
-        pageLength: 10,
-        language: { search: 'Pesquisar:' },
-        order: [[0, 'asc']]
-      });
-    }
-
-    function openAlunosLinhaEsp(linhaId, turno) {
-      $('#alunosLinhaId').val(linhaId);
-      $('#alunosLinhaTurno').val(turno);
-      const label = turno.charAt(0).toUpperCase() + turno.slice(1);
-      $('#modalAlunosLinhaLabel').text(`Alunos (${label})`);
-      $('#modalAlunosLinha').modal('show');
-      fetch(`/api/linhas-especiais/${linhaId}/alunos?turno=${turno}`)
-        .then(r => r.json())
-        .then(alunos => {
-          const tbody = $('#alunos-linha-table tbody').empty();
-          alunos.forEach(a => {
-            tbody.append(`<tr>
-                            <td>${a.nome}</td>
-                            <td>${a.escola_nome}</td>
-                            <td>${a.bairro}</td>
-                            <td>${a.turno}</td>
-                            <td>Sim</td>
-                          </tr>`);
-          });
-          toggleCsvBtn && toggleCsvBtn();
-        })
-        .catch(() => showNotification('danger', 'Erro ao carregar alunos'));
-    }
-
-    document.getElementById('btnGerarLinhasEsp').addEventListener('click', async () => {
-      if (!itEspAtual) return;
-      if (!confirm("Gerar/atualizar linhas para este itinerário especial?")) return;
-      try {
-        const res = await fetch(`/api/itinerarios-especiais/${itEspAtual}/linhas/gerar`, {
-          method: 'POST'
-        }).then(r => r.json());
-        if (res.success) {
-          showNotification('success', res.message || 'Linhas geradas.');
-          loadLinhasEsp();
-          loadRotasEspeciais();
-        } else {
-          showNotification('danger', res.error || 'Falha na geração.');
-        }
-      } catch {
-        showNotification('danger', 'Erro de rede.');
-      }
-    });
-
-    async function apagarLinhaEsp(id) {
-      if (!confirm('Excluir esta linha?')) return;
-      try {
-        const res = await fetch(`/api/linhas-especiais/${id}`, { method: 'DELETE' }).then(r => r.json());
-        if (res.success) {
-          showNotification('success', 'Linha excluída.');
-          loadLinhasEsp();
-        } else {
-          showNotification('danger', res.error || 'Erro ao excluir.');
-        }
-      } catch {
-        showNotification('danger', 'Erro de rede.');
-      }
-    }
     function toggleCsvBtn() {
       const btn = document.getElementById('btnExportarCSV');
       const tabela = document.getElementById('alunos-linha-table');

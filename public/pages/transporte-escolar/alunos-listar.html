@@ -629,6 +629,34 @@
             </div>
           </div>
 
+          <div class="modal fade" id="modalConflitos" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5>Alunos associados a outra escola</h5>
+                </div>
+                <div class="modal-body">
+                  <p>Deseja reatribuir estes alunos para a nova escola?</p>
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Pessoa</th>
+                        <th>CPF</th>
+                        <th>Matrícula</th>
+                        <th>Escola Atual</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tabelaConflitos"></tbody>
+                  </table>
+                </div>
+                <div class="modal-footer">
+                  <button id="btnIgnorar" class="btn btn-secondary">Não, Ignorar</button>
+                  <button id="btnTransferir" class="btn btn-primary">Sim, Transferir</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="modal fade" id="modalMapear" tabindex="-1" aria-labelledby="modalMapearLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
               <div class="modal-content">
@@ -690,8 +718,14 @@
                     <option value="sim">Sim</option>
                     <option value="nao">Não</option>
                   </select></div>
-                <div class="col-md-3"><label for="filtroIdade" class="form-label">Filtrar por Idade</label><input
-                    type="number" min="0" class="form-control" id="filtroIdade" placeholder="Ex: 10" /></div>
+                <div class="col-md-3">
+                  <label for="filtroMapeados" class="form-label">Mapeados</label>
+                  <select id="filtroMapeados" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="sim">Sim</option>
+                    <option value="nao">Não</option>
+                  </select>
+                </div>
                 <div class="col-md-3"><label for="filtroCep" class="form-label">Filtrar por CEP</label><input
                     type="text" class="form-control" id="filtroCep" placeholder="Digite o CEP" /></div>
                 <div class="col-md-3"><label for="filtroTurno" class="form-label">Turno</label><select id="filtroTurno"
@@ -1110,19 +1144,69 @@
       r.readAsBinaryString(f);
     }
 
-    function enviarImportacao() {
-      const escolaId = document.getElementById("escolaSelect").value;
-      if (!escolaId) { showNotification("danger", "Selecione uma escola antes de importar."); return; }
-      if (!dadosXLSX.length) { showNotification("danger", "Nenhum arquivo importado ainda."); return; }
+    function enviarImportacao(override = null) {
+      const escolaId = document.getElementById('escolaSelect').value;
+      if (!escolaId) return showNotification('danger', 'Selecione uma escola.');
+      if (!dadosXLSX.length) return showNotification('danger', 'Nenhum arquivo importado.');
+
       showLoader();
-      fetch("/api/import-alunos-ativos",
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ escolaId, alunos: dadosXLSX }) })
-        .then(r => r.json()).then(resp => {
-          if (resp.success) { showNotification("success", resp.message || "Importação realizada com sucesso!"); $("#modalImportar").modal("hide"); }
-          else { showNotification("danger", resp.message || "Ocorreu um erro na importação."); }
-        }).catch(() => showNotification("danger", "Erro ao enviar os dados ao servidor.")).finally(hideLoader);
+
+      // payload
+      const body = { escolaId, alunos: dadosXLSX };
+      if (override !== null) body.overrideConflicts = override;
+
+      fetch('/api/import-alunos-ativos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+        .then(async r => {
+          // tenta converter a resposta em JSON (não explode se não for JSON)
+          let resp = {};
+          try { resp = await r.json(); } catch { /* ignorar */ }
+
+          // ----- CASO 409: conflitos detectados -----
+          if (r.status === 409 && resp.type === 'conflicts') {
+            abrirModalConflitos(resp.conflicts);      // chama seu modal
+            return;                                   // não prossegue
+          }
+
+          // ----- CASO SUCESSO -----
+          if (r.ok) {
+            showNotification('success', resp.message || 'Importação concluída.');
+            $('#modalImportar').modal('hide');
+            return;
+          }
+
+          // ----- CASO ERRO -----
+          showNotification('danger', resp.message || 'Erro na importação.');
+        })
+        .catch(() => showNotification('danger', 'Erro de rede.'))
+        .finally(hideLoader);
     }
 
+    function abrirModalConflitos(conflicts) {
+      const tbody = $('#tabelaConflitos').empty();
+      conflicts.forEach(c => {
+        tbody.append(`
+        <tr>
+          <td>${c.id_pessoa}</td>
+          <td>${c.cpf}</td>
+          <td>${c.id_matricula}</td>
+          <td>${c.currentescola}</td>
+        </tr>`);
+      });
+      $('#modalConflitos').modal('show');
+    }
+
+    $('#btnIgnorar').click(() => {
+      $('#modalConflitos').modal('hide');
+      enviarImportacao(false);
+    });
+    $('#btnTransferir').click(() => {
+      $('#modalConflitos').modal('hide');
+      enviarImportacao(true);
+    });
     /* ---------- mapa geral ---------- */
     function initMap() { map = new google.maps.Map(document.getElementById("map"), { center: { lat: -3.135366, lng: -60.023207 }, zoom: 4, mapId: "ca7a0e55f44be727" }); }
     $("#modalMapear").on("shown.bs.modal", () => {
@@ -1229,21 +1313,21 @@
         bairro = $("#filtroBairro").val(),
         transporte = $("#filtroTransporte").val(),
         def = $("#filtroDeficiencia").val(),
-        idade = $("#filtroIdade").val(),
         cep = $("#filtroCep").val(),
         turno = $("#filtroTurno").val(),
-        associado = $("#filtroAssociado").val(),  // novo: sim / nao
+        associado = $("#filtroAssociado").val(),
+        mapeados = $("#filtroMapeados").val();   // novo: sim / nao
 
-        q = new URLSearchParams();
+      q = new URLSearchParams();
 
       if (escola) q.append("escola_id", escola);
       if (bairro) q.append("bairro", bairro);
       if (cep) q.append("cep", cep);
       if (transporte) q.append("transporte", transporte);
       if (def) q.append("deficiencia", def);
-      if (idade) q.append("idade", idade);
       if (turno) q.append("turno", turno);
       if (associado) q.append("associado_rota", associado);
+      if (mapeados) q.append("mapeados", mapeados);
 
       showLoader();
       fetch("/api/alunos-ativos?" + q.toString())
@@ -1463,31 +1547,31 @@
 
     $("#btnDownloadAlunosCSV").on("click", () => {
       const linhas = dataTable.rows({ search: "applied" }).data().toArray();
-      if (!linhas.length) { 
-        showNotification("info", "Nenhum aluno para exportar."); 
-        return; 
-    }
+      if (!linhas.length) {
+        showNotification("info", "Nenhum aluno para exportar.");
+        return;
+      }
 
-    const dadosParaCSV = linhas.map(l => {
-      const o = {};
-      exportCols.forEach(c => {
-        // se c.fn existir, usa função para montar valor, senão pega pelo índice
-        o[c.header] = c.fn 
-          ? c.fn(l) 
-          : (l[c.index] != null ? l[c.index] : "");
+      const dadosParaCSV = linhas.map(l => {
+        const o = {};
+        exportCols.forEach(c => {
+          // se c.fn existir, usa função para montar valor, senão pega pelo índice
+          o[c.header] = c.fn
+            ? c.fn(l)
+            : (l[c.index] != null ? l[c.index] : "");
+        });
+        return o;
       });
-      return o;
-    });
 
-  const csv = "\uFEFF" + jsonParaCSV(dadosParaCSV);
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "alunos_filtrados.csv";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-});
+      const csv = "\uFEFF" + jsonParaCSV(dadosParaCSV);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "alunos_filtrados.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
   </script>
 
 </body>

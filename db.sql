@@ -592,3 +592,8 @@ psql -h pyden-express-2-0.cjucwyoced9l.sa-east-1.rds.amazonaws.com \
      -p 5432 \
      -U postgres \
      -d pyden_express
+
+psql -h pyden-express-teste.cjucwyoced9l.sa-east-1.rds.amazonaws.com \
+     -p 5432 \
+     -U postgres \
+     -d pyden_express
