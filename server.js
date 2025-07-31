@@ -6835,54 +6835,62 @@ app.get("/api/motoristas/rota", async (req, res) => {
 // ====================================================================================
 // OUTRAS INFORMAÇÕES (DASHBOARD, ESCOLA COORDENADAS, ETC.)
 // ====================================================================================
-// ROTA /api/dashboard (atualizada para contar escolas)
+// ROTA /api/dashboard (atualizada para contar escolas e alunos mapeados)
 app.get("/api/dashboard", async (req, res) => {
   try {
-    const alunosAtivos = await pool.query(`
+    const alunosMapeados = await pool.query(`
       SELECT COUNT(*)::int AS count
       FROM alunos_ativos
-      WHERE LOWER(transporte_escolar_poder_publico) IN('municipal', 'estadual')
-      `);
+      WHERE latitude  IS NOT NULL
+        AND longitude IS NOT NULL
+        AND LOWER(transporte_escolar_poder_publico) IN('municipal', 'estadual')
+    `);
+
     const rotasAtivas = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM linhas_rotas
-      `);
+    `);
+
     const zoneamentosCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM zoneamentos
-      `);
+    `);
+
     const motoristasCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM motoristas
-      `);
+    `);
+
     const monitoresCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM monitores
-      `);
+    `);
+
     const fornecedoresCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM fornecedores
-      `);
+    `);
+
     const pontosCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM pontos
-      `);
+    `);
+
     // NOVO: Contar escolas
     const escolasCount = await pool.query(`
       SELECT COUNT(*)::int AS count 
       FROM escolas
-      `);
+    `);
 
     res.json({
-      alunos_ativos: alunosAtivos.rows[0]?.count || 0,
+      alunos_mapeados: alunosMapeados.rows[0]?.count || 0, // ← só quem tem lat/lng
       rotas_ativas: rotasAtivas.rows[0]?.count || 0,
       zoneamentos_total: zoneamentosCount.rows[0]?.count || 0,
       motoristas_total: motoristasCount.rows[0]?.count || 0,
       monitores_total: monitoresCount.rows[0]?.count || 0,
       fornecedores_total: fornecedoresCount.rows[0]?.count || 0,
       pontos_total: pontosCount.rows[0]?.count || 0,
-      // Novo campo
-      escolas_total: escolasCount.rows[0]?.count || 0,
+      escolas_total: escolasCount.rows[0]?.count || 0, // novo campo mantido
     });
   } catch (error) {
     console.error(error);

@@ -544,6 +544,7 @@
 
           <!-- Cards de Estatísticas (Linha de cima - agora com 4 colunas) -->
           <div class="row">
+            <!-- CARD – ALUNOS MAPEADOS -->
             <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
@@ -555,8 +556,8 @@
                     </div>
                     <div class="col col-stats ms-3 ms-sm-0">
                       <div class="numbers">
-                        <p class="card-category">Alunos</p>
-                        <h4 class="card-title" id="alunos-ativos">0</h4>
+                        <p class="card-category">Alunos Mapeados</p>
+                        <h4 class="card-title" id="alunos-mapeados">0</h4>
                       </div>
                     </div>
                   </div>
@@ -564,6 +565,7 @@
               </div>
             </div>
 
+            <!-- CARD – ROTAS ESCOLARES -->
             <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
@@ -584,6 +586,7 @@
               </div>
             </div>
 
+            <!-- CARD – ZONEAMENTOS -->
             <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
@@ -604,7 +607,7 @@
               </div>
             </div>
 
-            <!-- NOVO CARD DE ESCOLAS -->
+            <!-- CARD – ESCOLAS -->
             <div class="col-sm-3 col-md-3">
               <div class="card card-stats card-round">
                 <div class="card-body">
@@ -625,6 +628,7 @@
               </div>
             </div>
           </div>
+
           <!-- FIM DA LINHA DE CIMA -->
 
           <!-- NOVA LINHA DE CARDS (4 colunas) -->
@@ -1201,7 +1205,7 @@
       const res = await fetch('/api/dashboard');
       const data = await res.json();
 
-      document.getElementById('alunos-ativos').textContent = data.alunos_ativos || 0;
+      document.getElementById('alunos-mapeados').textContent = data.alunos_mapeados || 0;
       document.getElementById('rotas-ativas').textContent = data.rotas_ativas || 0;
       document.getElementById('zoneamentos-total').textContent = data.zoneamentos_total || 0;
       document.getElementById('motoristas-total').textContent = data.motoristas_total || 0;
