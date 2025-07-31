@@ -781,6 +781,7 @@
                           <th>Responsável</th>
                           <th>Deficiência</th>
                           <!-- ===== Colunas adicionadas ===== -->
+                          <th>Ponto</th>
                           <th>Itinerário ID</th>
                           <th>Linha</th>
                           <!-- ============================== -->
@@ -810,6 +811,7 @@
                           <th>Filiação 2</th>
                           <th>Responsável</th>
                           <th>Deficiência</th>
+                          <th>Ponto</th>
                           <!-- ===== Colunas adicionadas ===== -->
                           <th>Itinerário ID</th>
                           <th>Linha</th>
@@ -1000,6 +1002,28 @@
   </div>
   <!-- Fim do modal de edição -->
 
+  <div class="modal fade" id="modalAssociarPonto" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Associar Ponto de Parada</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div id="mapAssociar" style="height:500px;width:100%"></div>
+          <p class="mt-2">Ponto selecionado: <span id="pontoSelecionadoTxt">nenhum</span></p>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          <button class="btn btn-primary" id="btnSalvarAssociacao" disabled>Salvar associação</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   <div class="modal fade" id="modalLocalizarAluno" tabindex="-1" aria-labelledby="modalLocalizarAlunoLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -1053,6 +1077,7 @@
       currentAlunoMarker = null,
       currentAlunoPosition = null,
       alunosMapList = [];
+    let mapAssociar = null, assocAluno = null, assocPontoId = null, assocLine = null;
 
     /* ---------- utilidades ---------- */
     function showLoader() { document.getElementById("globalLoader").style.display = "flex"; }
@@ -1381,6 +1406,7 @@
               <td>${it.filiacao_2 || ""}</td>
               <td>${it.responsavel || ""}</td>
               <td>${def}</td>
+              <td>${it.ponto_nome || ""}</td> 
               <!-- NOVAS COLUNAS: Itinerário e Linha -->
               <td>${it.itinerario_id || ""}</td>
               <td>${it.linha || ""}</td>
@@ -1388,6 +1414,9 @@
               <td>${it.latitude || ""}</td>
               <td>${it.longitude || ""}</td>
               <td>
+                <button class="btn btn-sm btn-success btn-associar" title="Associar Ponto">
+                  <i class="fa fa-map-pin"></i>
+                </button>
                 <button class="btn btn-sm btn-warning btn-editar" title="Editar">
                   <i class="fa fa-edit"></i>
                 </button>
@@ -1572,6 +1601,103 @@
       link.click();
       document.body.removeChild(link);
     });
+
+    /* ---------- abrir modal --------------------------------------------- */
+    $(document).on("click", ".btn-associar", function () {
+      const obj = JSON.parse($(this).closest("tr").attr("data-obj") || "{ }");
+      if (!obj.latitude || !obj.longitude) {
+        showNotification("warning", "Aluno sem coordenadas — cadastre primeiro.");
+        return;
+      }
+
+      assocAluno = obj;
+      assocPontoId = obj.ponto_id || null;
+      $("#pontoSelecionadoTxt").text(obj.ponto_nome || "nenhum");
+      $("#btnSalvarAssociacao").prop("disabled", !assocPontoId);
+      $("#modalAssociarPonto").modal("show");
+      setTimeout(initMapAssociar, 400);           // dá tempo do modal abrir
+    });
+
+    /* ---------- inicializa e carrega pontos ----------------------------- */
+    function initMapAssociar() {
+      if (!assocAluno) return;
+
+      const alunoPos = { lat: +assocAluno.latitude, lng: +assocAluno.longitude };
+
+      mapAssociar = new google.maps.Map(
+        document.getElementById("mapAssociar"),
+        { center: alunoPos, zoom: 15, mapId: "ca7a0e55f44be727" }
+      );
+
+      new google.maps.Marker({
+        map: mapAssociar,
+        position: alunoPos,
+        title: "Aluno",
+        icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+      });
+
+      /* --- pega pontos próximos (3 km) --- */
+      fetch(`/api/pontos?lat=${alunoPos.lat}&lng=${alunoPos.lng}&raio_km=3`)
+        .then(r => r.json())
+        .then(lista => {
+          lista.forEach(p => {
+            const marker = new google.maps.Marker({
+              map: mapAssociar,
+              position: { lat: +p.latitude, lng: +p.longitude },
+              title: p.nome_ponto,
+              icon: p.id === assocPontoId
+                ? "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                : "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+            });
+
+            marker.addListener("click", () => {
+              assocPontoId = p.id;
+              $("#pontoSelecionadoTxt").text(p.nome_ponto);
+              $("#btnSalvarAssociacao").prop("disabled", false);
+              desenharLinha(alunoPos, marker.getPosition());
+            });
+          });
+        })
+        .catch(() => showNotification("danger", "Falha ao carregar pontos"));
+    }
+
+    /* ---------- desenha linha aluno → ponto ----------------------------- */
+    function desenharLinha(a, b) {
+      if (assocLine) assocLine.setMap(null);
+      assocLine = new google.maps.Polyline({
+        map: mapAssociar,
+        path: [a, b],
+        strokeColor: "#FF0000",
+        strokeOpacity: 1,
+        strokeWeight: 2
+      });
+    }
+
+    /* ---------- salva associação --------------------------------------- */
+    $("#btnSalvarAssociacao").click(() => {
+      if (!assocAluno || !assocPontoId) return;
+      $("#btnSalvarAssociacao").prop("disabled", true);
+
+      fetch(`/api/alunos-ativos/${assocAluno.id}/ponto`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ponto_id: assocPontoId })
+      })
+        .then(r => r.json())
+        .then(resp => {
+          if (resp.success) {
+            showNotification("success", "Associação atualizada!");
+            $("#modalAssociarPonto").modal("hide");
+            buscarAlunosComFiltros();            // atualiza a tabela
+          } else {
+            showNotification("danger", resp.message || "Erro ao salvar.");
+          }
+        })
+        .catch(() => showNotification("danger", "Falha na requisição."))
+        .finally(() => $("#btnSalvarAssociacao").prop("disabled", false));
+    });
+
+
   </script>
 
 </body>

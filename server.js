@@ -11212,32 +11212,39 @@ app.get("/api/alunos-ativos", async (req, res) => {
 
     // ——— montar SQL principal ———
     const sql = `
-      SELECT
-        a.*,
-        e.nome AS escola_nome,
+  SELECT
+    a.*,
+    e.nome AS escola_nome,
 
-        /* traz o nome da linha (ex.: “A”, “B”, ...) se houver */
-        (
-          SELECT lr2.nome_linha
-            FROM public.linhas_rotas lr2
-           WHERE a.id = ANY(lr2.alunos_ids)
-           LIMIT 1
-        ) AS linha,
+    /* nome da linha (ex.: “A”, “B”, …) */
+    (
+      SELECT lr2.nome_linha
+        FROM public.linhas_rotas lr2
+       WHERE a.id = ANY(lr2.alunos_ids)
+       LIMIT 1
+    )                               AS linha,
 
-        /* traz o itinerario_id associado, se houver */
-        (
-          SELECT lr2.itinerario_id
-            FROM public.linhas_rotas lr2
-           WHERE a.id = ANY(lr2.alunos_ids)
-           LIMIT 1
-        ) AS itinerario_id
+    /* itinerário ligado ao aluno, se houver */
+    (
+      SELECT lr2.itinerario_id
+        FROM public.linhas_rotas lr2
+       WHERE a.id = ANY(lr2.alunos_ids)
+       LIMIT 1
+    )                               AS itinerario_id,
 
-      FROM public.alunos_ativos a
-      LEFT JOIN public.escolas e
-        ON e.id = a.escola_id
-      ${where.length ? "WHERE " + where.join(" AND ") : ""}
-      ORDER BY a.id DESC
-    `;
+    /* NOVO — ponto de parada associado (primeiro encontrado) */
+    (
+      SELECT p.nome_ponto
+        FROM public.pontos p
+       WHERE p.id = a.ponto_id          -- ou JOIN alunos_pontos se preferir
+       LIMIT 1
+    )                               AS ponto_nome
+
+  FROM public.alunos_ativos a
+  LEFT JOIN public.escolas e ON e.id = a.escola_id
+  ${where.length ? "WHERE " + where.join(" AND ") : ""}
+  ORDER BY a.id DESC
+`;
 
     const { rows } = await pool.query(sql, params);
     res.json(rows);
@@ -11248,6 +11255,41 @@ app.get("/api/alunos-ativos", async (req, res) => {
   }
 });
 
+// PUT /api/alunos-ativos/:id/ponto
+app.put("/api/alunos-ativos/:id/ponto", async (req, res) => {
+  const { ponto_id } = req.body;
+  if (!ponto_id) return res.status(400).json({ success: false, message: "ponto_id obrigatório" });
+  try {
+    await pool.query("UPDATE alunos_ativos SET ponto_id=$1 WHERE id=$2", [ponto_id, req.params.id]);
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e); res.status(500).json({ success: false, message: "Erro ao atualizar ponto" });
+  }
+});
+
+// GET /api/pontos-proximos?lat=…&lng=…&raio_km=3
+app.get("/api/pontos-proximos", async (req, res) => {
+  const { lat, lng, raio_km = 3 } = req.query;
+  if (!lat || !lng) return res.status(400).json([]);
+  const q = `
+    SELECT *,
+           ( 6371 *
+             acos( cos(radians($1)) * cos(radians(latitude))
+                 * cos(radians(longitude) - radians($2))
+                 + sin(radians($1)) * sin(radians(latitude)) )
+           ) AS dist_km
+    FROM pontos
+    WHERE status = 'ativo'
+      AND latitude  IS NOT NULL
+      AND longitude IS NOT NULL
+    HAVING (6371 * acos(cos(radians($1))*cos(radians(latitude))
+          * cos(radians(longitude)-radians($2))
+          + sin(radians($1))*sin(radians(latitude)))) <= $3
+    ORDER BY dist_km;
+  `;
+  const { rows } = await pool.query(q, [lat, lng, raio_km]);
+  res.json(rows);
+});
 
 
 app.get("/api/alunos_ativos/:id", async (req, res) => {
