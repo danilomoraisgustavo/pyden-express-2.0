@@ -10895,6 +10895,12 @@ function normalizeDate(value) {
   return null;
 }
 
+function normalizeCpf(value) {
+  if (typeof value !== 'string') return null;           // não-string → null
+  const digits = value.replace(/\D/g, '');              // só dígitos
+  return digits.length ? digits : null;                 // vazio → null
+}
+
 /* ---------- rota ----------------------------------------------------- */
 app.post('/api/import-alunos-ativos', async (req, res) => {
   const { alunos, escolaId, overrideConflicts = false } = req.body;
