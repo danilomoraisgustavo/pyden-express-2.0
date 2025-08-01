@@ -5613,207 +5613,245 @@ app.get('/api/itinerarios/:itinerario_id/linhas', async (req, res) => {
 
 
 
-// POST /api/itinerarios/:itinerario_id/linhas/gerar
+// ============================================================================
+//  POST /api/itinerarios/:itinerario_id/linhas/gerar
+//    • incluiDef?  ← req.body.incluir_deficiencia   (bool)
+//    • diurno?     ← req.body.diurno                (bool)
+// ============================================================================
 app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
   const client = await pool.connect();
   try {
     const { itinerario_id } = req.params;
+    const incluirDef = !!req.body?.incluir_deficiencia;
+    const diurno = !!req.body?.diurno;      // ★ NOVO
 
+    /* ── constantes ── */
+    const VEL_KMH = 40, T_STOP = 2, T_MAX = 120, MAX_CAP = 50;
+    const TURNS = ['manha', 'tarde', 'noite', 'integral'];
+    const TURNS_PROC = diurno ? ['dia', 'noite', 'integral'] : TURNS;
+
+    /* ── util ── */
+    const hav = (la1, lo1, la2, lo2) => {
+      const R = 6371, r = Math.PI / 180;
+      const dφ = (la2 - la1) * r, dλ = (lo2 - lo1) * r;
+      const a = Math.sin(dφ / 2) ** 2 +
+        Math.cos(la1 * r) * Math.cos(la2 * r) * Math.sin(dλ / 2) ** 2;
+      return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+    const tempo = coords => {
+      let d = 0; for (let i = 1; i < coords.length; i++)
+        d += hav(coords[i - 1][1], coords[i - 1][0], coords[i][1], coords[i][0]);
+      return Math.round((d / VEL_KMH) * 60 + (coords.length - 2) * T_STOP);
+    };
+    const vtCap = n => n <= 16 ? ['van', 16] : n <= 33 ? ['microonibus', 33] : ['onibus', 50];
+
+    /* ── prepara ── */
     await client.query('BEGIN');
     await client.query('SET search_path TO public');
+    await client.query('DELETE FROM linhas_rotas WHERE itinerario_id=$1', [itinerario_id]);
 
-    /* 1) limpa linhas antigas */
-    await client.query(
-      `DELETE FROM public.linhas_rotas WHERE itinerario_id = $1`,
-      [itinerario_id]
-    );
+    const it = await client.query(
+      'SELECT pontos_ids, escolas_ids FROM itinerarios WHERE id=$1', [itinerario_id]);
+    if (!it.rowCount) throw new Error('Itinerário não encontrado');
+    const pontosIds = it.rows[0].pontos_ids, escolasIds = it.rows[0].escolas_ids;
 
-    /* 2) pontos + escolas do itinerário */
-    const itRes = await client.query(
-      `SELECT pontos_ids, escolas_ids
-         FROM public.itinerarios
-        WHERE id = $1`,
-      [itinerario_id]
-    );
-    if (!itRes.rowCount) throw new Error('Itinerário não encontrado');
-    const pontosIds = itRes.rows[0].pontos_ids;
-    const escolasIds = itRes.rows[0].escolas_ids;
-    if (!pontosIds.length) throw new Error('Itinerário sem pontos');
+    const esc = await client.query(
+      'SELECT latitude lat, longitude lng FROM escolas WHERE id = ANY($1) LIMIT 1', [escolasIds]);
+    if (!esc.rowCount) throw new Error('Escola não encontrada');
+    const school = { lat: +esc.rows[0].lat, lng: +esc.rows[0].lng };
 
-    /* 3) origem/destino = 1ª escola */
-    const escRes = await client.query(
-      `SELECT latitude AS lat, longitude AS lng
-         FROM public.escolas
-        WHERE id = ANY($1)
-        LIMIT 1`,
-      [escolasIds]
-    );
-    if (!escRes.rowCount) throw new Error('Escola não encontrada');
-    const school = {
-      lat: +escRes.rows[0].lat,
-      lng: +escRes.rows[0].lng
-    };
-    const incluirDef = !!req.body?.incluir_deficiencia;
-    /* 4) alunos vinculados (TODOS, especiais ou não) */
-    const { rows: alunos } = await client.query(
-      `SELECT ap.ponto_id,
-          a.id  AS aluno_id,
-          a.latitude,
-          a.longitude,
-          a.turma,
-          (a.deficiencia IS NOT NULL AND array_length(a.deficiencia,1) > 0)
-            AS tem_deficiencia
-     FROM public.alunos_ativos a
-     JOIN public.alunos_pontos ap ON ap.aluno_id = a.id
-    WHERE ap.ponto_id = ANY($1)
-      AND a.escola_id  = ANY($2)
-      AND a.latitude  IS NOT NULL
-      AND a.longitude IS NOT NULL
-      ${incluirDef ? '' :
-        'AND (a.deficiencia IS NULL OR array_length(a.deficiencia,1) = 0)'} `,
-      [pontosIds, escolasIds]
-    );
+    /* ── alunos ── */
+    const { rows: alunos } = await client.query(`
+      SELECT ap.ponto_id,
+             a.id aluno_id,
+             a.latitude, a.longitude, a.turma,
+             (a.deficiencia IS NOT NULL AND array_length(a.deficiencia,1)>0) tem_def
+        FROM alunos_ativos a
+        JOIN alunos_pontos ap ON ap.aluno_id = a.id
+       WHERE ap.ponto_id = ANY($1)
+         AND a.escola_id  = ANY($2)
+         AND a.latitude  IS NOT NULL
+         AND a.longitude IS NOT NULL
+         ${incluirDef ? '' : `
+         AND (a.deficiencia IS NULL OR array_length(a.deficiencia,1)=0)`}`,
+      [pontosIds, escolasIds]);
 
-    /* 5) agrupa alunos por “stop” */
-    const stopsMap = {};
+    /* ── monta rawStops ── */
+    const raw = {};                 // key → {lat,lng,ponto_id,alunos{turno:[]}}
     alunos.forEach(a => {
-      const turno = /MAT/i.test(a.turma) ? 'manha'
-        : /VESP/i.test(a.turma) ? 'tarde'
-          : /NOT/i.test(a.turma) ? 'noite'
-            : /INT/i.test(a.turma) ? 'integral'
-              : 'manha';
-
-      // chave: ponto normal OU “E-<aluno_id>” para especiais
-      const key = a.tem_deficiencia ? `E-${a.aluno_id}` : String(a.ponto_id);
-
-      if (!stopsMap[key]) {
-        stopsMap[key] = {
-          alunos: { manha: [], tarde: [], noite: [], integral: [] },
-          lat: a.tem_deficiencia ? +a.latitude : undefined,
-          lng: a.tem_deficiencia ? +a.longitude : undefined,
-          ponto_id: a.tem_deficiencia ? null : a.ponto_id   // não existe registro em “pontos” para especiais
-        };
-      }
-      stopsMap[key].alunos[turno].push(a.aluno_id);
+      const turno = /MAT/i.test(a.turma) ? 'manha' :
+        /VESP/i.test(a.turma) ? 'tarde' :
+          /NOT/i.test(a.turma) ? 'noite' : 'integral';
+      const key = a.tem_def ? `E-${a.aluno_id}` : String(a.ponto_id);
+      if (!raw[key]) raw[key] = {
+        lat: +a.latitude, lng: +a.longitude, ponto_id: a.ponto_id || null,
+        alunos: { manha: [], tarde: [], noite: [], integral: [] }
+      };
+      raw[key].alunos[turno].push(a.aluno_id);
     });
 
-    /* 6) latitude/longitude dos pontos REGULARES */
-    const { rows: pts } = await client.query(`
-        SELECT id, ST_Y(geom) AS lat, ST_X(geom) AS lng
-          FROM public.pontos
-         WHERE id = ANY($1)
-      `, [pontosIds]);
+    /* coords faltantes de pontos normais */
+    const falt = Object.values(raw).filter(s => !s.lat);
+    if (falt.length) {
+      const ids = falt.map(s => s.ponto_id);
+      const pts = await client.query(
+        'SELECT id,ST_Y(geom) lat,ST_X(geom) lng FROM pontos WHERE id=ANY($1)', [ids]);
+      pts.rows.forEach(p => {
+        const s = raw[Object.keys(raw).find(k => raw[k].ponto_id === p.id)];
+        if (s) { s.lat = +p.lat; s.lng = +p.lng; }
+      });
+    }
 
-    pts.forEach(p => {
-      if (!stopsMap[p.id]) {
-        // ponto sem aluno (raro, mas garante consistência)
-        stopsMap[p.id] = {
-          alunos: { manha: [], tarde: [], noite: [], integral: [] },
-          ponto_id: p.id
-        };
+    /* ── pseudoStops por turno / dia ── */
+    const turnStops = {};
+    TURNS_PROC.forEach(t => turnStops[t] = []);
+    Object.entries(raw).forEach(([baseKey, s]) => {
+      if (diurno) {
+        /* turno “dia” usa o pico entre manhã e tarde */
+        const peak = Math.max(s.alunos.manha.length, s.alunos.tarde.length);
+        for (let i = 0; i < peak; i += MAX_CAP) {
+          const ids = [      // alunos da faixa i-i+50 para cada turno (se existir)
+            ...s.alunos.manha.slice(i, i + MAX_CAP),
+            ...s.alunos.tarde.slice(i, i + MAX_CAP)
+          ];
+          if (!ids.length) continue;
+          turnStops['dia'].push({
+            key: `${baseKey}:dia:${i / MAX_CAP}`,
+            baseKey, turno: 'dia', peakCount: Math.min(MAX_CAP, peak - i),
+            lat: s.lat, lng: s.lng, alunosDia: ids,
+            manha: s.alunos.manha.slice(i, i + MAX_CAP),
+            tarde: s.alunos.tarde.slice(i, i + MAX_CAP)
+          });
+        }
+      } else {
+        ['manha', 'tarde'].forEach(t => {
+          for (let i = 0; i < s.alunos[t].length; i += MAX_CAP) {
+            const slice = s.alunos[t].slice(i, i + MAX_CAP);
+            if (!slice.length) return;
+            turnStops[t].push({
+              key: `${baseKey}:${t}:${i / MAX_CAP}`,
+              baseKey, turno: t,
+              lat: s.lat, lng: s.lng, alunos: slice
+            });
+          }
+        });
       }
-      stopsMap[p.id].lat = +p.lat;
-      stopsMap[p.id].lng = +p.lng;
+      /* noite / integral nunca se fundem */
+      ['noite', 'integral'].forEach(t => {
+        for (let i = 0; i < s.alunos[t].length; i += MAX_CAP) {
+          const slice = s.alunos[t].slice(i, i + MAX_CAP);
+          if (!slice.length) return;
+          turnStops[t].push({
+            key: `${baseKey}:${t}:${i / MAX_CAP}`,
+            baseKey, turno: t,
+            lat: s.lat, lng: s.lng, alunos: slice
+          });
+        }
+      });
     });
 
-    /* 7) vetor de stops com ≥1 aluno */
-    let stops = Object.values(stopsMap).filter(s =>
-      Object.values(s.alunos).some(arr => arr.length)
-    );
+    /* ── clusterização greedy ── */
+    const linhasTemp = [];   // cada item: {turno|dia, cluster, peakQt/qt, ids, coords}
+    for (const turno of TURNS_PROC) {
+      let pool = turnStops[turno].slice();
+      while (pool.length) {
+        pool.sort((a, b) => (b.peakCount || b.alunos.length) - (a.peakCount || a.alunos.length));
+        const cluster = [pool.shift()];
+        let carga = turno === 'dia'
+          ? cluster[0].peakCount
+          : cluster[0].alunos.length;
 
-    /* 8) haversine + clusterização (inalterados) */
-    const hav = (lat1, lng1, lat2, lng2) => {
-      const r = Math.PI / 180, R = 6371;
-      const dφ = (lat2 - lat1) * r, dλ = (lng2 - lng1) * r;
-      const a = Math.sin(dφ / 2) ** 2 +
-        Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dλ / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    };
-    const MAX_POR_TURNO = 50;
+        let added;
+        do {
+          added = false;
+          let best = -1, bestD = Infinity;
+          for (let i = 0; i < pool.length; i++) {
+            const cand = pool[i];
+            const candCarga = turno === 'dia' ? cand.peakCount : cand.alunos.length;
+            if (carga + candCarga > MAX_CAP) continue;
+            const coords = [[school.lng, school.lat],
+            ...cluster.map(c => [c.lng, c.lat]),
+            [cand.lng, cand.lat],
+            [school.lng, school.lat]];
+            if (tempo(coords) > T_MAX) continue;
+            const d = hav(cluster.at(-1).lat, cluster.at(-1).lng, cand.lat, cand.lng);
+            if (d < bestD) { bestD = d; best = i; }
+          }
+          if (best >= 0) {
+            const ch = pool.splice(best, 1)[0];
+            cluster.push(ch);
+            carga += turno === 'dia' ? ch.peakCount : ch.alunos.length;
+            added = true;
+          }
+        } while (added);
 
-    const insertLine = async (nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt) =>
-      client.query(
-        `INSERT INTO public.linhas_rotas
-           (itinerario_id,nome_linha,descricao,
-            veiculo_tipo,capacidade,
-            alunos_ids,paradas_ids,geom)
-         VALUES($1,$2,$3,$4,$5,$6,$7,ST_GeomFromEWKT($8))`,
-        [itinerario_id, nome, desc, vt, cap, alunos_ids, paradas_ids, ewkt]
-      );
-
-    /* 9) clusterização */
-    let nextChar = 'A'.charCodeAt(0);
-    while (stops.length) {
-      stops.sort((a, b) =>
-        Object.values(b.alunos).reduce((s, u) => s + u.length, 0) -
-        Object.values(a.alunos).reduce((s, u) => s + u.length, 0)
-      );
-      const cluster = [stops.shift()];
-      const counts = { manha: 0, tarde: 0, noite: 0, integral: 0 };
-      Object.entries(cluster[0].alunos)
-        .forEach(([t, arr]) => counts[t] += arr.length);
-
-      let added;
-      do {
-        added = false;
-        let best = -1, dist = Infinity;
-        for (let i = 0; i < stops.length; i++) {
-          const s = stops[i];
-          const last = cluster[cluster.length - 1];
-          const d = hav(last.lat, last.lng, s.lat, s.lng);
-          const ok = Object.entries(s.alunos)
-            .every(([t, arr]) => counts[t] + arr.length <= MAX_POR_TURNO);
-          if (ok && d < dist) { dist = d; best = i; }
-        }
-        if (best >= 0) {
-          const nxt = stops.splice(best, 1)[0];
-          cluster.push(nxt);
-          Object.entries(nxt.alunos)
-            .forEach(([t, arr]) => counts[t] += arr.length);
-          added = true;
-        }
-      } while (added);
-
-      const paradas_ids = cluster
-        .map(s => s.ponto_id)
-        .filter(pid => pid !== null && pid !== undefined);   // IGNORA os “E‑…”
-      const alunos_ids = [...new Set(
-        cluster.flatMap(s => [
-          ...s.alunos.manha, ...s.alunos.tarde,
-          ...s.alunos.noite, ...s.alunos.integral
-        ])
-      )];
-
-      /* rota bruta: escola → stops → escola */
-      const routePts = [];
-      for (let v = 0; v < 3; v++) {
-        routePts.push([school.lng, school.lat]);
-        cluster.forEach(s => routePts.push([s.lng, s.lat]));
+        linhasTemp.push({ turno, cluster });
       }
-      routePts.push([school.lng, school.lat]);
+    }
+
+    /* ── monta dados finais p/ INSERT ── */
+    let seq = 65;
+    for (const ln of linhasTemp) {
+      /* paradas físicas */
+      const paradas = [...new Set(
+        ln.cluster.map(c => raw[c.baseKey].ponto_id).filter(Boolean))];
+
+      /* alunos por período */
+      let idsManha = [], idsTarde = [], idsNoite = [], idsInte = [];
+      if (diurno && ln.turno === 'dia') {
+        idsManha = ln.cluster.flatMap(c => c.manha);
+        idsTarde = ln.cluster.flatMap(c => c.tarde);
+      } else {
+        if (ln.turno === 'manha') idsManha = ln.cluster.flatMap(c => c.alunos);
+        if (ln.turno === 'tarde') idsTarde = ln.cluster.flatMap(c => c.alunos);
+      }
+      if (ln.turno === 'noite') idsNoite = ln.cluster.flatMap(c => c.alunos);
+      if (ln.turno === 'integral') idsInte = ln.cluster.flatMap(c => c.alunos);
+
+      const alunosIds = [...new Set([
+        ...idsManha, ...idsTarde, ...idsNoite, ...idsInte])];
+
+      const coords = [[school.lng, school.lat],
+      ...ln.cluster.map(c => [c.lng, c.lat]),
+      [school.lng, school.lat]];
+      const tMin = tempo(coords);
+
+      /* pico de capacidade */
+      const pico = diurno && ln.turno === 'dia'
+        ? Math.max(idsManha.length, idsTarde.length)
+        : alunosIds.length;
+      const [vt, cap] = vtCap(pico);
+
+      const periods = diurno && ln.turno === 'dia'
+        ? ['manha', 'tarde']
+        : [ln.turno];
+      const tempos = {};
+      periods.forEach(p => tempos[p] = tMin);
+
+      const nome = String.fromCharCode(seq++);
       const ewkt = 'SRID=4326;LINESTRING(' +
-        routePts.map(c => c.join(' ')).join(',') + ')';
+        coords.map(p => p.join(' ')).join(',') + ')';
 
-      const maxTur = Math.max(counts.manha, counts.tarde, counts.noite, counts.integral);
-      let vt, cap;
-      if (maxTur <= 16) { vt = 'van'; cap = 16; }
-      else if (maxTur <= 33) { vt = 'microonibus'; cap = 33; }
-      else /* até 50 lugares */ { vt = 'onibus'; cap = 50; }
-
-      const nome = String.fromCharCode(nextChar++);
-      await insertLine(nome, `Linha ${nome}`, vt, cap,
-        alunos_ids, paradas_ids, ewkt);
+      await client.query(`
+        INSERT INTO linhas_rotas
+          (itinerario_id,nome_linha,descricao,
+           veiculo_tipo,capacidade,
+           alunos_ids,paradas_ids,geom,
+           periodos_disponiveis,tempo_estimado)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,ST_GeomFromEWKT($8),$9,$10)`,
+        [itinerario_id, nome, `Linha ${nome}`,
+          vt, cap,
+          alunosIds, paradas, ewkt,
+          periods, tempos]);
     }
 
     await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('Erro ao gerar linhas:', err);
-    res.status(500).json({ error: 'Erro interno ao gerar linhas.' });
-  } finally {
-    client.release();
-  }
+    console.error('gerar linhas:', err);
+    res.status(500).json({ error: 'Falha ao gerar linhas.' });
+  } finally { client.release(); }
 });
 
 

@@ -1122,17 +1122,25 @@
       const id = $('#linhasItinerarioId').val();
       if (!id) return;
 
-      // pergunta ➜ OK = inclui / Cancelar = exclui
-      const incluirEsp = confirm(
-        'Incluir alunos com necessidades especiais?\n\n' +
-        '• OK  →  incluir\n' +
-        '• Cancelar →  ignorar'
+      /* 1️⃣  Dia todo? (manhã + tarde com o mesmo veículo) */
+      const diurno = confirm(
+        'A linha será DIURNA (mesmo veículo atende manhã e tarde)?\n\n' +
+        '• OK → sim (diurna)\n' +
+        '• Cancelar → apenas um turno'
       );
 
+      /* 2️⃣  Incluir alunos com necessidades especiais? */
+      const incluirEsp = confirm(
+        'Incluir alunos com necessidades especiais?\n\n' +
+        '• OK → incluir\n' +
+        '• Cancelar → ignorar'
+      );
+
+      /* 3️⃣  Chama API já com as duas flags */
       fetch(`/api/itinerarios/${id}/linhas/gerar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ incluir_deficiencia: incluirEsp })
+        body: JSON.stringify({ diurno, incluir_deficiencia: incluirEsp })
       })
         .then(r => r.json())
         .then(res => {
@@ -1143,10 +1151,9 @@
             showNotification('danger', res.error || 'Falha ao gerar linhas');
           }
         })
-        .catch(() =>
-          showNotification('danger', 'Erro de rede ao gerar linhas')
-        );
+        .catch(() => showNotification('danger', 'Erro de rede ao gerar linhas'));
     });
+
 
     function renderEditEscolasSelecionadas() {
       const container = document.getElementById('editListaEscolasSelecionadas');
