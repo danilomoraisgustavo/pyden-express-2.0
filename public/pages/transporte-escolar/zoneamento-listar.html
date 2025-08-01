@@ -636,6 +636,14 @@
                 <div class="map-instructions mb-2">
                   Ajuste o polígono ou linha. Use as ferramentas para redesenhar se necessário.
                 </div>
+                <div class="d-flex mb-2">
+                  <button type="button" id="btnClearShape" class="btn btn-danger btn-sm me-2">
+                    <i class="fa fa-trash"></i> Apagar geometria
+                  </button>
+                  <span class="align-self-center small text-muted">
+                    Dica: clique com o botão direito num vértice para removê-lo.
+                  </span>
+                </div>
                 <div id="editMap" style="height:500px;width:100%;"></div>
               </div>
               <div class="modal-footer">
@@ -933,6 +941,18 @@
         showNotification('warning', 'O zoneamento selecionado não é Polygon nem LineString.');
       }
     }
+    function attachVertexRemoval(shape) {
+      google.maps.event.addListener(shape, 'rightclick', e => {
+        if (e.vertex == null) return;                 // clicou fora de vértice
+        const path = shape.getPath();
+        const min = (shape instanceof google.maps.Polygon) ? 3 : 2;
+        if (path.getLength() <= min) {
+          showNotification('warning', 'O desenho precisa ter ao menos ' + min + ' vértices.');
+          return;
+        }
+        path.removeAt(e.vertex);
+      });
+    }
 
     function focusZoneamento(id) {
       const z = zoneamentos.find(zone => zone.id == id);
@@ -1043,6 +1063,8 @@
         editShape = e.overlay;
         editShape.type = e.type;
         editDrawingManager.setDrawingMode(null);
+
+        attachVertexRemoval(editShape);          // <- NOVO
       });
 
       loadGeometryOnEditMap(z);
@@ -1061,19 +1083,32 @@
         const coords = g.coordinates[0].map(c => ({ lat: c[1], lng: c[0] }));
         editShape = new google.maps.Polygon({
           paths: coords,
-          fillColor: '#1E90FF', fillOpacity: .4, strokeWeight: 2, strokeColor: '#1E90FF',
-          editable: true, map: editMap
+          fillColor: '#1E90FF',
+          fillOpacity: 0.4,
+          strokeWeight: 2,
+          strokeColor: '#1E90FF',
+          editable: true,
+          map: editMap
         });
+        attachVertexRemoval(editShape);          // ← aplica remoção de vértice
         coords.forEach(p => bounds.extend(p));
+
       } else if (g.type === 'LineString') {
         const coords = g.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
         editShape = new google.maps.Polyline({
-          path: coords, strokeWeight: 3, strokeColor: '#FF1493',
-          editable: true, map: editMap
+          path: coords,
+          strokeWeight: 3,
+          strokeColor: '#FF1493',
+          editable: true,
+          map: editMap
         });
+        attachVertexRemoval(editShape);          // ← idem para linhas
         coords.forEach(p => bounds.extend(p));
       }
-      if (!bounds.isEmpty()) editMap.fitBounds(bounds);
+
+      if (!bounds.isEmpty()) {
+        editMap.fitBounds(bounds);
+      }
     }
 
     $('#editZoneamentoForm').on('submit', function (e) {
@@ -1126,6 +1161,12 @@
           console.error(err);
           showNotification('danger', 'Erro ao atualizar zoneamento.');
         });
+    });
+    $('#btnClearShape').on('click', () => {
+      if (editShape) {
+        editShape.setMap(null);
+        editShape = null;
+      }
     });
   </script>
 </body>
