@@ -11294,16 +11294,41 @@ app.get("/api/alunos-ativos", async (req, res) => {
 });
 
 // PUT /api/alunos-ativos/:id/ponto
+// PUT /api/alunos-ativos/:id/ponto
 app.put("/api/alunos-ativos/:id/ponto", async (req, res) => {
   const { ponto_id } = req.body;
+  const aluno_id = req.params.id;
   if (!ponto_id) return res.status(400).json({ success: false, message: "ponto_id obrigatório" });
+
+  const client = await pool.connect();
   try {
-    await pool.query("UPDATE alunos_ativos SET ponto_id=$1 WHERE id=$2", [ponto_id, req.params.id]);
+    await client.query('BEGIN');
+
+    // garante a ligação na tabela pivô
+    await client.query(`
+      INSERT INTO alunos_pontos (aluno_id, ponto_id)
+      VALUES ($1, $2)
+      ON CONFLICT (aluno_id)
+      DO UPDATE SET ponto_id = EXCLUDED.ponto_id
+    `, [aluno_id, ponto_id]);
+
+    // mantém o campo direto para consultas rápidas
+    await client.query(
+      `UPDATE alunos_ativos SET ponto_id = $2 WHERE id = $1`,
+      [aluno_id, ponto_id]
+    );
+
+    await client.query('COMMIT');
     res.json({ success: true });
   } catch (e) {
-    console.error(e); res.status(500).json({ success: false, message: "Erro ao atualizar ponto" });
+    await client.query('ROLLBACK');
+    console.error(e);
+    res.status(500).json({ success: false, message: "erro interno" });
+  } finally {
+    client.release();
   }
 });
+
 
 // GET /api/pontos-proximos?lat=…&lng=…&raio_km=3
 app.get("/api/pontos-proximos", async (req, res) => {
