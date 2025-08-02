@@ -11293,37 +11293,64 @@ app.get("/api/alunos-ativos", async (req, res) => {
   }
 });
 
-// PUT /api/alunos-ativos/:id/ponto
-// PUT /api/alunos-ativos/:id/ponto
+/// PUT /api/alunos-ativos/:id/ponto  – v2
 app.put("/api/alunos-ativos/:id/ponto", async (req, res) => {
-  const { ponto_id } = req.body;
-  const aluno_id = req.params.id;
-  if (!ponto_id) return res.status(400).json({ success: false, message: "ponto_id obrigatório" });
+  const alunoId = Number(req.params.id);
+  const pontoId = Number(req.body.ponto_id);
+  if (!pontoId) return res.status(400).json({ success: false, message: "ponto_id obrigatório" });
 
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
-    // garante a ligação na tabela pivô
+    /* procura ponto anterior (se existir) */
+    const { rows: oldRows } = await client.query(
+      `SELECT ponto_id FROM alunos_pontos WHERE aluno_id = $1`, [alunoId]);
+    const oldPontoId = oldRows[0]?.ponto_id;
+
+    /* 1. upsert na tabela pivô */
     await client.query(`
       INSERT INTO alunos_pontos (aluno_id, ponto_id)
-      VALUES ($1, $2)
+           VALUES ($1, $2)
       ON CONFLICT (aluno_id)
       DO UPDATE SET ponto_id = EXCLUDED.ponto_id
-    `, [aluno_id, ponto_id]);
+    `, [alunoId, pontoId]);
 
-    // mantém o campo direto para consultas rápidas
-    await client.query(
-      `UPDATE alunos_ativos SET ponto_id = $2 WHERE id = $1`,
-      [aluno_id, ponto_id]
-    );
+    /* 2. campo direto na tabela de alunos */
+    await client.query(`UPDATE alunos_ativos SET ponto_id = $2 WHERE id = $1`,
+      [alunoId, pontoId]);
 
-    await client.query('COMMIT');
+    /* 3. ativa o novo ponto, se necessário */
+    await client.query(`UPDATE pontos SET status = 'ativo'
+                         WHERE id = $1 AND status <> 'ativo'`, [pontoId]);
+
+    /* 4. desativa o ponto antigo se ficou sem alunos */
+    if (oldPontoId && oldPontoId !== pontoId) {
+      const { rows } = await client.query(
+        `SELECT COUNT(*)::int AS c FROM alunos_pontos WHERE ponto_id = $1`, [oldPontoId]);
+      if (rows[0].c === 0) {
+        await client.query(`UPDATE pontos SET status = 'inativo' WHERE id = $1`, [oldPontoId]);
+      }
+    }
+
+    /* 5. saneia todos os pontos (garantia extra) */
+    await client.query(`
+      UPDATE pontos p
+         SET status = 'inativo'
+       WHERE status <> 'inativo'
+         AND NOT EXISTS (SELECT 1 FROM alunos_pontos ap WHERE ap.ponto_id = p.id);
+      UPDATE pontos p
+         SET status = 'ativo'
+       WHERE status <> 'ativo'
+         AND EXISTS (SELECT 1 FROM alunos_pontos ap WHERE ap.ponto_id = p.id);
+    `);
+
+    await client.query("COMMIT");
     res.json({ success: true });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    console.error(e);
-    res.status(500).json({ success: false, message: "erro interno" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("erro update ponto manual:", err);
+    res.status(500).json({ success: false, message: err.detail || "Erro interno" });
   } finally {
     client.release();
   }
