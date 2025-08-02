@@ -11383,14 +11383,41 @@ app.get("/api/alunos_ativos/:id", async (req, res) => {
   }
 });
 
+// remove aluno + vínculos sem estourar FK
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+
   try {
-    await pool.query("DELETE FROM alunos_ativos WHERE id = $1", [req.params.id]);
+    await client.query("BEGIN");
+
+    /* 1. Tabelas pivô (FK - aluno_id) */
+    await client.query("DELETE FROM alunos_pontos WHERE aluno_id = $1", [id]);
+    await client.query("DELETE FROM alunos_rotas  WHERE aluno_id = $1", [id]);
+
+    /* 2. Remove o aluno dos arrays das linhas */
+    await client.query(`
+      UPDATE linhas_rotas
+         SET alunos_ids = array_remove(alunos_ids, $1)
+       WHERE $1 = ANY(alunos_ids)
+    `, [id]);
+
+    /* 3. Registro principal */
+    await client.query("DELETE FROM alunos_ativos WHERE id = $1", [id]);
+
+    await client.query("COMMIT");
     return res.json({ success: true });
-  } catch (e) {
-    return res.status(500).json({ success: false });
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("erro delete aluno:", err);
+    // devolve detalhe útil p/ front
+    return res.status(500).json({ success: false, message: err.detail || "Erro ao excluir" });
+  } finally {
+    client.release();
   }
 });
+
 
 // PUT /api/alunos-recadastro/:id — não zera mais campos inadvertidamente
 app.put('/api/alunos-recadastro/:id', async (req, res) => {
