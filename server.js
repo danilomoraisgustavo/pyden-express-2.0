@@ -11383,36 +11383,33 @@ app.get("/api/alunos_ativos/:id", async (req, res) => {
   }
 });
 
-// remove aluno + vínculos sem estourar FK
+// DELETE /api/alunos-ativos/:id  – versão 2
 app.delete("/api/alunos-ativos/:id", async (req, res) => {
   const { id } = req.params;
   const client = await pool.connect();
-
   try {
     await client.query("BEGIN");
 
-    /* 1. Tabelas pivô (FK - aluno_id) */
-    await client.query("DELETE FROM alunos_pontos WHERE aluno_id = $1", [id]);
-    await client.query("DELETE FROM alunos_rotas  WHERE aluno_id = $1", [id]);
+    // 1. tabelas dependentes
+    await client.query("DELETE FROM solicitacoes_transporte_especial WHERE aluno_id = $1", [id]);
+    await client.query("DELETE FROM alunos_pontos                WHERE aluno_id = $1", [id]);
+    await client.query("DELETE FROM alunos_rotas                 WHERE aluno_id = $1", [id]);
 
-    /* 2. Remove o aluno dos arrays das linhas */
+    // 2. arrays em linhas_rotas
     await client.query(`
       UPDATE linhas_rotas
          SET alunos_ids = array_remove(alunos_ids, $1)
-       WHERE $1 = ANY(alunos_ids)
-    `, [id]);
+       WHERE $1 = ANY(alunos_ids)`, [id]);
 
-    /* 3. Registro principal */
+    // 3. registro principal
     await client.query("DELETE FROM alunos_ativos WHERE id = $1", [id]);
 
     await client.query("COMMIT");
-    return res.json({ success: true });
-
+    res.json({ success: true });
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("erro delete aluno:", err);
-    // devolve detalhe útil p/ front
-    return res.status(500).json({ success: false, message: err.detail || "Erro ao excluir" });
+    res.status(500).json({ success: false, message: err.detail || "Erro ao excluir" });
   } finally {
     client.release();
   }
