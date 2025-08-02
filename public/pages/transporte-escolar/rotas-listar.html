@@ -1069,6 +1069,9 @@
 
     function openEditModal(rowEncoded) {
       itinerarioEmEdicao = JSON.parse(decodeURIComponent(rowEncoded));
+      editZoneamentosSelecionados =
+        itinerarioEmEdicao.zoneamentos_ids ??
+        (itinerarioEmEdicao.zoneamentos || []).map(z => z.id);
       $('#modalEditarRota').modal('show');
       setTimeout(async () => {
         // 1) Inicializa mapa de edição se necessário
@@ -1173,29 +1176,49 @@
       });
     }
 
+    /* renderEditZoneamentos ------------------------------------------- */
     function renderEditZoneamentos() {
       const zonas = {};
       editEscolasSelecionadas.forEach(id => {
         const esc = editEscolasData.find(e => e.id === id);
         esc.zoneamentos.forEach(z => zonas[z.id] = z.nome);
       });
+
       const cont = document.getElementById('editListaZoneamentos');
       cont.innerHTML = '';
+
       Object.entries(zonas).forEach(([id, nome]) => {
         const cb = document.createElement('input');
-        cb.type = 'checkbox'; cb.value = id; cb.id = 'edit_zon_' + id;
+        cb.type = 'checkbox';
+        cb.value = id;
+        cb.id = 'edit_zon_' + id;
+        cb.checked = editZoneamentosSelecionados.includes(+id); //  ✅ marca já vinculados
+
+        // mantém lista em sincronia
+        cb.onchange = () => {
+          const idx = editZoneamentosSelecionados.indexOf(+id);
+          if (cb.checked && idx === -1) editZoneamentosSelecionados.push(+id);
+          if (!cb.checked && idx !== -1) editZoneamentosSelecionados.splice(idx, 1);
+        };
+
         const lbl = document.createElement('label');
-        lbl.htmlFor = cb.id; lbl.textContent = nome;
+        lbl.htmlFor = cb.id;
+        lbl.textContent = nome;
+
         const div = document.createElement('div');
         div.append(cb, ' ', lbl);
         cont.appendChild(div);
       });
     }
 
+
     document.getElementById('btnSalvarEdicao').onclick = async () => {
       const zoneamentos_ids = Array.from(document.querySelectorAll('#editListaZoneamentos input:checked'))
         .map(cb => parseInt(cb.value));
-      const payload = { escolas_ids: editEscolasSelecionadas, zoneamentos_ids };
+      const payload = {
+        escolas_ids: editEscolasSelecionadas,
+        zoneamentos_ids: editZoneamentosSelecionados      // usa lista já atualizada
+      };
       const id = itinerarioEmEdicao ? itinerarioEmEdicao.id : null;
       if (!id) return;
       try {
