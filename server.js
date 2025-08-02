@@ -5626,7 +5626,7 @@ app.post('/api/itinerarios/:itinerario_id/linhas/gerar', async (req, res) => {
     const diurno = !!req.body?.diurno;      // ★ NOVO
 
     /* ── constantes ── */
-    const VEL_KMH = 40, T_STOP = 2, T_MAX = 120, MAX_CAP = 50;
+    const VEL_KMH = 60, T_STOP = 2, T_MAX = 120, MAX_CAP = 50;
     const TURNS = ['manha', 'tarde', 'noite', 'integral'];
     const TURNS_PROC = diurno ? ['dia', 'noite', 'integral'] : TURNS;
 
@@ -11988,43 +11988,83 @@ app.get("/api/rotas/:id/alunos-elegiveis", async (req, res) => {
   res.json(data.rows)
 })
 
-// vincular alunos
+// vincular alunos a uma rota e garantir que os pontos entrem na rota
 app.post("/api/rotas/:id/alunos", async (req, res) => {
-  const { id } = req.params
-  const { alunos } = req.body           // array de ids
-  if (!Array.isArray(alunos) || !alunos.length) return res.status(400).json({ success: false })
-  const caps = await pool.query(`SELECT COALESCE(SUM(f.capacidade),0) AS total FROM frota_rotas fr JOIN frota f ON f.id=fr.frota_id WHERE fr.rota_id=$1`, [id])
-  const total = +caps.rows[0].total
-  const usados = +(await pool.query(`SELECT COUNT(*) FROM alunos_rotas WHERE rota_id=$1`, [id])).rows[0].count
-  if (usados + alunos.length > total) return res.status(409).json({ success: false, message: "Lotação excedida" })
-  const client = await pool.connect()
-  try {
-    await client.query("BEGIN")
-    for (const aid of alunos) {
-      await client.query(`INSERT INTO alunos_rotas(aluno_id,rota_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [aid, id])
-    }
-    await client.query("COMMIT")
-    res.json({ success: true })
-  } catch (e) { await client.query("ROLLBACK"); res.status(500).json({ success: false }) } finally { client.release() }
-})
+  const { id: rotaId } = req.params;
+  const { alunos } = req.body;     // array de IDs (int)
 
-// lista já vinculados + motorista + monitor
-app.get("/api/rotas/:id/vinculos-completos", async (req, res) => {
-  const { id } = req.params
-  const data = await pool.query(`
-    SELECT a.id,a.pessoa_nome,a.turma,
-           m.id AS motorista_id,m.nome_motorista,
-           mo.id AS monitor_id,mo.nome_monitor
-    FROM alunos_rotas ar
-    JOIN alunos_ativos a   ON a.id = ar.aluno_id
-    LEFT JOIN motoristas_rotas mr ON mr.rota_id = ar.rota_id
-    LEFT JOIN motoristas m  ON m.id = mr.motorista_id
-    LEFT JOIN monitores_rotas mor ON mor.rota_id = ar.rota_id
-    LEFT JOIN monitores mo ON mo.id = mor.monitor_id
-    WHERE ar.rota_id = $1
-  `, [id])
-  res.json(data.rows)
-})
+  if (!Array.isArray(alunos) || !alunos.length)
+    return res.status(400).json({ success: false, message: "Lista vazia" });
+
+  /* 1. checa lotação da frota */
+  const caps = await pool.query(`
+      SELECT COALESCE(SUM(f.capacidade),0) AS total
+        FROM frota_rotas fr
+        JOIN frota f ON f.id = fr.frota_id
+       WHERE fr.rota_id = $1
+  `, [rotaId]);
+  const total = +caps.rows[0].total;
+  const usados = +(await pool.query(
+    `SELECT COUNT(*) FROM alunos_rotas WHERE rota_id = $1`, [rotaId]
+  )).rows[0].count;
+
+  if (usados + alunos.length > total)
+    return res.status(409).json({ success: false, message: "Lotação excedida" });
+
+  /* 2. transação completa */
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    /* 2a. insere alunos na tabela pivô */
+    const insAluno = `
+      INSERT INTO alunos_rotas (aluno_id, rota_id)
+      VALUES ($1,$2)
+      ON CONFLICT DO NOTHING`;
+    for (const aid of alunos) {
+      await client.query(insAluno, [aid, rotaId]);
+    }
+
+    /* 2b. coleta os pontos desses alunos */
+    const { rows: pontos } = await client.query(`
+      SELECT DISTINCT ponto_id
+        FROM alunos_pontos
+       WHERE aluno_id = ANY($1::int[])
+         AND ponto_id IS NOT NULL
+    `, [alunos]);
+    const pontoIds = pontos.map(r => r.ponto_id);
+
+    if (pontoIds.length) {
+      /* 2c. garante link em rotas_pontos */
+      await client.query(`
+        INSERT INTO rotas_pontos (rota_id, ponto_id)
+        SELECT $1, UNNEST($2::int[])
+        ON CONFLICT DO NOTHING
+      `, [rotaId, pontoIds]);
+
+      /* 2d. atualiza array paradas_ids da linha */
+      await client.query(`
+        UPDATE linhas_rotas
+           SET paradas_ids = (
+                 SELECT ARRAY(
+                   SELECT DISTINCT unnest(paradas_ids || $2::int[])
+                 )
+               )
+         WHERE id = $1
+      `, [rotaId, pontoIds]);
+    }
+
+    await client.query("COMMIT");
+    res.json({ success: true });
+  } catch (e) {
+    await client.query("ROLLBACK");
+    console.error("erro vincular alunos:", e);
+    res.status(500).json({ success: false, message: e.detail || "Erro interno" });
+  } finally {
+    client.release();
+  }
+});
+
 
 // ====================================================================================
 // MOTORISTAS ADMINISTRATIVOS
