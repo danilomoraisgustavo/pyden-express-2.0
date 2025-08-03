@@ -1556,6 +1556,7 @@
       });
     }
     /* ---------- download CSV da listagem ---------- */
+    /* ---------- download CSV da listagem ---------- */
     const exportCols = [
       { header: "ID Pessoa", index: 1 },
       { header: "Nome Aluno", index: 7 },
@@ -1563,11 +1564,16 @@
       { header: "Bairro", index: 12 },
       { header: "Telefone", index: 15 },
 
-      { header: "Rota", fn: row => `${row[19] || ""} - ${row[20] || ""}` },
-      { header: "Latitude", index: 21 },
-      { header: "Longitude", index: 22 },
+      // junta ponto + linha (não mais itinerário)
+      { header: "Ponto/Linha", fn: row => `${row[19] || ""} - ${row[21] || ""}` },
+
+      // corrige offsets dos coordenadas
+      { header: "Latitude", index: 22 },
+      { header: "Longitude", index: 23 },
+
       { header: "Deficiência", index: 18 }
     ];
+
 
     function toggleDownloadBtn() {
       const temDados = dataTable && dataTable.rows({ search: "applied" }).any();
