@@ -1556,7 +1556,6 @@
       });
     }
     /* ---------- download CSV da listagem ---------- */
-    /* ---------- download CSV da listagem ---------- */
     const exportCols = [
       { header: "ID Pessoa", index: 1 },
       { header: "Nome Aluno", index: 7 },
@@ -1568,8 +1567,8 @@
       { header: "Ponto/Linha", fn: row => `${row[19] || ""} - ${row[21] || ""}` },
 
       // corrige offsets dos coordenadas
-      { header: "Latitude", index: 22 },
-      { header: "Longitude", index: 23 },
+      { header: "Latitude do Ponto", index: 22 },
+      { header: "Longitude do Ponto", index: 23 },
 
       { header: "Deficiência", index: 18 }
     ];
