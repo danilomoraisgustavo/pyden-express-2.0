@@ -328,6 +328,43 @@ app.get("/api/admin/users", async (req, res) => {
     return res.status(500).json({ error: "Erro interno ao buscar usuários." });
   }
 });
+
+// CONTADORES DE ROTAS POR CAPACIDADE CONFIGURADA
+app.get("/api/rotas/contadores", async (req, res) => {
+  try {
+    // 1) Pega a capacidade de cada linha cadastrada
+    const sql = `
+      SELECT
+        lr.id          AS rota_id,
+        lr.capacidade  AS capacidade
+      FROM linhas_rotas lr
+    `;
+    const { rows } = await pool.query(sql);
+
+    // 2) Conta cada linha conforme a capacidade configurada
+    let vans = 0, micro = 0, onibus = 0;
+    for (const { capacidade } of rows) {
+      if (capacidade <= 16) {
+        vans++;
+      } else if (capacidade <= 33) {
+        micro++;
+      } else if (capacidade <= 50) {
+        onibus++;
+      }
+      // Se houver capacidades diferentes, ajuste as faixas acima
+    }
+
+    // 3) Retorna todos os 71 (vans+micro+onibus) = total de linhas
+    res.json({ vans, micro, onibus });
+
+  } catch (err) {
+    console.error("Erro contadores rotas:", err);
+    res.status(500).json({ error: "Erro interno ao obter contadores." });
+  }
+});
+
+
+
 // ----------------------------------------------------------------------
 // ROTAS PARA RELATÓRIOS DE OCORRÊNCIA
 // ----------------------------------------------------------------------

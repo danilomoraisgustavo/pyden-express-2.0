@@ -598,6 +598,71 @@
               <li class="nav-item"><a href="#">Listar / Cadastrar</a></li>
             </ul>
           </div>
+          <!-- Cards de rotas -->
+          <div class="row">
+            <!-- CARD – VANS -->
+            <div class="col-sm-3 col-md-3">
+              <div class="card card-stats card-round">
+                <div class="card-body">
+                  <div class="row align-items-center">
+                    <div class="col-icon">
+                      <div class="icon-big text-center icon-primary bubble-shadow-small">
+                        <i class="fas fa-shuttle-van"></i>
+                      </div>
+                    </div>
+                    <div class="col col-stats ms-3 ms-sm-0">
+                      <div class="numbers">
+                        <p class="card-category">Vans</p>
+                        <h4 class="card-title" id="count-vans">0</h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD – MICRO-ÔNIBUS -->
+            <div class="col-sm-3 col-md-3">
+              <div class="card card-stats card-round">
+                <div class="card-body">
+                  <div class="row align-items-center">
+                    <div class="col-icon">
+                      <div class="icon-big text-center icon-info bubble-shadow-small">
+                        <i class="fas fa-bus-alt"></i>
+                      </div>
+                    </div>
+                    <div class="col col-stats ms-3 ms-sm-0">
+                      <div class="numbers">
+                        <p class="card-category">Micro-ônibus</p>
+                        <h4 class="card-title" id="count-micro">0</h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD – ÔNIBUS -->
+            <div class="col-sm-3 col-md-3">
+              <div class="card card-stats card-round">
+                <div class="card-body">
+                  <div class="row align-items-center">
+                    <div class="col-icon">
+                      <div class="icon-big text-center icon-warning bubble-shadow-small">
+                        <i class="fas fa-bus"></i>
+                      </div>
+                    </div>
+                    <div class="col col-stats ms-3 ms-sm-0">
+                      <div class="numbers">
+                        <p class="card-category">Ônibus</p>
+                        <h4 class="card-title" id="count-onibus">0</h4>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="row">
             <div class="col-md-12">
@@ -1708,8 +1773,6 @@
       }, 300);
     });
 
-
-
     function toggleCsvBtn() {
       const btn = document.getElementById('btnExportarCSV');
       const tabela = document.getElementById('alunos-linha-table');
@@ -1718,6 +1781,19 @@
       btn.disabled = linhas.length === 0;
     }
 
+    async function carregarContadoresRotas() {
+      try {
+        const resp = await fetch('/api/rotas/contadores');
+        const dados = await resp.json();
+        document.getElementById('count-vans').textContent = dados.vans;
+        document.getElementById('count-micro').textContent = dados.micro;
+        document.getElementById('count-onibus').textContent = dados.onibus;
+      } catch (err) {
+        console.error('Falha ao carregar contadores de rotas:', err);
+      }
+    }
+    // Executa ao carregar a página
+    window.addEventListener('DOMContentLoaded', carregarContadoresRotas);
   </script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCAwvAt4l0Pkb1c52FLUE-ttVxm4YZ9J8M&callback=initMap"
     async defer></script>
