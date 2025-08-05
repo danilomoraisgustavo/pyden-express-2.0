@@ -1030,7 +1030,7 @@
         const resp = await fetch(`/api/alunos_ativos?search=${encodeURIComponent(valorBusca)}`);
         if (!resp.ok) throw new Error("Erro ao buscar aluno (Municipal).");
         const data = await resp.json();
-        if (!data || !data.id_matricula) {
+        if (!data || !data.id) {
           showNotification("Nenhum aluno encontrado.", "danger");
           return;
         }
