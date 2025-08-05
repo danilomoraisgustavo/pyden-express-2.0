@@ -7881,6 +7881,7 @@ app.get("/api/alunos_ativos", async (req, res) => {
       WHERE a.cpf = $1
              OR CAST(a.id_matricula AS TEXT) = $1
              OR CAST(a.id_pessoa    AS TEXT) = $1
+             OR CAST(a.codigo_inep  AS TEXT) = $1
              OR LOWER(a.pessoa_nome) LIKE LOWER('%' || $1 || '%')
       LIMIT 1
     `;
