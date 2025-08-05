@@ -7879,7 +7879,9 @@ app.get("/api/alunos_ativos", async (req, res) => {
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.cpf = $1
-         OR CAST(a.id_matricula AS TEXT) = $1
+             OR CAST(a.id_matricula AS TEXT) = $1
+             OR CAST(a.id_pessoa    AS TEXT) = $1
+             OR LOWER(a.pessoa_nome) LIKE LOWER('%' || $1 || '%')
       LIMIT 1
     `;
     const result = await pool.query(query, [search]);

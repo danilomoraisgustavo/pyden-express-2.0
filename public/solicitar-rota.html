@@ -362,7 +362,9 @@
         <div class="card-body">
           <div class="row justify-content-center">
             <div class="col-md-6 text-center">
-              <label for="inputBusca" class="form-label">CPF ou ID de Matrícula</label>
+              <label for="inputBusca" class="form-label">
+                CPF, ID de Matrícula, ID de Pessoa ou Nome completo
+              </label>
               <input type="text" class="form-control mx-auto" style="max-width: 300px;" id="inputBusca"
                 placeholder="Digite aqui..." />
               <button id="btnBuscar" class="btn btn-primary mt-3">Buscar</button>
@@ -1018,7 +1020,10 @@
     btnBuscar.addEventListener("click", async () => {
       const valorBusca = inputBusca.value.trim();
       if (!valorBusca) {
-        showNotification("Informe CPF ou ID de Matrícula.", "warning");
+        showNotification(
+          "Informe CPF, ID de Matrícula, ID de Pessoa ou Nome completo.",
+          "warning"
+        );
         return;
       }
       try {
