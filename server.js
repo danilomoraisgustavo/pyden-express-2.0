@@ -7850,7 +7850,6 @@ app.get("/api/alunos-transporte-publico", async (req, res) => {
   }
 });
 
-// ENDPOINT ATUALIZADO (com campo data_nascimento)
 app.get("/api/alunos_ativos", async (req, res) => {
   try {
     const search = req.query.search ? req.query.search.trim() : "";
@@ -7863,7 +7862,6 @@ app.get("/api/alunos_ativos", async (req, res) => {
         a.id,
         a.id_pessoa,
         a.id_matricula,
-        a.codigo_inep,
         a.pessoa_nome,
         a.cpf,
         a.cep,
@@ -7881,7 +7879,6 @@ app.get("/api/alunos_ativos", async (req, res) => {
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.cpf = $1
          OR CAST(a.id_matricula AS TEXT) = $1
-         OR CAST(a.codigo_inep   AS TEXT) = $1
          OR CAST(a.id_pessoa     AS TEXT) = $1
          OR a.pessoa_nome ILIKE '%' || $1 || '%'
       LIMIT 1
@@ -7891,8 +7888,8 @@ app.get("/api/alunos_ativos", async (req, res) => {
     if (result.rows.length === 0) {
       return res.json(null);
     }
-
     return res.json(result.rows[0]);
+
   } catch (error) {
     console.error("Erro ao buscar aluno:", error);
     return res.status(500).json({ error: "Erro interno do servidor" });
