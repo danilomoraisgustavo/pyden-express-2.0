@@ -7858,11 +7858,12 @@ app.get("/api/alunos_ativos", async (req, res) => {
       return res.json(null);
     }
 
-    // Consulta que retorna também data_nascimento
     const query = `
       SELECT
         a.id,
+        a.id_pessoa,
         a.id_matricula,
+        a.codigo_inep,
         a.pessoa_nome,
         a.cpf,
         a.cep,
@@ -7879,23 +7880,25 @@ app.get("/api/alunos_ativos", async (req, res) => {
       FROM alunos_ativos a
       LEFT JOIN escolas e ON e.id = a.escola_id
       WHERE a.cpf = $1
-             OR CAST(a.id_matricula AS TEXT) = $1
-             OR CAST(a.id_pessoa    AS TEXT) = $1
-             OR CAST(a.codigo_inep  AS TEXT) = $1
-             OR LOWER(a.pessoa_nome) LIKE LOWER('%' || $1 || '%')
+         OR CAST(a.id_matricula AS TEXT) = $1
+         OR CAST(a.codigo_inep   AS TEXT) = $1
+         OR CAST(a.id_pessoa     AS TEXT) = $1
+         OR a.pessoa_nome ILIKE '%' || $1 || '%'
       LIMIT 1
     `;
-    const result = await pool.query(query, [search]);
 
+    const result = await pool.query(query, [search]);
     if (result.rows.length === 0) {
       return res.json(null);
     }
+
     return res.json(result.rows[0]);
   } catch (error) {
-    console.error("Erro ao buscar aluno por CPF/ID:", error);
+    console.error("Erro ao buscar aluno:", error);
     return res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
+
 
 app.get("/api/escola-coordenadas", async (req, res) => {
   try {
@@ -11005,18 +11008,21 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
     if (!overrideConflicts) {
       const conflicts = [];
       for (const a of alunos) {
-        const cpfNorm = typeof a.cpf === 'string' ? a.cpf.trim() || null : null;
+        const cpfNorm   = typeof a.cpf          === 'string' ? a.cpf.trim()        || null : null;
+        const mat       = a.id_matricula        || a.codigo_inep || null;
+        const pessoaId  = a.id_pessoa           || null;
 
         const { rows } = await client.query(
-          `SELECT id, id_pessoa, cpf, escola_id AS currentEscola, id_matricula
+          `SELECT id, id_pessoa, cpf, id_matricula, codigo_inep, escola_id AS currentEscola
              FROM alunos_ativos
             WHERE (
                   id_pessoa    = $1
                OR cpf          = $2
                OR id_matricula = $3
+               OR codigo_inep  = $4
             )
-              AND escola_id != $4`,
-          [a.id_pessoa, cpfNorm, a.id_matricula, escolaId]
+              AND escola_id != $5`,
+          [pessoaId, cpfNorm, mat, mat, escolaId]
         );
 
         if (rows.length) conflicts.push(...rows);
@@ -11034,6 +11040,7 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
       let {
         id_pessoa,
         id_matricula,
+        codigo_inep,
         ANO,
         MODALIDADE,
         FORMATO_LETIVO,
@@ -11051,6 +11058,9 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
         data_nascimento
       } = a;
 
+      // se não veio id_matricula, usa codigo_inep
+      id_matricula = id_matricula || codigo_inep || null;
+
       /* normalizações */
       const cpfNorm = typeof cpf === 'string' ? cpf.trim() || null : null;
       let defArray = null;
@@ -11062,7 +11072,7 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
       }
       data_nascimento = normalizeDate(data_nascimento);
 
-      /* 2.1) Conflito de pessoa/matrícula/CPF em outra escola */
+      /* 2.1) Conflito de pessoa/matrícula/CPF/codigo_inep em outra escola */
       const { rowCount: hasConflict, rows: conflictRow } = await client.query(
         `SELECT id
            FROM alunos_ativos
@@ -11070,6 +11080,7 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
                 id_pessoa    = $1
              OR cpf          = $2
              OR id_matricula = $3
+             OR codigo_inep  = $3
           )
             AND escola_id != $4
           LIMIT 1`,
@@ -11094,22 +11105,24 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
                filiacao_2              = $13,
                responsavel             = $14,
                deficiencia             = $15,
-               data_nascimento         = $16
-             WHERE id = $17`,
+               data_nascimento         = $16,
+               codigo_inep             = $17
+             WHERE id = $18`,
             [
               escolaId,
               ANO, MODALIDADE, FORMATO_LETIVO, TURMA,
               pessoa_nome, cpfNorm, cep, bairro, numero_pessoa_endereco,
               filiacao_1, telefone_filiacao_1, filiacao_2, RESPONSAVEL,
               defArray, data_nascimento,
+              codigo_inep,
               conflictRow[0].id
             ]
           );
         }
-        continue; // próximo aluno
+        continue; // pula para o próximo
       }
 
-      /* 2.2) Completa id_pessoa se matrícula existir */
+      /* 2.2) Preenche id_pessoa se matrícula existir */
       const { rowCount: fillByMat } = await client.query(
         `UPDATE alunos_ativos
             SET id_pessoa = $1
@@ -11120,7 +11133,7 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
       );
       if (fillByMat) continue;
 
-      /* 2.3) Completa id_pessoa se CPF existir */
+      /* 2.3) Preenche id_pessoa se CPF existir */
       if (cpfNorm) {
         const { rowCount: fillByCpf } = await client.query(
           `UPDATE alunos_ativos
@@ -11133,14 +11146,14 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
         if (fillByCpf) continue;
       }
 
-      /* 2.4) Pessoa já existe? então ignora */
+      /* 2.4) Ignora se pessoa já existe */
       const { rowCount: dupPessoa } = await client.query(
         `SELECT 1 FROM alunos_ativos WHERE id_pessoa = $1 LIMIT 1`,
         [id_pessoa]
       );
       if (dupPessoa) continue;
 
-      /* 2.5) Chave duplicada matrícula/CPF já presente? ignora */
+      /* 2.5) Ignora se matrícula/CPF já existentes */
       const { rowCount: dupKey } = await client.query(
         `SELECT 1
            FROM alunos_ativos
@@ -11151,48 +11164,48 @@ app.post('/api/import-alunos-ativos', async (req, res) => {
       );
       if (dupKey) continue;
 
-      /* 2.6) INSERT/UPSERT — captura CPF duplicado e pula */
+      /* 2.6) INSERT/UPSERT */
       try {
         await client.query(
           `INSERT INTO alunos_ativos (
-             id_pessoa, id_matricula, escola_id, ano, modalidade,
-             formato_letivo, turma, pessoa_nome, cpf,
+             id_pessoa, id_matricula, codigo_inep, escola_id, ano,
+             modalidade, formato_letivo, turma, pessoa_nome, cpf,
              cep, bairro, numero_pessoa_endereco,
              filiacao_1, numero_telefone, filiacao_2, responsavel,
              deficiencia, data_nascimento
            ) VALUES (
              $1,$2,$3,$4,$5,
-             $6,$7,$8,$9,
-             $10,$11,$12,
-             $13,$14,$15,$16,
-             $17::text[],$18
+             $6,$7,$8,$9,$10,
+             $11,$12,$13,
+             $14,$15,$16,$17,
+             $18::text[],$19
            )
            ON CONFLICT ON CONSTRAINT alunos_ativos_id_matricula_uk
            DO UPDATE
              SET id_pessoa = COALESCE(alunos_ativos.id_pessoa, EXCLUDED.id_pessoa)
            WHERE alunos_ativos.id_pessoa IS NULL`,
           [
-            id_pessoa, id_matricula, escolaId, ANO, MODALIDADE,
-            FORMATO_LETIVO, TURMA, pessoa_nome, cpfNorm,
+            id_pessoa, id_matricula, codigo_inep, escolaId, ANO,
+            MODALIDADE, FORMATO_LETIVO, TURMA, pessoa_nome, cpfNorm,
             cep, bairro, numero_pessoa_endereco,
             filiacao_1, telefone_filiacao_1, filiacao_2, RESPONSAVEL,
             defArray, data_nascimento
           ]
         );
       } catch (err) {
-        // CPF duplicado → apenas ignora e segue
+        // pula se CPF duplicado
         if (err.code === '23505' && err.constraint === 'alunos_ativos_cpf_uk') {
           continue;
         }
-        throw err; // qualquer outro erro é fatal
+        throw err;
       }
     }
 
     /* -------------------------------------------------------------------- *
-     * 3) Marcar transferidos (saíram desta escola)                         *
+     * 3) Marca transferidos (não vieram no novo lote)                     *
      * -------------------------------------------------------------------- */
     const incomingMats = alunos
-      .map(a => parseInt(a.id_matricula, 10))
+      .map(a => parseInt(a.id_matricula || a.codigo_inep, 10))
       .filter(n => !isNaN(n));
 
     if (incomingMats.length) {
