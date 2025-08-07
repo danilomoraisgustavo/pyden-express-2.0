@@ -12553,34 +12553,58 @@ app.delete("/api/frota_administrativa/:id", async (req, res) => {
 });
 
 
-app.get('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
+const { DateTime } = require('luxon');          // npm i luxon
+const zone = 'America/Belem';
+
+app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
-    // busca carro associado
-    const carroRes = await pool.query(
-      'SELECT carro_id FROM motoristas_administrativos WHERE id = $1',
+    const agora = DateTime.now().setZone(zone);
+
+    // Regra 1 – só sexta-feira
+    if (agora.weekday !== 5) {                       // 1=Seg … 5=Sexta
+      return res.status(400).json({ message: 'Checklist liberado apenas na sexta-feira.' });
+    }
+
+    // Regra 2 – um envio por sexta
+    const existe = await pool.query(
+      `SELECT 1 FROM checklist_envios
+       WHERE motorista_id = $1 AND enviado_em::date = $2 LIMIT 1`,
+      [motoristaId, agora.toISODate()]
+    );
+    if (existe.rowCount) {
+      return res.status(409).json({ message: 'Checklist já enviado hoje.' });
+    }
+
+    /* ───────── grava envio ───────── */
+    await pool.query('BEGIN');
+    const envioRes = await pool.query(
+      'INSERT INTO checklist_envios (motorista_id) VALUES ($1) RETURNING id',
       [motoristaId]
     );
-    const carroId = carroRes.rows[0]?.carro_id;
-    if (!carroId) return res.json([]);
+    const envioId = envioRes.rows[0].id;
 
-    // busca tipo_veiculo
-    const tipoRes = await pool.query(
-      'SELECT tipo_veiculo FROM frota_administrativa WHERE id = $1',
-      [carroId]
-    );
-    const tipo = tipoRes.rows[0]?.tipo_veiculo;
-    if (!tipo) return res.json([]);
+    const respostas = req.body.respostas ?? [];
+    const values = respostas.map((r, i) =>
+      `($1,$${i * 4 + 2},$${i * 4 + 3},$${i * 4 + 4})`
+    ).join(',');
+    const params = [envioId];
+    respostas.forEach(r => params.push(r.item_id, r.ok, r.observacao));
 
-    // lista itens
-    const itensRes = await pool.query(
-      'SELECT id, descricao FROM checklist_itens WHERE tipo_veiculo = $1 ORDER BY id',
-      [tipo]
-    );
-    return res.json(itensRes.rows);
+    if (values) {
+      await pool.query(
+        `INSERT INTO checklist_respostas (envio_id,item_id,ok,observacao) VALUES ${values}`,
+        params
+      );
+    }
+
+    await pool.query('COMMIT');
+    return res.json({ success: true });
+
   } catch (err) {
-    console.error('Erro ao listar checklist:', err);
-    return res.status(500).json({ success: false, message: 'Erro interno' });
+    await pool.query('ROLLBACK');
+    console.error('Erro no checklist:', err);
+    return res.status(500).json({ message: 'Erro interno' });
   }
 });
 
