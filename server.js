@@ -19,6 +19,8 @@ const { DOMParser } = require("@xmldom/xmldom");
 const tj = require("@mapbox/togeojson");
 const axios = require("axios");
 const jwt = require('jsonwebtoken');
+const { DateTime } = require('luxon');          // npm i luxon
+const zone = 'America/Belem';
 
 
 const {
@@ -12552,9 +12554,6 @@ app.delete("/api/frota_administrativa/:id", async (req, res) => {
   }
 });
 
-
-const { DateTime } = require('luxon');          // npm i luxon
-const zone = 'America/Belem';
 
 app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
   try {
