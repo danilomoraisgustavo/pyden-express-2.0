@@ -1562,17 +1562,13 @@
       { header: "Escola", index: 2 },
       { header: "Bairro", index: 12 },
       { header: "Telefone", index: 15 },
+      { header: "Itinerário/Linha", fn: row => `${row[20] || ""} - ${row[21] || ""}` },
 
-      // junta ponto + linha (não mais itinerário)
-      { header: "Ponto/Linha", fn: row => `${row[19] || ""} - ${row[21] || ""}` },
-
-      // corrige offsets dos coordenadas
       { header: "Latitude do Ponto", index: 22 },
       { header: "Longitude do Ponto", index: 23 },
 
       { header: "Deficiência", index: 18 }
     ];
-
 
     function toggleDownloadBtn() {
       const temDados = dataTable && dataTable.rows({ search: "applied" }).any();
