@@ -12554,26 +12554,47 @@ app.delete("/api/frota_administrativa/:id", async (req, res) => {
   }
 });
 
-// GET /api/geo/directions?origin=lat,lng&destination=lat,lng&waypoints=...&departure_time=now&traffic_model=best_guess&mode=driving
 app.get('/api/geo/directions', async (req, res) => {
   try {
+    const key = process.env.GOOGLE_MAPS_KEY;
+    if (!key) {
+      console.error('Directions proxy: GOOGLE_MAPS_KEY ausente');
+      return res.status(500).json({ status: 'REQUEST_DENIED', error_message: 'Missing GOOGLE_MAPS_KEY' });
+    }
+
+    const { origin, destination, waypoints } = req.query;
+    if (!origin || !destination) {
+      return res.status(400).json({ status: 'INVALID_REQUEST', error_message: 'origin and destination are required' });
+    }
+
+    // Monta URL do Google mantendo os mesmos parâmetros do app
     const params = new URLSearchParams({
-      origin: req.query.origin,
-      destination: req.query.destination,
-      key: process.env.GOOGLE_MAPS_API_KEY, // não exponha no cliente
-      departure_time: req.query.departure_time || 'now',
-      traffic_model: req.query.traffic_model || 'best_guess',
-      mode: req.query.mode || 'driving',
+      origin,
+      destination,
+      mode: 'driving',
+      departure_time: 'now',
+      traffic_model: 'best_guess',
+      language: 'pt-BR',
+      region: 'br',
+      key
     });
-    if (req.query.waypoints) params.set('waypoints', req.query.waypoints);
+    if (waypoints) params.set('waypoints', waypoints); // ex: "optimize:true|lat,lng|lat,lng"
 
     const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
-    const r = await fetch(url);
-    const json = await r.json();
-    res.json(json);
-  } catch (e) {
-    console.error('Directions proxy error:', e);
-    res.status(500).json({ status: 'ERROR', message: 'Proxy failed' });
+    console.log('Directions proxy ->', url);
+
+    const g = await fetch(url, { method: 'GET' });
+    const text = await g.text();
+
+    // CORS para web (se necessário)
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Content-Type', 'application/json');
+
+    // Repassa exatamente o que o Google respondeu (inclui status, legs, overview_polyline, etc.)
+    res.status(g.status).send(text);
+  } catch (err) {
+    console.error('Erro no proxy Directions:', err);
+    res.status(500).json({ status: 'UNKNOWN_ERROR', error_message: 'Proxy failure' });
   }
 });
 
