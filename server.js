@@ -12598,107 +12598,112 @@ app.get('/api/geo/directions', async (req, res) => {
   }
 });
 
-app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
+// [GET] Itens de checklist para motoristas administrativos
+app.get("/api/admin-motoristas/checklist-itens", async (req, res) => {
   try {
-    const motoristaId = req.user.id;
-    const agora = DateTime.now().setZone(zone);
-
-    // Regra 1 – só sexta-feira
-    if (agora.weekday !== 5) {                       // 1=Seg … 5=Sexta
-      return res.status(400).json({ message: 'Checklist liberado apenas na sexta-feira.' });
-    }
-
-    // Regra 2 – um envio por sexta
-    const existe = await pool.query(
-      `SELECT 1 FROM checklist_envios
-       WHERE motorista_id = $1 AND enviado_em::date = $2 LIMIT 1`,
-      [motoristaId, agora.toISODate()]
-    );
-    if (existe.rowCount) {
-      return res.status(409).json({ message: 'Checklist já enviado hoje.' });
-    }
-
-    /* ───────── grava envio ───────── */
-    await pool.query('BEGIN');
-    const envioRes = await pool.query(
-      'INSERT INTO checklist_envios (motorista_id) VALUES ($1) RETURNING id',
-      [motoristaId]
-    );
-    const envioId = envioRes.rows[0].id;
-
-    const respostas = req.body.respostas ?? [];
-    const values = respostas.map((r, i) =>
-      `($1,$${i * 4 + 2},$${i * 4 + 3},$${i * 4 + 4})`
-    ).join(',');
-    const params = [envioId];
-    respostas.forEach(r => params.push(r.item_id, r.ok, r.observacao));
-
-    if (values) {
-      await pool.query(
-        `INSERT INTO checklist_respostas (envio_id,item_id,ok,observacao) VALUES ${values}`,
-        params
-      );
-    }
-
-    await pool.query('COMMIT');
-    return res.json({ success: true });
-
+    const { rows } = await pool.query(`
+      SELECT id, descricao
+      FROM checklist_itens
+      WHERE (ativo IS TRUE OR ativo IS NULL)
+      ORDER BY COALESCE(ordem, 9999), id
+    `);
+    return res.json(rows);
   } catch (err) {
-    await pool.query('ROLLBACK');
-    console.error('Erro no checklist:', err);
-    return res.status(500).json({ message: 'Erro interno' });
+    console.error("Erro ao buscar checklist-itens:", err);
+    return res.status(500).json({ message: "Erro ao buscar itens" });
   }
 });
 
-// POST → grava respostas do checklist
+// POST → grava checklist (único handler oficial)
 app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
+  const client = await pool.connect();
   try {
+    const zone = 'America/Belem'; // ajuste se usa isso acima
+    const agora = DateTime.now().setZone(zone);
+    const allowedDays = [1]; // 1 = segunda (ou [1,2,3,4,5] p/ seg-sex)
+
     const motoristaId = req.user.id;
-    const { respostas, observacoes_extras } = req.body;
-    // busca carro
-    const carroRes = await pool.query(
+
+    // 1) Dia permitido?
+    if (!allowedDays.includes(agora.weekday)) {
+      return res.status(403).json({ message: 'Checklist liberado apenas na segunda-feira.' });
+    }
+
+    // 2) Motorista tem veículo?
+    const carroRes = await client.query(
       'SELECT carro_id FROM motoristas_administrativos WHERE id = $1',
       [motoristaId]
     );
     const carroId = carroRes.rows[0]?.carro_id;
     if (!carroId) {
-      return res.status(400).json({ success: false, message: 'Sem veículo associado' });
+      return res.status(400).json({ message: 'Motorista sem veículo associado.' });
     }
 
-    // insere respostas item a item
-    const insertItem = `
-      INSERT INTO checklist_respostas
-      (motorista_id, carro_id, item_id, ok, observacao)
-      VALUES ($1,$2,$3,$4,$5)
-    `;
-    for (const r of respostas) {
-      await pool.query(insertItem, [
-        motoristaId,
-        carroId,
-        r.item_id,
-        r.ok,
-        r.observacao || null
-      ]);
-    }
-
-    // insere observação extra
-    await pool.query(
-      `INSERT INTO checklist_extras
-        (motorista_id, carro_id, observacoes)
-       VALUES ($1,$2,$3)`,
-      [motoristaId, carroId, observacoes_extras || null]
+    // 3) Já enviou hoje?
+    const jaRes = await client.query(
+      `SELECT 1
+         FROM checklist_envios
+        WHERE motorista_id = $1
+          AND enviado_em::date = $2
+        LIMIT 1`,
+      [motoristaId, agora.toISODate()]
     );
+    if (jaRes.rowCount) {
+      return res.status(409).json({ message: 'Checklist já enviado hoje.' });
+    }
 
-    return res.json({ success: true, message: 'Checklist enviado com sucesso' });
+    // 4) Corpo da requisição
+    const respostas = Array.isArray(req.body.respostas) ? req.body.respostas : [];
+    const observacoesExtras = (req.body.observacoesExtras ?? req.body.observacoes_extras ?? null) || null;
+
+    await client.query('BEGIN');
+
+    // 5) Cria envio
+    const envioRes = await client.query(
+      `INSERT INTO checklist_envios (motorista_id, carro_id, enviado_em)
+       VALUES ($1,$2, NOW())
+       RETURNING id`,
+      [motoristaId, carroId]
+    );
+    const envioId = envioRes.rows[0].id;
+
+    // 6) Insere respostas vinculadas ao envio
+    if (respostas.length > 0) {
+      const values = [];
+      const params = [];
+      let p = 1;
+      for (const r of respostas) {
+        values.push(`($${p++}, $${p++}, $${p++}, $${p++})`);
+        params.push(envioId, r.item_id, !!r.ok, r.observacao || null);
+      }
+      await client.query(
+        `INSERT INTO checklist_respostas (envio_id, item_id, ok, observacao)
+         VALUES ${values.join(',')}`,
+        params
+      );
+    }
+
+    // 7) Observações extras (se tiver tabela própria)
+    if (observacoesExtras) {
+      await client.query(
+        `INSERT INTO checklist_extras (envio_id, motorista_id, carro_id, observacoes)
+         VALUES ($1,$2,$3,$4)`,
+        [envioId, motoristaId, carroId, observacoesExtras]
+      );
+    }
+
+    await client.query('COMMIT');
+    return res.json({ success: true, envioId });
+
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('Erro ao enviar checklist:', err);
-    return res.status(500).json({ success: false, message: 'Erro interno' });
+    return res.status(500).json({ message: 'Erro interno' });
+  } finally {
+    client.release();
   }
 });
 
-// [GET] Listar todos os checklists com filtro por data, motorista, veículo e fornecedor
-// server.js
-// Ajustes em server.js:
 
 // [GET] Listar todos os checklists
 app.get("/api/checklists", async (req, res) => {
