@@ -12554,6 +12554,28 @@ app.delete("/api/frota_administrativa/:id", async (req, res) => {
   }
 });
 
+// GET /api/geo/directions?origin=lat,lng&destination=lat,lng&waypoints=...&departure_time=now&traffic_model=best_guess&mode=driving
+app.get('/api/geo/directions', async (req, res) => {
+  try {
+    const params = new URLSearchParams({
+      origin: req.query.origin,
+      destination: req.query.destination,
+      key: process.env.GOOGLE_MAPS_API_KEY, // não exponha no cliente
+      departure_time: req.query.departure_time || 'now',
+      traffic_model: req.query.traffic_model || 'best_guess',
+      mode: req.query.mode || 'driving',
+    });
+    if (req.query.waypoints) params.set('waypoints', req.query.waypoints);
+
+    const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
+    const r = await fetch(url);
+    const json = await r.json();
+    res.json(json);
+  } catch (e) {
+    console.error('Directions proxy error:', e);
+    res.status(500).json({ status: 'ERROR', message: 'Proxy failed' });
+  }
+});
 
 app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
   try {
