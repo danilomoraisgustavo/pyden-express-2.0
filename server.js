@@ -12598,18 +12598,21 @@ app.get('/api/geo/directions', async (req, res) => {
   }
 });
 
-// [GET] Itens de checklist para motoristas administrativos
 // GET /api/admin-motoristas/checklist-itens
 app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
 
-    // Descobre o veículo do motorista e seu tipo
-    // Ajuste nomes de tabela/colunas se forem diferentes aí.
+    // 🚗 pega veículo do motorista na frota_administrativa
+    // Se na sua tabela de motoristas a coluna se chamar 'frota_id' (e não 'carro_id'),
+    // troque m.carro_id por m.frota_id na linha do JOIN, ok?
     const veic = await pool.query(`
-      SELECT c.id AS carro_id, c.tipo AS tipo_veiculo, c.modelo AS veiculo_modelo
+      SELECT f.id AS carro_id,
+             f.tipo_veiculo,
+             f.marca,
+             f.placa
       FROM motoristas_administrativos m
-      JOIN carros c ON c.id = m.carro_id
+      JOIN frota_administrativa f ON f.id = m.carro_id
       WHERE m.id = $1
       LIMIT 1
     `, [motoristaId]);
@@ -12618,29 +12621,35 @@ app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, 
       return res.status(400).json({ message: 'Motorista sem veículo associado.' });
     }
 
-    const { carro_id, tipo_veiculo, veiculo_modelo } = veic.rows[0];
+    const { carro_id, tipo_veiculo, marca, placa } = veic.rows[0];
 
-    // Filtra itens por tipo do veículo (ou "todos"), respeitando ativo/ordem
-    // Se sua tabela usa outro esquema (array de tipos ou tabela ponte),
-    // me avisa que ajusto a query certinho.
+    // 🔎 Filtra itens pelo tipo do veículo (ou "todos")
+    // Ajuste a coluna de tipagem em 'checklist_itens' caso seja diferente.
+    // Aqui estou assumindo que existe 'checklist_itens.tipo' com valores como
+    // 'caminhonete', 'caminhao', 'sedan', 'hatch', 'van', 'microonibus', 'onibus' ou 'todos'.
     const itens = await pool.query(`
       SELECT id, descricao
       FROM checklist_itens
       WHERE (ativo IS TRUE OR ativo IS NULL)
-        AND (tipo = $1 OR tipo = 'todos')
+        AND (
+          LOWER(tipo) = LOWER($1)
+          OR LOWER(tipo) = 'todos'
+        )
       ORDER BY COALESCE(ordem, 9999), id
     `, [tipo_veiculo]);
 
     return res.json({
-      tipoVeiculo: tipo_veiculo,     // ex.: "caminhonete"
-      veiculoModelo: veiculo_modelo, // opcional, pra UI
-      itens: itens.rows,             // [{id, descricao}]
+      tipoVeiculo: tipo_veiculo,
+      veiculoModelo: marca,
+      placa,
+      itens: itens.rows,
     });
   } catch (err) {
     console.error('Erro ao buscar checklist-itens:', err);
     return res.status(500).json({ message: 'Erro ao buscar itens' });
   }
 });
+
 
 // POST → grava checklist (único handler oficial)
 app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
