@@ -12598,44 +12598,53 @@ app.get('/api/geo/directions', async (req, res) => {
   }
 });
 
-// utils/tipoVeiculo.js
+/* ---------- Normalizador de tipo de veículo (coloque antes da rota) ---------- */
 function normalizaTipoVeiculo(raw) {
   if (!raw) return 'todos';
-  const s = String(raw).toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
-  // exemplos de mapeamento
-  if (['sedan', 'seda', 'sedã'].some(k => s.includes(k))) return 'sedan';
-  if (['hatch'].some(k => s.includes(k))) return 'hatch';
-  if (['pickup', 'pick-up', 'pick up'].some(k => s.includes(k))) return 'pickup';
-  if (['caminhonete', 'camionete'].some(k => s.includes(k))) return 'caminhonete';
-  if (['caminhao'].some(k => s.includes(k))) return 'caminhao';
-  if (['van'].some(k => s.includes(k))) return 'van';
-  if (['microonibus', 'micro onibus', 'micro-onibus'].some(k => s.includes(k))) return 'microonibus';
-  if (['onibus', 'ônibus', 'omnibus'].some(k => s.includes(k))) return 'onibus';
+  const s = String(raw)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .trim();
+
+  if (s.includes('sedan') || s.includes('seda') || s.includes('seda ')) return 'sedan';
+  if (s.includes('hatch')) return 'hatch';
+  if (s.includes('pick-up') || s.includes('pickup') || s.includes('pick up')) return 'pickup';
+  if (s.includes('caminhonete') || s.includes('camionete')) return 'caminhonete';
+  if (s.includes('caminhao')) return 'caminhao';
+  if (s.includes('van')) return 'van';
+  if (s.includes('microonibus') || s.includes('micro onibus') || s.includes('micro-onibus')) return 'microonibus';
+  if (s.includes('onibus')) return 'onibus';
+
   return s; // fallback
 }
 
-// GET /api/admin-motoristas/checklist-itens
+/* ---------- GET /api/admin-motoristas/checklist-itens ---------- */
 app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
 
-    // veículo do motorista
-    const veic = await pool.query(`
+    // Descobre o tipo do veículo do motorista
+    const veic = await pool.query(
+      `
       SELECT f.id AS carro_id, f.tipo_veiculo
       FROM motoristas_administrativos m
       JOIN frota_administrativa f ON f.id = m.carro_id
       WHERE m.id = $1
       LIMIT 1
-    `, [motoristaId]);
+      `,
+      [motoristaId]
+    );
+
     if (!veic.rowCount) {
       return res.status(400).json({ message: 'Motorista sem veículo associado.' });
     }
 
-    const { normalizaTipoVeiculo } = require('./utils/tipoVeiculo');
     const tipoCanonico = normalizaTipoVeiculo(veic.rows[0].tipo_veiculo);
 
-    // Busca todos aplicáveis
-    const { rows } = await pool.query(`
+    // Busca itens aplicáveis ao tipo, ou 'todos'
+    const { rows } = await pool.query(
+      `
       SELECT id,
              descricao,
              COALESCE(ordem, 9999) AS ord
@@ -12646,9 +12655,11 @@ app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, 
           OR $1 = ANY(aplica_tipos)
         )
       ORDER BY COALESCE(ordem, 9999), id
-    `, [tipoCanonico]);
+      `,
+      [tipoCanonico]
+    );
 
-    // Dedup por descrição normalizada (lower + trim)
+    // Dedup por descrição normalizada (evita "Freio ABS" repetido)
     const seen = new Set();
     const dedup = [];
     for (const r of rows) {
@@ -12664,6 +12675,7 @@ app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, 
     return res.status(500).json({ message: 'Erro ao buscar itens' });
   }
 });
+
 
 
 // POST → grava checklist (único handler oficial)
