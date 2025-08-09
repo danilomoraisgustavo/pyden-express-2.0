@@ -12619,60 +12619,54 @@ function normalizaTipoVeiculo(raw) {
   return s; // fallback
 }
 
-/* ---------- GET /api/admin-motoristas/checklist-itens ---------- */
+function normalizaDescricao(desc) {
+  return String(desc || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '') // tira acentos
+    .replace(/\b(conferir|verificar|testar|checar)\b/g, '') // remove verbos
+    .replace(/\s+/g, ' ') // espaço simples
+    .trim();
+}
+
 app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
 
-    // Descobre o tipo do veículo do motorista
-    const veic = await pool.query(
-      `
-      SELECT f.id AS carro_id, f.tipo_veiculo
+    const veic = await pool.query(`
+      SELECT f.tipo_veiculo
       FROM motoristas_administrativos m
       JOIN frota_administrativa f ON f.id = m.carro_id
       WHERE m.id = $1
       LIMIT 1
-      `,
-      [motoristaId]
-    );
-
+    `, [motoristaId]);
     if (!veic.rowCount) {
       return res.status(400).json({ message: 'Motorista sem veículo associado.' });
     }
 
     const tipoCanonico = normalizaTipoVeiculo(veic.rows[0].tipo_veiculo);
 
-    // Busca itens aplicáveis ao tipo, ou 'todos'
-    const { rows } = await pool.query(
-      `
-      SELECT id,
-             descricao,
-             COALESCE(ordem, 9999) AS ord
+    const { rows } = await pool.query(`
+      SELECT id, descricao
       FROM checklist_itens
       WHERE (ativo IS TRUE OR ativo IS NULL)
-        AND (
-          'todos' = ANY(aplica_tipos)
-          OR $1 = ANY(aplica_tipos)
-        )
+        AND ('todos' = ANY(aplica_tipos) OR $1 = ANY(aplica_tipos))
       ORDER BY COALESCE(ordem, 9999), id
-      `,
-      [tipoCanonico]
-    );
+    `, [tipoCanonico]);
 
-    // Dedup por descrição normalizada (evita "Freio ABS" repetido)
     const seen = new Set();
     const dedup = [];
+
     for (const r of rows) {
-      const key = String(r.descricao || '').trim().toLowerCase();
+      const key = normalizaDescricao(r.descricao);
       if (seen.has(key)) continue;
       seen.add(key);
-      dedup.push({ id: r.id, descricao: r.descricao });
+      dedup.push(r);
     }
 
     return res.json(dedup);
   } catch (err) {
     console.error('Erro ao buscar checklist-itens:', err);
-    return res.status(500).json({ message: 'Erro ao buscar itens' });
+    return res.status(500).json({ message: 'Erro interno' });
   }
 });
 
