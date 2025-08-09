@@ -12275,67 +12275,91 @@ app.post('/api/admin-motoristas/login', async (req, res) => {
 // Rota protegida de exemplo: detalhes do perfil do motorista administrativo logado
 
 // [GET] Perfil do motorista administrativo com dados do veículo
+// server.js (adicione perto dos outros endpoints autenticados)
 app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
   try {
-    const id = req.user.id;
+    const motoristaId = req.user.id;
 
-    // 1) Busca dados do motorista
-    const motoristaQ = `
-      SELECT 
+    // Dados do motorista (ajuste os nomes das colunas conforme seu schema)
+    const mSql = `
+      SELECT
         m.id,
-        m.nome_motorista,
+        m.nome           AS nome_motorista,
         m.cpf,
         m.rg,
-        to_char(m.data_nascimento, 'YYYY-MM-DD')       AS data_nascimento,
+        m.data_nascimento,
         m.telefone,
         m.email,
         m.endereco,
         m.cidade,
         m.estado,
         m.cep,
+        -- se tiver essas colunas na tabela:
         m.numero_cnh,
-        to_char(m.validade_cnh, 'YYYY-MM-DD')          AS validade_cnh,
+        m.validade_cnh,
         m.cnh_pdf,
         m.carro_id
       FROM motoristas_administrativos m
       WHERE m.id = $1
       LIMIT 1
     `;
-    const motoRes = await pool.query(motoristaQ, [id]);
-    if (motoRes.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Motorista não encontrado' });
+    const mRes = await pool.query(mSql, [motoristaId]);
+    if (!mRes.rowCount) {
+      return res.status(404).json({ message: 'Motorista não encontrado' });
     }
-    const motorista = motoRes.rows[0];
+    const mot = mRes.rows[0];
 
-    // 2) Busca veículo associado (usando carro_id), agora com alias tipo_veiculo → modelo
+    // Veículo associado (tabela correta: frota_administrativa)
     let carro = null;
-    if (motorista.carro_id) {
-      const carroQ = `
+    if (mot.carro_id) {
+      const cSql = `
         SELECT
-          id,
-          tipo_veiculo   AS modelo,
-          placa,
-          documento      AS documento_url
-        FROM frota_administrativa
-        WHERE id = $1
+          f.id,
+          f.placa,
+          f.tipo_veiculo,
+          f.capacidade,
+          f.cor_veiculo,
+          f.ano,
+          f.marca,
+          f.documento         AS documento_url,
+          f.adaptado,
+          f.elevador,
+          f.ar_condicionado,
+          f.gps,
+          f.cinto_seguranca
+        FROM frota_administrativa f
+        WHERE f.id = $1
         LIMIT 1
       `;
-      const carroRes = await pool.query(carroQ, [motorista.carro_id]);
-      if (carroRes.rows.length > 0) {
-        carro = carroRes.rows[0];
-      }
+      const cRes = await pool.query(cSql, [mot.carro_id]);
+      carro = cRes.rowCount ? cRes.rows[0] : null;
     }
 
     return res.json({
-      success: true,
-      motorista,
-      carro  // null se não houver veículo
+      motorista: {
+        id: mot.id,
+        nome_motorista: mot.nome_motorista,
+        cpf: mot.cpf,
+        rg: mot.rg,
+        data_nascimento: mot.data_nascimento,
+        telefone: mot.telefone,
+        email: mot.email,
+        endereco: mot.endereco,
+        cidade: mot.cidade,
+        estado: mot.estado,
+        cep: mot.cep,
+        numero_cnh: mot.numero_cnh ?? null,
+        validade_cnh: mot.validade_cnh ?? null,
+        cnh_pdf: mot.cnh_pdf ?? null,
+      },
+      carro, // pode ser null
     });
-  } catch (error) {
-    console.error('Erro ao obter perfil:', error);
-    return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+  } catch (err) {
+    console.error('Erro ao carregar perfil:', err);
+    return res.status(500).json({ message: 'Erro interno' });
   }
 });
+
 
 
 // =============================================================================
