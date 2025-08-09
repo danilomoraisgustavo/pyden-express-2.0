@@ -12598,21 +12598,35 @@ app.get('/api/geo/directions', async (req, res) => {
   }
 });
 
+// utils/tipoVeiculo.js
+function normalizaTipoVeiculo(raw) {
+  if (!raw) return 'todos';
+  const s = String(raw).toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
+  // exemplos de mapeamento
+  if (['sedan', 'seda', 'sedã'].some(k => s.includes(k))) return 'sedan';
+  if (['hatch'].some(k => s.includes(k))) return 'hatch';
+  if (['pickup', 'pick-up', 'pick up'].some(k => s.includes(k))) return 'pickup';
+  if (['caminhonete', 'camionete'].some(k => s.includes(k))) return 'caminhonete';
+  if (['caminhao'].some(k => s.includes(k))) return 'caminhao';
+  if (['van'].some(k => s.includes(k))) return 'van';
+  if (['microonibus', 'micro onibus', 'micro-onibus'].some(k => s.includes(k))) return 'microonibus';
+  if (['onibus', 'ônibus', 'omnibus'].some(k => s.includes(k))) return 'onibus';
+  return s; // fallback
+}
+
 // GET /api/admin-motoristas/checklist-itens
 app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
 
-    // 🚗 pega veículo do motorista na frota_administrativa
-    // Se na sua tabela de motoristas a coluna se chamar 'frota_id' (e não 'carro_id'),
-    // troque m.carro_id por m.frota_id na linha do JOIN, ok?
+    // pega veículo do motorista
     const veic = await pool.query(`
-      SELECT f.id AS carro_id,
+      SELECT f.id   AS carro_id,
              f.tipo_veiculo,
              f.marca,
              f.placa
       FROM motoristas_administrativos m
-      JOIN frota_administrativa f ON f.id = m.carro_id
+      JOIN frota_administrativa f ON f.id = m.carro_id   -- troque para m.frota_id se for o seu caso
       WHERE m.id = $1
       LIMIT 1
     `, [motoristaId]);
@@ -12621,35 +12635,32 @@ app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, 
       return res.status(400).json({ message: 'Motorista sem veículo associado.' });
     }
 
-    const { carro_id, tipo_veiculo, marca, placa } = veic.rows[0];
+    const { tipo_veiculo, marca, placa } = veic.rows[0];
+    const tipoCanonico = normalizaTipoVeiculo(tipo_veiculo); // ex.: "caminhonete"
 
-    // 🔎 Filtra itens pelo tipo do veículo (ou "todos")
-    // Ajuste a coluna de tipagem em 'checklist_itens' caso seja diferente.
-    // Aqui estou assumindo que existe 'checklist_itens.tipo' com valores como
-    // 'caminhonete', 'caminhao', 'sedan', 'hatch', 'van', 'microonibus', 'onibus' ou 'todos'.
-    const itens = await pool.query(`
+    // filtra itens: 'todos' ou que contém o tipo na array aplica_tipos
+    const { rows: itens } = await pool.query(`
       SELECT id, descricao
       FROM checklist_itens
       WHERE (ativo IS TRUE OR ativo IS NULL)
         AND (
-          LOWER(tipo) = LOWER($1)
-          OR LOWER(tipo) = 'todos'
+          'todos' = ANY(aplica_tipos)
+          OR $1 = ANY(aplica_tipos)
         )
       ORDER BY COALESCE(ordem, 9999), id
-    `, [tipo_veiculo]);
+    `, [tipoCanonico]);
 
     return res.json({
-      tipoVeiculo: tipo_veiculo,
+      tipoVeiculo: tipoCanonico,
       veiculoModelo: marca,
       placa,
-      itens: itens.rows,
+      itens,
     });
   } catch (err) {
     console.error('Erro ao buscar checklist-itens:', err);
     return res.status(500).json({ message: 'Erro ao buscar itens' });
   }
 });
-
 
 // POST → grava checklist (único handler oficial)
 app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
