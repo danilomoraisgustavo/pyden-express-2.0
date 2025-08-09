@@ -12682,20 +12682,43 @@ app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, 
 app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
   const client = await pool.connect();
   try {
-    const zone = 'America/Belem'; // ajuste se usa isso acima
-    const agora = DateTime.now().setZone(zone);
-    const allowedDays = [1]; // 1 = segunda (ou [1,2,3,4,5] p/ seg-sex)
+    // ===== Config =====
+    const zone = process.env.TZ_ZONE || 'America/Belem';
 
+    // 1=Seg, 2=Ter, ... 7=Dom  (ex.: "1" só segunda | "1,2,3,4,5" seg–sex)
+    const allowedDays = (process.env.CHECKLIST_DIAS || '1')
+      .split(',')
+      .map(s => parseInt(s.trim(), 10))
+      .filter(n => n >= 1 && n <= 7);
+
+    // Janela de horário (inclusive)
+    const startHour = parseInt(process.env.CHECKLIST_INICIO || '0', 10);   // 0..23
+    const endHour = parseInt(process.env.CHECKLIST_FIM || '23', 10);  // 0..23
+
+    // ===== Contexto atual =====
+    const agora = DateTime.now().setZone(zone);
+    const weekday = agora.weekday;  // 1..7
+    const hour = agora.hour;     // 0..23
     const motoristaId = req.user.id;
 
-    // 1) Dia permitido?
-    if (!allowedDays.includes(agora.weekday)) {
-      return res.status(403).json({ message: 'Checklist liberado apenas na segunda-feira.' });
+    // ===== Regras de liberação =====
+    const diaPermitido = allowedDays.includes(weekday);
+    const horaPermitida = hour >= startHour && hour <= endHour;
+
+    if (!diaPermitido || !horaPermitida) {
+      const nomes = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
+      const diasTxt = allowedDays.map(d => nomes[d - 1]).join(', ');
+      return res.status(403).json({
+        message: `Checklist liberado apenas em: ${diasTxt} entre ${String(startHour).padStart(2, '0')}:00 e ${String(endHour).padStart(2, '0')}:59.`
+      });
     }
 
-    // 2) Motorista tem veículo?
+    // ===== Checa veículo do motorista =====
     const carroRes = await client.query(
-      'SELECT carro_id FROM motoristas_administrativos WHERE id = $1',
+      `SELECT carro_id
+         FROM motoristas_administrativos
+        WHERE id = $1
+        LIMIT 1`,
       [motoristaId]
     );
     const carroId = carroRes.rows[0]?.carro_id;
@@ -12703,7 +12726,7 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
       return res.status(400).json({ message: 'Motorista sem veículo associado.' });
     }
 
-    // 3) Já enviou hoje?
+    // ===== Garante 1 envio por dia =====
     const jaRes = await client.query(
       `SELECT 1
          FROM checklist_envios
@@ -12716,13 +12739,22 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
       return res.status(409).json({ message: 'Checklist já enviado hoje.' });
     }
 
-    // 4) Corpo da requisição
+    // ===== Corpo =====
     const respostas = Array.isArray(req.body.respostas) ? req.body.respostas : [];
-    const observacoesExtras = (req.body.observacoesExtras ?? req.body.observacoes_extras ?? null) || null;
+    const observacoesExtras =
+      (req.body.observacoesExtras ?? req.body.observacoes_extras ?? null) || null;
 
+    // (Opcional) Validação básica das respostas
+    for (const r of respostas) {
+      if (typeof r.item_id !== 'number') {
+        return res.status(400).json({ message: 'item_id inválido em respostas.' });
+      }
+    }
+
+    // ===== Transação =====
     await client.query('BEGIN');
 
-    // 5) Cria envio
+    // 1) Cria envio
     const envioRes = await client.query(
       `INSERT INTO checklist_envios (motorista_id, carro_id, enviado_em)
        VALUES ($1,$2, NOW())
@@ -12731,15 +12763,17 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
     );
     const envioId = envioRes.rows[0].id;
 
-    // 6) Insere respostas vinculadas ao envio
+    // 2) Insere respostas (se houver)
     if (respostas.length > 0) {
       const values = [];
       const params = [];
       let p = 1;
+
       for (const r of respostas) {
         values.push(`($${p++}, $${p++}, $${p++}, $${p++})`);
-        params.push(envioId, r.item_id, !!r.ok, r.observacao || null);
+        params.push(envioId, r.item_id, !!r.ok, (r.observacao || null));
       }
+
       await client.query(
         `INSERT INTO checklist_respostas (envio_id, item_id, ok, observacao)
          VALUES ${values.join(',')}`,
@@ -12747,7 +12781,7 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
       );
     }
 
-    // 7) Observações extras (se tiver tabela própria)
+    // 3) Observações extras (se existir tabela própria)
     if (observacoesExtras) {
       await client.query(
         `INSERT INTO checklist_extras (envio_id, motorista_id, carro_id, observacoes)
@@ -12767,7 +12801,6 @@ app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) 
     client.release();
   }
 });
-
 
 // [GET] Listar todos os checklists
 app.get("/api/checklists", async (req, res) => {
