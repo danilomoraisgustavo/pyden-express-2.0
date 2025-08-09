@@ -12619,28 +12619,26 @@ app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, 
   try {
     const motoristaId = req.user.id;
 
-    // pega veículo do motorista
+    // veículo do motorista
     const veic = await pool.query(`
-      SELECT f.id   AS carro_id,
-             f.tipo_veiculo,
-             f.marca,
-             f.placa
+      SELECT f.id AS carro_id, f.tipo_veiculo
       FROM motoristas_administrativos m
-      JOIN frota_administrativa f ON f.id = m.carro_id   -- troque para m.frota_id se for o seu caso
+      JOIN frota_administrativa f ON f.id = m.carro_id
       WHERE m.id = $1
       LIMIT 1
     `, [motoristaId]);
-
     if (!veic.rowCount) {
       return res.status(400).json({ message: 'Motorista sem veículo associado.' });
     }
 
-    const { tipo_veiculo, marca, placa } = veic.rows[0];
-    const tipoCanonico = normalizaTipoVeiculo(tipo_veiculo); // ex.: "caminhonete"
+    const { normalizaTipoVeiculo } = require('./utils/tipoVeiculo');
+    const tipoCanonico = normalizaTipoVeiculo(veic.rows[0].tipo_veiculo);
 
-    // filtra itens: 'todos' ou que contém o tipo na array aplica_tipos
-    const { rows: itens } = await pool.query(`
-      SELECT id, descricao
+    // Busca todos aplicáveis
+    const { rows } = await pool.query(`
+      SELECT id,
+             descricao,
+             COALESCE(ordem, 9999) AS ord
       FROM checklist_itens
       WHERE (ativo IS TRUE OR ativo IS NULL)
         AND (
@@ -12650,17 +12648,23 @@ app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, 
       ORDER BY COALESCE(ordem, 9999), id
     `, [tipoCanonico]);
 
-    return res.json({
-      tipoVeiculo: tipoCanonico,
-      veiculoModelo: marca,
-      placa,
-      itens,
-    });
+    // Dedup por descrição normalizada (lower + trim)
+    const seen = new Set();
+    const dedup = [];
+    for (const r of rows) {
+      const key = String(r.descricao || '').trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      dedup.push({ id: r.id, descricao: r.descricao });
+    }
+
+    return res.json(dedup);
   } catch (err) {
     console.error('Erro ao buscar checklist-itens:', err);
     return res.status(500).json({ message: 'Erro ao buscar itens' });
   }
 });
+
 
 // POST → grava checklist (único handler oficial)
 app.post('/api/admin-motoristas/checklist', verificarTokenJWT, async (req, res) => {
