@@ -12599,18 +12599,46 @@ app.get('/api/geo/directions', async (req, res) => {
 });
 
 // [GET] Itens de checklist para motoristas administrativos
-app.get("/api/admin-motoristas/checklist-itens", async (req, res) => {
+// GET /api/admin-motoristas/checklist-itens
+app.get('/api/admin-motoristas/checklist-itens', verificarTokenJWT, async (req, res) => {
   try {
-    const { rows } = await pool.query(`
+    const motoristaId = req.user.id;
+
+    // Descobre o veículo do motorista e seu tipo
+    // Ajuste nomes de tabela/colunas se forem diferentes aí.
+    const veic = await pool.query(`
+      SELECT c.id AS carro_id, c.tipo AS tipo_veiculo, c.modelo AS veiculo_modelo
+      FROM motoristas_administrativos m
+      JOIN carros c ON c.id = m.carro_id
+      WHERE m.id = $1
+      LIMIT 1
+    `, [motoristaId]);
+
+    if (!veic.rowCount) {
+      return res.status(400).json({ message: 'Motorista sem veículo associado.' });
+    }
+
+    const { carro_id, tipo_veiculo, veiculo_modelo } = veic.rows[0];
+
+    // Filtra itens por tipo do veículo (ou "todos"), respeitando ativo/ordem
+    // Se sua tabela usa outro esquema (array de tipos ou tabela ponte),
+    // me avisa que ajusto a query certinho.
+    const itens = await pool.query(`
       SELECT id, descricao
       FROM checklist_itens
       WHERE (ativo IS TRUE OR ativo IS NULL)
+        AND (tipo = $1 OR tipo = 'todos')
       ORDER BY COALESCE(ordem, 9999), id
-    `);
-    return res.json(rows);
+    `, [tipo_veiculo]);
+
+    return res.json({
+      tipoVeiculo: tipo_veiculo,     // ex.: "caminhonete"
+      veiculoModelo: veiculo_modelo, // opcional, pra UI
+      itens: itens.rows,             // [{id, descricao}]
+    });
   } catch (err) {
-    console.error("Erro ao buscar checklist-itens:", err);
-    return res.status(500).json({ message: "Erro ao buscar itens" });
+    console.error('Erro ao buscar checklist-itens:', err);
+    return res.status(500).json({ message: 'Erro ao buscar itens' });
   }
 });
 
