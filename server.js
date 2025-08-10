@@ -60,19 +60,20 @@ const pool = new Pool({
 
 app.use(
   session({
-    store: new pgSession({
-      pool: pool,
-      tableName: "session",
-    }),
+    store: new pgSession({ pool, tableName: "session" }),
     secret: process.env.SESSION_SECRET || "fallback-secret",
     resave: false,
     saveUninitialized: false,
+    rolling: true,                                  // ← renova a cada request
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // 24 horas
-      secure: false, // Em produção, use true se for HTTPS
+      maxAge: 365 * 24 * 60 * 60 * 1000,            // ← 365 dias
+      secure: false,                                 // true se atrás de HTTPS
+      sameSite: "lax",
+      httpOnly: true,
     },
   })
 );
+
 
 function isAdmin(req, res, next) {
   if (!req.session || !req.session.userId) {
