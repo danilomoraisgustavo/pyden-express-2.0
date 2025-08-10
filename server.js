@@ -12274,92 +12274,98 @@ app.post('/api/admin-motoristas/login', async (req, res) => {
 
 // Rota protegida de exemplo: detalhes do perfil do motorista administrativo logado
 
-// [GET] Perfil do motorista administrativo com dados do veículo
-// server.js (adicione perto dos outros endpoints autenticados)
+// [GET] Perfil do motorista administrativo com dados do veículo (robusto p/ nova UI)
 app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
   try {
-    const motoristaId = req.user.id;
+    const id = req.user.id;
 
-    // Dados do motorista (ajuste os nomes das colunas conforme seu schema)
-    const mSql = `
+    // Busca motorista + (opcionalmente) o veículo associado em uma única query
+    const sql = `
       SELECT
         m.id,
-        m.nome           AS nome_motorista,
+        m.nome_motorista,
         m.cpf,
         m.rg,
-        m.data_nascimento,
+        to_char(m.data_nascimento, 'YYYY-MM-DD') AS data_nascimento,
         m.telefone,
         m.email,
         m.endereco,
         m.cidade,
         m.estado,
         m.cep,
-        -- se tiver essas colunas na tabela:
         m.numero_cnh,
-        m.validade_cnh,
+        to_char(m.validade_cnh, 'YYYY-MM-DD')    AS validade_cnh,
         m.cnh_pdf,
-        m.carro_id
+        m.carro_id,
+
+        -- Veículo (pode ser null)
+        f.id                                      AS carro__id,
+        f.tipo_veiculo                            AS carro__modelo,
+        f.placa                                   AS carro__placa,
+        f.documento                               AS carro__documento_url,
+        f.capacidade                              AS carro__capacidade,
+        f.cor_veiculo                             AS carro__cor_veiculo,
+        f.ano                                     AS carro__ano,
+        f.marca                                   AS carro__marca,
+        f.adaptado                                AS carro__adaptado,
+        f.elevador                                AS carro__elevador,
+        f.ar_condicionado                         AS carro__ar_condicionado,
+        f.gps                                     AS carro__gps,
+        f.cinto_seguranca                         AS carro__cinto_seguranca
       FROM motoristas_administrativos m
+      LEFT JOIN frota_administrativa f
+             ON f.id = m.carro_id
       WHERE m.id = $1
       LIMIT 1
     `;
-    const mRes = await pool.query(mSql, [motoristaId]);
-    if (!mRes.rowCount) {
-      return res.status(404).json({ message: 'Motorista não encontrado' });
-    }
-    const mot = mRes.rows[0];
 
-    // Veículo associado (tabela correta: frota_administrativa)
-    let carro = null;
-    if (mot.carro_id) {
-      const cSql = `
-        SELECT
-          f.id,
-          f.placa,
-          f.tipo_veiculo,
-          f.capacidade,
-          f.cor_veiculo,
-          f.ano,
-          f.marca,
-          f.documento         AS documento_url,
-          f.adaptado,
-          f.elevador,
-          f.ar_condicionado,
-          f.gps,
-          f.cinto_seguranca
-        FROM frota_administrativa f
-        WHERE f.id = $1
-        LIMIT 1
-      `;
-      const cRes = await pool.query(cSql, [mot.carro_id]);
-      carro = cRes.rowCount ? cRes.rows[0] : null;
+    const { rows } = await pool.query(sql, [id]);
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: 'Motorista não encontrado' });
     }
+    const r = rows[0];
 
-    return res.json({
-      motorista: {
-        id: mot.id,
-        nome_motorista: mot.nome_motorista,
-        cpf: mot.cpf,
-        rg: mot.rg,
-        data_nascimento: mot.data_nascimento,
-        telefone: mot.telefone,
-        email: mot.email,
-        endereco: mot.endereco,
-        cidade: mot.cidade,
-        estado: mot.estado,
-        cep: mot.cep,
-        numero_cnh: mot.numero_cnh ?? null,
-        validade_cnh: mot.validade_cnh ?? null,
-        cnh_pdf: mot.cnh_pdf ?? null,
-      },
-      carro, // pode ser null
-    });
-  } catch (err) {
-    console.error('Erro ao carregar perfil:', err);
-    return res.status(500).json({ message: 'Erro interno' });
+    const motorista = {
+      id: r.id,
+      nome_motorista: r.nome_motorista,
+      cpf: r.cpf,
+      rg: r.rg,
+      data_nascimento: r.data_nascimento,
+      telefone: r.telefone,
+      email: r.email,
+      endereco: r.endereco,
+      cidade: r.cidade,
+      estado: r.estado,
+      cep: r.cep,
+      numero_cnh: r.numero_cnh,
+      validade_cnh: r.validade_cnh,
+      cnh_pdf: r.cnh_pdf,
+      carro_id: r.carro_id ?? null,
+    };
+
+    const temCarro = !!r.carro__id;
+    const carro = temCarro ? {
+      id: r.carro__id,
+      modelo: r.carro__modelo,            // a UI usa "modelo" no subtítulo
+      placa: r.carro__placa,
+      documento_url: r.carro__documento_url, // a UI já monta URL completa se vier relativo
+      capacidade: r.carro__capacidade,
+      cor_veiculo: r.carro__cor_veiculo,
+      ano: r.carro__ano,
+      marca: r.carro__marca,
+      adaptado: r.carro__adaptado,
+      elevador: r.carro__elevador,
+      ar_condicionado: r.carro__ar_condicionado,
+      gps: r.carro__gps,
+      cinto_seguranca: r.carro__cinto_seguranca,
+    } : null;
+
+    return res.json({ success: true, motorista, carro });
+  } catch (error) {
+    console.error('Erro ao obter perfil:', error);
+    return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
   }
 });
-
 
 
 // =============================================================================
