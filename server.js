@@ -107,46 +107,6 @@ function isAdmin(req, res, next) {
       return res.status(500).send("Erro interno do servidor.");
     });
 }
-const httpServer = http.createServer(app);
-
-const { Server } = require('socket.io');
-const io = new Server(httpServer, {
-  cors: { origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }
-});
-
-io.use((socket, next) => {
-  // Ex: Authorization: Bearer <token>
-  const auth = socket.handshake.auth || {};
-  const token = auth.token || null;
-  if (!token) return next(); // deixe passar se quiser clientes “públicos”
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
-    socket.user = payload; // { id, nome, perfil, ... }
-    next();
-  } catch (e) {
-    // rejeita apenas se quiser bloquear quem não autentica
-    return next(new Error('invalid token'));
-  }
-});
-
-
-io.on('connection', (socket) => {
-  // rooms por perfil/fornecedor/motorista se quiser granularidade:
-  // if (socket.user?.perfil === 'motorista') socket.join(`motorista:${socket.user.id}`);
-  // Exemplo simples:
-  socket.emit('connected', { ok: true, ts: Date.now() });
-
-  socket.on('disconnect', () => { });
-});
-
-
-// Helpers para emitir eventos padronizados
-function emitNovaDemanda(viagem) {
-  io.emit('demanda:new', viagem);
-}
-function emitAtualizacaoDemandas() {
-  io.emit('demanda:update', { ts: Date.now() });
-}
 
 
 // MIDDLEWARE: isAuthenticated (protege rotas e páginas)
@@ -259,6 +219,49 @@ app.get("/logout", (req, res) => {
     return res.redirect("/");
   });
 });
+
+
+const httpServer = http.createServer(app);
+
+const { Server } = require('socket.io');
+const io = new Server(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }
+});
+
+io.use((socket, next) => {
+  // Ex: Authorization: Bearer <token>
+  const auth = socket.handshake.auth || {};
+  const token = auth.token || null;
+  if (!token) return next(); // deixe passar se quiser clientes “públicos”
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+    socket.user = payload; // { id, nome, perfil, ... }
+    next();
+  } catch (e) {
+    // rejeita apenas se quiser bloquear quem não autentica
+    return next(new Error('invalid token'));
+  }
+});
+
+
+io.on('connection', (socket) => {
+  // rooms por perfil/fornecedor/motorista se quiser granularidade:
+  // if (socket.user?.perfil === 'motorista') socket.join(`motorista:${socket.user.id}`);
+  // Exemplo simples:
+  socket.emit('connected', { ok: true, ts: Date.now() });
+
+  socket.on('disconnect', () => { });
+});
+
+
+// Helpers para emitir eventos padronizados
+function emitNovaDemanda(viagem) {
+  io.emit('demanda:new', viagem);
+}
+function emitAtualizacaoDemandas() {
+  io.emit('demanda:update', { ts: Date.now() });
+}
+
 
 // CONFIGURAÇÃO DE UPLOAD
 
