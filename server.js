@@ -13046,13 +13046,35 @@ app.delete("/api/checklists/:id", async (req, res) => {
 app.get('/api/viagens', async (req, res) => {
   try {
     const q = `
-      SELECT v.*,
-             to_char(v.data_saida, 'YYYY-MM-DD"T"HH24:MI') AS data_saida,
-             to_char(v.data_retorno, 'YYYY-MM-DD"T"HH24:MI') AS data_retorno,
-             m.nome_motorista AS motorista_nome
+      SELECT
+        v.id,
+        v.motorista_id,
+        v.tipo,
+        v.data_saida,
+        v.data_retorno,
+        v.vai_esperar,
+        v.origem,
+        v.origem_lat,
+        v.origem_lng,
+        v.destino,
+        v.destino_lat,
+        v.destino_lng,
+        COALESCE(v.pontos_intermediarios, '[]'::jsonb) AS pontos_intermediarios,
+        v.observacoes,
+        v.recorrencia,
+        v.status,
+        v.created_at,
+        v.updated_at,
+        -- strings ISO (sem sobrescrever os campos originais)
+        to_char(v.data_saida AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')   AS data_saida_iso,
+        CASE
+          WHEN v.data_retorno IS NULL THEN NULL
+          ELSE to_char(v.data_retorno AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+        END AS data_retorno_iso,
+        m.nome_motorista AS motorista_nome
       FROM viagens v
       JOIN motoristas_administrativos m ON m.id = v.motorista_id
-      ORDER BY v.data_saida DESC
+      ORDER BY v.data_saida DESC;
     `;
     const result = await pool.query(q);
     return res.json(result.rows);
@@ -13063,7 +13085,6 @@ app.get('/api/viagens', async (req, res) => {
 });
 
 
-// POST /api/viagens  → cria viagem e emite demanda:new
 app.post('/api/viagens', async (req, res) => {
   try {
     let {
@@ -13074,6 +13095,11 @@ app.post('/api/viagens', async (req, res) => {
     } = req.body;
 
     // Normalizações
+    const motoristaIdNum = Number(motorista_id);
+    if (!motoristaIdNum) {
+      return res.status(400).json({ success: false, message: 'motorista_id inválido.' });
+    }
+
     const boolVaiEsperar =
       vai_esperar === true ||
       vai_esperar === 'true' ||
@@ -13081,43 +13107,41 @@ app.post('/api/viagens', async (req, res) => {
       vai_esperar === '1';
 
     const saida = data_saida ? new Date(data_saida) : null;
+    if (!saida || isNaN(saida.getTime())) {
+      return res.status(400).json({ success: false, message: 'data_saida inválida.' });
+    }
     const retorno = data_retorno ? new Date(data_retorno) : null;
 
-    // pontos_intermediarios pode vir como string (form) ou objeto
+    // pontos_intermediarios: string JSON ou array
     let pontos = [];
     if (pontos_intermediarios) {
       try {
-        const raw =
-          typeof pontos_intermediarios === 'string'
-            ? JSON.parse(pontos_intermediarios)
-            : pontos_intermediarios;
+        const raw = (typeof pontos_intermediarios === 'string')
+          ? JSON.parse(pontos_intermediarios)
+          : pontos_intermediarios;
 
         if (Array.isArray(raw)) {
-          pontos = raw
-            .filter(Boolean)
-            .map((p) => {
-              // aceita {descricao, latitude, longitude} ou string simples
-              if (typeof p === 'string') {
-                return { descricao: p, latitude: 0, longitude: 0 };
-              }
-              return {
-                descricao: (p.descricao ?? '').toString(),
-                latitude: Number(p.latitude ?? 0) || 0,
-                longitude: Number(p.longitude ?? 0) || 0,
-              };
-            });
+          pontos = raw.filter(Boolean).map(p => {
+            if (typeof p === 'string') {
+              return { descricao: p, latitude: 0, longitude: 0 };
+            }
+            return {
+              descricao: (p.descricao ?? '').toString(),
+              latitude: Number(p.latitude ?? 0) || 0,
+              longitude: Number(p.longitude ?? 0) || 0
+            };
+          });
         }
       } catch (_) {
-        // se vier inválido, mantém vazio
         pontos = [];
       }
     }
 
     const vals = [
-      Number(motorista_id),
+      motoristaIdNum,
       (tipo ?? '').toString(),
-      saida,
-      retorno,
+      saida,                            // timestamptz
+      retorno,                          // timestamptz | null
       boolVaiEsperar,
       (origem ?? '').toString(),
       origem_lat != null ? Number(origem_lat) : null,
@@ -13125,7 +13149,7 @@ app.post('/api/viagens', async (req, res) => {
       (destino ?? '').toString(),
       destino_lat != null ? Number(destino_lat) : null,
       destino_lng != null ? Number(destino_lng) : null,
-      JSON.stringify(pontos),
+      JSON.stringify(pontos),           // será castado para ::jsonb
       observacoes ?? null,
       (recorrencia ?? 'unica').toString(),
     ];
@@ -13154,25 +13178,31 @@ app.post('/api/viagens', async (req, res) => {
     const result = await pool.query(q, vals);
     const v = result.rows[0];
 
-    // Payload no formato que o app (DemandasPage) espera (flat)
+    // Payload enxuto pro app (flat + arrays)
     const payload = {
       id: v.id,
       tipo: v.tipo,
-      data_saida: v.data_saida,            // ISO string do Postgres
-      data_retorno: v.data_retorno,        // pode ser null
-      origem: v.origem,                    // texto
-      origem_lat: v.origem_lat,            // number | null
-      origem_lng: v.origem_lng,            // number | null
-      destino: v.destino,                  // texto
+      data_saida: v.data_saida,              // ISO do Postgres
+      data_retorno: v.data_retorno,          // pode ser null
+      origem: v.origem,
+      origem_lat: v.origem_lat,
+      origem_lng: v.origem_lng,
+      destino: v.destino,
       destino_lat: v.destino_lat,
       destino_lng: v.destino_lng,
       pontos_intermediarios: v.pontos_intermediarios || [],
       observacoes: v.observacoes || '',
-      status: v.status,                    // 'Agendada'
+      status: v.status                       // 'Agendada'
     };
 
-    // Notifica todos os clientes conectados (incluindo o motorista alvo)
-    io.emit('demanda:new', payload);
+    // Notificação em tempo real (global e por motorista)
+    try {
+      io.emit('demanda:new', payload);
+      io.to(`motorista:${v.motorista_id}`).emit('demanda:new', payload);
+    } catch (notifyErr) {
+      // se io não existir ainda, só loga
+      console.warn('Socket emit falhou (ignorado):', notifyErr?.message || notifyErr);
+    }
 
     return res.status(201).json({ id: v.id, viagem: v });
   } catch (err) {
@@ -13182,6 +13212,7 @@ app.post('/api/viagens', async (req, res) => {
       .json({ success: false, message: 'Não foi possível agendar a viagem.' });
   }
 });
+
 
 
 // [PUT] Atualizar viagem
