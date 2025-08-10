@@ -13042,6 +13042,40 @@ app.delete("/api/checklists/:id", async (req, res) => {
     return res.status(500).json({ success: false, message: "Erro interno do servidor." });
   }
 });
+// Exemplo no server.js
+app.get('/api/app-version', async (req, res) => {
+  try {
+    const platform = (req.query.platform || '').toString().toLowerCase();
+
+    // Você pode ler do banco/config/ENV. Aqui, estático por plataforma:
+    let latestVersion = '1.1.0';
+    let latestBuild = 6;          // FLUTTER_BUILD_NUMBER
+    let minSupportedBuild = 6;    // força >= 6
+    let storeUrl = 'https://apps.apple.com/app/idXXXXXXXX'; // iOS por padrão
+    let notes = 'Correções, melhorias de estabilidade e nova tela de navegação.';
+
+    if (platform === 'android') {
+      storeUrl = 'https://play.google.com/store/apps/details?id=com.seu.pacote';
+      // se quiser, diferencie builds por plataforma
+      latestBuild = 6;
+      minSupportedBuild = 6;
+    }
+
+    // `force` opcional: força prompt mesmo se build >= minSupportedBuild
+    const force = false;
+
+    return res.json({
+      latest_version: latestVersion,
+      latest_build: latestBuild,
+      min_supported_build: minSupportedBuild,
+      force,
+      store_url: storeUrl,
+      notes,
+    });
+  } catch (e) {
+    return res.status(500).json({ message: 'Version endpoint error' });
+  }
+});
 
 app.get('/api/viagens', async (req, res) => {
   try {
