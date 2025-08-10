@@ -23,13 +23,6 @@ const { DateTime } = require('luxon');          // npm i luxon
 const zone = 'America/Belem';
 const http = require('http');
 
-const httpServer = http.createServer(app);
-
-const { Server } = require('socket.io');
-const io = new Server(httpServer, {
-  cors: { origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }
-});
-
 const {
   Document,
   Packer,
@@ -114,6 +107,12 @@ function isAdmin(req, res, next) {
       return res.status(500).send("Erro interno do servidor.");
     });
 }
+const httpServer = http.createServer(app);
+
+const { Server } = require('socket.io');
+const io = new Server(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }
+});
 
 io.use((socket, next) => {
   // Ex: Authorization: Bearer <token>
@@ -13476,5 +13475,5 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
-  console.log(`Server + Socket.IO no ar na porta ${PORT}`);
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
