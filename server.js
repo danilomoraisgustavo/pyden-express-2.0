@@ -21,7 +21,14 @@ const axios = require("axios");
 const jwt = require('jsonwebtoken');
 const { DateTime } = require('luxon');          // npm i luxon
 const zone = 'America/Belem';
+const http = require('http');
 
+const httpServer = http.createServer(app);
+
+const { Server } = require('socket.io');
+const io = new Server(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }
+});
 
 const {
   Document,
@@ -106,6 +113,40 @@ function isAdmin(req, res, next) {
       console.error("Erro ao verificar permissões de admin:", error);
       return res.status(500).send("Erro interno do servidor.");
     });
+}
+
+io.use((socket, next) => {
+  // Ex: Authorization: Bearer <token>
+  const auth = socket.handshake.auth || {};
+  const token = auth.token || null;
+  if (!token) return next(); // deixe passar se quiser clientes “públicos”
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+    socket.user = payload; // { id, nome, perfil, ... }
+    next();
+  } catch (e) {
+    // rejeita apenas se quiser bloquear quem não autentica
+    return next(new Error('invalid token'));
+  }
+});
+
+
+io.on('connection', (socket) => {
+  // rooms por perfil/fornecedor/motorista se quiser granularidade:
+  // if (socket.user?.perfil === 'motorista') socket.join(`motorista:${socket.user.id}`);
+  // Exemplo simples:
+  socket.emit('connected', { ok: true, ts: Date.now() });
+
+  socket.on('disconnect', () => { });
+});
+
+
+// Helpers para emitir eventos padronizados
+function emitNovaDemanda(viagem) {
+  io.emit('demanda:new', viagem);
+}
+function emitAtualizacaoDemandas() {
+  io.emit('demanda:update', { ts: Date.now() });
 }
 
 
@@ -12215,6 +12256,57 @@ app.post('/api/admin-motoristas/primeiro-acesso', async (req, res) => {
   }
 });
 
+// === MIDDLEWARE JWT para rotas mobile (Bearer <token>) ===
+function authBearer(req, res, next) {
+  try {
+    const h = req.headers.authorization || '';
+    const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+    if (!token) return res.status(401).json({ error: 'Token ausente' });
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+    req.jwt = payload; // payload que emitimos no login mobile
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'Token inválido' });
+  }
+}
+
+// === Login mobile (retorna JWT) ===
+// Você pode reaproveitar tua tabela `usuarios`. Ajuste regras de permissão a gosto.
+app.post('/api/mobile/login', async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    const q = `
+      SELECT id, senha, init, permissoes, nome_completo
+      FROM usuarios
+      WHERE email = $1
+      LIMIT 1`;
+    const { rows } = await pool.query(q, [email]);
+
+    if (!rows.length) return res.status(401).json({ success: false, message: 'Usuário não encontrado' });
+    const u = rows[0];
+    if (!u.init) return res.status(403).json({ success: false, message: 'Acesso não liberado' });
+
+    const ok = await bcrypt.compare(senha, u.senha);
+    if (!ok) return res.status(401).json({ success: false, message: 'Senha incorreta' });
+
+    // Exemplo de checagem: precisa ter permissão de motorista OU administrador
+    const perms = (u.permissoes || '').toLowerCase();
+    const perfil = perms.includes('motorista') ? 'motorista' :
+      (perms.includes('admin') || perms.includes('gestor')) ? 'admin' : 'user';
+
+    const token = jwt.sign(
+      { id: u.id, nome: u.nome_completo, perfil },
+      process.env.JWT_SECRET || 'dev-secret',
+      { expiresIn: '7d' }
+    );
+
+    return res.json({ success: true, token });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ success: false, message: 'Erro no login mobile' });
+  }
+});
+
 app.post('/api/admin-motoristas/login', async (req, res) => {
   try {
     const cpfRaw = req.body.cpf || '';
@@ -12969,53 +13061,125 @@ app.get('/api/viagens', async (req, res) => {
 });
 
 
+// POST /api/viagens  → cria viagem e emite demanda:new
 app.post('/api/viagens', async (req, res) => {
   try {
-    const {
+    let {
       motorista_id, tipo, data_saida, data_retorno,
       vai_esperar, origem, origem_lat, origem_lng,
       destino, destino_lat, destino_lng,
       pontos_intermediarios, observacoes, recorrencia
     } = req.body;
 
+    // Normalizações
+    const boolVaiEsperar =
+      vai_esperar === true ||
+      vai_esperar === 'true' ||
+      vai_esperar === 'on' ||
+      vai_esperar === '1';
+
+    const saida = data_saida ? new Date(data_saida) : null;
+    const retorno = data_retorno ? new Date(data_retorno) : null;
+
+    // pontos_intermediarios pode vir como string (form) ou objeto
+    let pontos = [];
+    if (pontos_intermediarios) {
+      try {
+        const raw =
+          typeof pontos_intermediarios === 'string'
+            ? JSON.parse(pontos_intermediarios)
+            : pontos_intermediarios;
+
+        if (Array.isArray(raw)) {
+          pontos = raw
+            .filter(Boolean)
+            .map((p) => {
+              // aceita {descricao, latitude, longitude} ou string simples
+              if (typeof p === 'string') {
+                return { descricao: p, latitude: 0, longitude: 0 };
+              }
+              return {
+                descricao: (p.descricao ?? '').toString(),
+                latitude: Number(p.latitude ?? 0) || 0,
+                longitude: Number(p.longitude ?? 0) || 0,
+              };
+            });
+        }
+      } catch (_) {
+        // se vier inválido, mantém vazio
+        pontos = [];
+      }
+    }
+
+    const vals = [
+      Number(motorista_id),
+      (tipo ?? '').toString(),
+      saida,
+      retorno,
+      boolVaiEsperar,
+      (origem ?? '').toString(),
+      origem_lat != null ? Number(origem_lat) : null,
+      origem_lng != null ? Number(origem_lng) : null,
+      (destino ?? '').toString(),
+      destino_lat != null ? Number(destino_lat) : null,
+      destino_lng != null ? Number(destino_lng) : null,
+      JSON.stringify(pontos),
+      observacoes ?? null,
+      (recorrencia ?? 'unica').toString(),
+    ];
+
     const q = `
       INSERT INTO viagens (
         motorista_id, tipo, data_saida, data_retorno,
         vai_esperar, origem, origem_lat, origem_lng,
         destino, destino_lat, destino_lng,
-        pontos_intermediarios, observacoes, recorrencia
+        pontos_intermediarios, observacoes, recorrencia,
+        status, created_at, updated_at
       ) VALUES (
         $1,$2,$3,$4,
         $5,$6,$7,$8,
         $9,$10,$11,
-        $12::json, $13, $14
-      ) RETURNING id
+        $12::jsonb,$13,$14,
+        'Agendada', NOW(), NOW()
+      )
+      RETURNING
+        id, motorista_id, tipo, data_saida, data_retorno,
+        vai_esperar, origem, origem_lat, origem_lng,
+        destino, destino_lat, destino_lng,
+        pontos_intermediarios, observacoes, recorrencia, status
     `;
-    const vals = [
-      motorista_id,
-      tipo,
-      data_saida,
-      data_retorno || null,
-      vai_esperar === 'on' || vai_esperar === true,
-      origem,
-      origem_lat || null,
-      origem_lng || null,
-      destino,
-      destino_lat || null,
-      destino_lng || null,
-      pontos_intermediarios || null,
-      observacoes || null,
-      recorrencia || 'unica'
-    ];
 
     const result = await pool.query(q, vals);
-    return res.json({ id: result.rows[0].id });
+    const v = result.rows[0];
+
+    // Payload no formato que o app (DemandasPage) espera (flat)
+    const payload = {
+      id: v.id,
+      tipo: v.tipo,
+      data_saida: v.data_saida,            // ISO string do Postgres
+      data_retorno: v.data_retorno,        // pode ser null
+      origem: v.origem,                    // texto
+      origem_lat: v.origem_lat,            // number | null
+      origem_lng: v.origem_lng,            // number | null
+      destino: v.destino,                  // texto
+      destino_lat: v.destino_lat,
+      destino_lng: v.destino_lng,
+      pontos_intermediarios: v.pontos_intermediarios || [],
+      observacoes: v.observacoes || '',
+      status: v.status,                    // 'Agendada'
+    };
+
+    // Notifica todos os clientes conectados (incluindo o motorista alvo)
+    io.emit('demanda:new', payload);
+
+    return res.status(201).json({ id: v.id, viagem: v });
   } catch (err) {
     console.error('Erro ao criar viagem:', err);
-    return res.status(500).json({ success: false, message: 'Não foi possível agendar a viagem.' });
+    return res
+      .status(500)
+      .json({ success: false, message: 'Não foi possível agendar a viagem.' });
   }
 });
-
 
 
 // [PUT] Atualizar viagem
@@ -13084,36 +13248,38 @@ app.delete('/api/viagens/:id', async (req, res) => {
 // … suas importações iniciais, incluindo verificarTokenJWT e pool …
 
 // [GET] Listar todas as viagens atribuídas ao motorista autenticado
+// GET /api/admin-motoristas/viagens
 app.get('/api/admin-motoristas/viagens', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
-    const query = `
+
+    const q = `
       SELECT
-        v.id,
-        v.tipo,
-        v.data_saida,
-        v.data_retorno,
-        v.vai_esperar,
-        v.origem,
-        v.origem_lat,
-        v.origem_lng,
-        v.destino,
-        v.destino_lat,
-        v.destino_lng,
-        v.pontos_intermediarios,
-        v.observacoes,
-        v.status
-      FROM viagens v
-      WHERE v.motorista_id = $1
-      ORDER BY v.data_saida DESC;
+        id,
+        tipo,
+        data_saida,
+        data_retorno,
+        origem           AS origem,        -- texto
+        origem_lat       AS origem_lat,
+        origem_lng       AS origem_lng,
+        destino          AS destino,       -- texto
+        destino_lat      AS destino_lat,
+        destino_lng      AS destino_lng,
+        COALESCE(pontos_intermediarios, '[]'::json) AS pontos_intermediarios,
+        COALESCE(observacoes, '')         AS observacoes,
+        status
+      FROM viagens
+      WHERE motorista_id = $1
+      ORDER BY data_saida DESC, id DESC
     `;
-    const result = await pool.query(query, [motoristaId]);
-    return res.json(result.rows);
-  } catch (error) {
-    console.error('Erro ao listar viagens do motorista:', error);
-    return res.status(500).json({ success: false, message: 'Erro interno ao listar viagens.' });
+    const { rows } = await pool.query(q, [motoristaId]);
+    return res.json(rows);
+  } catch (e) {
+    console.error('GET /viagens erro:', e);
+    return res.status(500).json({ error: 'Erro ao listar viagens' });
   }
 });
+
 
 // [GET] Detalhar uma viagem específica
 app.get('/api/admin-motoristas/viagens/:id', verificarTokenJWT, async (req, res) => {
@@ -13154,65 +13320,88 @@ app.get('/api/admin-motoristas/viagens/:id', verificarTokenJWT, async (req, res)
     return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
   }
 });
-// Atualizar status para "Em andamento"
+// PUT /api/admin-motoristas/viagens/:id/atender
 app.put('/api/admin-motoristas/viagens/:id/atender', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
-    const viagemId = req.params.id;
-    // Atualiza status apenas se a viagem pertencer ao motorista autenticado
-    const result = await pool.query(
-      "UPDATE viagens SET status = 'Em andamento' WHERE id = $1 AND motorista_id = $2 RETURNING id",
-      [viagemId, motoristaId]
+    const id = Number(req.params.id);
+
+    const up = await pool.query(
+      `UPDATE viagens
+         SET status = 'Em andamento',
+             updated_at = NOW()
+       WHERE id = $1 AND motorista_id = $2
+       RETURNING id, status`,
+      [id, motoristaId]
     );
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: 'Viagem não encontrada.' });
+
+    if (!up.rowCount) {
+      return res.status(404).json({ error: 'Viagem não encontrada para este motorista' });
     }
-    return res.sendStatus(204); // sucesso
-  } catch (error) {
-    console.error('Erro ao iniciar viagem:', error);
-    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+
+    emitAtualizacaoDemandas();
+    return res.status(204).send();
+  } catch (e) {
+    console.error('PUT /viagens/:id/atender erro:', e);
+    return res.status(500).json({ error: 'Falha ao iniciar viagem' });
   }
 });
 
-// Atualizar status para "Concluída"
+
+
+// PUT /api/admin-motoristas/viagens/:id/finalizar
 app.put('/api/admin-motoristas/viagens/:id/finalizar', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
-    const viagemId = req.params.id;
-    const result = await pool.query(
-      "UPDATE viagens SET status = 'Concluída' WHERE id = $1 AND motorista_id = $2 RETURNING id",
-      [viagemId, motoristaId]
+    const id = Number(req.params.id);
+
+    const up = await pool.query(
+      `UPDATE viagens
+         SET status = 'Concluída',
+             data_retorno = NOW(),
+             updated_at = NOW()
+       WHERE id = $1 AND motorista_id = $2
+       RETURNING id, status`,
+      [id, motoristaId]
     );
-    if (result.rowCount === 0) {
-      return res.status(404).json({ success: false, message: 'Viagem não encontrada.' });
+
+    if (!up.rowCount) {
+      return res.status(404).json({ error: 'Viagem não encontrada para este motorista' });
     }
-    return res.sendStatus(204);
-  } catch (error) {
-    console.error('Erro ao finalizar viagem:', error);
-    return res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+
+    emitAtualizacaoDemandas();
+    return res.status(204).send();
+  } catch (e) {
+    console.error('PUT /viagens/:id/finalizar erro:', e);
+    return res.status(500).json({ error: 'Falha ao finalizar viagem' });
   }
 });
 
-// Atualiza o campo `status` na tabela motoristas_administrativos
+
+// PUT /api/admin-motoristas/status
 app.put('/api/admin-motoristas/status', verificarTokenJWT, async (req, res) => {
   try {
     const motoristaId = req.user.id;
-    const { status } = req.body;             // ex: 'Em demanda' ou 'Livre'
-    const result = await pool.query(
-      `UPDATE motoristas_administrativos 
-       SET status = $1 
-       WHERE id = $2`,
-      [status, motoristaId]
-    );
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: 'Motorista não encontrado.' });
+    const { status } = req.body; // 'Disponível' | 'Em demanda' | 'Indisponível'
+
+    // Tente atualizar se a coluna existir; se não, ignore com try/catch
+    try {
+      await pool.query(
+        `UPDATE motoristas_administrativos SET status_app = $1 WHERE id = $2`,
+        [status, motoristaId]
+      );
+    } catch (_) {
+      // coluna ausente? tudo bem — mantemos compatibilidade
     }
-    return res.sendStatus(204);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Erro interno do servidor.' });
+
+    emitAtualizacaoDemandas();
+    return res.status(204).send();
+  } catch (e) {
+    console.error('PUT /admin-motoristas/status erro:', e);
+    return res.status(500).json({ error: 'Falha ao atualizar status do motorista' });
   }
 });
+
 
 
 // [POST] Registrar avaliação do passageiro ao final da viagem (nota e observação)
@@ -13286,6 +13475,6 @@ app.get('/api/dashboard-administrativo', isAdmin, async (req, res) => {
 // LISTEN (FINAL)
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+httpServer.listen(PORT, () => {
+  console.log(`Server + Socket.IO no ar na porta ${PORT}`);
 });
