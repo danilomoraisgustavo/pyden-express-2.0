@@ -12274,12 +12274,11 @@ app.post('/api/admin-motoristas/login', async (req, res) => {
 
 // Rota protegida de exemplo: detalhes do perfil do motorista administrativo logado
 
-// [GET] Perfil do motorista administrativo com dados do veículo (robusto p/ nova UI)
+// [GET] Perfil do motorista administrativo com dados do veículo (enxuto e compatível com a UI)
 app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
   try {
     const id = req.user.id;
 
-    // Busca motorista + (opcionalmente) o veículo associado em uma única query
     const sql = `
       SELECT
         m.id,
@@ -12298,23 +12297,13 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
         m.cnh_pdf,
         m.carro_id,
 
-        -- Veículo (pode ser null)
-        f.id                                      AS carro__id,
-        f.tipo_veiculo                            AS carro__modelo,
-        f.placa                                   AS carro__placa,
-        f.documento                               AS carro__documento_url,
-        f.capacidade                              AS carro__capacidade,
-        f.cor_veiculo                             AS carro__cor_veiculo,
-        f.ano                                     AS carro__ano,
-        f.marca                                   AS carro__marca,
-        f.adaptado                                AS carro__adaptado,
-        f.elevador                                AS carro__elevador,
-        f.ar_condicionado                         AS carro__ar_condicionado,
-        f.gps                                     AS carro__gps,
-        f.cinto_seguranca                         AS carro__cinto_seguranca
+        -- Somente os campos que a UI usa
+        f.id            AS carro__id,
+        f.tipo_veiculo  AS carro__modelo,
+        f.placa         AS carro__placa,
+        f.documento     AS carro__documento_url
       FROM motoristas_administrativos m
-      LEFT JOIN frota_administrativa f
-             ON f.id = m.carro_id
+      LEFT JOIN frota_administrativa f ON f.id = m.carro_id
       WHERE m.id = $1
       LIMIT 1
     `;
@@ -12323,6 +12312,7 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
     if (!rows.length) {
       return res.status(404).json({ success: false, message: 'Motorista não encontrado' });
     }
+
     const r = rows[0];
 
     const motorista = {
@@ -12343,21 +12333,11 @@ app.get('/api/admin-motoristas/perfil', verificarTokenJWT, async (req, res) => {
       carro_id: r.carro_id ?? null,
     };
 
-    const temCarro = !!r.carro__id;
-    const carro = temCarro ? {
+    const carro = r.carro__id ? {
       id: r.carro__id,
-      modelo: r.carro__modelo,            // a UI usa "modelo" no subtítulo
+      modelo: r.carro__modelo,
       placa: r.carro__placa,
-      documento_url: r.carro__documento_url, // a UI já monta URL completa se vier relativo
-      capacidade: r.carro__capacidade,
-      cor_veiculo: r.carro__cor_veiculo,
-      ano: r.carro__ano,
-      marca: r.carro__marca,
-      adaptado: r.carro__adaptado,
-      elevador: r.carro__elevador,
-      ar_condicionado: r.carro__ar_condicionado,
-      gps: r.carro__gps,
-      cinto_seguranca: r.carro__cinto_seguranca,
+      documento_url: r.carro__documento_url, // a tela já completa a URL se vier relativa
     } : null;
 
     return res.json({ success: true, motorista, carro });
