@@ -13233,7 +13233,7 @@ app.put('/api/viagens/:id', async (req, res) => {
         vai_esperar=$5,
         origem=$6, origem_lat=$7, origem_lng=$8,
         destino=$9, destino_lat=$10, destino_lng=$11,
-        pontos_intermediarios=$12::json,
+        pontos_intermediarios=$12::jsonb,
         observacoes=$13,
         recorrencia=$14,
         updated_at=NOW()
@@ -13298,7 +13298,7 @@ app.get('/api/admin-motoristas/viagens', verificarTokenJWT, async (req, res) => 
         destino          AS destino,       -- texto
         destino_lat      AS destino_lat,
         destino_lng      AS destino_lng,
-        COALESCE(pontos_intermediarios, '[]'::json) AS pontos_intermediarios,
+        COALESCE(pontos_intermediarios, '[]'::jsonb) AS pontos_intermediarios,
         COALESCE(observacoes, '')         AS observacoes,
         status
       FROM viagens
