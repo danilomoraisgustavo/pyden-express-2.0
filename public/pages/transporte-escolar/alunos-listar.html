@@ -1211,16 +1211,43 @@
     $('#btnTransferir').click(() => { $('#modalConflitos').modal('hide'); enviarImportacao(true); });
 
     /* ===================== LIMITE MUNICIPAL (GEOJSON) ===================== */
+    // Opcional: meta para sobrescrever a URL no HTML, se precisar.
+    // <meta name="limite-url" content="/static/assets/geo/canaa_dos_carajas_limite.geojson">
+    const LIMITE_URL =
+      document.querySelector('meta[name="limite-url"]')?.content ||
+      '/assets/geo/canaa_dos_carajas_limite.geojson';
+
     async function carregarLimiteMunicipal() {
       try {
-        const resp = await fetch('/assets/geo/canaa_dos_carajas_limite.geojson');
+        const resp = await fetch(LIMITE_URL, { cache: 'no-store' });
+        if (!resp.ok) {
+          console.error('GeoJSON não encontrado:', LIMITE_URL, resp.status);
+          showNotification('warning', 'Limite municipal não encontrado. Filtro “Residência” desativado.');
+          return; // não seta limiteMunicipal -> ficará null
+        }
+
+        const ct = resp.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          // Evita tentar parsear HTML de 404 como JSON
+          console.error('Content-Type inesperado para GeoJSON:', ct);
+          showNotification('warning', 'Arquivo de limite não é JSON válido. Verifique o caminho.');
+          return;
+        }
+
         const gj = await resp.json();
-        const paths = geoJsonToPaths(gj); // array de paths
+        const paths = geoJsonToPaths(gj);
+        if (!paths.length) {
+          showNotification('warning', 'GeoJSON sem geometria válida.');
+          return;
+        }
 
         limiteMunicipal = new google.maps.Polygon({
           paths,
-          strokeColor: '#0066ff', strokeOpacity: 0.9, strokeWeight: 2,
-          fillColor: '#0066ff', fillOpacity: 0.08,
+          strokeColor: '#0066ff',
+          strokeOpacity: 0.9,
+          strokeWeight: 2,
+          fillColor: '#0066ff',
+          fillOpacity: 0.08,
           clickable: false
         });
 
@@ -1228,6 +1255,7 @@
         paths.flat().forEach(ll => limiteBounds.extend(ll));
       } catch (e) {
         console.error('Falha ao carregar limite municipal', e);
+        showNotification('danger', 'Erro ao carregar limite municipal. Verifique a URL/servidor.');
       }
     }
     function geoJsonToPaths(geojson) {
@@ -1416,10 +1444,11 @@
       fetch("/api/alunos-ativos?" + q.toString())
         .then(r => r.json())
         .then(async d => {
-          // Garante limite para classificar residência
-          if (!limiteMunicipal) await carregarLimiteMunicipal();
+          if (!limiteMunicipal) {
+            // tenta carregar, mas se continuar ausente, desativa classificação
+            await carregarLimiteMunicipal();
+          }
 
-          // Marca cada item com residente: "sim" | "nao" | "desconhecido"
           alunosData = (d || []).map(it => {
             let residente = "desconhecido";
             if (it.latitude && it.longitude && limiteMunicipal) {
@@ -1430,8 +1459,15 @@
             return { ...it, residente };
           });
 
-          // Aplica filtro “Residência” (client-side)
-          const filtrados = residencia ? alunosData.filter(a => a.residente === residencia) : alunosData;
+          // Só filtra por residência se o limite está disponível
+          let filtrados = alunosData;
+          if (residencia) {
+            if (!limiteMunicipal) {
+              showNotification('info', 'Limite municipal indisponível — filtro “Residência” ignorado.');
+            } else {
+              filtrados = alunosData.filter(a => a.residente === residencia);
+            }
+          }
 
           popularTabela(filtrados);
           popularFiltros(filtrados);
