@@ -1223,14 +1223,14 @@
         if (!resp.ok) {
           console.error('GeoJSON não encontrado:', LIMITE_URL, resp.status);
           showNotification('warning', 'Limite municipal não encontrado. Filtro “Residência” desativado.');
-          return; // não seta limiteMunicipal -> ficará null
+          return;
         }
 
-        const ct = resp.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) {
-          // Evita tentar parsear HTML de 404 como JSON
+        const ct = (resp.headers.get('content-type') || '').toLowerCase();
+        // ✅ aceita application/geo+json, application/json e variações com charset
+        if (!ct.includes('json')) {
           console.error('Content-Type inesperado para GeoJSON:', ct);
-          showNotification('warning', 'Arquivo de limite não é JSON válido. Verifique o caminho.');
+          showNotification('warning', 'Arquivo de limite não veio como JSON. Verifique o servidor.');
           return;
         }
 
