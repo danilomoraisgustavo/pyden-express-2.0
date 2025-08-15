@@ -175,6 +175,9 @@ app.use(
   isAuthenticated,
   express.static(path.join(__dirname, "public", "pages"))
 );
+// disponibiliza arquivos estáticos da pasta public/data em /data
+app.use('/data', express.static(path.join(__dirname, 'public', 'data')));
+
 
 
 // ROTAS PRINCIPAIS
